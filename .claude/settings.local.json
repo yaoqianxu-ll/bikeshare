@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn clean:*)",
+      "Bash(cmd:*)",
+      "Bash(where java:*)",
+      "Bash(mysql:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:oportable.jp)",
+      "Bash(cd /c/VsProjact/bickdemo/bickdemo-backend && mvn spring-boot:run)",
+      "Bash(cd \"C:/VsProjact/bickdemo/bickdemo-backend\" && mvn.cmd spring-boot:run)",
+      "Bash(cd C:/VsProjact/bickdemo/bickdemo-frontend && npm install echarts --save)",
+      "Bash(cd C:/VsProjact/bickdemo/bickdemo-frontend && npm install sass --save-dev)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(npm run:*)",
+      "Bash(npm install:*)",
+      "Bash(git init:*)",
+      "Bash(git config:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
