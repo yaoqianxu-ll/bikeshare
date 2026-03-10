@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: bickdemo-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: bickdemo
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    restart: always
+    networks:
+      - bickdemo-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot123456"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # 后端服务
+  app:
+    build:
+      context: ./bickdemo-backend
+      dockerfile: Dockerfile
+    container_name: bickdemo-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USERNAME=root
+      - MYSQL_PASSWORD=root123456
+      - MINIO_ENDPOINT=http://60.205.169.251:9000
+      - MINIO_ACCESS_KEY=tTrQL3XQCic9Dc93jbQ7
+      - MINIO_SECRET_KEY=AtFjrLwasDoEgr4yZFAgwQqRzqGXrDndFHHQLL7f
+      - MINIO_BUCKET=bicycles
+      - JWT_SECRET=c2VjcmV0LWtleS1mb3Itand0LXRva2VuLWdlbmVyYXRpb24tbWluaW11bS0yNTYtYml0cw==
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./logs:/app/logs
+    restart: always
+    networks:
+      - bickdemo-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+networks:
+  bickdemo-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local

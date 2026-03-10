@@ -1,0 +1,1 @@
+import{r as t}from"./request-By3jwAOH.js";function u(e){return t({url:"/bicycles",method:"get",params:e})}function l(e){return t({url:"/bicycles",method:"post",data:e})}function i(e,c){return t({url:`/bicycles/${e}`,method:"put",data:c})}function n(e){return t({url:`/bicycles/${e}`,method:"delete"})}export{l as c,n as d,u as g,i as u};

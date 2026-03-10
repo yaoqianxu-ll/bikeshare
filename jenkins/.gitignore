@@ -1,0 +1,11 @@
+# Jenkins
+jenkins-data/
+maven-repo/
+node-cache/
+
+# Docker
+docker-compose.yml.bak
+
+# Logs
+*.log
+logs/

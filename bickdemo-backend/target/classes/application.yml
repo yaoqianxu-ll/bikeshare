@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: bickdemo
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  datasource:
+    url: jdbc:mysql://localhost:3306/bickdemo?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      # 连接池名称
+      pool-name: HikariCP-bickdemo
+      # 最小空闲连接数
+      minimum-idle: 5
+      # 最大连接数
+      maximum-pool-size: 20
+      # 连接空闲超时时间（毫秒）
+      idle-timeout: 300000
+      # 连接最大生命周期（毫秒）
+      max-lifetime: 1800000
+      # 连接超时时间（毫秒）
+      connection-timeout: 30000
+      # 连接测试查询
+      connection-test-query: SELECT 1
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+server:
+  port: 8080
+
+jwt:
+  secret: c2VjcmV0LWtleS1mb3Itand0LXRva2VuLWdlbmVyYXRpb24tbWluaW11bS0yNTYtYml0cw==
+  expiration: 86400000
+
+
+# MinIO 配置
+minio:
+  endpoint: http://60.205.169.251:9000
+  accessKey: tTrQL3XQCic9Dc93jbQ7
+  secretKey: AtFjrLwasDoEgr4yZFAgwQqRzqGXrDndFHHQLL7f
+  bucket-name: bicycles
+
+logging:
+  level:
+    com.example.bickdemo: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.beans.factory.support: DEBUG
+
