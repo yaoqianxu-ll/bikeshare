@@ -11,13 +11,11 @@
  Target Server Version : 80043 (8.0.43)
  File Encoding         : 65001
 
- Date: 09/03/2026 21:01:12
+ Date: 10/03/2026 17:57:11
 */
+
 -- 创建数据库
 CREATE DATABASE IF NOT EXISTS bickdemo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-USE bickdemo;
-
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -39,15 +37,13 @@ CREATE TABLE `background_images`  (
                                       PRIMARY KEY (`id`) USING BTREE,
                                       INDEX `idx_enabled`(`enabled` ASC) USING BTREE,
                                       INDEX `idx_sort`(`sort` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '背景图片表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '背景图片表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of background_images
 -- ----------------------------
 INSERT INTO `background_images` VALUES (1, '默认背景 1', '', 'DEFAULT', 0, 1, '2026-03-09 18:25:11', '2026-03-09 18:25:11', 0);
-INSERT INTO `background_images` VALUES (6, 'th.jpg', 'http://60.205.169.251:9000/bicycles/fe3b1486-4b8c-45e0-b2f7-85bec89ea981.jpg', 'CUSTOM', 1, 0, '2026-03-09 18:34:01', '2026-03-09 18:34:01', 0);
-INSERT INTO `background_images` VALUES (7, 'th.jpg', 'http://60.205.169.251:9000/bicycles/fd3eb844-5da4-4b31-8829-87156a41e5af.jpg', 'CUSTOM', 0, 0, '2026-03-09 18:35:24', '2026-03-09 18:35:29', 1);
-INSERT INTO `background_images` VALUES (8, 'cd5dac76efbc694f-1.jpg', 'http://60.205.169.251:9000/bicycles/6b05ddbb-9dad-422e-9946-578a1a2d2a71.jpg', 'CUSTOM', 0, 0, '2026-03-09 18:52:35', '2026-03-09 18:52:35', 0);
+INSERT INTO `background_images` VALUES (10, 'tiank.jpg', 'http://124.221.113.208:9000/bicycles/473de4c7-176c-494c-a749-bf2212f77c70.jpg', 'CUSTOM', 1, 0, '2026-03-10 17:50:06', '2026-03-10 17:50:06', 0);
 
 -- ----------------------------
 -- Table structure for bicycles
@@ -71,14 +67,14 @@ CREATE TABLE `bicycles`  (
 -- ----------------------------
 -- Records of bicycles
 -- ----------------------------
-INSERT INTO `bicycles` VALUES (1, '山地车 X1', 'MOUNTAIN', 'AVAILABLE', '北京市朝阳区', '专业山地自行车，适合越野骑行', 25.00, 'http://60.205.169.251:9000/bicycles/f69e5ec2-bb2d-4296-912c-b071b2901d07.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (2, '公路车 Pro', 'ROAD', 'AVAILABLE', '北京市海淀区', '轻量化公路车，适合长途骑行', 35.00, 'http://60.205.169.251:9000/bicycles/9351eaeb-d2c1-4fa4-9b53-6d546a172a64.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (3, '城市单车 C1', 'CITY', 'AVAILABLE', '北京市东城区', '舒适城市自行车，适合日常通勤', 15.00, 'http://60.205.169.251:9000/bicycles/39c0019b-e10d-4d79-9ca5-0e2051c6c52f.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (4, '电动车 E1', 'ELECTRIC', 'AVAILABLE', '北京市西城区', '电动助力自行车，省力便捷', 30.00, 'http://60.205.169.251:9000/bicycles/1d34edb3-e63f-4015-bef2-38fc2ed03632.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (5, '双人车 T1', 'TANDEM', 'AVAILABLE', '北京市丰台区', '双人协力自行车，适合情侣朋友', 40.00, 'http://60.205.169.251:9000/bicycles/d11e6a83-ac65-4130-b154-4b3a5d155bf6.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (6, '机车', 'ROAD', 'MAINTENANCE', '江西省九江市', '公路车最快速度', 50.00, 'http://60.205.169.251:9000/bicycles/24d42629-9ad7-4384-a25f-1cf2189c0d2d.jpg', '2026-03-08 18:10:08', '2026-03-08 18:10:08', 0);
-INSERT INTO `bicycles` VALUES (7, '自行车', 'CITY', 'AVAILABLE', '江西省九江市', '单车更方便出行，绝不堵车，畅通无阻', 5.00, 'http://60.205.169.251:9000/bicycles/22f7f0c3-de21-4c6a-a585-45f082f3d3bf.jpg', '2026-03-09 18:00:03', '2026-03-09 18:00:03', 0);
-INSERT INTO `bicycles` VALUES (8, '劳斯莱斯幻影', 'CITY', 'DISABLED', '上海市外滩区', '享受不一样的体验', 188.00, 'http://60.205.169.251:9000/bicycles/11461a5e-848b-4492-ae1d-dda34edb7053.jpg', '2026-03-09 18:04:46', '2026-03-09 18:04:46', 0);
+INSERT INTO `bicycles` VALUES (1, '山地车 X1', 'MOUNTAIN', 'AVAILABLE', '北京市朝阳区', '专业山地自行车，适合越野骑行', 25.00, 'http://124.221.113.208:9000/bicycles/5fe1bdd5-37ef-4b9c-8705-c6ce7882cfb5.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
+INSERT INTO `bicycles` VALUES (2, '公路车 Pro', 'ROAD', 'AVAILABLE', '北京市海淀区', '轻量化公路车，适合长途骑行', 35.00, 'http://124.221.113.208:9000/bicycles/c0460e9b-bbbb-47c7-a89a-5544b961e908.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
+INSERT INTO `bicycles` VALUES (3, '城市单车 C1', 'CITY', 'AVAILABLE', '北京市东城区', '舒适城市自行车，适合日常通勤', 15.00, 'http://124.221.113.208:9000/bicycles/978e2c03-2a78-4085-bb9f-5d9d61aecff2.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
+INSERT INTO `bicycles` VALUES (4, '电动车 E1', 'ELECTRIC', 'AVAILABLE', '北京市西城区', '电动助力自行车，省力便捷', 30.00, 'http://124.221.113.208:9000/bicycles/001f8da5-b139-406b-81ad-42b7c61c5f2b.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
+INSERT INTO `bicycles` VALUES (5, '双人车 T1', 'TANDEM', 'AVAILABLE', '北京市丰台区', '双人协力自行车，适合情侣朋友', 40.00, 'http://124.221.113.208:9000/bicycles/5628005a-afdc-4172-9ee9-f0e55d370b04.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
+INSERT INTO `bicycles` VALUES (6, '机车', 'ROAD', 'MAINTENANCE', '江西省九江市', '公路车最快速度', 50.00, 'http://124.221.113.208:9000/bicycles/fe89ad6b-920b-45fe-9150-ec0a48d3fe9f.jpg', '2026-03-08 18:10:08', '2026-03-08 18:10:08', 0);
+INSERT INTO `bicycles` VALUES (7, '自行车', 'CITY', 'AVAILABLE', '江西省九江市', '单车更方便出行，绝不堵车，畅通无阻', 5.00, 'http://124.221.113.208:9000/bicycles/d2ff510e-fdbc-42df-815f-e53a94d27994.jpg', '2026-03-09 18:00:03', '2026-03-09 18:00:03', 0);
+INSERT INTO `bicycles` VALUES (8, '劳斯莱斯幻影', 'CITY', 'DISABLED', '上海市外滩区', '享受不一样的体验', 188.00, 'http://124.221.113.208:9000/bicycles/5ab8287c-7802-42d3-8cd3-f6d94162956e.jpg', '2026-03-09 18:04:46', '2026-03-09 18:04:46', 0);
 
 -- ----------------------------
 -- Table structure for rentals
@@ -100,7 +96,7 @@ CREATE TABLE `rentals`  (
                             INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
                             INDEX `idx_bicycle_id`(`bicycle_id` ASC) USING BTREE,
                             INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 35 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '租赁记录表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 36 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '租赁记录表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of rentals
@@ -114,6 +110,7 @@ INSERT INTO `rentals` VALUES (31, 2, 1, '2026-03-09 18:42:14', '2026-03-09 18:42
 INSERT INTO `rentals` VALUES (32, 1, 2, '2026-03-09 20:26:47', '2026-03-09 20:28:42', '2026-03-09 21:26:46', 'COMPLETED', 1.11, '2026-03-09 20:26:47', '2026-03-09 20:26:47', 0);
 INSERT INTO `rentals` VALUES (33, 1, 1, '2026-03-09 20:29:13', '2026-03-09 20:35:22', '2026-03-09 21:29:12', 'COMPLETED', 2.56, '2026-03-09 20:29:13', '2026-03-09 20:29:13', 0);
 INSERT INTO `rentals` VALUES (34, 1, 1, '2026-03-09 20:36:56', NULL, '2026-03-09 21:36:55', 'CANCELLED', NULL, '2026-03-09 20:36:56', '2026-03-09 20:36:56', 0);
+INSERT INTO `rentals` VALUES (35, 2, 1, '2026-03-09 22:01:58', '2026-03-09 22:03:32', '2026-03-09 23:01:57', 'COMPLETED', 0.65, '2026-03-09 22:01:58', '2026-03-09 22:01:58', 0);
 
 -- ----------------------------
 -- Table structure for users

@@ -18,17 +18,17 @@ pipeline {
         IMAGE_TAG = "${BUILD_NUMBER}"
 
         // 服务器配置 (如果是远程部署)
-        DEPLOY_HOST = '60.205.169.251'
+        DEPLOY_HOST = '124.221.113.208'
         DEPLOY_USER = 'root'
 
         // 数据库配置
-        MYSQL_ROOT_PASSWORD = 'root123456'
+        MYSQL_ROOT_PASSWORD = 'Lile200623'
         MYSQL_DATABASE = 'bickdemo'
 
         // MinIO 配置
-        MINIO_ENDPOINT = 'http://60.205.169.251:9000'
-        MINIO_ACCESS_KEY = 'tTrQL3XQCic9Dc93jbQ7'
-        MINIO_SECRET_KEY = 'AtFjrLwasDoEgr4yZFAgwQqRzqGXrDndFHHQLL7f'
+        MINIO_ENDPOINT = 'http://124.221.113.208:9000'
+        MINIO_ACCESS_KEY = 'Cg6huvLg5AuW8ShqQoAr'
+        MINIO_SECRET_KEY = 'j8AoV6yOOUXVNPWVcIpJLuuZJidCeurCiBwg1c1z'
         MINIO_BUCKET = 'bicycles'
     }
 
@@ -206,9 +206,10 @@ pipeline {
                 def currentTime = new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('Asia/Shanghai'))
                 echo "部署完成时间：${currentTime}"
                 echo "访问地址："
-                echo "  前端：http://60.205.169.251"
-                echo "  后端：http://60.205.169.251:8080"
-                echo "  Jenkins: http://60.205.169.251:8081"
+                echo "  前端：http://124.221.113.208"
+                echo "  后端：http://124.221.113.208:8080"
+                echo "  Jenkins: http://124.221.113.208:8081"
+                echo "  Gitea: http://124.221.113.208:3000"
             }
         }
         failure {

@@ -51,9 +51,9 @@ jwt:
 
 # MinIO 配置
 minio:
-  endpoint: http://60.205.169.251:9000
-  accessKey: tTrQL3XQCic9Dc93jbQ7
-  secretKey: AtFjrLwasDoEgr4yZFAgwQqRzqGXrDndFHHQLL7f
+  endpoint: http://124.221.113.208:9000
+  accessKey: Cg6huvLg5AuW8ShqQoAr
+  secretKey: j8AoV6yOOUXVNPWVcIpJLuuZJidCeurCiBwg1c1z
   bucket-name: bicycles
 
 logging:

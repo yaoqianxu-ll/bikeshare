@@ -4,9 +4,9 @@ services:
   # MySQL 数据库
   mysql:
     image: mysql:8.0
-    container_name: bickdemo-mysql
+    container_name: bikeshare-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_ROOT_PASSWORD: Lile200623
       MYSQL_DATABASE: bickdemo
       TZ: Asia/Shanghai
     ports:
@@ -20,9 +20,9 @@ services:
       - --default-authentication-plugin=mysql_native_password
     restart: always
     networks:
-      - bickdemo-network
+      - bikeshare-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot123456"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pLile200623"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,17 +32,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: bickdemo-app
+    container_name: bikeshare-app
     ports:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - MYSQL_HOST=mysql
       - MYSQL_USERNAME=root
-      - MYSQL_PASSWORD=root123456
-      - MINIO_ENDPOINT=http://60.205.169.251:9000
-      - MINIO_ACCESS_KEY=tTrQL3XQCic9Dc93jbQ7
-      - MINIO_SECRET_KEY=AtFjrLwasDoEgr4yZFAgwQqRzqGXrDndFHHQLL7f
+      - MYSQL_PASSWORD=Lile200623
+      - MINIO_ENDPOINT=http://124.221.113.208:9000
+      - MINIO_ACCESS_KEY=Cg6huvLg5AuW8ShqQoAr
+      - MINIO_SECRET_KEY=j8AoV6yOOUXVNPWVcIpJLuuZJidCeurCiBwg1c1z
       - MINIO_BUCKET=bicycles
       - JWT_SECRET=c2VjcmV0LWtleS1mb3Itand0LXRva2VuLWdlbmVyYXRpb24tbWluaW11bS0yNTYtYml0cw==
       - TZ=Asia/Shanghai
@@ -53,10 +53,10 @@ services:
       - ./logs:/app/logs
     restart: always
     networks:
-      - bickdemo-network
+      - bikeshare-network
 
 networks:
-  bickdemo-network:
+  bikeshare-network:
     driver: bridge
 
 volumes:
