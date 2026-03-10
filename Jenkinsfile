@@ -41,7 +41,7 @@ pipeline {
                 script {
                     // 获取 Git 提交信息
                     env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                    env.GIT_BRANCH_NAME = env.BRANCH_NAME ?: 'master'
+                    env.GIT_BRANCH_NAME = env.BRANCH_NAME ?: 'main'
                 }
                 echo "✅ 代码拉取完成 | 分支：${env.GIT_BRANCH_NAME} | 提交：${env.GIT_COMMIT_SHORT}"
             }
