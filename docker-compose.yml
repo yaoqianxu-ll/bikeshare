@@ -4,7 +4,7 @@ services:
   # MySQL 数据库
   mysql:
     image: mysql:8.0
-    container_name: bickdemo-mysql
+    container_name: bikeshare-mysql
     dns:
       - 183.60.83.19
       - 183.60.82.98
@@ -23,7 +23,7 @@ services:
       - --default-authentication-plugin=mysql_native_password
     restart: always
     networks:
-      - bickdemo-network
+      - bikeshare-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pLile200623"]
       interval: 5s
@@ -35,7 +35,7 @@ services:
     build:
       context: ./bickdemo-backend
       dockerfile: Dockerfile.simple
-    container_name: bickdemo-app
+    container_name: bikeshare-backend
     dns:
       - 183.60.83.19
       - 183.60.82.98
@@ -58,7 +58,7 @@ services:
       - ./bickdemo-backend/target:/app/target
     restart: always
     networks:
-      - bickdemo-network
+      - bikeshare-network
     depends_on:
       mysql:
         condition: service_healthy
@@ -68,7 +68,7 @@ services:
     build:
       context: ./bickdemo-frontend
       dockerfile: Dockerfile.simple
-    container_name: bickdemo-frontend
+    container_name: bikeshare-frontend
     dns:
       - 183.60.83.19
       - 183.60.82.98
@@ -76,12 +76,12 @@ services:
       - "80:80"
     restart: always
     networks:
-      - bickdemo-network
+      - bikeshare-network
     depends_on:
       - app
 
 networks:
-  bickdemo-network:
+  bikeshare-network:
     driver: bridge
 
 volumes:

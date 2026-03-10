@@ -50,11 +50,7 @@ pipeline {
         stage('Prepare') {
             steps {
                 echo '🔧 准备构建环境...'
-                script {
-                    // 检查 Docker 是否可用
-                    sh 'docker --version'
-                    sh 'docker-compose --version || docker compose version'
-                }
+                sh 'docker --version'
             }
         }
 
