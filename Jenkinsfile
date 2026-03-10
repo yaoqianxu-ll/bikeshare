@@ -208,10 +208,6 @@ pipeline {
         }
         failure {
             echo '❌ 构建失败，请查看控制台输出'
-            script {
-                // 可选：发送失败通知
-                // emailext subject: "构建失败：${env.JOB_NAME}", body: "请查看：${env.BUILD_URL}", to: 'your-email@example.com'
-            }
         }
     }
 }
