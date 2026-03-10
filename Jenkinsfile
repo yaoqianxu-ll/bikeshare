@@ -1,12 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'maven-3.9.6'  // 需要在 Jenkins 工具配置中预先配置
-        jdk 'jdk-17'         // 需要在 Jenkins 工具配置中预先配置
-        nodejs 'node-20'     // 需要在 Jenkins 插件管理中安装 NodeJS 插件
-    }
-
     environment {
         // 项目配置
         PROJECT_NAME = 'bickdemo'
