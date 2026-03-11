@@ -107,14 +107,18 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo '🐳 构建 Docker 镜像...'
-                // 切换到项目根目录执行 docker compose
                 sh '''
+                    echo "当前目录：" && pwd
+                    echo "工作空间：${WORKSPACE}"
+                    echo "文件列表："
+                    ls -la ${WORKSPACE}/
+                    echo "切换到工作空间..."
                     cd ${WORKSPACE}
                     echo "当前目录：" && pwd
                     echo "停止旧容器..."
                     docker compose down || true
                     echo "构建镜像..."
-                    docker compose build
+                    docker compose build --progress=plain
                 '''
             }
         }
