@@ -45,6 +45,8 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo '📦 拉取代码...'
+                // 清空工作空间，避免旧代码干扰
+                cleanWs()
                 checkout scm
                 script {
                     // 获取 Git 提交信息
