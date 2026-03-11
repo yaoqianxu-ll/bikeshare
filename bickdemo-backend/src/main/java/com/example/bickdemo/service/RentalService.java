@@ -31,7 +31,7 @@ import java.math.RoundingMode;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class adRentalService {
+public class RentalService {
 
     private final RentalMapper rentalMapper;
     private final BicycleMapper bicycleMapper;
