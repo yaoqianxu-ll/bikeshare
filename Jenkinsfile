@@ -10,7 +10,7 @@ pipeline {
         // Docker 配置 - 使用 docker compose 容器
         DOCKER_COMPOSE_CMD = 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v ${WORKSPACE}:${WORKSPACE} -w ${WORKSPACE} docker/compose:latest'
 
-        // 服务器配置 (如果是远程部署)
+        // 服务器配置
         DEPLOY_HOST = '124.221.113.208'
         DEPLOY_USER = 'root'
 
@@ -23,6 +23,15 @@ pipeline {
         MINIO_ACCESS_KEY = 'Cg6huvLg5AuW8ShqQoAr'
         MINIO_SECRET_KEY = 'j8AoV6yOOUXVNPWVcIpJLuuZJidCeurCiBwg1c1z'
         MINIO_BUCKET = 'bicycles'
+    }
+
+    options {
+        // 保留最近的构建记录
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        // 超时时间
+        timeout(time: 30, unit: 'MINUTES')
+        // 禁止并发构建
+        disableConcurrentBuilds()
     }
 
     triggers {
@@ -62,7 +71,9 @@ pipeline {
                         mvn --version
 
                         echo "清理并构建..."
-                        mvn clean package -DskipTests -B
+                        # -o 离线模式，使用本地缓存
+                        # -U 强制更新快照（可选）
+                        mvn clean package -DskipTests -B -o || mvn clean package -DskipTests -B
 
                         echo "检查构建产物..."
                         ls -lh target/*.jar 2>/dev/null || echo "未找到 jar 包"
@@ -79,27 +90,26 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 echo '🎨 构建前端...'
-                dir("${FRONTEND_DIR}") {
-                    sh '''
-                        echo "Node.js 版本："
-                        node --version
-                        npm --version
+                // 在宿主机上构建，使用服务器已安装的 Node.js
+                sh '''
+                    cd ${WORKSPACE}/${FRONTEND_DIR}
+                    echo "Node.js 版本："
+                    node --version || echo "Node.js 未安装，使用 Docker 容器"
 
-                        echo "安装依赖..."
-                        npm ci --legacy-peer-deps || npm install --legacy-peer-deps
-
-                        echo "构建生产版本..."
+                    if command -v node &> /dev/null; then
+                        echo "使用宿主机 Node.js 构建"
+                        npm install --legacy-peer-deps
                         npm run build
+                    else
+                        echo "使用 Docker 容器构建"
+                        docker run --rm -v ${WORKSPACE}/${FRONTEND_DIR}:/app -w /app node:20-alpine sh -c '
+                            npm install --legacy-peer-deps &&
+                            npm run build
+                        '
+                    fi
 
-                        echo "检查构建产物..."
-                        ls -lh dist/ 2>/dev/null || echo "未找到 dist 目录"
-                    '''
-                }
-            }
-            post {
-                success {
-                    archiveArtifacts artifacts: "${FRONTEND_DIR}/dist/**", allowEmptyArchive: true
-                }
+                    ls -lh dist/ || echo "构建产物检查失败"
+                '''
             }
         }
 
@@ -109,14 +119,14 @@ pipeline {
                 sh '''
                     echo "使用 Docker Compose 容器命令"
 
-                    # 停止旧容器
+                    # 停止旧容器（保留卷）
                     ${DOCKER_COMPOSE_CMD} down || true
 
-                    # 清理悬空镜像
-                    docker image prune -f
+                    # 不清理镜像，保留缓存加速下次构建
+                    # docker image prune -f
 
-                    # 构建新镜像
-                    ${DOCKER_COMPOSE_CMD} build --no-cache
+                    # 构建新镜像（使用缓存）
+                    ${DOCKER_COMPOSE_CMD} build
                 '''
             }
         }
