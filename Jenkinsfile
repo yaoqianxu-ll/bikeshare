@@ -92,16 +92,18 @@ pipeline {
                 echo '🎨 构建前端...'
                 sh '''
                     cd ${WORKSPACE}/${FRONTEND_DIR}
-                    echo "Node.js 版本："
-                    node --version
-                    npm --version
+
+                    echo "清理旧的 node_modules..."
+                    rm -rf node_modules
 
                     echo "安装依赖..."
                     npm install --legacy-peer-deps
 
+                    echo "修复权限..."
+                    chmod -R 755 node_modules/.bin
+
                     echo "构建生产版本..."
-                    # 使用 npx 运行 vite，避免权限问题
-                    npx vite build
+                    ./node_modules/.bin/vite build
 
                     echo "检查构建产物..."
                     ls -lh dist/ || echo "构建产物检查失败"
