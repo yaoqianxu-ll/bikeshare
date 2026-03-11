@@ -51,9 +51,9 @@
             <el-table-column label="位置" min-width="140" show-overflow-tooltip>
               <template #default="{ row }">{{ formatText(row.location) }}</template>
             </el-table-column>
-            <el-table-column prop="pricePerHour" label="价格/小时" width="100" align="center">
-              <template #default="{ row }"><span class="price-text">{{ formatMoney(row.pricePerHour) }}</span></template>
-            </el-table-column>
+          <el-table-column prop="pricePerHour" label="价格/小时" width="120" align="center">
+            <template #default="{ row }"><span class="price-text">{{ formatMoney(row.pricePerHour) }}</span></template>
+          </el-table-column>
             <el-table-column label="操作" width="200" fixed="right" align="center" class-name="col-actions">
               <template #default="{ row }">
                 <div class="row-actions">
@@ -97,9 +97,9 @@
                 <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="总价格" width="100" align="center">
-              <template #default="{ row }"><span class="price-text">{{ formatMoney(row.totalPrice) }}</span></template>
-            </el-table-column>
+          <el-table-column label="总价格" width="120" align="center">
+            <template #default="{ row }"><span class="price-text">{{ formatMoney(row.totalPrice) }}</span></template>
+          </el-table-column>
           </el-table>
           <!-- 分页 -->
           <div class="pagination-wrapper">
@@ -654,6 +654,11 @@ onMounted(() => {
   color: var(--brand-primary);
   font-weight: 800;
   font-size: 15px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Tabs 样式 */

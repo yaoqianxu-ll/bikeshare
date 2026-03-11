@@ -34,11 +34,11 @@
             {{ formatDateTime(row.endTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="总价格" width="100" align="center">
-          <template #default="{ row }">
-            <span class="price-text">{{ formatMoney(row.totalPrice) }}</span>
-          </template>
-        </el-table-column>
+          <el-table-column label="总价格" width="120" align="center">
+            <template #default="{ row }">
+              <span class="price-text">{{ formatMoney(row.totalPrice) }}</span>
+            </template>
+          </el-table-column>
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">
@@ -384,6 +384,11 @@ onMounted(() => {
   color: var(--brand-primary);
   font-weight: 800;
   font-size: 15px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pagination-wrapper {
