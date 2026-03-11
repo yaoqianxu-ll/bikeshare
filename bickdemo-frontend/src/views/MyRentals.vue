@@ -228,7 +228,12 @@ const getTypeText = (type) => {
 
 const isCancelDisabled = (startTime) => {
   if (!startTime) return false
-  const start = new Date(startTime)
+  const raw = typeof startTime === 'string' ? startTime.trim() : startTime
+  const normalized = typeof raw === 'string' && raw.includes(' ') && !raw.includes('T')
+    ? raw.replace(' ', 'T')
+    : raw
+  const start = new Date(normalized)
+  if (Number.isNaN(start.getTime())) return false
   const now = new Date()
   const minutesElapsed = (now - start) / 60000
   return minutesElapsed >= 1

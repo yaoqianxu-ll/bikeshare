@@ -31,11 +31,13 @@ import java.math.RoundingMode;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RentalService {
+public class adRentalService {
 
     private final RentalMapper rentalMapper;
     private final BicycleMapper bicycleMapper;
     private final UserMapper userMapper;
+
+    private static final long FREE_CANCEL_MINUTES = 1L;
 
     /**
      * 创建租赁
@@ -85,7 +87,7 @@ public class RentalService {
 
         // 获取自行车信息并计算总价格
         Bicycle bicycle = bicycleMapper.selectById(rental.getBicycleId());
-        double hours = calculateRentalHours(rental);
+        double hours = calculateBillableHours(rental.getStartTime(), rental.getEndTime());
         double totalPrice = hours * (bicycle.getPricePerHour() != null ? bicycle.getPricePerHour() : 0);
         rental.setTotalPrice(totalPrice);
 
@@ -114,7 +116,7 @@ public class RentalService {
         // 检查是否超过 1 分钟，超过 1 分钟不能取消
         LocalDateTime now = LocalDateTime.now();
         long minutesElapsed = java.time.Duration.between(rental.getStartTime(), now).toMinutes();
-        if (minutesElapsed >= 1) {
+        if (minutesElapsed >= FREE_CANCEL_MINUTES) {
             throw new RuntimeException("租赁超过 1 分钟，无法取消，请归还自行车");
         }
 
@@ -265,12 +267,12 @@ public class RentalService {
         );
     }
 
-    private double calculateRentalHours(Rental rental) {
-        if (rental.getEndTime() == null) {
-            return 0;
-        }
-        long millis = java.time.Duration.between(rental.getStartTime(), rental.getEndTime()).toMillis();
-        return millis / 3600000.0;
+    private double calculateBillableHours(LocalDateTime startTime, LocalDateTime endTime) {
+        if (startTime == null || endTime == null) return 0;
+        long millis = java.time.Duration.between(startTime, endTime).toMillis();
+        // Billing starts after the free-cancel window (1 minute).
+        long billableMillis = Math.max(0L, millis - java.time.Duration.ofMinutes(FREE_CANCEL_MINUTES).toMillis());
+        return billableMillis / 3600000.0;
     }
 
     private Double calculateRunningTotalPrice(Rental rental, Bicycle bicycle) {
@@ -278,8 +280,14 @@ public class RentalService {
         if (rental.getStatus() != RentalStatus.ACTIVE) return rental.getTotalPrice();
         if (bicycle == null || bicycle.getPricePerHour() == null) return 0.0;
 
-        long millis = java.time.Duration.between(rental.getStartTime(), LocalDateTime.now()).toMillis();
-        double hours = Math.max(0.0, millis / 3600000.0);
+        LocalDateTime now = LocalDateTime.now();
+        long minutesElapsed = java.time.Duration.between(rental.getStartTime(), now).toMinutes();
+        if (minutesElapsed < FREE_CANCEL_MINUTES) {
+            // Within cancel window: no billing.
+            return 0.0;
+        }
+
+        double hours = calculateBillableHours(rental.getStartTime(), now);
         double raw = hours * bicycle.getPricePerHour();
         return BigDecimal.valueOf(raw).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
