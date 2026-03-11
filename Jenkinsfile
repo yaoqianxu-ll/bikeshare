@@ -90,9 +90,9 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 echo '🎨 构建前端...'
-                // 使用 Docker 容器构建，避免权限问题
+                // 使用 Docker 容器构建，挂载整个工作空间
                 sh '''
-                    docker run --rm -v ${WORKSPACE}/${FRONTEND_DIR}:/app -w /app node:20-alpine sh -c '
+                    docker run --rm -v ${WORKSPACE}:${WORKSPACE} -w ${WORKSPACE}/${FRONTEND_DIR} node:20-alpine sh -c '
                         echo "安装依赖..." &&
                         npm install --legacy-peer-deps &&
                         echo "构建..." &&
