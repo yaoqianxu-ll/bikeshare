@@ -110,15 +110,15 @@ pipeline {
                 sh '''
                     echo "当前目录：" && pwd
                     echo "工作空间：${WORKSPACE}"
-                    echo "文件列表："
-                    ls -la ${WORKSPACE}/
                     echo "切换到工作空间..."
                     cd ${WORKSPACE}
                     echo "当前目录：" && pwd
+                    echo "Docker 版本："
+                    docker --version
                     echo "停止旧容器..."
-                    docker compose down || true
+                    docker-compose down || true
                     echo "构建镜像..."
-                    docker compose build --progress=plain
+                    docker-compose build
                 '''
             }
         }
@@ -129,16 +129,16 @@ pipeline {
                 sh """
                     cd ${WORKSPACE}
                     echo "启动服务..."
-                    docker compose up -d
+                    docker-compose up -d
 
                     echo "等待服务启动..."
                     sleep 30
 
                     echo "检查容器状态..."
-                    docker compose ps
+                    docker-compose ps
 
                     echo "查看最近日志..."
-                    docker compose logs --tail=50
+                    docker-compose logs --tail=50
                 """
             }
         }
