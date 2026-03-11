@@ -90,23 +90,15 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 echo '🎨 构建前端...'
+                // 使用 Docker 容器构建，避免权限问题
                 sh '''
-                    cd ${WORKSPACE}/${FRONTEND_DIR}
-
-                    echo "清理旧的 node_modules..."
-                    rm -rf node_modules
-
-                    echo "安装依赖..."
-                    npm install --legacy-peer-deps
-
-                    echo "修复权限..."
-                    chmod -R 755 node_modules/.bin
-
-                    echo "构建生产版本..."
-                    ./node_modules/.bin/vite build
-
-                    echo "检查构建产物..."
-                    ls -lh dist/ || echo "构建产物检查失败"
+                    docker run --rm -v ${WORKSPACE}/${FRONTEND_DIR}:/app -w /app node:20-alpine sh -c '
+                        echo "安装依赖..." &&
+                        npm install --legacy-peer-deps &&
+                        echo "构建..." &&
+                        npm run build &&
+                        ls -lh dist/
+                    '
                 '''
             }
         }
