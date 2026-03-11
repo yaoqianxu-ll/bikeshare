@@ -17,5 +17,21 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  build: {
+    // 增加块大小警告限制
+    chunkSizeWarningLimit: 2000,
+    // 代码分割
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vue-vendor': ['vue', 'vue-router', 'pinia'],
+          'element-plus': ['element-plus'],
+          'echarts': ['echarts']
+        }
+      }
+    },
+    // 禁用 gzip 大小报告加速构建
+    reportCompressedSize: false
   }
 })

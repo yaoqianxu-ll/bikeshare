@@ -19,7 +19,10 @@
       "Bash(git config:*)",
       "Bash(git add:*)",
       "Bash(docker-compose logs:*)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(git rm:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(ssh root@124.221.113.208)"
     ]
   }
 }
