@@ -479,6 +479,22 @@ a:hover {
   border-radius: var(--radius-2xl);
 }
 
+/* Common numeric display helpers */
+.price-text {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Element Plus tables default to ellipsis inside `.cell`; for prices we always show full value. */
+.el-table .col-price .cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
 /* ========== 动画 ========== */
 @keyframes fadeIn {
   from { opacity: 0; }

@@ -35,7 +35,7 @@
               {{ formatDateTime(row.endTime) }}
             </template>
           </el-table-column>
-          <el-table-column label="总价格" width="100" align="center">
+          <el-table-column label="总价格" width="120" align="center" class-name="col-price">
             <template #default="{ row }">
               <span class="price-text">{{ formatMoney(row.totalPrice) }}</span>
             </template>

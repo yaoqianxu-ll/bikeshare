@@ -52,7 +52,7 @@
               <el-table-column label="位置" min-width="140" show-overflow-tooltip>
                 <template #default="{ row }">{{ formatText(row.location) }}</template>
               </el-table-column>
-              <el-table-column prop="pricePerHour" label="价格/小时" width="100" align="center">
+              <el-table-column prop="pricePerHour" label="价格/小时" width="120" align="center" class-name="col-price">
                 <template #default="{ row }"><span class="price-text">{{ formatMoney(row.pricePerHour) }}</span></template>
               </el-table-column>
               <el-table-column label="操作" width="200" fixed="right" align="center" class-name="col-actions">
@@ -100,7 +100,7 @@
                   <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="总价格" width="100" align="center">
+              <el-table-column label="总价格" width="120" align="center" class-name="col-price">
                 <template #default="{ row }"><span class="price-text">{{ formatMoney(row.totalPrice) }}</span></template>
               </el-table-column>
             </el-table>
