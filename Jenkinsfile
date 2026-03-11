@@ -92,14 +92,22 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 echo '🎨 构建前端...'
+                // 先检查文件是否存在
+                sh '''
+                    echo "检查工作空间文件..."
+                    ls -la ${WORKSPACE}/
+                    ls -la ${WORKSPACE}/${FRONTEND_DIR}/ || echo "前端目录不存在"
+                '''
                 // 使用 Docker 容器构建，挂载整个工作空间
                 sh '''
                     docker run --rm -v ${WORKSPACE}:${WORKSPACE} -w ${WORKSPACE}/${FRONTEND_DIR} node:20-alpine sh -c '
+                        echo "当前目录：" && pwd &&
+                        echo "文件列表：" && ls -la &&
                         echo "安装依赖..." &&
                         npm install --legacy-peer-deps &&
                         echo "构建..." &&
                         npm run build &&
-                        ls -lh dist/
+                        echo "检查产物：" && ls -lh dist/
                     '
                 '''
             }
