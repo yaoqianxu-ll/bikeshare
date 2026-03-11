@@ -37,34 +37,32 @@
             <el-button type="primary" size="small" @click="openDialog()" :icon="Plus">添加自行车</el-button>
           </div>
 
-          <div class="table-scroll">
-            <el-table :data="bicycles" style="width: 100%; min-width: 860px" v-loading="loading" stripe>
-              <el-table-column prop="id" label="ID" width="80" />
-              <el-table-column prop="name" label="名称" min-width="170" show-overflow-tooltip />
-              <el-table-column label="类型" width="100" align="center">
-                <template #default="{ row }">{{ getTypeText(row.type) }}</template>
-              </el-table-column>
-              <el-table-column label="状态" width="100" align="center" class-name="col-status">
-                <template #default="{ row }">
-                  <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="位置" min-width="140" show-overflow-tooltip>
-                <template #default="{ row }">{{ formatText(row.location) }}</template>
-              </el-table-column>
-              <el-table-column prop="pricePerHour" label="价格/小时" width="120" align="center" class-name="col-price">
-                <template #default="{ row }"><span class="price-text">{{ formatMoney(row.pricePerHour) }}</span></template>
-              </el-table-column>
-              <el-table-column label="操作" width="200" fixed="right" align="center" class-name="col-actions">
-                <template #default="{ row }">
-                  <div class="row-actions">
-                    <el-button size="small" type="primary" plain @click="openDialog(row)">编辑</el-button>
-                    <el-button size="small" type="danger" plain @click="handleDelete(row)">删除</el-button>
-                  </div>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
+          <el-table :data="bicycles" style="width: 100%" v-loading="loading" stripe>
+            <el-table-column prop="id" label="ID" width="80" />
+            <el-table-column prop="name" label="名称" min-width="170" show-overflow-tooltip />
+            <el-table-column label="类型" width="100" align="center">
+              <template #default="{ row }">{{ getTypeText(row.type) }}</template>
+            </el-table-column>
+            <el-table-column label="状态" width="100" align="center" class-name="col-status">
+              <template #default="{ row }">
+                <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="位置" min-width="140" show-overflow-tooltip>
+              <template #default="{ row }">{{ formatText(row.location) }}</template>
+            </el-table-column>
+            <el-table-column prop="pricePerHour" label="价格/小时" width="100" align="center">
+              <template #default="{ row }"><span class="price-text">{{ formatMoney(row.pricePerHour) }}</span></template>
+            </el-table-column>
+            <el-table-column label="操作" width="200" fixed="right" align="center" class-name="col-actions">
+              <template #default="{ row }">
+                <div class="row-actions">
+                  <el-button size="small" type="primary" plain @click="openDialog(row)">编辑</el-button>
+                  <el-button size="small" type="danger" plain @click="handleDelete(row)">删除</el-button>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
 
           <!-- 分页 -->
           <div class="pagination-wrapper">
@@ -84,27 +82,25 @@
           <div class="rental-toolbar">
             <el-button type="primary" plain :icon="Refresh" @click="loadRentals" size="small">刷新</el-button>
           </div>
-          <div class="table-scroll">
-            <el-table :data="rentals" style="width: 100%; min-width: 860px" v-loading="loading" stripe>
-              <el-table-column prop="id" label="订单号" width="80" />
-              <el-table-column prop="username" label="用户" width="120" show-overflow-tooltip />
-              <el-table-column prop="bicycleName" label="自行车" min-width="170" show-overflow-tooltip />
-              <el-table-column label="类型" width="100" align="center">
-                <template #default="{ row }">{{ getTypeText(row.bicycleType) }}</template>
-              </el-table-column>
-              <el-table-column label="开始时间" width="180">
-                <template #default="{ row }">{{ formatDateTime(row.startTime) }}</template>
-              </el-table-column>
-              <el-table-column label="状态" width="100" align="center" class-name="col-status">
-                <template #default="{ row }">
-                  <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="总价格" width="120" align="center" class-name="col-price">
-                <template #default="{ row }"><span class="price-text">{{ formatMoney(row.totalPrice) }}</span></template>
-              </el-table-column>
-            </el-table>
-          </div>
+          <el-table :data="rentals" style="width: 100%" v-loading="loading" stripe>
+            <el-table-column prop="id" label="订单号" width="80" />
+            <el-table-column prop="username" label="用户" width="120" show-overflow-tooltip />
+            <el-table-column prop="bicycleName" label="自行车" min-width="170" show-overflow-tooltip />
+            <el-table-column label="类型" width="100" align="center">
+              <template #default="{ row }">{{ getTypeText(row.bicycleType) }}</template>
+            </el-table-column>
+            <el-table-column label="开始时间" width="180">
+              <template #default="{ row }">{{ formatDateTime(row.startTime) }}</template>
+            </el-table-column>
+            <el-table-column label="状态" width="100" align="center" class-name="col-status">
+              <template #default="{ row }">
+                <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="总价格" width="100" align="center">
+              <template #default="{ row }"><span class="price-text">{{ formatMoney(row.totalPrice) }}</span></template>
+            </el-table-column>
+          </el-table>
           <!-- 分页 -->
           <div class="pagination-wrapper">
             <el-pagination
@@ -518,22 +514,6 @@ onMounted(() => {
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
-}
-
-.table-scroll {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  border-radius: 12px;
-}
-
-.table-scroll::-webkit-scrollbar {
-  height: 8px;
-}
-
-.table-scroll::-webkit-scrollbar-thumb {
-  background: rgba(15, 23, 42, 0.18);
-  border-radius: 999px;
 }
 
 .page-header {
@@ -1014,44 +994,6 @@ onMounted(() => {
 
 :deep(.el-dialog__body) {
   padding: 24px;
-}
-
-:deep(.el-dialog__footer) {
-  padding: 16px 24px 24px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(255, 255, 255, 0.72);
-}
-
-/* Mobile layout */
-@media (max-width: 768px) {
-  .admin {
-    padding: 12px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .kpi-row {
-    justify-content: space-between;
-  }
-
-  .toolbar,
-  .rental-toolbar {
-    justify-content: flex-start;
-  }
-
-  /* Tabs: allow horizontal scroll instead of wrapping/squeezing */
-  :deep(.el-tabs__nav-scroll) {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  :deep(.el-tabs__item) {
-    white-space: nowrap;
-    flex: 0 0 auto;
-  }
 }
 
 :deep(.el-dialog__footer) {

@@ -16,67 +16,65 @@
         </div>
       </template>
 
-      <div class="table-scroll">
-        <el-table :data="rentals" style="width: 100%; min-width: 980px" v-loading="loading" stripe>
-          <el-table-column prop="id" label="订单号" width="80" />
-          <el-table-column prop="bicycleName" label="自行车" min-width="170" show-overflow-tooltip />
-          <el-table-column label="类型" width="100" align="center">
-            <template #default="{ row }">
-              {{ getTypeText(row.bicycleType) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="开始时间" width="180">
-            <template #default="{ row }">
-              {{ formatDateTime(row.startTime) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="结束时间" width="180">
-            <template #default="{ row }">
-              {{ formatDateTime(row.endTime) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="总价格" width="120" align="center" class-name="col-price">
-            <template #default="{ row }">
-              <span class="price-text">{{ formatMoney(row.totalPrice) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="状态" width="100" align="center">
-            <template #default="{ row }">
-              <el-tag :type="getStatusType(row.status)">
-                {{ getStatusText(row.status) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="200" fixed="right" align="center">
-            <template #default="{ row }">
-              <div class="action-buttons">
-                <el-button
-                  v-if="row.status === 'ACTIVE'"
-                  type="success"
-                  plain
-                  size="small"
-                  @click="handleEndRental(row)"
-                >
-                  结束租赁
-                </el-button>
-                <el-button
-                  v-if="row.status === 'ACTIVE'"
-                  type="danger"
-                  plain
-                  size="small"
-                  @click="handleCancelRental(row)"
-                  :disabled="isCancelDisabled(row.startTime)"
-                >
-                  取消租赁
-                </el-button>
-                <el-button v-else size="small" type="primary" plain @click="viewDetail(row)">
-                  查看详情
-                </el-button>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
+      <el-table :data="rentals" style="width: 100%" v-loading="loading" stripe>
+        <el-table-column prop="id" label="订单号" width="80" />
+        <el-table-column prop="bicycleName" label="自行车" min-width="170" show-overflow-tooltip />
+        <el-table-column label="类型" width="100" align="center">
+          <template #default="{ row }">
+            {{ getTypeText(row.bicycleType) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="开始时间" width="180">
+          <template #default="{ row }">
+            {{ formatDateTime(row.startTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="结束时间" width="180">
+          <template #default="{ row }">
+            {{ formatDateTime(row.endTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="总价格" width="100" align="center">
+          <template #default="{ row }">
+            <span class="price-text">{{ formatMoney(row.totalPrice) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.status)">
+              {{ getStatusText(row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="200" fixed="right" align="center">
+          <template #default="{ row }">
+            <div class="action-buttons">
+              <el-button
+                v-if="row.status === 'ACTIVE'"
+                type="success"
+                plain
+                size="small"
+                @click="handleEndRental(row)"
+              >
+                结束租赁
+              </el-button>
+              <el-button
+                v-if="row.status === 'ACTIVE'"
+                type="danger"
+                plain
+                size="small"
+                @click="handleCancelRental(row)"
+                :disabled="isCancelDisabled(row.startTime)"
+              >
+                取消租赁
+              </el-button>
+              <el-button v-else size="small" type="primary" plain @click="viewDetail(row)">
+                查看详情
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
 
       <!-- 分页 -->
       <div class="pagination-wrapper">
@@ -119,7 +117,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyRentals, endRental, cancelRental } from '@/api/rental'
 
@@ -133,7 +131,6 @@ const selectedRental = ref(null)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
-let priceTimer = null
 
 const totalText = computed(() => {
   const n = Number(total.value)
@@ -228,12 +225,7 @@ const getTypeText = (type) => {
 
 const isCancelDisabled = (startTime) => {
   if (!startTime) return false
-  const raw = typeof startTime === 'string' ? startTime.trim() : startTime
-  const normalized = typeof raw === 'string' && raw.includes(' ') && !raw.includes('T')
-    ? raw.replace(' ', 'T')
-    : raw
-  const start = new Date(normalized)
-  if (Number.isNaN(start.getTime())) return false
+  const start = new Date(startTime)
   const now = new Date()
   const minutesElapsed = (now - start) / 60000
   return minutesElapsed >= 1
@@ -291,21 +283,6 @@ const viewDetail = (row) => {
 
 onMounted(() => {
   loadRentals()
-
-  // Lightweight “real-time” total price: refresh periodically while there are ACTIVE rentals.
-  priceTimer = setInterval(() => {
-    if (loading.value) return
-    if (rentals.value.some(r => r?.status === 'ACTIVE')) {
-      loadRentals()
-    }
-  }, 10000)
-})
-
-onUnmounted(() => {
-  if (priceTimer) {
-    clearInterval(priceTimer)
-    priceTimer = null
-  }
 })
 </script>
 
@@ -314,22 +291,6 @@ onUnmounted(() => {
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
-}
-
-.table-scroll {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  border-radius: 12px;
-}
-
-.table-scroll::-webkit-scrollbar {
-  height: 8px;
-}
-
-.table-scroll::-webkit-scrollbar-thumb {
-  background: rgba(15, 23, 42, 0.18);
-  border-radius: 999px;
 }
 
 .filter-card {
@@ -639,39 +600,5 @@ onUnmounted(() => {
 :deep(.el-descriptions__content) {
   color: #1a1a2e;
   font-weight: 500;
-}
-
-@media (max-width: 768px) {
-  .my-rentals {
-    padding: 12px;
-  }
-
-  .card-header {
-    padding: 16px;
-    gap: 12px;
-  }
-
-  .title-wrap {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  :deep(.el-radio-group) {
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 6px;
-  }
-
-  :deep(.el-radio-button__outer) {
-    padding: 8px 12px;
-    font-size: 13px;
-  }
-
-  .pagination-wrapper {
-    padding-right: 16px;
-    padding-bottom: 16px;
-  }
 }
 </style>

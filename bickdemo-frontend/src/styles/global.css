@@ -479,22 +479,6 @@ a:hover {
   border-radius: var(--radius-2xl);
 }
 
-/* Common numeric display helpers */
-.price-text {
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Element Plus tables default to ellipsis inside `.cell`; for prices we always show full value. */
-.el-table .col-price .cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: visible;
-  text-overflow: clip;
-  white-space: nowrap;
-}
-
 /* ========== 动画 ========== */
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -582,43 +566,6 @@ a:hover {
   }
 
   .hide-mobile {
-    display: none !important;
-  }
-
-  /* Small-screen sanity: keep overlays usable and prevent “everything squeezed” layouts. */
-  body {
-    background-attachment: scroll;
-  }
-
-  .el-dialog {
-    width: calc(100vw - 24px) !important;
-    max-width: 520px !important;
-    margin: 12px auto !important;
-  }
-
-  .el-dialog__header {
-    padding: 16px 16px 12px;
-  }
-
-  .el-dialog__body {
-    padding: 16px;
-  }
-
-  .el-dialog__footer {
-    padding: 12px 16px 16px;
-  }
-
-  .el-drawer {
-    width: min(92vw, 420px) !important;
-  }
-
-  .el-message {
-    max-width: calc(100vw - 24px);
-  }
-
-  /* Pagination: hide “sizes/jumper” on phones to avoid wrapping into a blob. */
-  .el-pagination__sizes,
-  .el-pagination__jump {
     display: none !important;
   }
 }

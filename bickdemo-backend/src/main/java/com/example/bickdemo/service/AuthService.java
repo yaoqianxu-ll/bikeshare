@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
 
@@ -29,6 +30,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final MinioService minioService;
 
     /**
      * 用户注册
@@ -117,6 +119,62 @@ public class AuthService {
             user.setAvatar(request.getAvatar());
         }
 
+        userMapper.updateById(user);
+        return user;
+    }
+
+    /**
+     * 上传/更新用户头像（写入 users.avatar）
+     * - 会尽量删除旧头像（删除失败不影响更新）
+     */
+    @Transactional
+    public User uploadAvatar(String username, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("请选择要上传的头像");
+        }
+
+        User user = userMapper.findByUsername(username);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        // Delete old avatar if present (best-effort)
+        String old = user.getAvatar();
+        if (old != null && !old.trim().isEmpty()) {
+            try {
+                minioService.deleteImage(old);
+            } catch (Exception ignored) {
+                // best-effort: do not fail avatar update if deletion fails
+            }
+        }
+
+        String url = minioService.uploadImage(file);
+        user.setAvatar(url);
+        userMapper.updateById(user);
+        return user;
+    }
+
+    /**
+     * 删除用户头像（清空 users.avatar）
+     * - 会尽量删除对象存储中的图片（删除失败不影响清空 DB 字段）
+     */
+    @Transactional
+    public User deleteAvatar(String username) {
+        User user = userMapper.findByUsername(username);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        String old = user.getAvatar();
+        if (old != null && !old.trim().isEmpty()) {
+            try {
+                minioService.deleteImage(old);
+            } catch (Exception ignored) {
+                // best-effort
+            }
+        }
+
+        user.setAvatar(null);
         userMapper.updateById(user);
         return user;
     }

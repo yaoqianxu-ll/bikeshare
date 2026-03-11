@@ -7,9 +7,11 @@ import com.example.bickdemo.service.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -75,6 +77,41 @@ public class AuthController {
                                                          @AuthenticationPrincipal UserDetails userDetails) {
         User user = authService.updateUser(userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success("更新成功", user));
+    }
+
+    /**
+     * 上传/更新头像
+     * 写入 users.avatar 字段（URL）
+     */
+    @PostMapping("/avatar")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<User>> uploadAvatar(@RequestParam("file") MultipartFile file,
+                                                          @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            User user = authService.uploadAvatar(userDetails.getUsername(), file);
+            return ResponseEntity.ok(ApiResponse.success("头像已更新", user));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error(500, "上传头像失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 删除头像
+     * 清空 users.avatar 字段
+     */
+    @DeleteMapping("/avatar")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<User>> deleteAvatar(@AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            User user = authService.deleteAvatar(userDetails.getUsername());
+            return ResponseEntity.ok(ApiResponse.success("头像已删除", user));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error(500, "删除头像失败：" + e.getMessage()));
+        }
     }
 
     /**

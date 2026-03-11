@@ -30,3 +30,25 @@ export function updateUser(data) {
     data
   })
 }
+
+// 上传/更新头像（写入 users.avatar）
+export function uploadAvatar(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request({
+    url: '/auth/avatar',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+// 删除头像（清空 users.avatar）
+export function deleteAvatar() {
+  return request({
+    url: '/auth/avatar',
+    method: 'delete'
+  })
+}

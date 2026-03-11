@@ -4,7 +4,8 @@
       <template #header>
         <div class="profile-header">
           <div class="header-left">
-            <div class="avatar">{{ avatarText }}</div>
+            <div class="avatar" v-if="!avatarUrl">{{ avatarText }}</div>
+            <el-avatar v-else :src="avatarUrl" :size="44" class="avatar-img" />
             <div class="header-text">
               <h2>个人信息</h2>
               <p class="subline">{{ formatText(userInfo?.email) }}</p>
@@ -33,7 +34,21 @@
         </section>
 
         <section class="profile-panel">
-          <div class="panel-title">修改资料</div>
+          <div class="panel-title">头像与资料</div>
+
+          <div class="avatar-actions">
+            <el-upload
+              :show-file-list="false"
+              :http-request="handleAvatarUpload"
+              :before-upload="beforeAvatarUpload"
+            >
+              <el-button type="primary" :loading="avatarUploading">上传头像</el-button>
+            </el-upload>
+            <el-button v-if="avatarUrl" type="danger" plain :loading="avatarDeleting" @click="handleAvatarDelete">
+              删除头像
+            </el-button>
+          </div>
+
           <el-form :model="form" :rules="rules" ref="formRef" label-width="90px" class="profile-form">
             <el-form-item label="用户名" prop="username">
               <el-input v-model="form.username" placeholder="请输入用户名" />
@@ -58,16 +73,22 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { getCurrentUser, updateUser } from '@/api/auth'
+import { getCurrentUser, updateUser, uploadAvatar, deleteAvatar } from '@/api/auth'
 
 const userStore = useUserStore()
 const formRef = ref(null)
 const loading = ref(false)
 const userInfo = ref(null)
+const avatarUploading = ref(false)
+const avatarDeleting = ref(false)
 
 const avatarText = computed(() => {
   const name = (userInfo.value?.username || userStore.username || '').toString().trim()
   return name ? name.slice(0, 1).toUpperCase() : '?'
+})
+
+const avatarUrl = computed(() => {
+  return (userInfo.value?.avatar || userStore.avatar || '').toString().trim()
 })
 
 const formatText = (value) => {
@@ -101,8 +122,51 @@ const loadUserInfo = async () => {
     form.username = user.username
     form.email = user.email
     form.phone = user.phone || ''
+    userStore.setAvatar(user?.avatar || '')
   } catch (error) {
     console.error(error)
+  }
+}
+
+const beforeAvatarUpload = (file) => {
+  const isImage = file.type && file.type.startsWith('image/')
+  const isLt5M = file.size / 1024 / 1024 < 5
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件')
+    return false
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB')
+    return false
+  }
+  return true
+}
+
+const handleAvatarUpload = async (options) => {
+  try {
+    avatarUploading.value = true
+    const res = await uploadAvatar(options.file)
+    userInfo.value = res.data
+    userStore.setAvatar(res?.data?.avatar || '')
+    ElMessage.success('头像已更新')
+  } catch (error) {
+    console.error(error)
+  } finally {
+    avatarUploading.value = false
+  }
+}
+
+const handleAvatarDelete = async () => {
+  try {
+    avatarDeleting.value = true
+    const res = await deleteAvatar()
+    userInfo.value = res.data
+    userStore.setAvatar('')
+    ElMessage.success('头像已删除')
+  } catch (error) {
+    console.error(error)
+  } finally {
+    avatarDeleting.value = false
   }
 }
 
@@ -170,6 +234,13 @@ onMounted(() => {
   box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
 }
 
+.avatar-img {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 107, 53, 0.20);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+}
+
 .header-text h2 {
   margin: 0;
   font-size: 18px;
@@ -196,6 +267,13 @@ onMounted(() => {
   border-radius: 16px;
   padding: 14px;
   backdrop-filter: blur(16px) saturate(140%);
+}
+
+.avatar-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
 .panel-title {
