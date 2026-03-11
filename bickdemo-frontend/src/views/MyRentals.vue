@@ -3,8 +3,11 @@
     <el-card shadow="never" class="filter-card">
       <template #header>
         <div class="card-header">
-          <h2>我的租赁记录</h2>
-          <el-radio-group v-model="filterStatus" @change="loadRentals" size="default">
+          <div class="title-wrap">
+            <h2>我的租赁记录</h2>
+            <span class="meta">{{ totalText }}</span>
+          </div>
+          <el-radio-group v-model="filterStatus" @change="handleFilterChange" size="default">
             <el-radio-button label="">全部</el-radio-button>
             <el-radio-button label="ACTIVE">租赁中</el-radio-button>
             <el-radio-button label="COMPLETED">已完成</el-radio-button>
@@ -15,21 +18,25 @@
 
       <el-table :data="rentals" style="width: 100%" v-loading="loading" stripe>
         <el-table-column prop="id" label="订单号" width="80" />
-        <el-table-column prop="bicycleName" label="自行车" min-width="150" />
+        <el-table-column prop="bicycleName" label="自行车" min-width="170" show-overflow-tooltip />
         <el-table-column label="类型" width="100" align="center">
           <template #default="{ row }">
             {{ getTypeText(row.bicycleType) }}
           </template>
         </el-table-column>
-        <el-table-column prop="startTime" label="开始时间" width="180" />
-        <el-table-column prop="endTime" label="结束时间" width="180">
+        <el-table-column label="开始时间" width="180">
           <template #default="{ row }">
-            {{ row.endTime || '-' }}
+            {{ formatDateTime(row.startTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="结束时间" width="180">
+          <template #default="{ row }">
+            {{ formatDateTime(row.endTime) }}
           </template>
         </el-table-column>
         <el-table-column label="总价格" width="100" align="center">
           <template #default="{ row }">
-            <span class="price-text">¥{{ row.totalPrice || '-' }}</span>
+            <span class="price-text">{{ formatMoney(row.totalPrice) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="100" align="center">
@@ -45,6 +52,7 @@
               <el-button
                 v-if="row.status === 'ACTIVE'"
                 type="success"
+                plain
                 size="small"
                 @click="handleEndRental(row)"
               >
@@ -53,13 +61,14 @@
               <el-button
                 v-if="row.status === 'ACTIVE'"
                 type="danger"
+                plain
                 size="small"
                 @click="handleCancelRental(row)"
                 :disabled="isCancelDisabled(row.startTime)"
               >
                 取消租赁
               </el-button>
-              <el-button v-else size="small" @click="viewDetail(row)">
+              <el-button v-else size="small" type="primary" plain @click="viewDetail(row)">
                 查看详情
               </el-button>
             </div>
@@ -86,16 +95,16 @@
       <div v-if="selectedRental">
         <el-descriptions :column="1" border :label-width="100">
           <el-descriptions-item label="订单号">{{ selectedRental.id }}</el-descriptions-item>
-          <el-descriptions-item label="自行车">{{ selectedRental.bicycleName }}</el-descriptions-item>
+          <el-descriptions-item label="自行车">{{ formatText(selectedRental.bicycleName) }}</el-descriptions-item>
           <el-descriptions-item label="类型">{{ getTypeText(selectedRental.bicycleType) }}</el-descriptions-item>
-          <el-descriptions-item label="开始时间">{{ selectedRental.startTime }}</el-descriptions-item>
+          <el-descriptions-item label="开始时间">{{ formatDateTime(selectedRental.startTime) }}</el-descriptions-item>
           <el-descriptions-item label="结束时间">
-            {{ selectedRental.endTime || '-' }}
+            {{ formatDateTime(selectedRental.endTime) }}
           </el-descriptions-item>
           <el-descriptions-item label="预计归还">
-            {{ selectedRental.expectedEndTime || '-' }}
+            {{ formatDateTime(selectedRental.expectedEndTime) }}
           </el-descriptions-item>
-          <el-descriptions-item label="总价格">¥{{ selectedRental.totalPrice || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="总价格">{{ formatMoney(selectedRental.totalPrice) }}</el-descriptions-item>
           <el-descriptions-item label="状态">
             <el-tag :type="getStatusType(selectedRental.status)">
               {{ getStatusText(selectedRental.status) }}
@@ -108,7 +117,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyRentals, endRental, cancelRental } from '@/api/rental'
 
@@ -122,6 +131,40 @@ const selectedRental = ref(null)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+
+const totalText = computed(() => {
+  const n = Number(total.value)
+  return Number.isFinite(n) ? `共 ${n} 条` : ''
+})
+
+const formatText = (value) => {
+  if (value === null || value === undefined) return '-'
+  const text = String(value).trim()
+  return text ? text : '-'
+}
+
+const formatMoney = (value) => {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return '-'
+  return `¥${num.toFixed(2)}`
+}
+
+const formatDateTime = (value) => {
+  if (!value) return '-'
+  const raw = typeof value === 'string' ? value.trim() : value
+  const normalized = typeof raw === 'string' && raw.includes(' ') && !raw.includes('T')
+    ? raw.replace(' ', 'T')
+    : raw
+  const date = new Date(normalized)
+  if (Number.isNaN(date.getTime())) return String(value)
+  const pad2 = (n) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`
+}
+
+const handleFilterChange = async () => {
+  currentPage.value = 1
+  await loadRentals()
+}
 
 const loadRentals = async () => {
   loading.value = true
@@ -252,12 +295,12 @@ onMounted(() => {
 
 .filter-card {
   margin-bottom: 24px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 250, 250, 0.9) 100%);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(15, 23, 42, 0.10);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
 }
 
 .filter-card::before {
@@ -267,7 +310,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #ff6b35 0%, #f72585 100%);
+  background: rgba(255, 107, 53, 0.55);
 }
 
 .card-header {
@@ -279,21 +322,33 @@ onMounted(() => {
   padding: 20px 24px;
 }
 
+.title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--bs-muted);
+  font-weight: 600;
+}
+
 .card-header h2 {
   margin: 0;
   font-size: 20px;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--bs-ink);
   letter-spacing: -0.3px;
 }
 
 /* 状态筛选按钮组 */
 :deep(.el-radio-group) {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(250, 250, 250, 0.6) 100%);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px) saturate(140%);
   padding: 4px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(15, 23, 42, 0.10);
 }
 
 :deep(.el-radio-button__outer) {
@@ -308,13 +363,13 @@ onMounted(() => {
 }
 
 :deep(.el-radio-button__outer:hover) {
-  color: #ff6b35;
+  color: var(--bs-ink);
 }
 
 :deep(.el-radio-button__original-radio:checked + .el-radio-button__outer) {
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+  background: var(--brand-primary);
   color: #fff;
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.16);
 }
 
 :deep(.el-radio-button:first-child .el-radio-button__outer) {
@@ -326,10 +381,7 @@ onMounted(() => {
 }
 
 .price-text {
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--brand-primary);
   font-weight: 800;
   font-size: 15px;
 }
@@ -348,20 +400,20 @@ onMounted(() => {
 
 :deep(.el-pagination .btn-prev),
 :deep(.el-pagination .btn-next) {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: none;
-  color: #1a1a2e;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: var(--bs-ink);
   font-weight: 600;
 }
 
 :deep(.el-pagination .btn-prev:hover),
 :deep(.el-pagination .btn-next:hover) {
-  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  background: rgba(15, 23, 42, 0.04);
   transform: translateY(-2px);
 }
 
 :deep(.el-pagination li.is-active) {
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+  background: var(--brand-primary);
   border-color: transparent;
 }
 
@@ -388,12 +440,12 @@ onMounted(() => {
 }
 
 :deep(.el-table__row:hover) {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.03) 0%, rgba(247, 37, 133, 0.03) 100%);
+  background: rgba(15, 23, 42, 0.03);
 }
 
 :deep(.el-table__cell) {
   border-color: rgba(0, 0, 0, 0.06);
-  color: #1a1a2e;
+  color: var(--bs-ink);
   padding: 16px 12px;
 }
 
@@ -412,24 +464,27 @@ onMounted(() => {
 }
 
 :deep(.el-tag--warning) {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: #fff;
+  background: rgba(245, 158, 11, 0.14);
+  color: #92400e;
+  border: 1px solid rgba(245, 158, 11, 0.22);
 }
 
 :deep(.el-tag--success) {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: #fff;
+  background: rgba(16, 185, 129, 0.14);
+  color: #065f46;
+  border: 1px solid rgba(16, 185, 129, 0.22);
 }
 
 :deep(.el-tag--info) {
-  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-  color: #fff;
+  background: rgba(100, 116, 139, 0.14);
+  color: #334155;
+  border: 1px solid rgba(100, 116, 139, 0.22);
 }
 
 /* 卡片头部 */
 :deep(.el-card__header) {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(250, 250, 250, 0.9) 100%);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px) saturate(140%);
   border-bottom-color: rgba(0, 0, 0, 0.06);
   padding: 20px 24px;
 }
@@ -456,44 +511,51 @@ onMounted(() => {
   gap: 8px;
 }
 
-:deep(.el-button--primary) {
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+:deep(.el-button--primary:not(.is-plain)) {
+  background: var(--brand-primary);
   border: none;
 }
 
-:deep(.el-button--primary:hover) {
+:deep(.el-button--primary:not(.is-plain):hover) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.16);
+  background: #ff7b4a;
 }
 
-:deep(.el-button--success) {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border: none;
+:deep(.el-button--primary.is-plain) {
+  background: rgba(255, 107, 53, 0.10);
+  border: 1px solid rgba(255, 107, 53, 0.28);
+  color: var(--brand-primary);
 }
 
-:deep(.el-button--success:hover) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+:deep(.el-button--primary.is-plain:hover) {
+  background: rgba(255, 107, 53, 0.14);
+  border-color: rgba(255, 107, 53, 0.38);
+  color: #c2410c;
+  transform: translateY(-1px);
 }
 
-:deep(.el-button--danger) {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  border: none;
+:deep(.el-button--success.is-plain) {
+  background: rgba(16, 185, 129, 0.10);
+  border: 1px solid rgba(16, 185, 129, 0.26);
+  color: #065f46;
 }
 
-:deep(.el-button--danger:hover) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+:deep(.el-button--success.is-plain:hover) {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.34);
+  color: #064e3b;
+  transform: translateY(-1px);
 }
 
 :deep(.el-button--default) {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: none;
-  color: #1a1a2e;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: var(--bs-ink);
 }
 
 :deep(.el-button--default:hover) {
-  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  background: rgba(15, 23, 42, 0.04);
   transform: translateY(-2px);
 }
 

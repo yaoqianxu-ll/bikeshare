@@ -185,7 +185,8 @@
             <el-tag>{{ getTypeText(selectedBicycle.type) }}</el-tag>
             <el-tag :type="getStatusType(selectedBicycle.status)">{{ getStatusText(selectedBicycle.status) }}</el-tag>
           </div>
-          <el-descriptions :column="2" border class="detail-descriptions">
+          <!-- Vertical: label on top, content below (avoids narrow 2-column squeeze that makes CJK wrap per character) -->
+          <el-descriptions :column="1" direction="vertical" border class="detail-descriptions">
             <el-descriptions-item label="位置">
               <el-icon><Location /></el-icon>
               {{ selectedBicycle.location || '暂无' }}
@@ -414,15 +415,14 @@ onMounted(() => {
 
 /* ========== Filter Section ========== */
 .filter-section {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
-  backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(140%);
   padding: 28px 24px;
   margin: 24px auto;
   max-width: 1000px;
   border-radius: 20px;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.12),
-    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
   position: relative;
   z-index: 10;
   overflow: hidden;
@@ -435,16 +435,8 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #ff6b35 0%, #f72585 50%, #ff6b35 100%);
-  background-size: 200% 100%;
-  animation: gradient-shift 3s ease infinite;
+  background: rgba(255, 107, 53, 0.55);
   border-radius: 20px 20px 0 0;
-}
-
-@keyframes gradient-shift {
-  0% { background-position: 0% 0%; }
-  50% { background-position: 100% 0%; }
-  100% { background-position: 0% 0%; }
 }
 
 .filter-container {
@@ -458,7 +450,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #1a1a2e;
+  color: var(--bs-ink);
   font-size: 18px;
   font-weight: 700;
 }
@@ -466,14 +458,15 @@ onMounted(() => {
 .filter-title .el-icon {
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+  background: rgba(255, 107, 53, 0.14);
+  border: 1px solid rgba(255, 107, 53, 0.20);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--brand-primary);
   font-size: 18px;
-  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
 }
 
 .filter-chips {
@@ -489,36 +482,23 @@ onMounted(() => {
   border-radius: 14px;
   font-size: 14px;
   font-weight: 600;
-  border: 2px solid transparent;
+  border: 1px solid rgba(15, 23, 42, 0.12);
   position: relative;
   overflow: hidden;
-}
-
-.filter-chip::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  transition: left 0.5s ease;
-}
-
-.filter-chip:hover::before {
-  left: 100%;
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .filter-chip:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
 }
 
-.filter-chip[aria-pressed="true"],
-.filter-chip:has(.is-dark) {
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+.filter-chip.el-tag--dark,
+.filter-chip.el-tag--dark.is-hit {
+  background: var(--brand-primary);
   color: #fff;
-  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+  border-color: rgba(255, 107, 53, 0.55);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.16);
 }
 
 .filter-subtitle {
@@ -546,13 +526,13 @@ onMounted(() => {
 
 /* ========== Bike Card ========== */
 .bike-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 250, 250, 0.9) 100%);
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(140%);
   border-radius: 20px;
   overflow: hidden;
   position: relative;
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(15, 23, 42, 0.10);
 }
 
 .bike-card::before {
@@ -562,23 +542,18 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 5px;
-  background: linear-gradient(90deg, #ff6b35 0%, #f72585 50%, #4361ee 100%);
-  background-size: 200% 100%;
+  background: rgba(255, 107, 53, 0.55);
   opacity: 0;
   transition: opacity 0.5s ease;
 }
 
 .bike-card:hover::before {
   opacity: 1;
-  animation: gradient-shift 2s linear infinite;
 }
 
 .bike-card:hover {
-  transform: translateY(-12px) scale(1.02);
-  box-shadow:
-    0 25px 60px rgba(255, 107, 53, 0.25),
-    0 15px 40px rgba(247, 37, 133, 0.2),
-    0 0 80px rgba(255, 107, 53, 0.1);
+  transform: translateY(-6px);
+  box-shadow: 0 26px 70px rgba(15, 23, 42, 0.16);
 }
 
 .bike-card.unavailable {
@@ -613,7 +588,7 @@ onMounted(() => {
 }
 
 .bike-card:hover .bike-img {
-  transform: scale(1.15) rotate(2deg);
+  transform: scale(1.06);
 }
 
 .no-image {
@@ -687,10 +662,7 @@ onMounted(() => {
 .price-value {
   font-size: 24px;
   font-weight: 800;
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--brand-primary);
 }
 
 .price-unit {
@@ -712,7 +684,7 @@ onMounted(() => {
 
 .bike-location .el-icon {
   font-size: 15px;
-  color: #ff6b35;
+  color: var(--brand-primary);
 }
 
 .bike-actions {
@@ -732,14 +704,15 @@ onMounted(() => {
 }
 
 .rent-btn {
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+  background: var(--brand-primary);
   border: none;
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.35);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.18);
 }
 
 .rent-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.45);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22);
+  background: #ff7b4a;
 }
 
 .return-btn {
@@ -754,13 +727,13 @@ onMounted(() => {
 }
 
 .detail-btn {
-  background: linear-gradient(135deg, #f1f3f4 0%, #e9ecef 100%);
-  border: none;
-  color: #1a1a2e;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: var(--bs-ink);
 }
 
 .detail-btn:hover {
-  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  background: rgba(15, 23, 42, 0.04);
   transform: translateY(-2px);
 }
 
@@ -773,7 +746,7 @@ onMounted(() => {
 .modern-dialog :deep(.el-dialog__header) {
   padding: 24px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 250, 250, 0.9) 100%);
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .modern-dialog :deep(.el-dialog__title) {
@@ -799,10 +772,10 @@ onMounted(() => {
 
 /* Rent Dialog */
 .rent-dialog-content .selected-bike-info {
-  background: linear-gradient(135deg, #fff5f0 0%, #fef0f5 100%);
+  background: rgba(255, 107, 53, 0.08);
   padding: 24px;
   border-radius: 16px;
-  border: 1px solid rgba(255, 107, 53, 0.15);
+  border: 1px solid rgba(255, 107, 53, 0.18);
 }
 
 .bike-info-header {
@@ -836,13 +809,13 @@ onMounted(() => {
   width: 80px;
   height: 80px;
   margin: 0 auto 20px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: #10b981;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 18px 50px rgba(16, 185, 129, 0.28);
 }
 
 .confirm-icon .el-icon {
@@ -888,7 +861,7 @@ onMounted(() => {
   align-items: center;
   padding: 20px 24px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 250, 250, 0.9) 100%);
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .dialog-header h2 {
@@ -965,10 +938,7 @@ onMounted(() => {
 .detail-price {
   font-size: 28px;
   font-weight: 800;
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--brand-primary);
 }
 
 .detail-price span {
@@ -999,13 +969,16 @@ onMounted(() => {
 
 .detail-descriptions :deep(.el-descriptions__label) {
   font-weight: 600;
-  width: 90px;
+  width: auto;
   color: #6c757d;
 }
 
 .detail-descriptions :deep(.el-descriptions__content) {
   color: #1a1a2e;
   font-weight: 500;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.5;
 }
 
 /* Responsive */

@@ -8,6 +8,14 @@ export function getBicycles(params) {
   })
 }
 
+export function getBicyclesPage(params) {
+  return request({
+    url: '/bicycles/page',
+    method: 'get',
+    params
+  })
+}
+
 export function getAvailableBicycles() {
   return request({
     url: '/bicycles/available',

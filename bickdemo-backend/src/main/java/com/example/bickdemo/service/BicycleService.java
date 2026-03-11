@@ -7,6 +7,7 @@ import com.example.bickdemo.entity.Bicycle;
 import com.example.bickdemo.entity.BicycleStatus;
 import com.example.bickdemo.entity.BicycleType;
 import com.example.bickdemo.mapper.BicycleMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,23 @@ public class BicycleService {
         return bicycleMapper.selectList(wrapper).stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取自行车列表（分页，支持筛选）
+     */
+    public Page<BicycleResponse> getBicyclesPage(BicycleType type, BicycleStatus status, int page, int size) {
+        LambdaQueryWrapper<Bicycle> wrapper = new LambdaQueryWrapper<Bicycle>()
+                .eq(Bicycle::getDeleted, 0)
+                .eq(type != null, Bicycle::getType, type)
+                .eq(status != null, Bicycle::getStatus, status)
+                .orderByDesc(Bicycle::getId);
+
+        Page<Bicycle> bicyclePage = bicycleMapper.selectPage(new Page<>(page, size), wrapper);
+        Page<BicycleResponse> result = new Page<>(bicyclePage.getCurrent(), bicyclePage.getSize());
+        result.setTotal(bicyclePage.getTotal());
+        result.setRecords(bicyclePage.getRecords().stream().map(this::convertToResponse).collect(Collectors.toList()));
+        return result;
     }
 
     /**

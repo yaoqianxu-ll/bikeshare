@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:mysql}:3306/bickdemo?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true
     username: ${MYSQL_USERNAME:root}
-    password: ${MYSQL_PASSWORD:root123456}
+    password: ${MYSQL_PASSWORD:Lile200623}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       pool-name: HikariCP-bickdemo
@@ -44,7 +44,7 @@ cache:
 
 # MinIO 配置
 minio:
-  endpoint: ${MINIO_ENDPOINT:http://60.205.169.251:9000}
+  endpoint: ${MINIO_ENDPOINT:http://124.221.113.208:9000}
   accessKey: ${MINIO_ACCESS_KEY:tTrQL3XQCic9Dc93jbQ7}
   secretKey: ${MINIO_SECRET_KEY:AtFjrLwasDoEgr4yZFAgwQqRzqGXrDndFHHQLL7f}
   bucket-name: ${MINIO_BUCKET:bicycles}

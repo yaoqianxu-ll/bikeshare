@@ -6,6 +6,7 @@ import com.example.bickdemo.dto.BicycleResponse;
 import com.example.bickdemo.entity.BicycleStatus;
 import com.example.bickdemo.entity.BicycleType;
 import com.example.bickdemo.service.BicycleService;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +36,19 @@ public class BicycleController {
             @RequestParam(required = false) BicycleStatus status) {
         List<BicycleResponse> bicycles = bicycleService.getBicycles(type, status);
         return ResponseEntity.ok(ApiResponse.success(bicycles));
+    }
+
+    /**
+     * 获取自行车列表（分页，支持筛选）
+     */
+    @GetMapping("/page")
+    public ResponseEntity<ApiResponse<?>> getBicyclesPage(
+            @RequestParam(required = false) BicycleType type,
+            @RequestParam(required = false) BicycleStatus status,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<BicycleResponse> bicyclePage = bicycleService.getBicyclesPage(type, status, page, size);
+        return ResponseEntity.ok(ApiResponse.success(bicyclePage));
     }
 
     /**

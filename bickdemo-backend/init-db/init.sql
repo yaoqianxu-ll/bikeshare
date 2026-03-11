@@ -20,23 +20,24 @@ CREATE DATABASE IF NOT EXISTS bickdemo CHARACTER SET utf8mb4 COLLATE utf8mb4_uni
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+USE bickdemo;
 -- ----------------------------
 -- Table structure for background_images
 -- ----------------------------
 DROP TABLE IF EXISTS `background_images`;
 CREATE TABLE `background_images`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
-  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '图片名称',
-  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '图片 URL',
-  `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'CUSTOM' COMMENT '类型：DEFAULT-默认，CUSTOM-自定义',
-  `enabled` tinyint NULL DEFAULT 0 COMMENT '是否启用：0-否，1-是',
-  `sort` int NULL DEFAULT 0 COMMENT '排序',
-  `created_at` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `deleted` tinyint NULL DEFAULT 0 COMMENT '逻辑删除：0-否，1-是',
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `idx_enabled`(`enabled` ASC) USING BTREE,
-  INDEX `idx_sort`(`sort` ASC) USING BTREE
+                                      `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+                                      `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '图片名称',
+                                      `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '图片 URL',
+                                      `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'CUSTOM' COMMENT '类型：DEFAULT-默认，CUSTOM-自定义',
+                                      `enabled` tinyint NULL DEFAULT 0 COMMENT '是否启用：0-否，1-是',
+                                      `sort` int NULL DEFAULT 0 COMMENT '排序',
+                                      `created_at` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                      `updated_at` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                                      `deleted` tinyint NULL DEFAULT 0 COMMENT '逻辑删除：0-否，1-是',
+                                      PRIMARY KEY (`id`) USING BTREE,
+                                      INDEX `idx_enabled`(`enabled` ASC) USING BTREE,
+                                      INDEX `idx_sort`(`sort` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '背景图片表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -50,18 +51,18 @@ INSERT INTO `background_images` VALUES (10, 'tiank.jpg', 'http://124.221.113.208
 -- ----------------------------
 DROP TABLE IF EXISTS `bicycles`;
 CREATE TABLE `bicycles`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '自行车 ID',
-  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '自行车名称',
-  `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '类型：MOUNTAIN/ROAD/CITY/ELECTRIC/TANDEM',
-  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'AVAILABLE' COMMENT '状态：AVAILABLE/RENTED/MAINTENANCE/DISABLED',
-  `location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '位置',
-  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '描述',
-  `price_per_hour` decimal(10, 2) NULL DEFAULT NULL COMMENT '每小时价格',
-  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '图片 URL',
-  `created_at` datetime NULL DEFAULT NULL COMMENT '创建时间',
-  `updated_at` datetime NULL DEFAULT NULL COMMENT '更新时间',
-  `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
-  PRIMARY KEY (`id`) USING BTREE
+                             `id` bigint NOT NULL AUTO_INCREMENT COMMENT '自行车 ID',
+                             `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '自行车名称',
+                             `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '类型：MOUNTAIN/ROAD/CITY/ELECTRIC/TANDEM',
+                             `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'AVAILABLE' COMMENT '状态：AVAILABLE/RENTED/MAINTENANCE/DISABLED',
+                             `location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '位置',
+                             `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '描述',
+                             `price_per_hour` decimal(10, 2) NULL DEFAULT NULL COMMENT '每小时价格',
+                             `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '图片 URL',
+                             `created_at` datetime NULL DEFAULT NULL COMMENT '创建时间',
+                             `updated_at` datetime NULL DEFAULT NULL COMMENT '更新时间',
+                             `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
+                             PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '自行车表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -81,21 +82,21 @@ INSERT INTO `bicycles` VALUES (8, '劳斯莱斯幻影', 'CITY', 'DISABLED', '上
 -- ----------------------------
 DROP TABLE IF EXISTS `rentals`;
 CREATE TABLE `rentals`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '租赁记录 ID',
-  `user_id` bigint NOT NULL COMMENT '用户 ID',
-  `bicycle_id` bigint NOT NULL COMMENT '自行车 ID',
-  `start_time` datetime NOT NULL COMMENT '租赁开始时间',
-  `end_time` datetime NULL DEFAULT NULL COMMENT '租赁结束时间',
-  `expected_end_time` datetime NULL DEFAULT NULL COMMENT '预计归还时间',
-  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ACTIVE' COMMENT '状态：ACTIVE/COMPLETED/CANCELLED',
-  `total_price` decimal(10, 2) NULL DEFAULT NULL COMMENT '总价格',
-  `created_at` datetime NULL DEFAULT NULL COMMENT '创建时间',
-  `updated_at` datetime NULL DEFAULT NULL COMMENT '更新时间',
-  `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
-  INDEX `idx_bicycle_id`(`bicycle_id` ASC) USING BTREE,
-  INDEX `idx_status`(`status` ASC) USING BTREE
+                            `id` bigint NOT NULL AUTO_INCREMENT COMMENT '租赁记录 ID',
+                            `user_id` bigint NOT NULL COMMENT '用户 ID',
+                            `bicycle_id` bigint NOT NULL COMMENT '自行车 ID',
+                            `start_time` datetime NOT NULL COMMENT '租赁开始时间',
+                            `end_time` datetime NULL DEFAULT NULL COMMENT '租赁结束时间',
+                            `expected_end_time` datetime NULL DEFAULT NULL COMMENT '预计归还时间',
+                            `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ACTIVE' COMMENT '状态：ACTIVE/COMPLETED/CANCELLED',
+                            `total_price` decimal(10, 2) NULL DEFAULT NULL COMMENT '总价格',
+                            `created_at` datetime NULL DEFAULT NULL COMMENT '创建时间',
+                            `updated_at` datetime NULL DEFAULT NULL COMMENT '更新时间',
+                            `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
+                            PRIMARY KEY (`id`) USING BTREE,
+                            INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
+                            INDEX `idx_bicycle_id`(`bicycle_id` ASC) USING BTREE,
+                            INDEX `idx_status`(`status` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 36 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '租赁记录表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -117,20 +118,20 @@ INSERT INTO `rentals` VALUES (35, 2, 1, '2026-03-09 22:01:58', '2026-03-09 22:03
 -- ----------------------------
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户 ID',
-  `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名',
-  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '密码',
-  `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '邮箱',
-  `phone` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '手机号',
-  `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '头像 URL',
-  `role` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'USER' COMMENT '角色：USER/ADMIN',
-  `enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
-  `created_at` datetime NULL DEFAULT NULL COMMENT '创建时间',
-  `updated_at` datetime NULL DEFAULT NULL COMMENT '更新时间',
-  `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `uk_username`(`username` ASC) USING BTREE,
-  UNIQUE INDEX `uk_email`(`email` ASC) USING BTREE
+                          `id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户 ID',
+                          `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名',
+                          `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '密码',
+                          `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '邮箱',
+                          `phone` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '手机号',
+                          `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '头像 URL',
+                          `role` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'USER' COMMENT '角色：USER/ADMIN',
+                          `enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
+                          `created_at` datetime NULL DEFAULT NULL COMMENT '创建时间',
+                          `updated_at` datetime NULL DEFAULT NULL COMMENT '更新时间',
+                          `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
+                          PRIMARY KEY (`id`) USING BTREE,
+                          UNIQUE INDEX `uk_username`(`username` ASC) USING BTREE,
+                          UNIQUE INDEX `uk_email`(`email` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
