@@ -42,9 +42,16 @@ request.interceptors.response.use(
           ElMessage.error((data && data.message) || '用户名或密码错误')
         } else {
           const userStore = useUserStore()
-          userStore.logout()
-          ElMessage.error((data && data.message) || '登录已过期，请重新登录')
-          window.location.href = '/login'
+          // If user has already logged out (no token), do not force redirect to /login.
+          // This avoids “I clicked logout and got bounced to login” when some in-flight request returns 401.
+          const hasToken = !!userStore.token
+          if (hasToken) {
+            userStore.logout()
+            ElMessage.error((data && data.message) || '登录已过期，请重新登录')
+            window.location.href = '/login'
+          } else {
+            ElMessage.error((data && data.message) || '需要登录后操作')
+          }
         }
       } else if (status === 400) {
         // 400 错误显示详细验证信息

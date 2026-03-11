@@ -715,11 +715,15 @@ onMounted(() => {
 /* 表格容器 */
 .table-container {
   padding: 8px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
 }
 
 :deep(.el-table) {
   font-size: 14px;
   background: transparent;
+  min-width: 720px;
 }
 
 :deep(.el-table th) {
@@ -843,6 +847,11 @@ onMounted(() => {
   .pie-chart,
   .bar-chart {
     height: 280px;
+  }
+
+  :deep(.el-table) {
+    font-size: 13px;
+    min-width: 720px;
   }
 }
 </style>

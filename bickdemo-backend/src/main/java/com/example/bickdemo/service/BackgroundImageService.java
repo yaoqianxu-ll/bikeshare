@@ -27,6 +27,13 @@ public class BackgroundImageService {
     }
 
     /**
+     * 获取所有可选择的背景图片（用于游客/普通用户的本地选择）
+     */
+    public List<BackgroundImage> getAllSelectable() {
+        return backgroundImageMapper.findAllSelectable();
+    }
+
+    /**
      * 获取所有背景图片（管理员）
      */
     public List<BackgroundImage> getAll() {

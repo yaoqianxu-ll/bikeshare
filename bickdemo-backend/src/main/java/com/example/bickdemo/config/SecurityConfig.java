@@ -111,6 +111,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
+                        // Background selection is allowed for guests/USER; admin endpoint keeps role check below.
+                        .requestMatchers(HttpMethod.GET, "/api/backgrounds/all").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/backgrounds/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/bicycles/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/statistics/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

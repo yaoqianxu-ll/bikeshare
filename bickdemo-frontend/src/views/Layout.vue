@@ -97,6 +97,11 @@
             <span class="nav-icon-bg"><el-icon><Setting /></el-icon></span>
             <span>管理</span>
           </router-link>
+          <!-- Mobile-friendly auth entry: on phones the header login button is hidden, so keep a nav item. -->
+          <router-link to="/login" class="nav-link nav-link-auth" v-if="!userStore.isLoggedIn" @click="closeNav">
+            <span class="nav-icon-bg"><el-icon><User /></el-icon></span>
+            <span>登录</span>
+          </router-link>
         </nav>
 
         <div class="header-actions">
@@ -147,7 +152,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, SwitchButton, Bicycle, DataAnalysis, Document, Setting, Picture, CircleCheck, Delete, UploadFilled } from '@element-plus/icons-vue'
-import { getBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
+import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -156,6 +161,8 @@ const showBgSelector = ref(false)
 const selectedBgId = ref(null)
 const backgrounds = ref([])
 const uploading = ref(false)
+
+const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
 
 // 上传配置
 const uploadUrl = '/api/backgrounds/upload'
@@ -170,13 +177,31 @@ const loadBackgrounds = async () => {
     if (userStore.isAdmin) {
       res = await getAllBackgrounds()
     } else {
-      res = await getBackgrounds()
+      // Non-admin can pick from all backgrounds, but cannot upload/enable globally.
+      // Fallback to enabled-only endpoint if selectable endpoint is unavailable.
+      res = await getSelectableBackgrounds().catch(() => getBackgrounds())
     }
     backgrounds.value = res.data || []
-    // 获取当前启用的背景
-    const enabledBg = backgrounds.value.find(bg => bg.enabled)
-    if (enabledBg) {
-      selectedBgId.value = enabledBg.id
+
+    // Admin: follow the globally enabled background from server.
+    // Guest/USER: allow per-device selection (persisted in localStorage).
+    if (userStore.isAdmin) {
+      const enabledBg = backgrounds.value.find(bg => bg.enabled)
+      if (enabledBg) selectedBgId.value = enabledBg.id
+    } else {
+      let preferred = null
+      try {
+        preferred = window?.localStorage?.getItem(LOCAL_BG_KEY)
+      } catch (_) {}
+
+      const preferredId = preferred ? Number(preferred) : null
+      const match = preferredId ? backgrounds.value.find(bg => bg.id === preferredId) : null
+      if (match) {
+        selectedBgId.value = match.id
+      } else {
+        const enabledBg = backgrounds.value.find(bg => bg.enabled) || backgrounds.value[0]
+        selectedBgId.value = enabledBg ? enabledBg.id : null
+      }
     }
   } catch (error) {
     console.error(error)
@@ -186,10 +211,17 @@ const loadBackgrounds = async () => {
 // 选择背景
 const selectBackground = async (id) => {
   try {
-    await setEnabledBackground(id, true)
     selectedBgId.value = id
-    ElMessage.success('背景已切换')
-    loadBackgrounds()
+    if (userStore.isAdmin) {
+      await setEnabledBackground(id, true)
+      ElMessage.success('背景已切换')
+      loadBackgrounds()
+    } else {
+      try {
+        window?.localStorage?.setItem(LOCAL_BG_KEY, String(id))
+      } catch (_) {}
+      ElMessage.success('背景已切换')
+    }
   } catch (error) {
     console.error(error)
   }
@@ -246,10 +278,13 @@ const deleteBg = async (id) => {
 
 // 计算背景样式
 const containerStyle = computed(() => {
-  const enabledBg = backgrounds.value.find(bg => bg.enabled)
-  if (enabledBg && enabledBg.imageUrl) {
+  const activeBg = selectedBgId.value
+    ? backgrounds.value.find(bg => bg.id === selectedBgId.value)
+    : (backgrounds.value.find(bg => bg.enabled) || null)
+
+  if (activeBg && activeBg.imageUrl) {
     return {
-      backgroundImage: `url(${enabledBg.imageUrl})`,
+      backgroundImage: `url(${activeBg.imageUrl})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundAttachment: 'fixed'
@@ -261,7 +296,9 @@ const containerStyle = computed(() => {
 const handleLogout = () => {
   userStore.logout()
   ElMessage.success('已退出登录')
-  router.push('/login')
+  // After logging out, land on a public page instead of forcing user to re-login.
+  router.push('/bicycles')
+  closeNav()
 }
 
 const toggleNav = () => {
@@ -848,6 +885,10 @@ onMounted(() => {
 
   .auth-section {
     display: none;
+  }
+
+  .nav-link-auth {
+    margin-top: 8px;
   }
 }
 

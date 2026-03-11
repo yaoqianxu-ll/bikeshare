@@ -568,6 +568,43 @@ a:hover {
   .hide-mobile {
     display: none !important;
   }
+
+  /* Small-screen sanity: keep overlays usable and prevent “everything squeezed” layouts. */
+  body {
+    background-attachment: scroll;
+  }
+
+  .el-dialog {
+    width: calc(100vw - 24px) !important;
+    max-width: 520px !important;
+    margin: 12px auto !important;
+  }
+
+  .el-dialog__header {
+    padding: 16px 16px 12px;
+  }
+
+  .el-dialog__body {
+    padding: 16px;
+  }
+
+  .el-dialog__footer {
+    padding: 12px 16px 16px;
+  }
+
+  .el-drawer {
+    width: min(92vw, 420px) !important;
+  }
+
+  .el-message {
+    max-width: calc(100vw - 24px);
+  }
+
+  /* Pagination: hide “sizes/jumper” on phones to avoid wrapping into a blob. */
+  .el-pagination__sizes,
+  .el-pagination__jump {
+    display: none !important;
+  }
 }
 
 @media (min-width: 769px) {
