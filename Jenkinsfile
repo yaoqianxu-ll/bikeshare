@@ -108,17 +108,13 @@ pipeline {
             steps {
                 echo '🐳 构建 Docker 镜像...'
                 sh '''
-                    echo "当前目录：" && pwd
-                    echo "工作空间：${WORKSPACE}"
                     echo "切换到工作空间..."
                     cd ${WORKSPACE}
                     echo "当前目录：" && pwd
-                    echo "Docker 版本："
-                    docker --version
                     echo "停止旧容器..."
                     docker-compose down || true
-                    echo "构建镜像..."
-                    docker-compose build
+                    echo "构建镜像（不使用 buildkit）..."
+                    COMPOSE_DOCKER_CLI_BUILD=0 DOCKER_BUILDKIT=0 docker-compose build --no-cache
                 '''
             }
         }
