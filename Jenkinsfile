@@ -29,6 +29,15 @@ pipeline {
         timeout(time: 30, unit: 'MINUTES')
         // 禁止并发构建
         disableConcurrentBuilds()
+        // 避免 Declarative 自动 checkout 一次 + 我们自己再 checkout 一次
+        skipDefaultCheckout(true)
+    }
+
+    parameters {
+        // 仅用于“快速重启部署已构建版本”，正常推送上线请保持 false
+        booleanParam(name: 'SKIP_BUILD', defaultValue: false, description: '跳过前后端构建与镜像构建，仅执行 docker-compose up -d 进行部署')
+        // 仅在你怀疑工作区脏了/依赖坏了时才打开
+        booleanParam(name: 'CLEAN_WORKSPACE', defaultValue: false, description: '构建前清空 Jenkins 工作区（会导致每次重新 npm install）')
     }
 
     triggers {
@@ -42,8 +51,12 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo '📦 拉取代码...'
-                // 清空工作空间，避免旧代码干扰
-                cleanWs()
+                script {
+                    if (params.CLEAN_WORKSPACE) {
+                        echo '🧹 CLEAN_WORKSPACE=true，清空工作区...'
+                        cleanWs()
+                    }
+                }
                 checkout scm
                 script {
                     // 获取 Git 提交信息
@@ -62,6 +75,7 @@ pipeline {
         }
 
         stage('Build Backend') {
+            when { expression { !params.SKIP_BUILD } }
             steps {
                 echo '🔨 构建后端...'
                 dir("${BACKEND_DIR}") {
@@ -87,6 +101,7 @@ pipeline {
         }
 
         stage('Build Frontend') {
+            when { expression { !params.SKIP_BUILD } }
             steps {
                 echo '🎨 构建前端...'
                 // 直接在 Jenkins 容器内构建（不挂载 Docker）
@@ -105,16 +120,15 @@ pipeline {
         }
 
         stage('Build Docker Image') {
+            when { expression { !params.SKIP_BUILD } }
             steps {
                 echo '🐳 构建 Docker 镜像...'
                 sh '''
                     echo "切换到工作空间..."
                     cd ${WORKSPACE}
                     echo "当前目录：" && pwd
-                    echo "停止旧容器..."
-                    docker-compose down || true
-                    echo "构建镜像（不使用 buildkit）..."
-                    COMPOSE_DOCKER_CLI_BUILD=0 DOCKER_BUILDKIT=0 docker-compose build --no-cache
+                    echo "构建镜像（使用缓存加速）..."
+                    docker-compose build
                 '''
             }
         }
@@ -125,7 +139,7 @@ pipeline {
                 sh """
                     cd ${WORKSPACE}
                     echo "启动服务..."
-                    docker-compose up -d
+                    docker-compose up -d --remove-orphans
 
                     echo "等待服务启动..."
                     sleep 30
@@ -163,8 +177,7 @@ pipeline {
 
     post {
         always {
-            echo '📊 构建完成，清理工作空间...'
-            cleanWs(cleanWhenNotBuilt: true)
+            echo '📊 构建完成'
         }
         success {
             echo '✅ 部署成功！'
