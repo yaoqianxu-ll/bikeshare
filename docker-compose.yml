@@ -1,10 +1,7 @@
-version: '3.8'
-
 services:
   # MySQL 数据库
   mysql:
     image: mysql:8.0
-    container_name: bikeshare-mysql
     dns:
       - 183.60.83.19
       - 183.60.82.98
@@ -35,7 +32,6 @@ services:
     build:
       context: ./bickdemo-backend
       dockerfile: Dockerfile.simple
-    container_name: bikeshare-backend
     dns:
       - 183.60.83.19
       - 183.60.82.98
@@ -68,7 +64,6 @@ services:
     build:
       context: ./bickdemo-frontend
       dockerfile: Dockerfile.simple
-    container_name: bikeshare-frontend
     dns:
       - 183.60.83.19
       - 183.60.82.98
