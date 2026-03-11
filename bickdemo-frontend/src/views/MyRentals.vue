@@ -119,7 +119,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyRentals, endRental, cancelRental } from '@/api/rental'
 
@@ -133,6 +133,7 @@ const selectedRental = ref(null)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+let priceTimer = null
 
 const totalText = computed(() => {
   const n = Number(total.value)
@@ -285,6 +286,21 @@ const viewDetail = (row) => {
 
 onMounted(() => {
   loadRentals()
+
+  // Lightweight “real-time” total price: refresh periodically while there are ACTIVE rentals.
+  priceTimer = setInterval(() => {
+    if (loading.value) return
+    if (rentals.value.some(r => r?.status === 'ACTIVE')) {
+      loadRentals()
+    }
+  }, 10000)
+})
+
+onUnmounted(() => {
+  if (priceTimer) {
+    clearInterval(priceTimer)
+    priceTimer = null
+  }
 })
 </script>
 

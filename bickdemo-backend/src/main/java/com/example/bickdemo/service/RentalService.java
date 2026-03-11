@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  * 租赁服务类
@@ -271,6 +273,17 @@ public class RentalService {
         return millis / 3600000.0;
     }
 
+    private Double calculateRunningTotalPrice(Rental rental, Bicycle bicycle) {
+        if (rental == null || rental.getStartTime() == null) return null;
+        if (rental.getStatus() != RentalStatus.ACTIVE) return rental.getTotalPrice();
+        if (bicycle == null || bicycle.getPricePerHour() == null) return 0.0;
+
+        long millis = java.time.Duration.between(rental.getStartTime(), LocalDateTime.now()).toMillis();
+        double hours = Math.max(0.0, millis / 3600000.0);
+        double raw = hours * bicycle.getPricePerHour();
+        return BigDecimal.valueOf(raw).setScale(2, RoundingMode.HALF_UP).doubleValue();
+    }
+
     private RentalResponse convertToResponse(Rental rental, Bicycle bicycle) {
         RentalResponse response = new RentalResponse();
         response.setId(rental.getId());
@@ -297,7 +310,8 @@ public class RentalService {
         response.setEndTime(rental.getEndTime());
         response.setExpectedEndTime(rental.getExpectedEndTime());
         response.setStatus(rental.getStatus());
-        response.setTotalPrice(rental.getTotalPrice());
+        // ACTIVE orders should show a running total so the UI can update in near real time.
+        response.setTotalPrice(calculateRunningTotalPrice(rental, bicycle));
         response.setCreatedAt(rental.getCreatedAt());
         return response;
     }
