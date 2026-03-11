@@ -7,9 +7,6 @@ pipeline {
         BACKEND_DIR = 'bickdemo-backend'
         FRONTEND_DIR = 'bickdemo-frontend'
 
-        // Docker 配置 - 使用 docker compose 容器
-        DOCKER_COMPOSE_CMD = 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v ${WORKSPACE}:${WORKSPACE} -w ${WORKSPACE} docker/compose:latest'
-
         // 服务器配置
         DEPLOY_HOST = '124.221.113.208'
         DEPLOY_USER = 'root'
@@ -110,17 +107,14 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo '🐳 构建 Docker 镜像...'
+                // 切换到项目根目录执行 docker compose
                 sh '''
-                    echo "使用 Docker Compose 容器命令"
-
-                    # 停止旧容器（保留卷）
-                    ${DOCKER_COMPOSE_CMD} down || true
-
-                    # 不清理镜像，保留缓存加速下次构建
-                    # docker image prune -f
-
-                    # 构建新镜像（使用缓存）
-                    ${DOCKER_COMPOSE_CMD} build
+                    cd ${WORKSPACE}
+                    echo "当前目录：" && pwd
+                    echo "停止旧容器..."
+                    docker compose down || true
+                    echo "构建镜像..."
+                    docker compose build
                 '''
             }
         }
@@ -129,17 +123,18 @@ pipeline {
             steps {
                 echo '🚀 部署应用...'
                 sh """
+                    cd ${WORKSPACE}
                     echo "启动服务..."
-                    ${DOCKER_COMPOSE_CMD} up -d
+                    docker compose up -d
 
                     echo "等待服务启动..."
                     sleep 30
 
                     echo "检查容器状态..."
-                    ${DOCKER_COMPOSE_CMD} ps
+                    docker compose ps
 
                     echo "查看最近日志..."
-                    ${DOCKER_COMPOSE_CMD} logs --tail=50
+                    docker compose logs --tail=50
                 """
             }
         }
