@@ -90,24 +90,20 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 echo '🎨 构建前端...'
-                // 在宿主机上构建，使用服务器已安装的 Node.js
                 sh '''
                     cd ${WORKSPACE}/${FRONTEND_DIR}
                     echo "Node.js 版本："
-                    node --version || echo "Node.js 未安装，使用 Docker 容器"
+                    node --version
+                    npm --version
 
-                    if command -v node &> /dev/null; then
-                        echo "使用宿主机 Node.js 构建"
-                        npm install --legacy-peer-deps
-                        npm run build
-                    else
-                        echo "使用 Docker 容器构建"
-                        docker run --rm -v ${WORKSPACE}/${FRONTEND_DIR}:/app -w /app node:20-alpine sh -c '
-                            npm install --legacy-peer-deps &&
-                            npm run build
-                        '
-                    fi
+                    echo "安装依赖..."
+                    npm install --legacy-peer-deps
 
+                    echo "构建生产版本..."
+                    # 使用 npx 运行 vite，避免权限问题
+                    npx vite build
+
+                    echo "检查构建产物..."
                     ls -lh dist/ || echo "构建产物检查失败"
                 '''
             }
