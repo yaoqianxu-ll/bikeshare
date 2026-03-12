@@ -245,11 +245,11 @@ public class RentalService {
         long activeRentals = rentalMapper.findByStatus(RentalStatus.ACTIVE).size();
 
         // Stock-based counts (sum of quantity per status)
-        long availableBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.AVAILABLE);
+        long availableBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.AVAILABLE)
+                + bicycleMapper.sumQuantityByStatus(BicycleStatus.RENTED);
         long maintenanceBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.MAINTENANCE);
         long disabledBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.DISABLED);
-        long totalBicycles = availableBicycles + maintenanceBicycles + disabledBicycles
-                + bicycleMapper.sumQuantityByStatus(BicycleStatus.RENTED);
+        long totalBicycles = availableBicycles + maintenanceBicycles + disabledBicycles;
 
         // 自行车类型统计
         List<BicycleMapper.TypeCountVO> typeCounts = bicycleMapper.sumQuantityByType();

@@ -1,6 +1,5 @@
 <template>
   <div class="register-container">
-    <!-- 动态背景装饰 -->
     <div class="background-decorations">
       <div class="floating-shape shape-1"></div>
       <div class="floating-shape shape-2"></div>
@@ -10,7 +9,6 @@
 
     <div class="register-card">
       <div class="register-card-inner">
-        <!-- 左侧品牌区 -->
         <div class="card-brand">
           <div class="brand-content">
             <div class="logo-wrapper">
@@ -21,7 +19,7 @@
             <div class="brand-features">
               <div class="feature-item">
                 <el-icon><CircleCheck /></el-icon>
-                <span>免费注册</span>
+                <span>邮箱验证</span>
               </div>
               <div class="feature-item">
                 <el-icon><Star /></el-icon>
@@ -35,11 +33,10 @@
           </div>
         </div>
 
-        <!-- 右侧注册区 -->
         <div class="card-form">
           <div class="form-header">
             <h2 class="register-title">创建账户</h2>
-            <p class="register-subtitle">填写以下信息，立即开始体验</p>
+            <p class="register-subtitle">使用邮箱验证码完成注册</p>
           </div>
 
           <el-form :model="form" :rules="rules" ref="formRef" class="register-form">
@@ -65,14 +62,19 @@
               </div>
             </el-form-item>
 
-            <el-form-item prop="phone">
-              <div class="input-wrapper">
-                <el-icon class="input-icon"><Phone /></el-icon>
-                <el-input
-                  v-model="form.phone"
-                  placeholder="手机号（选填）"
-                  size="large"
-                />
+            <el-form-item prop="code">
+              <div class="code-row">
+                <div class="input-wrapper code-input-wrapper">
+                  <el-icon class="input-icon"><Message /></el-icon>
+                  <el-input
+                    v-model="form.code"
+                    placeholder="请输入验证码"
+                    size="large"
+                  />
+                </div>
+                <el-button class="code-btn" :disabled="countdown > 0" @click="handleSendCode">
+                  {{ countdown > 0 ? `${countdown}s后重试` : '发送验证码' }}
+                </el-button>
               </div>
             </el-form-item>
 
@@ -131,19 +133,21 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { register } from '@/api/auth'
+import { register, sendEmailCode } from '@/api/auth'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Right, Bicycle, CircleCheck, Star, Message, Phone } from '@element-plus/icons-vue'
+import { User, Lock, Right, Bicycle, CircleCheck, Star, Message } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref(null)
 const loading = ref(false)
+const countdown = ref(0)
+let countdownTimer = null
 
 const form = reactive({
   username: '',
   email: '',
-  phone: '',
+  code: '',
   password: '',
   confirmPassword: ''
 })
@@ -165,6 +169,7 @@ const rules = {
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
   ],
+  code: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能少于 6 个字符', trigger: 'blur' }
@@ -175,6 +180,36 @@ const rules = {
   ]
 }
 
+const startCountdown = () => {
+  countdown.value = 60
+  clearInterval(countdownTimer)
+  countdownTimer = setInterval(() => {
+    countdown.value -= 1
+    if (countdown.value <= 0) {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+    }
+  }, 1000)
+}
+
+const handleSendCode = async () => {
+  if (!form.email) {
+    ElMessage.warning('请先输入邮箱')
+    return
+  }
+
+  try {
+    await sendEmailCode({
+      email: form.email,
+      type: 'REGISTER'
+    })
+    ElMessage.success('验证码已发送，请查收邮箱')
+    startCountdown()
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 const handleRegister = async () => {
   if (!formRef.value) return
 
@@ -182,7 +217,12 @@ const handleRegister = async () => {
     if (valid) {
       loading.value = true
       try {
-        const res = await register(form)
+        const res = await register({
+          username: form.username,
+          email: form.email,
+          code: form.code,
+          password: form.password
+        })
         userStore.setUser(res.data.token, res.data.username, res.data.role, res.data.userId)
         ElMessage.success('注册成功')
         router.push('/bicycles')
@@ -318,12 +358,6 @@ const handleRegister = async () => {
   opacity: 1;
 }
 
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
 .brand-content {
   position: relative;
   z-index: 1;
@@ -417,7 +451,7 @@ const handleRegister = async () => {
 }
 
 :deep(.el-form-item) {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .input-wrapper {
@@ -438,6 +472,24 @@ const handleRegister = async () => {
   background: #fff;
   border-color: rgba(255, 107, 53, 0.55);
   box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.10);
+}
+
+.code-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.code-input-wrapper {
+  width: 100%;
+}
+
+.code-btn {
+  height: 54px;
+  border-radius: 14px;
+  font-weight: 700;
 }
 
 .input-icon {
@@ -500,7 +552,7 @@ const handleRegister = async () => {
 
 /* ========== 表单底部 ========== */
 .form-footer {
-  margin-top: 24px;
+  margin-top: 32px;
   text-align: center;
 }
 
@@ -556,6 +608,10 @@ const handleRegister = async () => {
 
   .register-title {
     font-size: 24px;
+  }
+
+  .code-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -38,7 +38,7 @@
           v-for="bike in bicycles"
           :key="bike.id"
           class="bike-card"
-          :class="{ 'unavailable': bike.status !== 'AVAILABLE' || (bike.quantity ?? 0) <= 0 }"
+          :class="{ 'unavailable': !isBikeRentable(bike) }"
         >
           <div class="bike-card-image">
             <div class="image-wrapper">
@@ -54,8 +54,8 @@
               </div>
             </div>
             <div class="card-badges">
-              <el-tag :type="getStatusType(bike.status)" class="status-badge">
-                {{ getStatusText(bike.status) }}
+              <el-tag :type="getStatusType(bike)" class="status-badge">
+                {{ getStatusText(bike) }}
               </el-tag>
               <el-tag class="type-badge" v-if="getTypeText(bike.type)">
                 {{ getTypeText(bike.type) }}
@@ -76,7 +76,7 @@
             </p>
             <div class="bike-actions">
               <el-button
-                v-if="userStore.isLoggedIn && bike.status === 'AVAILABLE' && (bike.quantity ?? 0) > 0"
+                v-if="userStore.isLoggedIn && isBikeRentable(bike)"
                 type="primary"
                 class="rent-btn"
                 @click="handleRent(bike)"
@@ -85,12 +85,12 @@
                 立即租用
               </el-button>
               <el-button
-                v-if="userStore.isLoggedIn && bike.status === 'AVAILABLE' && (bike.quantity ?? 0) <= 0"
+                v-if="userStore.isLoggedIn && isBikeSoldOut(bike)"
                 type="primary"
                 class="rent-btn"
                 disabled
               >
-                无库存
+                已租罄
               </el-button>
               <el-button
                 v-if="userStore.isLoggedIn && bike.rentedByCurrentUser"
@@ -122,7 +122,7 @@
         <div class="selected-bike-info">
           <div class="bike-info-header">
             <h3>{{ selectedBicycle.name }}</h3>
-            <el-tag :type="getStatusType(selectedBicycle.status)">{{ getStatusText(selectedBicycle.status) }}</el-tag>
+            <el-tag :type="getStatusType(selectedBicycle)">{{ getStatusText(selectedBicycle) }}</el-tag>
           </div>
           <p class="bike-subinfo">{{ getTypeText(selectedBicycle.type) }} · ¥{{ selectedBicycle.pricePerHour }}/小时</p>
         </div>
@@ -202,7 +202,7 @@
           </div>
           <div class="detail-tags">
             <el-tag>{{ getTypeText(selectedBicycle.type) }}</el-tag>
-            <el-tag :type="getStatusType(selectedBicycle.status)">{{ getStatusText(selectedBicycle.status) }}</el-tag>
+            <el-tag :type="getStatusType(selectedBicycle)">{{ getStatusText(selectedBicycle) }}</el-tag>
           </div>
           <!-- Vertical: label on top, content below (avoids narrow 2-column squeeze that makes CJK wrap per character) -->
           <el-descriptions :column="1" direction="vertical" border class="detail-descriptions">
@@ -340,6 +340,8 @@ const loadUserActiveRentals = async () => {
     const rentalMap = new Map(res.data.map(r => [r.bicycleId, r.id]))
 
     bicycles.value.forEach(bike => {
+      bike.rentedByCurrentUser = false
+      bike.rentalId = null
       if (rentedBicycleIds.includes(bike.id)) {
         bike.rentedByCurrentUser = true
         bike.rentalId = rentalMap.get(bike.id)
@@ -350,20 +352,43 @@ const loadUserActiveRentals = async () => {
   }
 }
 
-const getStatusType = (status) => {
+const isBikeSoldOut = (bike) => {
+  return bike?.status === 'AVAILABLE' && (bike?.quantity ?? 0) <= 0
+}
+
+const isBikeRentable = (bike) => {
+  return bike?.status === 'AVAILABLE' && (bike?.quantity ?? 0) > 0
+}
+
+const getDisplayStatus = (target) => {
+  if (target && typeof target === 'object') {
+    if (isBikeSoldOut(target)) return 'SOLD_OUT'
+    if (target.status === 'RENTED') {
+      return (target.quantity ?? 0) > 0 ? 'AVAILABLE' : 'SOLD_OUT'
+    }
+    return target.status
+  }
+  return target
+}
+
+const getStatusType = (target) => {
+  const status = getDisplayStatus(target)
   const types = {
     AVAILABLE: 'success',
     RENTED: 'warning',
+    SOLD_OUT: 'warning',
     MAINTENANCE: 'info',
     DISABLED: 'danger'
   }
   return types[status] || 'info'
 }
 
-const getStatusText = (status) => {
+const getStatusText = (target) => {
+  const status = getDisplayStatus(target)
   const texts = {
     AVAILABLE: '可租赁',
     RENTED: '已租出',
+    SOLD_OUT: '已租罄',
     MAINTENANCE: '维修中',
     DISABLED: '不可用'
   }
@@ -411,7 +436,7 @@ const confirmRent = async () => {
     })
     ElMessage.success('租赁成功')
     rentDialogVisible.value = false
-    loadBicycles()
+    await loadBicycles()
   } catch (error) {
     console.error(error)
   } finally {

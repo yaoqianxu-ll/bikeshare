@@ -8,9 +8,33 @@ export function login(data) {
   })
 }
 
+export function loginByEmail(data) {
+  return request({
+    url: '/auth/email/login',
+    method: 'post',
+    data
+  })
+}
+
 export function register(data) {
   return request({
     url: '/auth/register',
+    method: 'post',
+    data
+  })
+}
+
+export function sendEmailCode(data) {
+  return request({
+    url: '/auth/email/send-code',
+    method: 'post',
+    data
+  })
+}
+
+export function resetPasswordByEmail(data) {
+  return request({
+    url: '/auth/email/reset-password',
     method: 'post',
     data
   })

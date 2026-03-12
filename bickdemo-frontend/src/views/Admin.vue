@@ -54,7 +54,7 @@
             </el-table-column>
           <el-table-column label="状态" width="100" align="center" class-name="col-status">
               <template #default="{ row }">
-                <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+                <el-tag :type="getBicycleStatusType(row)">{{ getBicycleStatusText(row) }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="quantity" label="数量" width="90" align="center">
@@ -153,7 +153,6 @@
         <el-form-item label="状态" prop="status">
           <el-select v-model="bikeForm.status" placeholder="选择状态" style="width: 100%">
             <el-option label="可租赁" value="AVAILABLE" />
-            <el-option label="已租出" value="RENTED" />
             <el-option label="维修中" value="MAINTENANCE" />
             <el-option label="不可用" value="DISABLED" />
           </el-select>
@@ -445,7 +444,7 @@ const openDialog = (row = null) => {
     bikeForm.id = row.id
     bikeForm.name = row.name
     bikeForm.type = row.type
-    bikeForm.status = row.status
+    bikeForm.status = row.status === 'RENTED' ? 'AVAILABLE' : row.status
     bikeForm.quantity = row.quantity ?? 1
     bikeForm.location = row.location
     bikeForm.description = row.description
@@ -516,6 +515,7 @@ const getStatusType = (status) => {
   const types = {
     AVAILABLE: 'success',
     RENTED: 'warning',
+    SOLD_OUT: 'warning',
     MAINTENANCE: 'info',
     DISABLED: 'danger'
   }
@@ -526,11 +526,25 @@ const getStatusText = (status) => {
   const texts = {
     AVAILABLE: '可租赁',
     RENTED: '已租出',
+    SOLD_OUT: '已租罄',
     MAINTENANCE: '维修中',
     DISABLED: '不可用'
   }
   return texts[status] || status
 }
+
+const getBicycleDisplayStatus = (row) => {
+  if (!row) return ''
+  if (row.status === 'AVAILABLE' && (row.quantity ?? 0) <= 0) return 'SOLD_OUT'
+  if (row.status === 'RENTED') {
+    return (row.quantity ?? 0) > 0 ? 'AVAILABLE' : 'SOLD_OUT'
+  }
+  return row.status
+}
+
+const getBicycleStatusType = (row) => getStatusType(getBicycleDisplayStatus(row))
+
+const getBicycleStatusText = (row) => getStatusText(getBicycleDisplayStatus(row))
 
 const getTypeText = (type) => {
   const texts = {

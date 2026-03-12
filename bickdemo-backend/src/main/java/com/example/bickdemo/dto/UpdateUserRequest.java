@@ -19,9 +19,6 @@ public class UpdateUserRequest {
     @Email(message = "邮箱格式不正确")
     private String email;
 
-    /** 手机号 */
-    private String phone;
-
     /** 头像 URL */
     @Size(max = 255, message = "头像 URL 长度不能超过 255 个字符")
     private String avatar;

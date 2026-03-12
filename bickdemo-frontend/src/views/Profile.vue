@@ -25,7 +25,6 @@
           <el-descriptions :column="1" border :label-width="90" class="profile-desc">
             <el-descriptions-item label="用户名">{{ formatText(userInfo?.username) }}</el-descriptions-item>
             <el-descriptions-item label="邮箱">{{ formatText(userInfo?.email) }}</el-descriptions-item>
-            <el-descriptions-item label="手机号">{{ formatText(userInfo?.phone) }}</el-descriptions-item>
             <el-descriptions-item label="角色">{{ userStore.isAdmin ? '管理员' : '普通用户' }}</el-descriptions-item>
             <el-descriptions-item v-if="userInfo?.id !== undefined && userInfo?.id !== null" label="用户ID">
               {{ userInfo.id }}
@@ -55,9 +54,6 @@
             </el-form-item>
             <el-form-item label="邮箱" prop="email">
               <el-input v-model="form.email" placeholder="请输入邮箱" />
-            </el-form-item>
-            <el-form-item label="手机号" prop="phone">
-              <el-input v-model="form.phone" placeholder="请输入手机号" />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="handleUpdate" :loading="loading">保存修改</el-button>
@@ -99,8 +95,7 @@ const formatText = (value) => {
 
 const form = reactive({
   username: '',
-  email: '',
-  phone: ''
+  email: ''
 })
 
 const rules = {
@@ -109,7 +104,6 @@ const rules = {
     { min: 3, max: 50, message: '用户名长度必须在 3-50 个字符之间', trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
   ]
 }
@@ -120,8 +114,7 @@ const loadUserInfo = async () => {
     const user = res.data
     userInfo.value = user
     form.username = user.username
-    form.email = user.email
-    form.phone = user.phone || ''
+    form.email = user.email || ''
     userStore.setAvatar(user?.avatar || '')
   } catch (error) {
     console.error(error)
@@ -177,7 +170,13 @@ const handleUpdate = async () => {
     if (valid) {
       loading.value = true
       try {
-        await updateUser(form)
+        const payload = {
+          username: form.username
+        }
+        if (form.email && form.email.trim()) {
+          payload.email = form.email.trim()
+        }
+        await updateUser(payload)
         ElMessage.success('更新成功')
         if (form.username !== userStore.username) {
           userStore.setUsername(form.username)

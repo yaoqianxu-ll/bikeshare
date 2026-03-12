@@ -39,10 +39,6 @@ public class User implements UserDetails {
     @TableField(value = "email", exist = true)
     private String email;
 
-    /** 手机号 */
-    @TableField(value = "phone", exist = true)
-    private String phone;
-
     /** 头像 URL */
     @TableField(value = "avatar", exist = true)
     private String avatar;

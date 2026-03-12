@@ -34,6 +34,15 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  function setUsername(value) {
+    username.value = value || ''
+    if (username.value) {
+      localStorage.setItem('username', username.value)
+    } else {
+      localStorage.removeItem('username')
+    }
+  }
+
   function logout() {
     token.value = ''
     username.value = ''
@@ -58,6 +67,7 @@ export const useUserStore = defineStore('user', () => {
     isAdmin,
     setUser,
     setAvatar,
+    setUsername,
     logout
   }
 })

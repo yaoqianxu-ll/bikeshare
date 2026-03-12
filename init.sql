@@ -116,6 +116,23 @@ INSERT INTO `rentals` VALUES (34, 1, 1, '2026-03-09 20:36:56', NULL, '2026-03-09
 INSERT INTO `rentals` VALUES (35, 2, 1, '2026-03-09 22:01:58', '2026-03-09 22:03:32', '2026-03-09 23:01:57', 'COMPLETED', 1, 0.65, '2026-03-09 22:01:58', '2026-03-09 22:01:58', 0);
 
 -- ----------------------------
+-- Table structure for email_auth
+-- ----------------------------
+DROP TABLE IF EXISTS `email_auth`;
+CREATE TABLE `email_auth`  (
+                               `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+                               `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '邮箱',
+                               `verify_code` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '验证码',
+                               `code_type` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '验证码用途：REGISTER/RESET_PASSWORD',
+                               `code_expire_at` datetime NULL DEFAULT NULL COMMENT '验证码过期时间',
+                               `created_at` datetime NULL DEFAULT NULL COMMENT '创建时间',
+                               `updated_at` datetime NULL DEFAULT NULL COMMENT '更新时间',
+                               `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
+                               PRIMARY KEY (`id`) USING BTREE,
+                               UNIQUE INDEX `uk_email_auth_email`(`email` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '邮箱验证码表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
 -- Table structure for users
 -- ----------------------------
 DROP TABLE IF EXISTS `users`;
@@ -124,7 +141,6 @@ CREATE TABLE `users`  (
                           `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名',
                           `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '密码',
                           `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '邮箱',
-                          `phone` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '手机号',
                           `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '头像 URL',
                           `role` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'USER' COMMENT '角色：USER/ADMIN',
                           `enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
@@ -139,8 +155,8 @@ CREATE TABLE `users`  (
 -- ----------------------------
 -- Records of users
 -- ----------------------------
-INSERT INTO `users` VALUES (1, 'admin', '$2a$10$b9Z8YSgrEKt7mRaJtgr2rOpCehkPOM3.dc5gvJ5Md6D.Rpx3MS5CK', 'admin@qq.com', '14796965560', NULL, 'ADMIN', 1, '2026-03-08 17:16:36', '2026-03-08 17:16:36', 0);
-INSERT INTO `users` VALUES (2, 'user', '$2a$10$d1nzggZk4u2S5aLMTanjFeB5XPuwpTEr8xM11sdDdjSARgsrRHW2.', 'user@qq.com', '18879972524', NULL, 'USER', 1, '2026-03-08 17:15:54', '2026-03-08 17:15:54', 0);
-INSERT INTO `users` VALUES (3, 'test', '$2a$10$Z14viQZe4IGLeuv150JeyeL6CUinkFSSnVPdgLR9GE8GjBHDpw5ny', 'lileyaoqianxu@gmail.com', '12345678901', NULL, 'USER', 1, '2026-03-08 16:46:08', '2026-03-08 16:46:08', 0);
+INSERT INTO `users` VALUES (1, 'admin', '$2a$10$b9Z8YSgrEKt7mRaJtgr2rOpCehkPOM3.dc5gvJ5Md6D.Rpx3MS5CK', 'admin@qq.com', NULL, 'ADMIN', 1, '2026-03-08 17:16:36', '2026-03-08 17:16:36', 0);
+INSERT INTO `users` VALUES (2, 'user', '$2a$10$d1nzggZk4u2S5aLMTanjFeB5XPuwpTEr8xM11sdDdjSARgsrRHW2.', 'user@qq.com', NULL, 'USER', 1, '2026-03-08 17:15:54', '2026-03-08 17:15:54', 0);
+INSERT INTO `users` VALUES (3, 'test', '$2a$10$Z14viQZe4IGLeuv150JeyeL6CUinkFSSnVPdgLR9GE8GjBHDpw5ny', 'lileyaoqianxu@gmail.com', NULL, 'USER', 1, '2026-03-08 16:46:08', '2026-03-08 16:46:08', 0);
 
 SET FOREIGN_KEY_CHECKS = 1;

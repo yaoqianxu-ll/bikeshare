@@ -27,6 +27,7 @@ public class RegisterRequest {
     @Email(message = "邮箱格式不正确")
     private String email;
 
-    /** 手机号（可选） */
-    private String phone;
+    /** 邮箱验证码 */
+    @NotBlank(message = "验证码不能为空")
+    private String code;
 }

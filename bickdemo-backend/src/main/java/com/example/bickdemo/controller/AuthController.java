@@ -48,6 +48,24 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("登录成功", response));
     }
 
+    @PostMapping("/email/send-code")
+    public ResponseEntity<ApiResponse<Void>> sendEmailCode(@Valid @RequestBody EmailCodeRequest request) {
+        authService.sendEmailCode(request);
+        return ResponseEntity.ok(ApiResponse.success("验证码已发送", null));
+    }
+
+    @PostMapping("/email/login")
+    public ResponseEntity<ApiResponse<AuthResponse>> loginByEmail(@Valid @RequestBody EmailLoginRequest request) {
+        AuthResponse response = authService.loginByEmail(request);
+        return ResponseEntity.ok(ApiResponse.success("登录成功", response));
+    }
+
+    @PostMapping("/email/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPasswordByEmail(@Valid @RequestBody EmailResetPasswordRequest request) {
+        authService.resetPasswordByEmail(request);
+        return ResponseEntity.ok(ApiResponse.success("密码重置成功", null));
+    }
+
     /**
      * 用户注销
      */

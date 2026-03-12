@@ -1,24 +1,35 @@
 package com.example.bickdemo.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.example.bickdemo.dto.*;
+import com.example.bickdemo.dto.AuthResponse;
+import com.example.bickdemo.dto.EmailCodeRequest;
+import com.example.bickdemo.dto.EmailLoginRequest;
+import com.example.bickdemo.dto.EmailResetPasswordRequest;
+import com.example.bickdemo.dto.LoginRequest;
+import com.example.bickdemo.dto.RegisterRequest;
+import com.example.bickdemo.dto.UpdateUserRequest;
+import com.example.bickdemo.entity.EmailAuth;
 import com.example.bickdemo.entity.User;
 import com.example.bickdemo.entity.UserRole;
+import com.example.bickdemo.mapper.EmailAuthMapper;
 import com.example.bickdemo.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 认证服务类
- * 处理用户注册、登录、用户信息管理等业务逻辑
+ * 处理用户注册、登录、邮箱验证码、资料管理等业务逻辑
  * @author Administrator
  */
 @Slf4j
@@ -27,41 +38,82 @@ import java.util.Optional;
 public class AuthService {
 
     private final UserMapper userMapper;
+    private final EmailAuthMapper emailAuthMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final MinioService minioService;
+    private final EmailMailService emailMailService;
+
+    @Value("${app.mail.code-expire-minutes:10}")
+    private int emailCodeExpireMinutes;
 
     /**
-     * 用户注册
+     * 用户注册（邮箱验证码）
      */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        String email = normalizeEmail(request.getEmail());
+
         if (userMapper.existsByUsername(request.getUsername())) {
             throw new RuntimeException("用户名已存在");
         }
-        if (userMapper.existsByEmail(request.getEmail())) {
+        if (userMapper.existsByEmail(email)) {
             throw new RuntimeException("邮箱已被注册");
         }
 
-        var user = new User();
+        validateEmailCode(email, request.getCode(), "REGISTER");
+
+        User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        System.out.println(user.getPassword());
-        log.info(user.getPassword());
-        user.setEmail(request.getEmail());
-        user.setPhone(request.getPhone());
+        user.setEmail(email);
         user.setRole(UserRole.USER);
         user.setEnabled(true);
-
         userMapper.insert(user);
 
-        var jwtToken = jwtService.generateToken(user);
+        clearEmailCode(email);
+
+        String jwtToken = jwtService.generateToken(user);
         return new AuthResponse(jwtToken, user.getUsername(), user.getRole().name(), user.getId());
     }
 
     /**
-     * 用户登录
+     * 发送邮箱验证码
+     */
+    @Transactional
+    public void sendEmailCode(EmailCodeRequest request) {
+        String email = normalizeEmail(request.getEmail());
+        String type = normalizeCodeType(request.getType());
+
+        if ("REGISTER".equals(type) && userMapper.existsByEmail(email)) {
+            throw new RuntimeException("邮箱已被注册");
+        }
+        if ("RESET_PASSWORD".equals(type) && userMapper.findByEmail(email) == null) {
+            throw new RuntimeException("该邮箱尚未注册");
+        }
+
+        String code = generateVerifyCode();
+        EmailAuth record = emailAuthMapper.findByEmail(email);
+        if (record == null) {
+            record = new EmailAuth();
+            record.setEmail(email);
+            record.setVerifyCode(code);
+            record.setCodeType(type);
+            record.setCodeExpireAt(LocalDateTime.now().plusMinutes(emailCodeExpireMinutes));
+            emailAuthMapper.insert(record);
+        } else {
+            record.setVerifyCode(code);
+            record.setCodeType(type);
+            record.setCodeExpireAt(LocalDateTime.now().plusMinutes(emailCodeExpireMinutes));
+            emailAuthMapper.updateById(record);
+        }
+
+        emailMailService.sendVerificationCode(email, code, type, emailCodeExpireMinutes);
+    }
+
+    /**
+     * 用户名登录
      */
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
@@ -71,13 +123,49 @@ public class AuthService {
                 )
         );
 
-        var user = userMapper.findByUsername(request.getUsername());
+        User user = userMapper.findByUsername(request.getUsername());
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
 
-        var jwtToken = jwtService.generateToken(user);
+        String jwtToken = jwtService.generateToken(user);
         return new AuthResponse(jwtToken, user.getUsername(), user.getRole().name(), user.getId());
+    }
+
+    /**
+     * 邮箱登录
+     */
+    public AuthResponse loginByEmail(EmailLoginRequest request) {
+        String email = normalizeEmail(request.getEmail());
+        User user = userMapper.findByEmail(email);
+        if (user == null) {
+            throw new RuntimeException("该邮箱尚未注册");
+        }
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new RuntimeException("邮箱或密码错误");
+        }
+
+        String jwtToken = jwtService.generateToken(user);
+        return new AuthResponse(jwtToken, user.getUsername(), user.getRole().name(), user.getId());
+    }
+
+    /**
+     * 邮箱找回密码
+     */
+    @Transactional
+    public void resetPasswordByEmail(EmailResetPasswordRequest request) {
+        String email = normalizeEmail(request.getEmail());
+        validateEmailCode(email, request.getCode(), "RESET_PASSWORD");
+
+        User user = userMapper.findByEmail(email);
+        if (user == null) {
+            throw new RuntimeException("该邮箱尚未注册");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userMapper.updateById(user);
+
+        clearEmailCode(email);
     }
 
     /**
@@ -104,15 +192,12 @@ public class AuthService {
             user.setUsername(request.getUsername());
         }
 
-        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
-            if (userMapper.existsByEmail(request.getEmail())) {
+        if (StringUtils.hasText(request.getEmail())) {
+            String normalizedEmail = normalizeEmail(request.getEmail());
+            if (!normalizedEmail.equals(user.getEmail()) && userMapper.existsByEmail(normalizedEmail)) {
                 throw new RuntimeException("邮箱已被使用");
             }
-            user.setEmail(request.getEmail());
-        }
-
-        if (request.getPhone() != null) {
-            user.setPhone(request.getPhone());
+            user.setEmail(normalizedEmail);
         }
 
         if (request.getAvatar() != null) {
@@ -138,7 +223,6 @@ public class AuthService {
             throw new RuntimeException("用户不存在");
         }
 
-        // Delete old avatar if present (best-effort)
         String old = user.getAvatar();
         if (old != null && !old.trim().isEmpty()) {
             try {
@@ -177,5 +261,52 @@ public class AuthService {
         user.setAvatar(null);
         userMapper.updateById(user);
         return user;
+    }
+
+    private void validateEmailCode(String email, String code, String type) {
+        EmailAuth record = emailAuthMapper.findByEmail(email);
+        if (record == null) {
+            throw new RuntimeException("请先获取验证码");
+        }
+        if (!type.equalsIgnoreCase(String.valueOf(record.getCodeType()))) {
+            throw new RuntimeException("验证码用途不匹配，请重新获取");
+        }
+        if (!StringUtils.hasText(record.getVerifyCode()) || !record.getVerifyCode().equals(code)) {
+            throw new RuntimeException("验证码错误");
+        }
+        if (record.getCodeExpireAt() == null || record.getCodeExpireAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("验证码已过期，请重新获取");
+        }
+    }
+
+    private void clearEmailCode(String email) {
+        EmailAuth record = emailAuthMapper.findByEmail(email);
+        if (record == null) return;
+        record.setVerifyCode(null);
+        record.setCodeType(null);
+        record.setCodeExpireAt(null);
+        emailAuthMapper.updateById(record);
+    }
+
+    private String normalizeEmail(String email) {
+        if (!StringUtils.hasText(email)) {
+            throw new RuntimeException("邮箱不能为空");
+        }
+        return email.trim().toLowerCase();
+    }
+
+    private String normalizeCodeType(String type) {
+        if (!StringUtils.hasText(type)) {
+            throw new RuntimeException("验证码用途不能为空");
+        }
+        String normalized = type.trim().toUpperCase();
+        if (!"REGISTER".equals(normalized) && !"RESET_PASSWORD".equals(normalized)) {
+            throw new RuntimeException("不支持的验证码用途");
+        }
+        return normalized;
+    }
+
+    private String generateVerifyCode() {
+        return String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
     }
 }
