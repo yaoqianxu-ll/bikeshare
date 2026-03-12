@@ -249,7 +249,7 @@ public class RentalService {
                 + bicycleMapper.sumQuantityByStatus(BicycleStatus.RENTED);
         long maintenanceBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.MAINTENANCE);
         long disabledBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.DISABLED);
-        long totalBicycles = availableBicycles + maintenanceBicycles + disabledBicycles;
+        long totalBicycles = bicycleMapper.sumAllQuantity();
 
         // 自行车类型统计
         List<BicycleMapper.TypeCountVO> typeCounts = bicycleMapper.sumQuantityByType();

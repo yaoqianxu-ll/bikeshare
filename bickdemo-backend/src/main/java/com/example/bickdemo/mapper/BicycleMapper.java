@@ -68,6 +68,12 @@ public interface BicycleMapper extends BaseMapper<Bicycle> {
     Long sumQuantityByStatus(@Param("status") BicycleStatus status);
 
     /**
+     * 汇总全部车辆数量（库存）
+     */
+    @Select("SELECT COALESCE(SUM(quantity),0) FROM bicycles WHERE deleted = 0")
+    Long sumAllQuantity();
+
+    /**
      * 按类型汇总数量（库存）
      */
     @Select("SELECT type, COALESCE(SUM(quantity),0) as count FROM bicycles WHERE deleted = 0 GROUP BY type")

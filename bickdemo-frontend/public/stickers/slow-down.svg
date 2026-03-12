@@ -1,0 +1,15 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="26" y1="16" x2="220" y2="226" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF3F2"/>
+      <stop offset="1" stop-color="#FFD6D3"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="42" fill="url(#bg)"/>
+  <path d="M64 158H176" stroke="#0F172A" stroke-width="12" stroke-linecap="round"/>
+  <path d="M78 146L106 118L134 146" stroke="#0F172A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M106 118V176" stroke="#0F172A" stroke-width="10" stroke-linecap="round"/>
+  <path d="M154 74L154 144" stroke="#FF6B35" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="154" cy="170" r="10" fill="#FF6B35"/>
+  <text x="120" y="210" fill="#B91C1C" font-family="Arial, sans-serif" font-size="28" font-weight="700" text-anchor="middle">SLOW</text>
+</svg>

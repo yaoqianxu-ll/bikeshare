@@ -241,28 +241,33 @@ const stats = ref({
   activeRentals: null
 })
 
+const sumBikeQuantity = (predicate = () => true) => {
+  return (bicycles.value || [])
+    .filter(predicate)
+    .reduce((sum, bike) => sum + Math.max(0, Number(bike?.quantity ?? 0) || 0), 0)
+}
+
 const bikeCount = computed(() => {
   const v = stats.value?.totalBicycles
   if (v === 0 || (typeof v === 'number' && Number.isFinite(v))) return v
-  if (bikeTotal.value) return bikeTotal.value
-  return bicycles.value?.length || 0
+  return sumBikeQuantity()
 })
 const availableBikeCount = computed(() => {
   const v = stats.value?.availableBicycles
   if (v === 0 || (typeof v === 'number' && Number.isFinite(v))) return v
-  return (bicycles.value || []).filter(b => b?.status === 'AVAILABLE').length
+  return sumBikeQuantity(b => b?.status === 'AVAILABLE' || b?.status === 'RENTED')
 })
 
 const maintenanceBikeCount = computed(() => {
   const v = stats.value?.maintenanceBicycles
   if (v === 0 || (typeof v === 'number' && Number.isFinite(v))) return v
-  return (bicycles.value || []).filter(b => b?.status === 'MAINTENANCE').length
+  return sumBikeQuantity(b => b?.status === 'MAINTENANCE')
 })
 
 const disabledBikeCount = computed(() => {
   const v = stats.value?.disabledBicycles
   if (v === 0 || (typeof v === 'number' && Number.isFinite(v))) return v
-  return (bicycles.value || []).filter(b => b?.status === 'DISABLED').length
+  return sumBikeQuantity(b => b?.status === 'DISABLED')
 })
 const rentalCount = computed(() => {
   const v = stats.value?.totalRentals

@@ -1,0 +1,13 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="18" y1="14" x2="226" y2="230" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF0E8"/>
+      <stop offset="1" stop-color="#FFD5C0"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="42" fill="url(#bg)"/>
+  <circle cx="82" cy="160" r="30" stroke="#0F172A" stroke-width="10"/>
+  <circle cx="162" cy="160" r="30" stroke="#0F172A" stroke-width="10"/>
+  <path d="M92 160L120 108L148 160M120 108H156M109 132H140" stroke="#0F172A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="120" y="60" fill="#FF6B35" font-family="Arial, sans-serif" font-size="32" font-weight="700" text-anchor="middle">RIDE ON</text>
+</svg>

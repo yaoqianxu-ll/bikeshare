@@ -1,0 +1,14 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="18" y1="20" x2="220" y2="222" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE9F1"/>
+      <stop offset="1" stop-color="#FFC9DB"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="42" fill="url(#bg)"/>
+  <circle cx="120" cy="118" r="58" fill="#FFF" stroke="#0F172A" stroke-width="10"/>
+  <circle cx="98" cy="106" r="8" fill="#0F172A"/>
+  <circle cx="142" cy="106" r="8" fill="#0F172A"/>
+  <circle cx="120" cy="134" r="14" fill="#FF6B35"/>
+  <text x="120" y="202" fill="#DB2777" font-family="Arial, sans-serif" font-size="34" font-weight="800" text-anchor="middle">WOW</text>
+</svg>

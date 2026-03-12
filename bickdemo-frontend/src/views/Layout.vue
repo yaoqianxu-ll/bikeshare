@@ -93,6 +93,10 @@
             <span class="nav-icon-bg"><el-icon><Document /></el-icon></span>
             <span>我的</span>
           </router-link>
+          <router-link to="/friends" class="nav-link" v-if="userStore.isLoggedIn" @click="closeNav">
+            <span class="nav-icon-bg"><el-icon><ChatDotRound /></el-icon></span>
+            <span>好友</span>
+          </router-link>
           <router-link to="/admin" class="nav-link" v-if="userStore.isAdmin" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><Setting /></el-icon></span>
             <span>管理</span>
@@ -115,6 +119,9 @@
               </span>
               <template #dropdown>
                 <el-dropdown-menu>
+                  <router-link to="/friends">
+                    <el-dropdown-item><el-icon><ChatDotRound /></el-icon> 好友与消息</el-dropdown-item>
+                  </router-link>
                   <router-link to="/profile">
                     <el-dropdown-item><el-icon><User /></el-icon> 个人信息</el-dropdown-item>
                   </router-link>
@@ -152,7 +159,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, SwitchButton, Bicycle, DataAnalysis, Document, Setting, Picture, CircleCheck, Delete, UploadFilled } from '@element-plus/icons-vue'
+import { User, SwitchButton, Bicycle, DataAnalysis, Document, Setting, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound } from '@element-plus/icons-vue'
 import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
 import { getCurrentUser } from '@/api/auth'
 

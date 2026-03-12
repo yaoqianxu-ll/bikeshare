@@ -2,9 +2,6 @@ services:
   # MySQL 数据库
   mysql:
     image: mysql:8.0
-    dns:
-      - 183.60.83.19
-      - 183.60.82.98
     environment:
       MYSQL_ROOT_PASSWORD: Lile200623
       MYSQL_DATABASE: bickdemo
@@ -32,9 +29,6 @@ services:
     build:
       context: ./bickdemo-backend
       dockerfile: Dockerfile.simple
-    dns:
-      - 183.60.83.19
-      - 183.60.82.98
     ports:
       - "8080:8080"
     environment:
@@ -47,6 +41,10 @@ services:
       - MINIO_ACCESS_KEY=Cg6huvLg5AuW8ShqQoAr
       - MINIO_SECRET_KEY=j8AoV6yOOUXVNPWVcIpJLuuZJidCeurCiBwg1c1z
       - MINIO_BUCKET=bicycles
+      - RABBITMQ_HOST=124.221.113.208
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=yaoqianxu
+      - RABBITMQ_PASSWORD=Lile200623
       - JWT_SECRET=c2VjcmV0LWtleS1mb3Itand0LXRva2VuLWdlbmVyYXRpb24tbWluaW11bS0yNTYtYml0cw==
       - TZ=Asia/Shanghai
     volumes:
