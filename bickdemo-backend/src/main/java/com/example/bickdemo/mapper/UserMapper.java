@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
-import java.util.Optional;
+import java.util.List;
 
 /**
  * 用户 Mapper 接口
@@ -39,4 +39,23 @@ public interface UserMapper extends BaseMapper<User> {
      */
     @Select("SELECT COUNT(*) > 0 FROM users WHERE email = #{email} AND deleted = 0")
     boolean existsByEmail(@Param("email") String email);
+
+    /**
+     * 按用户名模糊搜索
+     */
+    @Select("""
+            SELECT *
+            FROM users
+            WHERE username LIKE CONCAT('%', #{keyword}, '%')
+              AND id <> #{excludeUserId}
+              AND enabled = 1
+              AND deleted = 0
+            ORDER BY username ASC
+            LIMIT #{limit}
+            """)
+    List<User> searchByUsernameLike(
+            @Param("keyword") String keyword,
+            @Param("excludeUserId") Long excludeUserId,
+            @Param("limit") Integer limit
+    );
 }

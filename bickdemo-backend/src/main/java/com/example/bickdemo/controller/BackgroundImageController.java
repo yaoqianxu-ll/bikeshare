@@ -33,6 +33,15 @@ public class BackgroundImageController {
     }
 
     /**
+     * 获取所有可选择的背景图片（游客/普通用户，用于本地选择；不改变全局 enabled）
+     */
+    @GetMapping("/selectable")
+    public ResponseEntity<ApiResponse<List<BackgroundImage>>> getSelectableBackgrounds() {
+        List<BackgroundImage> backgrounds = backgroundImageService.getAllSelectable();
+        return ResponseEntity.ok(ApiResponse.success(backgrounds));
+    }
+
+    /**
      * 获取所有背景图片（管理员，包含未启用的）
      */
     @GetMapping("/all")

@@ -19,8 +19,13 @@ public class UpdateUserRequest {
     @Email(message = "邮箱格式不正确")
     private String email;
 
-    /** 手机号 */
-    private String phone;
+    /** 邮箱验证码 */
+    @Size(min = 6, max = 6, message = "邮箱验证码必须为 6 位")
+    private String code;
+
+    /** 个人简介 */
+    @Size(max = 500, message = "个人简介长度不能超过 500 个字符")
+    private String bio;
 
     /** 头像 URL */
     @Size(max = 255, message = "头像 URL 长度不能超过 255 个字符")

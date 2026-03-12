@@ -22,6 +22,12 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: '/friends',
+        name: 'Friends',
+        component: () => import('@/views/FriendsChat.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: '/admin',
         name: 'Admin',
         component: () => import('@/views/Admin.vue'),

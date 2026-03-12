@@ -1,5 +1,5 @@
 node_modules
-dist
+# Keep `dist/` in the build context for `Dockerfile.simple` (it copies prebuilt assets).
 .env
 .env.local
 *.log

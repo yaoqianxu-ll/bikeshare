@@ -2,6 +2,7 @@ package com.example.bickdemo.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Min;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -20,4 +21,8 @@ public class RentalRequest {
     /** 预计结束时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
     private LocalDateTime expectedEndTime;
+
+    /** 租赁数量 */
+    @Min(value = 1, message = "租赁数量不能小于 1")
+    private Integer quantity = 1;
 }

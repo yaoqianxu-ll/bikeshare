@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  * 租赁服务类
@@ -35,6 +37,8 @@ public class RentalService {
     private final BicycleMapper bicycleMapper;
     private final UserMapper userMapper;
 
+    private static final long FREE_CANCEL_MINUTES = 1L;
+
     /**
      * 创建租赁
      */
@@ -49,19 +53,29 @@ public class RentalService {
             throw new RuntimeException("自行车当前不可租赁");
         }
 
+        int qty = request.getQuantity() == null ? 1 : request.getQuantity();
+        if (qty <= 0) {
+            throw new RuntimeException("租赁数量不能小于 1");
+        }
+
+        // Atomic stock decrement (prevents over-rent under concurrency)
+        int updated = bicycleMapper.decrementQuantity(bicycle.getId(), qty);
+        if (updated != 1) {
+            throw new RuntimeException("库存不足");
+        }
+
         Rental rental = new Rental();
         rental.setUserId(userId);
         rental.setBicycleId(bicycle.getId());
         rental.setStartTime(LocalDateTime.now());
         rental.setExpectedEndTime(request.getExpectedEndTime());
         rental.setStatus(RentalStatus.ACTIVE);
-
-        // 更新自行车状态
-        bicycle.setStatus(BicycleStatus.RENTED);
-        bicycleMapper.updateById(bicycle);
+        rental.setQuantity(qty);
 
         rentalMapper.insert(rental);
-        return convertToResponse(rental, bicycle);
+
+        Bicycle latest = bicycleMapper.selectById(bicycle.getId());
+        return convertToResponse(rental, latest);
     }
 
     /**
@@ -83,16 +97,17 @@ public class RentalService {
 
         // 获取自行车信息并计算总价格
         Bicycle bicycle = bicycleMapper.selectById(rental.getBicycleId());
-        double hours = calculateRentalHours(rental);
-        double totalPrice = hours * (bicycle.getPricePerHour() != null ? bicycle.getPricePerHour() : 0);
+        double hours = calculateBillableHours(rental.getStartTime(), rental.getEndTime());
+        int qty = rental.getQuantity() == null ? 1 : rental.getQuantity();
+        double totalPrice = hours * (bicycle.getPricePerHour() != null ? bicycle.getPricePerHour() : 0) * qty;
         rental.setTotalPrice(totalPrice);
 
-        // 更新自行车状态
-        bicycle.setStatus(BicycleStatus.AVAILABLE);
-        bicycleMapper.updateById(bicycle);
+        // Return stock
+        bicycleMapper.incrementQuantity(rental.getBicycleId(), qty);
 
         rentalMapper.updateById(rental);
-        return convertToResponse(rental, bicycle);
+        Bicycle latest = bicycleMapper.selectById(rental.getBicycleId());
+        return convertToResponse(rental, latest);
     }
 
     /**
@@ -112,19 +127,18 @@ public class RentalService {
         // 检查是否超过 1 分钟，超过 1 分钟不能取消
         LocalDateTime now = LocalDateTime.now();
         long minutesElapsed = java.time.Duration.between(rental.getStartTime(), now).toMinutes();
-        if (minutesElapsed >= 1) {
+        if (minutesElapsed >= FREE_CANCEL_MINUTES) {
             throw new RuntimeException("租赁超过 1 分钟，无法取消，请归还自行车");
         }
 
         rental.setStatus(RentalStatus.CANCELLED);
 
-        // 更新自行车状态
-        Bicycle bicycle = bicycleMapper.selectById(rental.getBicycleId());
-        bicycle.setStatus(BicycleStatus.AVAILABLE);
-        bicycleMapper.updateById(bicycle);
+        int qty = rental.getQuantity() == null ? 1 : rental.getQuantity();
+        bicycleMapper.incrementQuantity(rental.getBicycleId(), qty);
 
         rentalMapper.updateById(rental);
-        return convertToResponse(rental, bicycle);
+        Bicycle latest = bicycleMapper.selectById(rental.getBicycleId());
+        return convertToResponse(rental, latest);
     }
 
     /**
@@ -229,12 +243,16 @@ public class RentalService {
         long totalRentals = rentalMapper.selectCount(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Rental>()
                 .eq(Rental::getDeleted, 0));
         long activeRentals = rentalMapper.findByStatus(RentalStatus.ACTIVE).size();
-        long availableBicycles = bicycleMapper.findByStatus(BicycleStatus.AVAILABLE).size();
-        long totalBicycles = bicycleMapper.selectCount(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Bicycle>()
-                .eq(Bicycle::getDeleted, 0));
+
+        // Stock-based counts (sum of quantity per status)
+        long availableBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.AVAILABLE)
+                + bicycleMapper.sumQuantityByStatus(BicycleStatus.RENTED);
+        long maintenanceBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.MAINTENANCE);
+        long disabledBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.DISABLED);
+        long totalBicycles = bicycleMapper.sumAllQuantity();
 
         // 自行车类型统计
-        List<BicycleMapper.TypeCountVO> typeCounts = bicycleMapper.countByType();
+        List<BicycleMapper.TypeCountVO> typeCounts = bicycleMapper.sumQuantityByType();
         StatisticsResponse.BicycleTypeStats[] typeStats = typeCounts.stream()
                 .map(vo -> new StatisticsResponse.BicycleTypeStats(
                         vo.getType().name(),
@@ -258,17 +276,37 @@ public class RentalService {
                 activeRentals,
                 availableBicycles,
                 totalBicycles,
+                maintenanceBicycles,
+                disabledBicycles,
                 typeStats,
                 popularBikes
         );
     }
 
-    private double calculateRentalHours(Rental rental) {
-        if (rental.getEndTime() == null) {
-            return 0;
+    private double calculateBillableHours(LocalDateTime startTime, LocalDateTime endTime) {
+        if (startTime == null || endTime == null) return 0;
+        long millis = java.time.Duration.between(startTime, endTime).toMillis();
+        // Billing starts after the free-cancel window (1 minute).
+        long billableMillis = Math.max(0L, millis - java.time.Duration.ofMinutes(FREE_CANCEL_MINUTES).toMillis());
+        return billableMillis / 3600000.0;
+    }
+
+    private Double calculateRunningTotalPrice(Rental rental, Bicycle bicycle) {
+        if (rental == null || rental.getStartTime() == null) return null;
+        if (rental.getStatus() != RentalStatus.ACTIVE) return rental.getTotalPrice();
+        if (bicycle == null || bicycle.getPricePerHour() == null) return 0.0;
+        int qty = rental.getQuantity() == null ? 1 : rental.getQuantity();
+
+        LocalDateTime now = LocalDateTime.now();
+        long minutesElapsed = java.time.Duration.between(rental.getStartTime(), now).toMinutes();
+        if (minutesElapsed < FREE_CANCEL_MINUTES) {
+            // Within cancel window: no billing.
+            return 0.0;
         }
-        long millis = java.time.Duration.between(rental.getStartTime(), rental.getEndTime()).toMillis();
-        return millis / 3600000.0;
+
+        double hours = calculateBillableHours(rental.getStartTime(), now);
+        double raw = hours * bicycle.getPricePerHour() * qty;
+        return BigDecimal.valueOf(raw).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 
     private RentalResponse convertToResponse(Rental rental, Bicycle bicycle) {
@@ -297,7 +335,9 @@ public class RentalService {
         response.setEndTime(rental.getEndTime());
         response.setExpectedEndTime(rental.getExpectedEndTime());
         response.setStatus(rental.getStatus());
-        response.setTotalPrice(rental.getTotalPrice());
+        response.setQuantity(rental.getQuantity() == null ? 1 : rental.getQuantity());
+        // ACTIVE orders should show a running total so the UI can update in near real time.
+        response.setTotalPrice(calculateRunningTotalPrice(rental, bicycle));
         response.setCreatedAt(rental.getCreatedAt());
         return response;
     }

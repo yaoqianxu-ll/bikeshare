@@ -93,9 +93,18 @@
             <span class="nav-icon-bg"><el-icon><Document /></el-icon></span>
             <span>我的</span>
           </router-link>
+          <router-link to="/friends" class="nav-link" v-if="userStore.isLoggedIn" @click="closeNav">
+            <span class="nav-icon-bg"><el-icon><ChatDotRound /></el-icon></span>
+            <span>好友</span>
+          </router-link>
           <router-link to="/admin" class="nav-link" v-if="userStore.isAdmin" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><Setting /></el-icon></span>
             <span>管理</span>
+          </router-link>
+          <!-- Mobile: the header login button is hidden, so keep a nav item. -->
+          <router-link to="/login" class="nav-link nav-link-auth" v-if="!userStore.isLoggedIn" @click="closeNav">
+            <span class="nav-icon-bg"><el-icon><User /></el-icon></span>
+            <span>登录</span>
           </router-link>
         </nav>
 
@@ -103,12 +112,16 @@
           <div class="user-section" v-if="userStore.isLoggedIn">
             <el-dropdown trigger="click">
               <span class="user-name">
-                <div class="user-avatar">{{ userStore.username.charAt(0).toUpperCase() }}</div>
+                <div class="user-avatar" v-if="!userStore.avatar">{{ userStore.username.charAt(0).toUpperCase() }}</div>
+                <el-avatar v-else :src="userStore.avatar" :size="32" class="user-avatar-img" />
                 <span class="user-text">{{ userStore.username }}</span>
                 <el-tag size="small" class="admin-tag" v-if="userStore.isAdmin">ADMIN</el-tag>
               </span>
               <template #dropdown>
                 <el-dropdown-menu>
+                  <router-link to="/friends">
+                    <el-dropdown-item><el-icon><ChatDotRound /></el-icon> 好友与消息</el-dropdown-item>
+                  </router-link>
                   <router-link to="/profile">
                     <el-dropdown-item><el-icon><User /></el-icon> 个人信息</el-dropdown-item>
                   </router-link>
@@ -146,8 +159,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, SwitchButton, Bicycle, DataAnalysis, Document, Setting, Picture, CircleCheck, Delete, UploadFilled } from '@element-plus/icons-vue'
-import { getBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
+import { User, SwitchButton, Bicycle, DataAnalysis, Document, Setting, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound } from '@element-plus/icons-vue'
+import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
+import { getCurrentUser } from '@/api/auth'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -156,6 +170,8 @@ const showBgSelector = ref(false)
 const selectedBgId = ref(null)
 const backgrounds = ref([])
 const uploading = ref(false)
+
+const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
 
 // 上传配置
 const uploadUrl = '/api/backgrounds/upload'
@@ -170,13 +186,29 @@ const loadBackgrounds = async () => {
     if (userStore.isAdmin) {
       res = await getAllBackgrounds()
     } else {
-      res = await getBackgrounds()
+      // Guests/USER can select from all backgrounds but cannot upload/enable globally.
+      res = await getSelectableBackgrounds().catch(() => getBackgrounds())
     }
     backgrounds.value = res.data || []
-    // 获取当前启用的背景
-    const enabledBg = backgrounds.value.find(bg => bg.enabled)
-    if (enabledBg) {
-      selectedBgId.value = enabledBg.id
+
+    if (userStore.isAdmin) {
+      const enabledBg = backgrounds.value.find(bg => bg.enabled)
+      if (enabledBg) selectedBgId.value = enabledBg.id
+      return
+    }
+
+    // Non-admin: prefer local selection (per device)
+    let preferred = null
+    try {
+      preferred = window?.localStorage?.getItem(LOCAL_BG_KEY)
+    } catch (_) {}
+    const preferredId = preferred ? Number(preferred) : null
+    const match = preferredId ? backgrounds.value.find(bg => bg.id === preferredId) : null
+    if (match) {
+      selectedBgId.value = match.id
+    } else {
+      const enabledBg = backgrounds.value.find(bg => bg.enabled) || backgrounds.value[0]
+      selectedBgId.value = enabledBg ? enabledBg.id : null
     }
   } catch (error) {
     console.error(error)
@@ -186,10 +218,17 @@ const loadBackgrounds = async () => {
 // 选择背景
 const selectBackground = async (id) => {
   try {
-    await setEnabledBackground(id, true)
     selectedBgId.value = id
-    ElMessage.success('背景已切换')
-    loadBackgrounds()
+    if (userStore.isAdmin) {
+      await setEnabledBackground(id, true)
+      ElMessage.success('背景已切换')
+      loadBackgrounds()
+    } else {
+      try {
+        window?.localStorage?.setItem(LOCAL_BG_KEY, String(id))
+      } catch (_) {}
+      ElMessage.success('背景已切换')
+    }
   } catch (error) {
     console.error(error)
   }
@@ -246,10 +285,12 @@ const deleteBg = async (id) => {
 
 // 计算背景样式
 const containerStyle = computed(() => {
+  const chosen = selectedBgId.value ? backgrounds.value.find(bg => bg.id === selectedBgId.value) : null
   const enabledBg = backgrounds.value.find(bg => bg.enabled)
-  if (enabledBg && enabledBg.imageUrl) {
+  const activeBg = userStore.isAdmin ? (enabledBg || chosen) : (chosen || enabledBg)
+  if (activeBg && activeBg.imageUrl) {
     return {
-      backgroundImage: `url(${enabledBg.imageUrl})`,
+      backgroundImage: `url(${activeBg.imageUrl})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundAttachment: 'fixed'
@@ -261,7 +302,9 @@ const containerStyle = computed(() => {
 const handleLogout = () => {
   userStore.logout()
   ElMessage.success('已退出登录')
-  router.push('/login')
+  // Logout should land on a public page (not force re-login).
+  router.push('/bicycles')
+  closeNav()
 }
 
 const toggleNav = () => {
@@ -275,6 +318,12 @@ const closeNav = () => {
 // 启动时加载背景图片
 onMounted(() => {
   loadBackgrounds()
+  // Pull latest avatar from backend after refresh/login
+  if (userStore.isLoggedIn) {
+    getCurrentUser()
+      .then(res => userStore.setAvatar(res?.data?.avatar || ''))
+      .catch(() => {})
+  }
 })
 </script>
 
@@ -287,24 +336,26 @@ onMounted(() => {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 999;
-  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.5);
-  transition: all 0.3s ease;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+  backdrop-filter: blur(16px) saturate(140%);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .bg-toggle:hover {
-  transform: scale(1.1) rotate(15deg);
-  box-shadow: 0 8px 30px rgba(255, 107, 53, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
 }
 
 .bg-toggle .el-icon {
   font-size: 22px;
-  color: #fff;
+  color: var(--bs-ink);
 }
 
 /* ========== 背景选择器 ========== */
@@ -332,8 +383,8 @@ onMounted(() => {
 }
 
 .bg-item.active {
-  border-color: #ff6b35;
-  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4);
+  border-color: rgba(255, 107, 53, 0.55);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.14);
 }
 
 .bg-image {
@@ -351,7 +402,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.8) 0%, rgba(247, 37, 133, 0.8) 100%);
+  background: rgba(15, 23, 42, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -369,7 +420,7 @@ onMounted(() => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: rgba(239, 68, 68, 0.92);
   color: #fff;
   display: flex;
   align-items: center;
@@ -433,8 +484,8 @@ onMounted(() => {
 }
 
 .bg-uploader :deep(.el-upload-dragger:hover) {
-  border-color: #ff6b35;
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.05) 0%, rgba(247, 37, 133, 0.05) 100%);
+  border-color: rgba(255, 107, 53, 0.55);
+  background: rgba(255, 255, 255, 0.55);
 }
 
 .uploader-content {
@@ -446,7 +497,7 @@ onMounted(() => {
 
 .uploader-content .el-icon--upload {
   font-size: 42px;
-  color: #ff6b35;
+  color: var(--brand-primary);
   margin-bottom: 12px;
 }
 
@@ -457,7 +508,7 @@ onMounted(() => {
 }
 
 .uploader-content .el-upload__text em {
-  color: #ff6b35;
+  color: var(--brand-primary);
   font-style: normal;
   font-weight: 600;
 }
@@ -517,23 +568,24 @@ onMounted(() => {
 .logo-icon-box {
   width: 44px;
   height: 44px;
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+  background: rgba(255, 107, 53, 0.14);
+  border: 1px solid rgba(255, 107, 53, 0.20);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
-  transition: all 0.3s ease;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .logo-wrapper:hover .logo-icon-box {
-  transform: rotate(-10deg) scale(1.05);
-  box-shadow: 0 6px 25px rgba(255, 107, 53, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
 }
 
 .logo-icon {
   font-size: 24px;
-  color: #fff;
+  color: var(--brand-primary);
 }
 
 .logo-text-section {
@@ -560,11 +612,11 @@ onMounted(() => {
 .nav-links {
   display: flex;
   gap: 8px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(250, 250, 250, 0.6) 100%);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px) saturate(140%);
   padding: 6px;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(15, 23, 42, 0.10);
 }
 
 .nav-link {
@@ -589,7 +641,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(247, 37, 133, 0.1) 100%);
+  background: rgba(15, 23, 42, 0.04);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -599,13 +651,14 @@ onMounted(() => {
 }
 
 .nav-link:hover {
-  color: #ff6b35;
+  color: var(--bs-ink);
 }
 
 .nav-link.router-link-active {
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+  background: rgba(255, 107, 53, 0.14);
+  color: var(--bs-ink);
+  border: 1px solid rgba(255, 107, 53, 0.22);
+  box-shadow: none;
 }
 
 .nav-link.router-link-active::before {
@@ -650,21 +703,29 @@ onMounted(() => {
 }
 
 .user-name:hover {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.08) 0%, rgba(247, 37, 133, 0.08) 100%);
+  background: rgba(15, 23, 42, 0.04);
 }
 
 .user-avatar {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
-  color: #fff;
+  background: rgba(255, 107, 53, 0.14);
+  border: 1px solid rgba(255, 107, 53, 0.20);
+  color: var(--brand-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   font-size: 16px;
-  box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+}
+
+.user-avatar-img {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 107, 53, 0.20);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
 }
 
 .user-text {
@@ -701,15 +762,17 @@ onMounted(() => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+  background: var(--brand-primary);
   color: #fff;
   border: none;
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.5);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22);
+  background: #ff7b4a;
 }
 
 /* 汉堡菜单 */
@@ -727,7 +790,7 @@ onMounted(() => {
 .menu-toggle span {
   width: 24px;
   height: 2px;
-  background: linear-gradient(90deg, #ff6b35 0%, #f72585 100%);
+  background: rgba(15, 23, 42, 0.62);
   border-radius: 2px;
   transition: all 0.3s ease;
 }
@@ -752,7 +815,7 @@ onMounted(() => {
 }
 
 :deep(.el-dropdown-menu__item:hover) {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(247, 37, 133, 0.1) 100%);
+  background: rgba(15, 23, 42, 0.04);
 }
 
 :deep(.el-dropdown-menu__item a) {
@@ -841,6 +904,21 @@ onMounted(() => {
 
   .auth-section {
     display: none;
+  }
+
+  .nav-link-auth {
+    margin-top: 8px;
+  }
+}
+
+/* Desktop already has a header login button */
+.nav-link-auth {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .nav-link-auth {
+    display: flex;
   }
 }
 

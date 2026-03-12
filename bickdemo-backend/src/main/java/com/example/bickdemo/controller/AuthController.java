@@ -7,9 +7,11 @@ import com.example.bickdemo.service.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,6 +48,24 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("登录成功", response));
     }
 
+    @PostMapping("/email/send-code")
+    public ResponseEntity<ApiResponse<Void>> sendEmailCode(@Valid @RequestBody EmailCodeRequest request) {
+        authService.sendEmailCode(request);
+        return ResponseEntity.ok(ApiResponse.success("验证码已发送", null));
+    }
+
+    @PostMapping("/email/login")
+    public ResponseEntity<ApiResponse<AuthResponse>> loginByEmail(@Valid @RequestBody EmailLoginRequest request) {
+        AuthResponse response = authService.loginByEmail(request);
+        return ResponseEntity.ok(ApiResponse.success("登录成功", response));
+    }
+
+    @PostMapping("/email/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPasswordByEmail(@Valid @RequestBody EmailResetPasswordRequest request) {
+        authService.resetPasswordByEmail(request);
+        return ResponseEntity.ok(ApiResponse.success("密码重置成功", null));
+    }
+
     /**
      * 用户注销
      */
@@ -71,10 +91,55 @@ public class AuthController {
      * 更新用户信息
      */
     @PutMapping("/update")
-    public ResponseEntity<ApiResponse<User>> updateUser(@Valid @RequestBody UpdateUserRequest request,
-                                                         @AuthenticationPrincipal UserDetails userDetails) {
-        User user = authService.updateUser(userDetails.getUsername(), request);
-        return ResponseEntity.ok(ApiResponse.success("更新成功", user));
+    public ResponseEntity<ApiResponse<AuthResponse>> updateUser(@Valid @RequestBody UpdateUserRequest request,
+                                                                @AuthenticationPrincipal UserDetails userDetails) {
+        AuthResponse response = authService.updateUser(userDetails.getUsername(), request);
+        return ResponseEntity.ok(ApiResponse.success("更新成功", response));
+    }
+
+    /**
+     * 修改当前用户密码
+     */
+    @PutMapping("/password")
+    public ResponseEntity<ApiResponse<Void>> updatePassword(@Valid @RequestBody UpdatePasswordRequest request,
+                                                            @AuthenticationPrincipal UserDetails userDetails) {
+        authService.updatePassword(userDetails.getUsername(), request);
+        return ResponseEntity.ok(ApiResponse.success("密码修改成功", null));
+    }
+
+    /**
+     * 上传/更新头像
+     * 写入 users.avatar 字段（URL）
+     */
+    @PostMapping("/avatar")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<User>> uploadAvatar(@RequestParam("file") MultipartFile file,
+                                                          @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            User user = authService.uploadAvatar(userDetails.getUsername(), file);
+            return ResponseEntity.ok(ApiResponse.success("头像已更新", user));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error(500, "上传头像失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 删除头像
+     * 清空 users.avatar 字段
+     */
+    @DeleteMapping("/avatar")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<User>> deleteAvatar(@AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            User user = authService.deleteAvatar(userDetails.getUsername());
+            return ResponseEntity.ok(ApiResponse.success("头像已删除", user));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error(500, "删除头像失败：" + e.getMessage()));
+        }
     }
 
     /**

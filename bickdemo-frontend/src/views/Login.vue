@@ -42,44 +42,98 @@
             <p class="login-subtitle">登录您的账户，开始骑行之旅</p>
           </div>
 
-          <el-form :model="form" :rules="rules" ref="formRef" class="login-form">
-            <el-form-item prop="username">
-              <div class="input-wrapper">
-                <el-icon class="input-icon"><User /></el-icon>
-                <el-input
-                  v-model="form.username"
-                  placeholder="请输入用户名"
-                  size="large"
-                />
-              </div>
-            </el-form-item>
+          <el-tabs v-model="loginMode" class="auth-tabs">
+            <el-tab-pane label="账号登录" name="account">
+              <el-form :model="form" :rules="rules" ref="formRef" class="login-form">
+                <el-form-item prop="username">
+                  <div class="input-wrapper">
+                    <el-icon class="input-icon"><User /></el-icon>
+                    <el-input
+                      v-model="form.username"
+                      placeholder="请输入用户名"
+                      size="large"
+                    />
+                  </div>
+                </el-form-item>
 
-            <el-form-item prop="password">
-              <div class="input-wrapper">
-                <el-icon class="input-icon"><Lock /></el-icon>
-                <el-input
-                  v-model="form.password"
-                  type="password"
-                  placeholder="请输入密码"
-                  size="large"
-                  @keyup.enter="handleLogin"
-                />
-              </div>
-            </el-form-item>
+                <el-form-item prop="password">
+                  <div class="input-wrapper">
+                    <el-icon class="input-icon"><Lock /></el-icon>
+                    <el-input
+                      v-model="form.password"
+                      type="password"
+                      placeholder="请输入密码"
+                      size="large"
+                      @keyup.enter="handleLogin"
+                    />
+                  </div>
+                </el-form-item>
 
-            <el-form-item>
-              <el-button
-                type="primary"
-                :loading="loading"
-                @click="handleLogin"
-                size="large"
-                class="login-btn"
-              >
-                <span>登 录</span>
-                <el-icon class="btn-icon"><Right /></el-icon>
-              </el-button>
-            </el-form-item>
-          </el-form>
+                <div class="login-options">
+                  <el-checkbox v-model="rememberPassword">保存密码</el-checkbox>
+                </div>
+
+                <el-form-item>
+                  <el-button
+                    type="primary"
+                    :loading="loading"
+                    @click="handleLogin"
+                    size="large"
+                    class="login-btn"
+                  >
+                    <span>登 录</span>
+                    <el-icon class="btn-icon"><Right /></el-icon>
+                  </el-button>
+                </el-form-item>
+              </el-form>
+            </el-tab-pane>
+
+            <el-tab-pane label="邮箱登录" name="email">
+              <el-form :model="emailLoginForm" :rules="emailLoginRules" ref="emailLoginFormRef" class="login-form">
+                <el-form-item prop="email">
+                  <div class="input-wrapper">
+                    <el-icon class="input-icon"><Message /></el-icon>
+                    <el-input
+                      v-model="emailLoginForm.email"
+                      placeholder="请输入邮箱"
+                      size="large"
+                    />
+                  </div>
+                </el-form-item>
+
+                <el-form-item prop="password">
+                  <div class="input-wrapper">
+                    <el-icon class="input-icon"><Lock /></el-icon>
+                    <el-input
+                      v-model="emailLoginForm.password"
+                      type="password"
+                      placeholder="请输入密码"
+                      size="large"
+                      @keyup.enter="handleEmailLogin"
+                    />
+                  </div>
+                </el-form-item>
+
+                <div class="login-options login-options-between">
+                  <span class="email-tip">支持使用注册邮箱直接登录</span>
+                  <button type="button" class="text-link-btn" @click="forgotDialogVisible = true">忘记密码？</button>
+                </div>
+
+                <el-form-item>
+                  <el-button
+                    type="primary"
+                    :loading="emailLoading"
+                    @click="handleEmailLogin"
+                    size="large"
+                    class="login-btn"
+                  >
+                    <span>邮箱登录</span>
+                    <el-icon class="btn-icon"><Right /></el-icon>
+                  </el-button>
+                </el-form-item>
+              </el-form>
+            </el-tab-pane>
+          </el-tabs>
 
           <div class="form-footer">
             <p class="link-text">
@@ -90,30 +144,120 @@
         </div>
       </div>
     </div>
+
+    <el-dialog v-model="forgotDialogVisible" title="通过邮箱找回密码" width="440px">
+      <el-form :model="resetForm" :rules="resetRules" ref="resetFormRef" label-width="0">
+        <el-form-item prop="email">
+          <el-input v-model="resetForm.email" placeholder="请输入注册邮箱" />
+        </el-form-item>
+        <el-form-item prop="code">
+          <div class="code-row">
+            <el-input v-model="resetForm.code" placeholder="请输入验证码" />
+            <el-button :disabled="countdown > 0" @click="handleSendResetCode">
+              {{ countdown > 0 ? `${countdown}s后重试` : '发送验证码' }}
+            </el-button>
+          </div>
+        </el-form-item>
+        <el-form-item prop="newPassword">
+          <el-input v-model="resetForm.newPassword" type="password" placeholder="请输入新密码" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="forgotDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="resetLoading" @click="handleResetPassword">重置密码</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { login } from '@/api/auth'
+import { login, loginByEmail, sendEmailCode, resetPasswordByEmail } from '@/api/auth'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Right, Bicycle, CircleCheck, Star, Location } from '@element-plus/icons-vue'
+import { User, Lock, Right, Bicycle, CircleCheck, Star, Location, Message } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref(null)
+const emailLoginFormRef = ref(null)
+const resetFormRef = ref(null)
 const loading = ref(false)
+const emailLoading = ref(false)
+const resetLoading = ref(false)
+const rememberPassword = ref(false)
+const REMEMBER_KEY = 'bickdemo:rememberLogin'
+const loginMode = ref('account')
+const forgotDialogVisible = ref(false)
+const countdown = ref(0)
+let countdownTimer = null
 
 const form = reactive({
   username: '',
   password: ''
 })
 
+const emailLoginForm = reactive({
+  email: '',
+  password: ''
+})
+
+const resetForm = reactive({
+  email: '',
+  code: '',
+  newPassword: ''
+})
+
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+}
+
+const emailLoginRules = {
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+  ],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+}
+
+const resetRules = {
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+  ],
+  code: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于 6 个字符', trigger: 'blur' }
+  ]
+}
+
+const loadRememberedLogin = () => {
+  const savedLogin = localStorage.getItem(REMEMBER_KEY)
+  if (!savedLogin) return
+
+  try {
+    const parsed = JSON.parse(savedLogin)
+    form.username = parsed.username || ''
+    form.password = parsed.password || ''
+    rememberPassword.value = Boolean(parsed.username || parsed.password)
+  } catch (error) {
+    localStorage.removeItem(REMEMBER_KEY)
+  }
+}
+
+const persistRememberedLogin = () => {
+  if (!rememberPassword.value) {
+    localStorage.removeItem(REMEMBER_KEY)
+    return
+  }
+
+  localStorage.setItem(REMEMBER_KEY, JSON.stringify({
+    username: form.username,
+    password: form.password
+  }))
 }
 
 const handleLogin = async () => {
@@ -124,17 +268,95 @@ const handleLogin = async () => {
       loading.value = true
       try {
         const res = await login(form)
+        persistRememberedLogin()
         userStore.setUser(res.data.token, res.data.username, res.data.role, res.data.userId)
         ElMessage.success('登录成功')
         router.push('/bicycles')
       } catch (error) {
         console.error(error)
+        ElMessage.error(error?.response?.data?.message || error?.message || '用户名或密码错误')
       } finally {
         loading.value = false
       }
     }
   })
 }
+
+const handleEmailLogin = async () => {
+  if (!emailLoginFormRef.value) return
+
+  await emailLoginFormRef.value.validate(async (valid) => {
+    if (!valid) return
+
+    emailLoading.value = true
+    try {
+      const res = await loginByEmail(emailLoginForm)
+      userStore.setUser(res.data.token, res.data.username, res.data.role, res.data.userId)
+      ElMessage.success('登录成功')
+      router.push('/bicycles')
+    } catch (error) {
+      console.error(error)
+    } finally {
+      emailLoading.value = false
+    }
+  })
+}
+
+const startCountdown = () => {
+  countdown.value = 60
+  clearInterval(countdownTimer)
+  countdownTimer = setInterval(() => {
+    countdown.value -= 1
+    if (countdown.value <= 0) {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+    }
+  }, 1000)
+}
+
+const handleSendResetCode = async () => {
+  if (!resetForm.email) {
+    ElMessage.warning('请先输入邮箱')
+    return
+  }
+
+  try {
+    await sendEmailCode({
+      email: resetForm.email,
+      type: 'RESET_PASSWORD'
+    })
+    ElMessage.success('验证码已发送，请注意查收邮箱')
+    startCountdown()
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const handleResetPassword = async () => {
+  if (!resetFormRef.value) return
+
+  await resetFormRef.value.validate(async (valid) => {
+    if (!valid) return
+
+    resetLoading.value = true
+    try {
+      await resetPasswordByEmail(resetForm)
+      ElMessage.success('密码已重置，请重新登录')
+      forgotDialogVisible.value = false
+      resetForm.code = ''
+      resetForm.newPassword = ''
+      loginMode.value = 'email'
+    } catch (error) {
+      console.error(error)
+    } finally {
+      resetLoading.value = false
+    }
+  })
+}
+
+onMounted(() => {
+  loadRememberedLogin()
+})
 </script>
 
 <style scoped>
@@ -145,7 +367,7 @@ const handleLogin = async () => {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  background: transparent;
   position: relative;
   overflow: hidden;
 }
@@ -155,6 +377,7 @@ const handleLogin = async () => {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  display: none;
 }
 
 .floating-shape {
@@ -241,9 +464,7 @@ const handleLogin = async () => {
 
 /* ========== 品牌区 ========== */
 .card-brand {
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 50%, #ff6b35 100%);
-  background-size: 200% 200%;
-  animation: gradient-shift 4s ease infinite;
+  background: rgba(15, 23, 42, 0.92);
   padding: 60px 40px;
   display: flex;
   flex-direction: column;
@@ -256,8 +477,8 @@ const handleLogin = async () => {
   content: '';
   position: absolute;
   inset: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  opacity: 0.5;
+  background: radial-gradient(700px 420px at 20% 20%, rgba(255, 107, 53, 0.18), transparent 60%);
+  opacity: 1;
 }
 
 @keyframes gradient-shift {
@@ -343,12 +564,8 @@ const handleLogin = async () => {
 .login-title {
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--bs-ink);
   margin: 0 0 8px;
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .login-subtitle {
@@ -360,6 +577,58 @@ const handleLogin = async () => {
 /* ========== 表单样式 ========== */
 .login-form {
   margin-top: 32px;
+}
+
+.auth-tabs {
+  margin-top: 16px;
+}
+
+.auth-tabs :deep(.el-tabs__nav-wrap::after) {
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.auth-tabs :deep(.el-tabs__item) {
+  font-weight: 700;
+}
+
+.login-options {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin: -6px 0 18px;
+}
+
+.login-options-between {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.login-options :deep(.el-checkbox__label) {
+  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.email-tip {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.text-link-btn {
+  border: none;
+  background: transparent;
+  color: var(--brand-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.code-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
 }
 
 :deep(.el-form-item) {
@@ -382,8 +651,8 @@ const handleLogin = async () => {
 
 .input-wrapper:focus-within {
   background: #fff;
-  border-color: #ff6b35;
-  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+  border-color: rgba(255, 107, 53, 0.55);
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.10);
 }
 
 .input-icon {
@@ -414,20 +683,21 @@ const handleLogin = async () => {
   font-size: 16px;
   font-weight: 600;
   border-radius: 14px;
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+  background: var(--brand-primary);
   border: none;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.35);
-  transition: all 0.3s ease;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .login-btn:hover:not(:disabled) {
   transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(255, 107, 53, 0.45);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22);
+  background: #ff7b4a;
 }
 
 .login-btn:active:not(:disabled) {
@@ -455,7 +725,7 @@ const handleLogin = async () => {
 }
 
 .register-link {
-  color: #ff6b35;
+  color: var(--brand-primary);
   text-decoration: none;
   font-weight: 600;
   margin-left: 4px;
@@ -463,7 +733,7 @@ const handleLogin = async () => {
 }
 
 .register-link:hover {
-  color: #f72585;
+  color: #c2410c;
   text-decoration: underline;
 }
 

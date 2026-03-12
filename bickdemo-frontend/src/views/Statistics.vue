@@ -17,7 +17,7 @@
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card class="stat-card stat-card-1" shadow="hover">
           <div class="stat-header">
-            <div class="stat-icon-wrap" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+            <div class="stat-icon-wrap tone-indigo">
               <el-icon><Bicycle /></el-icon>
             </div>
           </div>
@@ -35,7 +35,7 @@
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card class="stat-card stat-card-2" shadow="hover">
           <div class="stat-header">
-            <div class="stat-icon-wrap" style="background: linear-gradient(135deg, #00c6fb 0%, #005bea 100%)">
+            <div class="stat-icon-wrap tone-teal">
               <el-icon><CircleCheck /></el-icon>
             </div>
           </div>
@@ -53,17 +53,17 @@
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card class="stat-card stat-card-3" shadow="hover">
           <div class="stat-header">
-            <div class="stat-icon-wrap" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
+            <div class="stat-icon-wrap tone-rose">
               <el-icon><Document /></el-icon>
             </div>
           </div>
           <div class="stat-body">
-            <div class="stat-label">总租赁次数</div>
-            <div class="stat-value">{{ statistics.totalRentals || 0 }}<span class="stat-unit">次</span></div>
+            <div class="stat-label">维修中车辆</div>
+            <div class="stat-value">{{ statistics.maintenanceBicycles || 0 }}<span class="stat-unit">辆</span></div>
           </div>
           <div class="stat-footer">
-            <span class="footer-label">最受欢迎</span>
-            <span class="footer-value truncate">{{ topBicycleName }}</span>
+            <span class="footer-label">占比</span>
+            <span class="footer-value">{{ maintenancePercent }}%</span>
           </div>
         </el-card>
       </el-col>
@@ -71,17 +71,17 @@
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card class="stat-card stat-card-4" shadow="hover">
           <div class="stat-header">
-            <div class="stat-icon-wrap" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%)">
+            <div class="stat-icon-wrap tone-amber">
               <el-icon><Timer /></el-icon>
             </div>
           </div>
           <div class="stat-body">
-            <div class="stat-label">进行中租赁</div>
-            <div class="stat-value">{{ statistics.activeRentals || 0 }}<span class="stat-unit">单</span></div>
+            <div class="stat-label">不可用车辆</div>
+            <div class="stat-value">{{ statistics.disabledBicycles || 0 }}<span class="stat-unit">辆</span></div>
           </div>
           <div class="stat-footer">
-            <span class="footer-label">今日订单</span>
-            <span class="footer-value">{{ todayRentals }} 单</span>
+            <span class="footer-label">占比</span>
+            <span class="footer-value">{{ disabledPercent }}%</span>
           </div>
         </el-card>
       </el-col>
@@ -122,6 +122,7 @@
             </div>
           </template>
           <div class="table-container">
+            <div class="table-scroll">
             <el-table :data="popularBicycles" style="width: 100%" :show-header="true" stripe>
               <el-table-column type="index" label="排名" width="100" align="center">
                 <template #default="{ $index }">
@@ -149,6 +150,7 @@
                 </template>
               </el-table-column>
             </el-table>
+            </div>
           </div>
         </el-card>
       </el-col>
@@ -162,7 +164,7 @@
           </template>
           <div class="overview-list">
             <div class="overview-item">
-              <div class="overview-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+              <div class="overview-icon tone-indigo">
                 <el-icon><TrendCharts /></el-icon>
               </div>
               <div class="overview-content">
@@ -172,22 +174,22 @@
             </div>
             <el-divider />
             <div class="overview-item">
-              <div class="overview-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
+              <div class="overview-icon tone-rose">
                 <el-icon><DataLine /></el-icon>
               </div>
               <div class="overview-content">
-                <div class="overview-label">平均每车租赁</div>
-                <div class="overview-value">{{ avgRentalsPerBicycle }} 次</div>
+                <div class="overview-label">总租赁次数</div>
+                <div class="overview-value">{{ statistics.totalRentals }} 次</div>
               </div>
             </div>
             <el-divider />
             <div class="overview-item">
-              <div class="overview-icon" style="background: linear-gradient(135deg, #00c6fb 0%, #005bea 100%)">
+              <div class="overview-icon tone-teal">
                 <el-icon><User /></el-icon>
               </div>
               <div class="overview-content">
-                <div class="overview-label">服务类型</div>
-                <div class="overview-value">{{ statistics.typeStats?.length || 0 }} 种</div>
+                <div class="overview-label">进行中租赁</div>
+                <div class="overview-value">{{ statistics.activeRentals }} 单</div>
               </div>
             </div>
           </div>
@@ -212,6 +214,8 @@ const statistics = reactive({
   activeRentals: 0,
   availableBicycles: 0,
   totalBicycles: 0,
+  maintenanceBicycles: 0,
+  disabledBicycles: 0,
   typeStats: [],
   popularBicycles: []
 })
@@ -228,20 +232,25 @@ const availablePercent = computed(() => {
   return ((statistics.availableBicycles / statistics.totalBicycles) * 100).toFixed(1)
 })
 
+const maintenancePercent = computed(() => {
+  if (!statistics.totalBicycles) return 0
+  return ((statistics.maintenanceBicycles / statistics.totalBicycles) * 100).toFixed(1)
+})
+
+const disabledPercent = computed(() => {
+  if (!statistics.totalBicycles) return 0
+  return ((statistics.disabledBicycles / statistics.totalBicycles) * 100).toFixed(1)
+})
+
 const utilizationRate = computed(() => {
   if (!statistics.totalBicycles) return 0
-  const rented = statistics.totalBicycles - statistics.availableBicycles
-  return ((rented / statistics.totalBicycles) * 100).toFixed(1)
+  const inService = statistics.availableBicycles
+  return ((inService / statistics.totalBicycles) * 100).toFixed(1)
 })
 
 const avgRentalsPerBicycle = computed(() => {
   if (!statistics.totalBicycles) return 0
   return (statistics.totalRentals / statistics.totalBicycles).toFixed(1)
-})
-
-const todayRentals = computed(() => {
-  // 简化：显示活跃租赁数
-  return statistics.activeRentals
 })
 
 const topBicycleName = computed(() => {
@@ -270,6 +279,8 @@ const loadStatistics = async () => {
     statistics.activeRentals = data.activeRentals || 0
     statistics.availableBicycles = data.availableBicycles || 0
     statistics.totalBicycles = data.totalBicycles || 0
+    statistics.maintenanceBicycles = data.maintenanceBicycles || 0
+    statistics.disabledBicycles = data.disabledBicycles || 0
     statistics.typeStats = data.typeStats || []
     statistics.popularBicycles = data.popularBicycles || []
     popularBicycles.value = data.popularBicycles || []
@@ -298,12 +309,28 @@ const initPieChart = () => {
   if (!pieChart.value) return
   if (pieInstance) pieInstance.dispose()
 
-  pieInstance = echarts.init(pieChart.value)
+  pieInstance = echarts.init(pieChart.value, null, { useDirtyRect: true })
+
+  const getCssVar = (name, fallback) => {
+    if (typeof window === 'undefined') return fallback
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name)
+    return (value || '').trim() || fallback
+  }
+
+  const brand = getCssVar('--brand-primary', '#ff6b35')
+  const ink = getCssVar('--bs-ink', '#0f172a')
+  const muted = getCssVar('--bs-muted', '#64748b')
+  const stroke = 'rgba(15, 23, 42, 0.10)'
 
   const option = {
     tooltip: {
       trigger: 'item',
-      formatter: '{b}: {c} ({d}%)'
+      backgroundColor: 'rgba(15, 23, 42, 0.92)',
+      borderColor: stroke,
+      borderWidth: 1,
+      textStyle: { color: '#fff', fontSize: 12 },
+      padding: [10, 12],
+      formatter: params => `${params.name}<br/>${params.value} (${params.percent}%)`
     },
     legend: {
       orient: 'horizontal',
@@ -312,10 +339,10 @@ const initPieChart = () => {
       itemWidth: 14,
       itemHeight: 14,
       textStyle: {
-        color: '#606266'
+        color: muted
       }
     },
-    color: ['#667eea', '#00c6fb', '#f093fb', '#fa709a', '#a8edea'],
+    color: [brand, '#0ea5a4', '#6366f1', '#64748b', '#94a3b8'],
     series: [
       {
         name: '自行车类型',
@@ -323,9 +350,9 @@ const initPieChart = () => {
         radius: ['45%', '70%'],
         avoidLabelOverlap: false,
         itemStyle: {
-          borderRadius: 8,
-          borderColor: '#fff',
-          borderWidth: 2
+          borderRadius: 10,
+          borderColor: 'rgba(255, 255, 255, 0.9)',
+          borderWidth: 1
         },
         label: {
           show: false,
@@ -335,8 +362,8 @@ const initPieChart = () => {
           label: {
             show: true,
             fontSize: 18,
-            fontWeight: 'bold',
-            color: '#303133'
+            fontWeight: 800,
+            color: ink
           }
         },
         labelLine: {
@@ -347,7 +374,9 @@ const initPieChart = () => {
           value: stat.count
         }))
       }
-    ]
+    ],
+    animationDuration: 400,
+    animationEasing: 'cubicOut'
   }
 
   pieInstance.setOption(option)
@@ -357,14 +386,28 @@ const initBarChart = () => {
   if (!barChart.value) return
   if (barInstance) barInstance.dispose()
 
-  barInstance = echarts.init(barChart.value)
+  barInstance = echarts.init(barChart.value, null, { useDirtyRect: true })
+
+  const getCssVar = (name, fallback) => {
+    if (typeof window === 'undefined') return fallback
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name)
+    return (value || '').trim() || fallback
+  }
+
+  const brand = getCssVar('--brand-primary', '#ff6b35')
+  const muted = getCssVar('--bs-muted', '#64748b')
 
   const option = {
     tooltip: {
       trigger: 'axis',
       axisPointer: {
         type: 'shadow'
-      }
+      },
+      backgroundColor: 'rgba(15, 23, 42, 0.92)',
+      borderColor: 'rgba(15, 23, 42, 0.10)',
+      borderWidth: 1,
+      textStyle: { color: '#fff', fontSize: 12 },
+      padding: [10, 12]
     },
     grid: {
       left: '3%',
@@ -377,26 +420,28 @@ const initBarChart = () => {
       type: 'category',
       data: statistics.typeStats.map(stat => getTypeText(stat.type)),
       axisLabel: {
-        color: '#606266',
+        color: muted,
         fontSize: 12
       },
       axisLine: {
         lineStyle: {
-          color: '#ebeef5'
+          color: 'rgba(15, 23, 42, 0.10)'
         }
-      }
+      },
+      axisTick: { show: false }
     },
     yAxis: {
       type: 'value',
       axisLabel: {
-        color: '#606266'
+        color: muted
       },
       splitLine: {
         lineStyle: {
-          color: '#f5f7fa',
-          type: 'dashed'
+          color: 'rgba(15, 23, 42, 0.08)'
         }
-      }
+      },
+      axisLine: { show: false },
+      axisTick: { show: false }
     },
     series: [
       {
@@ -404,15 +449,14 @@ const initBarChart = () => {
         type: 'bar',
         barWidth: '50%',
         itemStyle: {
-          borderRadius: [6, 6, 0, 0],
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#667eea' },
-            { offset: 1, color: '#764ba2' }
-          ])
+          borderRadius: [10, 10, 0, 0],
+          color: brand
         },
         data: statistics.typeStats.map(stat => stat.count)
       }
-    ]
+    ],
+    animationDuration: 450,
+    animationEasing: 'cubicOut'
   }
 
   barInstance.setOption(option)
@@ -456,34 +500,36 @@ onMounted(() => {
 .title-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+  background: rgba(255, 107, 53, 0.14);
+  border: 1px solid rgba(255, 107, 53, 0.20);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--brand-primary);
   font-size: 24px;
-  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
 }
 
 .page-title {
   font-size: 28px;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--bs-ink);
   margin: 0;
   letter-spacing: -0.5px;
 }
 
 .refresh-btn {
   margin-left: 8px;
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
-  border: none;
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.35);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: var(--bs-ink);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.14);
 }
 
 .refresh-btn:hover {
-  transform: rotate(90deg) scale(1.1);
-  box-shadow: 0 6px 25px rgba(255, 107, 53, 0.45);
+  transform: rotate(45deg);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.18);
 }
 
 .page-subtitle {
@@ -503,10 +549,10 @@ onMounted(() => {
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 250, 250, 0.9) 100%);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
 }
 
 .stat-card::before {
@@ -520,18 +566,15 @@ onMounted(() => {
   transition: opacity 0.4s ease;
 }
 
-.stat-card-1::before { background: linear-gradient(90deg, #667eea 0%, #7b2cbf 100%); }
-.stat-card-2::before { background: linear-gradient(90deg, #00c6fb 0%, #005bea 100%); }
-.stat-card-3::before { background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%); }
-.stat-card-4::before { background: linear-gradient(90deg, #fa709a 0%, #fee140 100%); }
+.stat-card::before { background: rgba(255, 107, 53, 0.55); }
 
 .stat-card:hover::before {
   opacity: 1;
 }
 
 .stat-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 26px 70px rgba(15, 23, 42, 0.16);
 }
 
 .stat-card :deep(.el-card__body) {
@@ -552,13 +595,19 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
 }
 
 .stat-icon-wrap .el-icon {
   font-size: 26px;
-  color: #fff;
+  color: var(--bs-ink);
 }
+
+.tone-indigo { background: rgba(99, 102, 241, 0.14); border-color: rgba(99, 102, 241, 0.22); }
+.tone-teal { background: rgba(14, 165, 164, 0.14); border-color: rgba(14, 165, 164, 0.22); }
+.tone-rose { background: rgba(244, 63, 94, 0.14); border-color: rgba(244, 63, 94, 0.22); }
+.tone-amber { background: rgba(245, 158, 11, 0.14); border-color: rgba(245, 158, 11, 0.22); }
 
 .stat-body {
   margin-bottom: 16px;
@@ -576,7 +625,7 @@ onMounted(() => {
 .stat-value {
   font-size: 36px;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--bs-ink);
   line-height: 1;
   margin-bottom: 4px;
   letter-spacing: -1px;
@@ -606,7 +655,7 @@ onMounted(() => {
 .footer-value {
   font-size: 15px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--bs-ink);
 }
 
 .footer-value.positive {
@@ -629,16 +678,16 @@ onMounted(() => {
 .chart-card {
   border-radius: 20px;
   overflow: hidden;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 250, 250, 0.9) 100%);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
   transition: all 0.3s ease;
 }
 
 .chart-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  box-shadow: 0 26px 70px rgba(15, 23, 42, 0.16);
 }
 
 .card-header {
@@ -650,7 +699,7 @@ onMounted(() => {
 .card-title {
   font-size: 16px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--bs-ink);
   margin: 0;
   display: flex;
   align-items: center;
@@ -658,14 +707,14 @@ onMounted(() => {
 }
 
 .card-title .el-icon {
-  color: #ff6b35;
+  color: var(--brand-primary);
 }
 
 :deep(.el-card__header) {
   padding: 20px 24px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(250, 250, 250, 0.8) 100%);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px) saturate(140%);
 }
 
 .pie-chart,
@@ -677,6 +726,18 @@ onMounted(() => {
 /* 表格容器 */
 .table-container {
   padding: 8px 0;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .table-scroll :deep(.el-table) {
+    min-width: 760px;
+  }
 }
 
 :deep(.el-table) {
@@ -700,12 +761,12 @@ onMounted(() => {
 }
 
 :deep(.el-table__row:hover) {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.03) 0%, rgba(247, 37, 133, 0.03) 100%);
+  background: rgba(15, 23, 42, 0.03);
 }
 
 :deep(.el-table__cell) {
   border-color: rgba(0, 0, 0, 0.06);
-  color: #1a1a2e;
+  color: var(--bs-ink);
 }
 
 .rank-badge {
@@ -715,17 +776,18 @@ onMounted(() => {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-  color: #6c757d;
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--bs-muted);
   font-size: 13px;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
 }
 
 .rank-top {
-  background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+  background: var(--brand-primary);
   color: #fff;
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.16);
 }
 
 /* 概览列表 */
@@ -748,12 +810,13 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
 }
 
 .overview-icon .el-icon {
   font-size: 24px;
-  color: #fff;
+  color: var(--bs-ink);
 }
 
 .overview-content {
@@ -772,7 +835,7 @@ onMounted(() => {
 .overview-value {
   font-size: 24px;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--bs-ink);
   letter-spacing: -0.5px;
 }
 

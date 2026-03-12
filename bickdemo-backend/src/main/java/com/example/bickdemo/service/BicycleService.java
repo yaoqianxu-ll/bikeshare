@@ -7,6 +7,7 @@ import com.example.bickdemo.entity.Bicycle;
 import com.example.bickdemo.entity.BicycleStatus;
 import com.example.bickdemo.entity.BicycleType;
 import com.example.bickdemo.mapper.BicycleMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,16 +29,45 @@ public class BicycleService {
     private final BicycleMapper bicycleMapper;
 
     /**
+     * Legacy compatibility:
+     * Older versions used {@code BicycleStatus.RENTED}. With inventory-based renting,
+     * we treat RENTED as AVAILABLE and rely on {@code quantity} + rental records instead.
+     */
+    private BicycleStatus normalizeStatus(BicycleStatus status) {
+        if (status == null) return null;
+        return status == BicycleStatus.RENTED ? BicycleStatus.AVAILABLE : status;
+    }
+
+    /**
      * 获取所有自行车（支持筛选）
      */
     public List<BicycleResponse> getBicycles(BicycleType type, BicycleStatus status) {
         LambdaQueryWrapper<Bicycle> wrapper = new LambdaQueryWrapper<Bicycle>()
                 .eq(Bicycle::getDeleted, 0)
                 .eq(type != null, Bicycle::getType, type)
-                .eq(status != null, Bicycle::getStatus, status);
+                .in(status == BicycleStatus.AVAILABLE, Bicycle::getStatus, BicycleStatus.AVAILABLE, BicycleStatus.RENTED)
+                .eq(status != null && status != BicycleStatus.AVAILABLE, Bicycle::getStatus, status);
         return bicycleMapper.selectList(wrapper).stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取自行车列表（分页，支持筛选）
+     */
+    public Page<BicycleResponse> getBicyclesPage(BicycleType type, BicycleStatus status, int page, int size) {
+        LambdaQueryWrapper<Bicycle> wrapper = new LambdaQueryWrapper<Bicycle>()
+                .eq(Bicycle::getDeleted, 0)
+                .eq(type != null, Bicycle::getType, type)
+                .in(status == BicycleStatus.AVAILABLE, Bicycle::getStatus, BicycleStatus.AVAILABLE, BicycleStatus.RENTED)
+                .eq(status != null && status != BicycleStatus.AVAILABLE, Bicycle::getStatus, status)
+                .orderByDesc(Bicycle::getId);
+
+        Page<Bicycle> bicyclePage = bicycleMapper.selectPage(new Page<>(page, size), wrapper);
+        Page<BicycleResponse> result = new Page<>(bicyclePage.getCurrent(), bicyclePage.getSize());
+        result.setTotal(bicyclePage.getTotal());
+        result.setRecords(bicyclePage.getRecords().stream().map(this::convertToResponse).collect(Collectors.toList()));
+        return result;
     }
 
     /**
@@ -55,7 +85,11 @@ public class BicycleService {
      */
     public List<BicycleResponse> getAvailableBicycles() {
         log.debug("查询可用自行车");
-        return bicycleMapper.findByStatus(BicycleStatus.AVAILABLE).stream()
+        return bicycleMapper.selectList(new LambdaQueryWrapper<Bicycle>()
+                        .eq(Bicycle::getDeleted, 0)
+                        .in(Bicycle::getStatus, BicycleStatus.AVAILABLE, BicycleStatus.RENTED)
+                        .gt(Bicycle::getQuantity, 0))
+                .stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
@@ -100,7 +134,8 @@ public class BicycleService {
         Bicycle bicycle = new Bicycle();
         bicycle.setName(request.getName());
         bicycle.setType(request.getType());
-        bicycle.setStatus(request.getStatus());
+        bicycle.setStatus(normalizeStatus(request.getStatus()));
+        bicycle.setQuantity(request.getQuantity() == null ? 1 : request.getQuantity());
         bicycle.setLocation(request.getLocation());
         bicycle.setDescription(request.getDescription());
         bicycle.setPricePerHour(request.getPricePerHour() != null ? request.getPricePerHour().doubleValue() : null);
@@ -127,7 +162,10 @@ public class BicycleService {
             bicycle.setType(request.getType());
         }
         if (request.getStatus() != null) {
-            bicycle.setStatus(request.getStatus());
+            bicycle.setStatus(normalizeStatus(request.getStatus()));
+        }
+        if (request.getQuantity() != null) {
+            bicycle.setQuantity(request.getQuantity());
         }
         if (request.getLocation() != null) {
             bicycle.setLocation(request.getLocation());
@@ -167,7 +205,7 @@ public class BicycleService {
         if (bicycle == null) {
             throw new RuntimeException("自行车不存在：" + id);
         }
-        bicycle.setStatus(status);
+        bicycle.setStatus(normalizeStatus(status));
         bicycleMapper.updateById(bicycle);
         return convertToResponse(bicycle);
     }
@@ -177,7 +215,8 @@ public class BicycleService {
         response.setId(bicycle.getId());
         response.setName(bicycle.getName());
         response.setType(bicycle.getType());
-        response.setStatus(bicycle.getStatus());
+        response.setStatus(normalizeStatus(bicycle.getStatus()));
+        response.setQuantity(bicycle.getQuantity());
         response.setLocation(bicycle.getLocation());
         response.setDescription(bicycle.getDescription());
         response.setPricePerHour(bicycle.getPricePerHour() != null ?

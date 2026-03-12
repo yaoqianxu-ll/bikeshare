@@ -84,9 +84,10 @@ html {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans SC', sans-serif;
+  /* Prefer common CJK-friendly fonts without relying on downloadable web fonts. */
+  font-family: "HarmonyOS Sans SC", "MiSans", "Alibaba PuHuiTi 2.0", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
   color: var(--neutral-900);
-  background: linear-gradient(135deg, #f8fafc 0%, #e8ecf1 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #eef1f7 100%);
   line-height: 1.6;
   min-height: 100vh;
 }
@@ -98,18 +99,18 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 100%);
+  background: rgba(15, 23, 42, 0.06);
   border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #ff6b35 0%, #f72585 100%);
+  background: rgba(15, 23, 42, 0.22);
   border-radius: var(--radius-full);
-  border: 2px solid #f1f5f9;
+  border: 2px solid rgba(255, 255, 255, 0.7);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #ff8c5a 0%, #ff47a3 100%);
+  background: rgba(15, 23, 42, 0.32);
 }
 
 /* ========== 选中文本 ========== */
@@ -573,4 +574,51 @@ a:hover {
   .hide-desktop {
     display: none !important;
   }
+}
+
+/* =====================================================
+   2026 Modern Pass (Less "AI", More Calm)
+   - Reduce neon gradients and motion
+   - Keep a single warm brand accent
+   ===================================================== */
+
+:root {
+  --bs-ink: #0f172a;
+  --bs-muted: #64748b;
+  --bs-stroke: rgba(15, 23, 42, 0.12);
+  --bs-surface: rgba(255, 255, 255, 0.72);
+  --bs-surface-solid: #ffffff;
+
+  /* Brand: warm orange, no magenta secondary by default. */
+  --brand-primary: #ff6b35;
+  --brand-secondary: #0ea5a4;
+
+  /* Element Plus theme alignment */
+  --el-color-primary: var(--brand-primary);
+  --el-border-radius-base: 10px;
+}
+
+body {
+  color: var(--bs-ink);
+  background:
+    radial-gradient(900px 500px at 10% 10%, rgba(255, 107, 53, 0.14), transparent 60%),
+    radial-gradient(900px 500px at 90% 20%, rgba(14, 165, 164, 0.10), transparent 60%),
+    linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+  background-attachment: fixed;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--brand-primary);
+  --el-button-border-color: var(--brand-primary);
+  --el-button-hover-bg-color: #ff7b4a;
+  --el-button-hover-border-color: #ff7b4a;
+}
+
+.el-card {
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
 }

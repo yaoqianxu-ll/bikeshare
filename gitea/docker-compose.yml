@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
+    restart: always
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - TZ=Asia/Shanghai
+      - GITEA_DATABASE_TYPE=mysql
+      - GITEA_DATABASE_HOST=mysql:3306
+      - GITEA_DATABASE_NAME=gitea
+      - GITEA_DATABASE_USER=gitea
+      - GITEA_DATABASE_PASSWD=Lile200623
+    networks:
+      - gitea-network
+    volumes:
+      - gitea-data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3000:3000"    # Gitea Web 界面
+      - "222:22"       # Gitea SSH 端口
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.0
+    container_name: gitea-mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=Lile200623
+      - MYSQL_USER=gitea
+      - MYSQL_PASSWORD=Lile200623
+      - MYSQL_DATABASE=gitea
+      - TZ=Asia/Shanghai
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - gitea-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pLile200623"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+networks:
+  gitea-network:
+    driver: bridge
+
+volumes:
+  gitea-data:
+    driver: local
+  mysql-data:
+    driver: local

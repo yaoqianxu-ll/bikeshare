@@ -39,13 +39,13 @@ public class User implements UserDetails {
     @TableField(value = "email", exist = true)
     private String email;
 
-    /** 手机号 */
-    @TableField(value = "phone", exist = true)
-    private String phone;
-
     /** 头像 URL */
     @TableField(value = "avatar", exist = true)
     private String avatar;
+
+    /** 个人简介 */
+    @TableField(value = "bio", exist = true)
+    private String bio;
 
     /** 用户角色 */
     @TableField(value = "role", exist = true, typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)

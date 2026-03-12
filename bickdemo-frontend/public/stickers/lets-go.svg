@@ -1,0 +1,13 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="24" y1="10" x2="216" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E7FFF8"/>
+      <stop offset="1" stop-color="#BFF3E3"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="42" fill="url(#bg)"/>
+  <path d="M60 140C60 112 82 90 110 90H142C170 90 188 112 188 134C188 162 168 178 140 178H112" stroke="#0F172A" stroke-width="10" stroke-linecap="round"/>
+  <path d="M118 132L158 132" stroke="#FF6B35" stroke-width="14" stroke-linecap="round"/>
+  <path d="M146 116L164 132L146 148" stroke="#FF6B35" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="120" y="62" fill="#0EA5A4" font-family="Arial, sans-serif" font-size="30" font-weight="700" text-anchor="middle">LET'S GO</text>
+</svg>

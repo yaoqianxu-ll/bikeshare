@@ -18,4 +18,10 @@ public interface BackgroundImageMapper extends BaseMapper<BackgroundImage> {
      */
     @Select("SELECT * FROM background_images WHERE enabled = 1 AND deleted = 0 ORDER BY sort ASC")
     List<BackgroundImage> findAllEnabled();
+
+    /**
+     * 查询所有可选择的背景图片（不区分 enabled，仅过滤 deleted）
+     */
+    @Select("SELECT * FROM background_images WHERE deleted = 0 ORDER BY sort ASC")
+    List<BackgroundImage> findAllSelectable();
 }

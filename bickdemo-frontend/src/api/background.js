@@ -11,6 +11,16 @@ export function getBackgrounds() {
 }
 
 /**
+ * 获取所有可选择的背景图片（游客/普通用户）
+ */
+export function getSelectableBackgrounds() {
+  return request({
+    url: '/backgrounds/selectable',
+    method: 'get'
+  })
+}
+
+/**
  * 获取所有背景图片（管理员）
  */
 export function getAllBackgrounds() {

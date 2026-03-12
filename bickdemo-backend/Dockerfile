@@ -3,6 +3,28 @@ FROM maven:3.9.6-eclipse-temurin-17 AS builder
 
 WORKDIR /app
 
+# 配置阿里云 Maven 镜像
+RUN mkdir -p /root/.m2 && echo '\
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">\
+  <mirrors>\
+    <mirror>\
+      <id>aliyun</id>\
+      <mirrorOf>central</mirrorOf>\
+      <url>https://maven.aliyun.com/repository/central</url>\
+    </mirror>\
+    <mirror>\
+      <id>aliyun-spring</id>\
+      <mirrorOf>spring</mirrorOf>\
+      <url>https://maven.aliyun.com/repository/spring</url>\
+    </mirror>\
+    <mirror>\
+      <id>aliyun-public</id>\
+      <mirrorOf>*</mirrorOf>\
+      <url>https://maven.aliyun.com/repository/public</url>\
+    </mirror>\
+  </mirrors>\
+</settings>' > /root/.m2/settings.xml
+
 # 复制 pom.xml 并下载依赖
 COPY pom.xml .
 RUN mvn dependency:go-offline -B

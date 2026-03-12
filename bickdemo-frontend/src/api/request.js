@@ -33,9 +33,26 @@ request.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response
       if (status === 401) {
-        const userStore = useUserStore()
-        userStore.logout()
-        window.location.href = '/login'
+        // Login request should show a clear message instead of redirecting (redirect hides the toast)
+        const reqUrl = String(error?.config?.url || '')
+        const onLoginPage = typeof window !== 'undefined' && window.location && window.location.pathname === '/login'
+        const isLoginRequest = reqUrl.includes('/auth/login')
+
+        if (isLoginRequest || onLoginPage) {
+          ElMessage.error((data && data.message) || '用户名或密码错误')
+        } else {
+          const userStore = useUserStore()
+          // If user has already logged out (no token), do not force redirect to /login.
+          // This avoids “I clicked logout and got bounced to login” when some in-flight request returns 401.
+          const hasToken = !!userStore.token
+          if (hasToken) {
+            userStore.logout()
+            ElMessage.error((data && data.message) || '登录已过期，请重新登录')
+            window.location.href = '/login'
+          } else {
+            ElMessage.error((data && data.message) || '需要登录后操作')
+          }
+        }
       } else if (status === 400) {
         // 400 错误显示详细验证信息
         if (data && data.data && typeof data.data === 'object') {
