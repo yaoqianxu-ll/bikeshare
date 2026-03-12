@@ -439,19 +439,22 @@
               </div>
             </div>
 
-            <el-input
-              v-model="draft"
-              type="textarea"
-              resize="none"
-              :autosize="{ minRows: 3, maxRows: 6 }"
-              maxlength="1000"
-              show-word-limit
-              placeholder="写点什么吧，也可以直接发一个骑行表情包。"
-              @keydown.enter.exact.prevent="handleSendText"
-            />
+            <div class="composer-input-wrap">
+              <el-input
+                v-model="draft"
+                class="composer-textarea"
+                type="textarea"
+                resize="none"
+                :autosize="{ minRows: 3, maxRows: 6 }"
+                maxlength="1000"
+                show-word-limit
+                placeholder="写点什么吧，也可以直接发一个骑行表情包。"
+                @keydown.enter.exact.prevent="handleSendText"
+              />
 
-            <div class="composer-actions">
-              <el-button type="primary" @click="handleSendText">发送消息</el-button>
+              <div class="composer-actions">
+                <el-button type="primary" @click="handleSendText">发送消息</el-button>
+              </div>
             </div>
           </footer>
         </div>
@@ -1714,6 +1717,24 @@ onBeforeUnmount(async () => {
   gap: 14px;
 }
 
+.composer-input-wrap {
+  position: relative;
+}
+
+.composer-textarea :deep(.el-textarea__inner) {
+  border-radius: 22px;
+  padding: 16px 18px 64px;
+  line-height: 1.7;
+}
+
+.composer-textarea :deep(.el-input__count) {
+  right: 126px;
+  bottom: 16px;
+  background: transparent;
+  color: var(--bs-muted);
+  line-height: 1;
+}
+
 .composer-tools {
   display: flex;
   align-items: center;
@@ -1839,6 +1860,20 @@ onBeforeUnmount(async () => {
   display: none;
 }
 
+.composer-actions {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  z-index: 2;
+  justify-content: flex-end;
+}
+
+.composer-actions :deep(.el-button) {
+  min-width: 102px;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+}
+
 .chat-placeholder {
   min-height: calc(100vh - 210px);
   align-content: center;
@@ -1918,6 +1953,26 @@ onBeforeUnmount(async () => {
 
   .message-stack {
     max-width: 88%;
+  }
+
+  .composer-actions {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .composer-actions :deep(.el-button) {
+    min-width: 92px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .composer-textarea :deep(.el-textarea__inner) {
+    padding-bottom: 66px;
+  }
+
+  .composer-textarea :deep(.el-input__count) {
+    right: 112px;
+    bottom: 16px;
   }
 
   .emoji-grid {
