@@ -128,6 +128,7 @@
 
           <div class="sidebar-tabs">
             <button
+              type="button"
               class="sidebar-tab"
               :class="{ active: sidebarTab === 'contacts' }"
               @click="sidebarTab = 'contacts'"
@@ -136,6 +137,7 @@
               <span class="sidebar-tab__count">{{ totalUnreadCount }}</span>
             </button>
             <button
+              type="button"
               class="sidebar-tab"
               :class="{ active: sidebarTab === 'received' }"
               @click="sidebarTab = 'received'"
@@ -144,6 +146,7 @@
               <span class="sidebar-tab__count">{{ receivedRequests.length }}</span>
             </button>
             <button
+              type="button"
               class="sidebar-tab"
               :class="{ active: sidebarTab === 'sent' }"
               @click="sidebarTab = 'sent'"
@@ -161,6 +164,7 @@
 
             <div v-else-if="contacts.length" class="conversation-list">
               <button
+                type="button"
                 v-for="contact in contacts"
                 :key="contact.userId"
                 class="conversation-card"
@@ -281,6 +285,7 @@
           <div ref="messageListRef" class="message-board">
             <div v-if="messageHasMore" class="history-entry">
               <button
+                type="button"
                 class="history-button"
                 :disabled="messageLoadingMore"
                 @click="loadOlderMessages"
@@ -371,7 +376,7 @@
             <div v-else class="chat-empty">
               <el-icon><ChatDotRound /></el-icon>
               <h3>先发第一条消息吧</h3>
-              <p>会话已经建立，我们可以直接开始聊天。</p>
+
             </div>
           </div>
 
@@ -453,7 +458,7 @@
             </div>
 
             <div class="composer-input-wrap">
-              <button class="composer-image-button" :disabled="imageUploading" @click="triggerImagePicker">
+              <button type="button" class="composer-image-button" :disabled="imageUploading" @click="triggerImagePicker">
                 <el-icon><PictureFilled /></el-icon>
               </button>
               <input
@@ -471,7 +476,7 @@
                 :rows="4"
                 maxlength="1000"
                 show-word-limit
-                placeholder="写点什么吧，也可以直接发一个骑行表情包。"
+                placeholder="请输入消息..."
                 @keydown.enter.exact.prevent="handleSendText"
               />
 
@@ -724,8 +729,10 @@ const buildMessagePreview = (message) => {
   return message.content || ''
 }
 
+const getConversationUserId = (message) => (message?.mine ? message.receiverId : message.senderId)
+
 const touchContactActivity = (message, { incrementUnread = false } = {}) => {
-  const contactUserId = message.mine ? message.receiverId : message.senderId
+  const contactUserId = getConversationUserId(message)
   const existing = contacts.value.find((item) => item.userId === contactUserId)
   const fallbackContact = activeContact.value?.userId === contactUserId ? activeContact.value : null
   const nextPreview = buildMessagePreview(message)
@@ -780,8 +787,10 @@ const loadRequests = async () => {
   sentRequests.value = sentRes.data || []
 }
 
-const loadContacts = async () => {
-  contactsLoading.value = true
+const loadContacts = async ({ silent = false } = {}) => {
+  if (!silent) {
+    contactsLoading.value = true
+  }
   try {
     const res = await getContacts()
     contacts.value = res.data || []
@@ -795,7 +804,9 @@ const loadContacts = async () => {
       }
     }
   } finally {
-    contactsLoading.value = false
+    if (!silent) {
+      contactsLoading.value = false
+    }
   }
 }
 
@@ -1003,7 +1014,6 @@ const sendPayload = async (payload) => {
 
   await nextTick()
   await scrollMessageBoard('bottom')
-  loadContacts().catch(() => {})
 }
 
 const handleSendText = async () => {
@@ -1093,38 +1103,48 @@ const handleSocketEvent = async (event) => {
   if (!event?.eventType) return
 
   if (event.eventType === 'FRIEND_REQUEST_CREATED') {
-    await Promise.all([loadRequests(), loadContacts()])
+    await Promise.all([loadRequests(), loadContacts({ silent: true })])
     if (searchKeyword.value) await performSearch()
     return
   }
 
   if (event.eventType === 'FRIEND_REQUEST_ACCEPTED' || event.eventType === 'FRIEND_REQUEST_REJECTED') {
-    await Promise.all([loadRequests(), loadContacts()])
+    await Promise.all([loadRequests(), loadContacts({ silent: true })])
     if (searchKeyword.value) await performSearch()
     return
   }
 
   if (event.eventType === 'MESSAGE_READ' && event.readReceipt) {
     applyReadReceipt(event.readReceipt)
-    loadContacts().catch(() => {})
+    loadContacts({ silent: true }).catch(() => {})
     return
   }
 
   if (event.eventType === 'CHAT_MESSAGE' && event.message) {
     const incomingMessage = normalizeMessage(event.message)
-    const isActiveConversation = activeContact.value?.userId === incomingMessage.senderId
+    const conversationUserId = getConversationUserId(incomingMessage)
+    const isActiveConversation = activeContact.value?.userId === conversationUserId
 
-    touchContactActivity(incomingMessage, { incrementUnread: !isActiveConversation })
+    touchContactActivity(incomingMessage, {
+      incrementUnread: !incomingMessage.mine && !isActiveConversation
+    })
 
     if (isActiveConversation) {
       messages.value = mergeMessages(messages.value, [incomingMessage])
-      clearUnreadState(incomingMessage.senderId)
+      if (!incomingMessage.mine) {
+        clearUnreadState(conversationUserId)
+      }
       await nextTick()
       await scrollMessageBoard('bottom')
-      await acknowledgeConversation(incomingMessage.senderId)
+      if (!incomingMessage.mine) {
+        await acknowledgeConversation(conversationUserId)
+      }
+      return
     }
 
-    loadContacts().catch(() => {})
+    if (!incomingMessage.mine) {
+      loadContacts({ silent: true }).catch(() => {})
+    }
   }
 }
 
@@ -1260,7 +1280,7 @@ onBeforeUnmount(async () => {
   display: grid;
   grid-template-columns: minmax(380px, 430px) minmax(0, 1fr);
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
   min-height: calc(100vh - 170px);
 }
 
@@ -1273,6 +1293,7 @@ onBeforeUnmount(async () => {
 .chat-column {
   min-width: 0;
   min-height: 0;
+  display: flex;
 }
 
 .panel {
@@ -1598,8 +1619,9 @@ onBeforeUnmount(async () => {
 }
 
 .chat-card {
-  height: calc(100vh - 170px);
-  max-height: calc(100vh - 170px);
+  flex: 1;
+  height: auto;
+  max-height: none;
   min-height: calc(100vh - 170px);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
@@ -2019,6 +2041,7 @@ onBeforeUnmount(async () => {
 }
 
 .chat-placeholder {
+  height: 100%;
   min-height: calc(100vh - 170px);
   align-content: center;
   justify-items: start;
