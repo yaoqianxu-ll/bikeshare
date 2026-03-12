@@ -41,7 +41,7 @@
             v-model="searchKeyword"
             clearable
             size="large"
-            placeholder="输入用户名，例如 yaoq 或 admin"
+            placeholder="输入用户名，例如admin"
             @input="handleSearchInput"
             @clear="resetSearch"
           >
@@ -272,7 +272,7 @@
               </div>
             </div>
 
-            <div class="chat-head__side">
+            <div v-if="false" class="chat-head__side">
               <span class="head-stat">{{ messageTotal }} 条消息</span>
               <span class="head-stat">未读 {{ activeContact.unreadCount || 0 }}</span>
             </div>
@@ -302,16 +302,29 @@
                 class="message-row"
                 :class="{ mine: message.mine }"
               >
-                <div
-                  v-if="!message.mine"
-                  class="avatar-shell avatar-shell--sm message-row__avatar"
-                  :style="buildAvatarStyle(message.senderAvatar)"
-                >
-                  <img v-if="message.senderAvatar" :src="message.senderAvatar" :alt="message.senderUsername" />
-                  <span v-else>{{ getInitial(message.senderUsername) }}</span>
-                </div>
-
                 <div class="message-stack">
+                  <div
+                    class="message-head"
+                    :class="{ 'message-head--mine': message.mine }"
+                  >
+                    <div
+                      v-if="!message.mine"
+                      class="avatar-shell avatar-shell--sm message-head__avatar"
+                      :style="buildAvatarStyle(message.senderAvatar)"
+                    >
+                      <img v-if="message.senderAvatar" :src="message.senderAvatar" :alt="message.senderUsername" />
+                      <span v-else>{{ getInitial(message.senderUsername) }}</span>
+                    </div>
+
+                    <div class="message-meta message-meta--head">
+                      <span>{{ message.mine ? '我' : message.senderUsername }}</span>
+                      <span>{{ formatTime(message.createdAt) }}</span>
+                      <span v-if="message.mine" class="message-read-state" :class="{ read: message.read }">
+                        {{ formatReadState(message) }}
+                      </span>
+                    </div>
+                  </div>
+
                   <div class="message-bubble" :class="`message-bubble--${(message.type || 'TEXT').toLowerCase()}`">
                     <template v-if="message.type === 'IMAGE'">
                       <el-image
@@ -344,7 +357,7 @@
                     </template>
                   </div>
 
-                  <div class="message-meta">
+                  <div v-if="false" class="message-meta">
                     <span>{{ message.mine ? '我' : message.senderUsername }}</span>
                     <span>{{ formatTime(message.createdAt) }}</span>
                     <span v-if="message.mine" class="message-read-state" :class="{ read: message.read }">
@@ -364,16 +377,16 @@
 
           <footer class="composer">
             <div class="composer-toolbar">
-              <div class="composer-tools">
+              <div v-if="false" class="composer-tools">
                 <button
                   class="tool-button"
-                  :class="{ active: pickerVisible && pickerTab === 'emoji' }"
-                  @click="togglePicker('emoji')"
+                  :class="{ active: pickerVisible }"
+                  @click="togglePickerPanel"
                 >
                   <el-icon><Smile /></el-icon>
                   <span>表情</span>
                 </button>
-                <button
+                <button v-if="false"
                   class="tool-button"
                   :class="{ active: pickerVisible && pickerTab === 'sticker' }"
                   @click="togglePicker('sticker')"
@@ -393,10 +406,10 @@
                   @change="handleImageSelected"
                 />
               </div>
-              <span class="composer-hint">Enter 发送，Shift + Enter 换行</span>
+
             </div>
 
-            <div v-if="pickerVisible" class="picker-panel">
+            <div v-if="false && pickerVisible" class="picker-panel">
               <div class="picker-switch">
                 <button
                   class="picker-switch__button"
@@ -440,12 +453,22 @@
             </div>
 
             <div class="composer-input-wrap">
+              <button class="composer-image-button" :disabled="imageUploading" @click="triggerImagePicker">
+                <el-icon><PictureFilled /></el-icon>
+              </button>
+              <input
+                ref="imageInputRef"
+                class="hidden-input"
+                type="file"
+                accept="image/*"
+                @change="handleImageSelected"
+              />
               <el-input
                 v-model="draft"
                 class="composer-textarea"
                 type="textarea"
                 resize="none"
-                :autosize="{ minRows: 3, maxRows: 6 }"
+                :rows="4"
                 maxlength="1000"
                 show-word-limit
                 placeholder="写点什么吧，也可以直接发一个骑行表情包。"
@@ -453,7 +476,7 @@
               />
 
               <div class="composer-actions">
-                <el-button type="primary" @click="handleSendText">发送消息</el-button>
+                <el-button type="primary" @click="handleSendText"><span>发送</span></el-button>
               </div>
             </div>
           </footer>
@@ -1007,6 +1030,10 @@ const handleStickerSend = async (sticker) => {
   })
 }
 
+const togglePickerPanel = () => {
+  pickerVisible.value = !pickerVisible.value
+}
+
 const togglePicker = (tab) => {
   if (pickerVisible.value && pickerTab.value === tab) {
     pickerVisible.value = false
@@ -1234,16 +1261,18 @@ onBeforeUnmount(async () => {
   grid-template-columns: minmax(380px, 430px) minmax(0, 1fr);
   gap: 24px;
   align-items: start;
-  min-height: calc(100vh - 210px);
+  min-height: calc(100vh - 170px);
 }
 
 .sidebar-column {
   display: grid;
   gap: 20px;
+  min-height: 0;
 }
 
 .chat-column {
   min-width: 0;
+  min-height: 0;
 }
 
 .panel {
@@ -1448,34 +1477,55 @@ onBeforeUnmount(async () => {
   width: 100%;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
   gap: 14px;
-  padding: 16px;
+  padding: 16px 18px;
+  appearance: none;
+  border: 1px solid rgba(255, 107, 53, 0.14);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.76));
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
   cursor: pointer;
   text-align: left;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+.conversation-card:focus-visible {
+  outline: 2px solid rgba(255, 107, 53, 0.24);
+  outline-offset: 3px;
+}
+
 .conversation-card:hover,
 .conversation-card.active {
   transform: translateY(-2px);
-  border-color: rgba(255, 107, 53, 0.22);
-  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.09);
+  border-color: rgba(255, 107, 53, 0.24);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.09);
+}
+
+.conversation-copy {
+  display: grid;
+  gap: 8px;
+  align-content: center;
 }
 
 .conversation-top {
-  align-items: flex-start;
+  align-items: center;
+  gap: 14px;
 }
 
 .conversation-bottom {
-  margin-top: 8px;
+  margin-top: 0;
   align-items: center;
+  min-width: 0;
 }
 
 .preview-copy {
   min-width: 0;
+  display: block;
   flex: 1;
   color: var(--bs-muted);
   font-size: 13px;
+  line-height: 1.45;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1485,6 +1535,7 @@ onBeforeUnmount(async () => {
   flex-shrink: 0;
   color: var(--bs-muted);
   font-size: 12px;
+  line-height: 1;
 }
 
 .conversation-badge {
@@ -1547,9 +1598,12 @@ onBeforeUnmount(async () => {
 }
 
 .chat-card {
-  min-height: calc(100vh - 210px);
+  height: calc(100vh - 170px);
+  max-height: calc(100vh - 170px);
+  min-height: calc(100vh - 170px);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
 }
 
 .chat-head {
@@ -1587,6 +1641,7 @@ onBeforeUnmount(async () => {
 
 .message-board {
   min-height: 0;
+  height: 100%;
   overflow: auto;
   padding: 22px 24px;
   display: flex;
@@ -1619,8 +1674,6 @@ onBeforeUnmount(async () => {
 
 .message-row {
   display: flex;
-  align-items: flex-end;
-  gap: 12px;
   width: 100%;
 }
 
@@ -1628,15 +1681,35 @@ onBeforeUnmount(async () => {
   justify-content: flex-end;
 }
 
-.message-row__avatar {
-  align-self: flex-end;
-}
-
 .message-stack {
   max-width: min(640px, 80%);
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.message-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.message-head--mine {
+  justify-content: flex-end;
+}
+
+.message-head__avatar {
+  flex: 0 0 auto;
+}
+
+.message-bubble,
+.message-meta {
+  order: 2;
+}
+
+.message-bubble {
+  order: 1;
 }
 
 .message-row.mine .message-stack {
@@ -1665,13 +1738,26 @@ onBeforeUnmount(async () => {
 
 .message-bubble--image,
 .message-bubble--sticker {
-  padding: 8px;
+  display: grid;
+  justify-items: start;
+  order: 2;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .message-row.mine .message-bubble--image,
 .message-row.mine .message-bubble--sticker {
-  background: rgba(255, 107, 53, 0.14);
+  background: transparent;
   color: var(--bs-ink);
+  justify-items: end;
+}
+
+.message-bubble--image + .message-meta,
+.message-bubble--sticker + .message-meta {
+  order: 1;
+  margin-bottom: 2px;
 }
 
 .message-image {
@@ -1688,7 +1774,7 @@ onBeforeUnmount(async () => {
 
 .message-caption {
   margin: 10px 0 0;
-  color: inherit;
+  color: var(--bs-muted);
   line-height: 1.5;
 }
 
@@ -1705,6 +1791,21 @@ onBeforeUnmount(async () => {
   color: var(--bs-muted);
 }
 
+.message-meta--head {
+  flex: 1;
+  min-width: 0;
+}
+
+.message-head--mine .message-meta--head {
+  justify-content: flex-end;
+}
+
+.message-row.mine .message-caption,
+.message-row.mine .message-meta {
+  text-align: right;
+  justify-content: flex-end;
+}
+
 .message-read-state.read {
   color: var(--brand-primary);
   font-weight: 600;
@@ -1717,14 +1818,57 @@ onBeforeUnmount(async () => {
   gap: 14px;
 }
 
+.composer-toolbar {
+  display: none;
+}
+
 .composer-input-wrap {
   position: relative;
 }
 
+.composer-image-button {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--bs-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.composer-image-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 107, 53, 0.20);
+  background: rgba(255, 107, 53, 0.10);
+}
+
+.composer-image-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+  transform: none;
+}
+
+.composer-image-button .el-icon {
+  font-size: 18px;
+}
+
 .composer-textarea :deep(.el-textarea__inner) {
   border-radius: 22px;
-  padding: 16px 18px 64px;
+  min-height: 152px !important;
+  max-height: 152px !important;
+  padding: 18px 64px 64px 18px;
   line-height: 1.7;
+  text-align: left;
+  vertical-align: top;
+  overflow-y: auto;
 }
 
 .composer-textarea :deep(.el-input__count) {
@@ -1875,7 +2019,7 @@ onBeforeUnmount(async () => {
 }
 
 .chat-placeholder {
-  min-height: calc(100vh - 210px);
+  min-height: calc(100vh - 170px);
   align-content: center;
   justify-items: start;
   text-align: left;
@@ -1903,7 +2047,9 @@ onBeforeUnmount(async () => {
 
   .chat-card,
   .chat-placeholder {
-    min-height: auto;
+    height: min(76vh, 860px);
+    max-height: min(76vh, 860px);
+    min-height: min(76vh, 860px);
   }
 }
 
@@ -1934,6 +2080,13 @@ onBeforeUnmount(async () => {
     align-items: stretch;
   }
 
+  .chat-card,
+  .chat-placeholder {
+    height: min(72vh, 780px);
+    max-height: min(72vh, 780px);
+    min-height: min(72vh, 780px);
+  }
+
   .chat-head__main,
   .panel-head,
   .composer-toolbar,
@@ -1960,6 +2113,11 @@ onBeforeUnmount(async () => {
     bottom: 12px;
   }
 
+  .composer-image-button {
+    top: 12px;
+    right: 12px;
+  }
+
   .composer-actions :deep(.el-button) {
     min-width: 92px;
     padding-left: 16px;
@@ -1967,7 +2125,9 @@ onBeforeUnmount(async () => {
   }
 
   .composer-textarea :deep(.el-textarea__inner) {
-    padding-bottom: 66px;
+    min-height: 148px !important;
+    max-height: 148px !important;
+    padding: 16px 60px 66px 16px;
   }
 
   .composer-textarea :deep(.el-input__count) {
