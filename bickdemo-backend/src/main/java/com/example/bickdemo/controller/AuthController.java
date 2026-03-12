@@ -91,10 +91,20 @@ public class AuthController {
      * 更新用户信息
      */
     @PutMapping("/update")
-    public ResponseEntity<ApiResponse<User>> updateUser(@Valid @RequestBody UpdateUserRequest request,
-                                                         @AuthenticationPrincipal UserDetails userDetails) {
-        User user = authService.updateUser(userDetails.getUsername(), request);
-        return ResponseEntity.ok(ApiResponse.success("更新成功", user));
+    public ResponseEntity<ApiResponse<AuthResponse>> updateUser(@Valid @RequestBody UpdateUserRequest request,
+                                                                @AuthenticationPrincipal UserDetails userDetails) {
+        AuthResponse response = authService.updateUser(userDetails.getUsername(), request);
+        return ResponseEntity.ok(ApiResponse.success("更新成功", response));
+    }
+
+    /**
+     * 修改当前用户密码
+     */
+    @PutMapping("/password")
+    public ResponseEntity<ApiResponse<Void>> updatePassword(@Valid @RequestBody UpdatePasswordRequest request,
+                                                            @AuthenticationPrincipal UserDetails userDetails) {
+        authService.updatePassword(userDetails.getUsername(), request);
+        return ResponseEntity.ok(ApiResponse.success("密码修改成功", null));
     }
 
     /**

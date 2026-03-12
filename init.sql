@@ -123,7 +123,7 @@ CREATE TABLE `email_auth`  (
                                `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
                                `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '邮箱',
                                `verify_code` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '验证码',
-                               `code_type` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '验证码用途：REGISTER/RESET_PASSWORD',
+                               `code_type` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '验证码用途：REGISTER/RESET_PASSWORD/UPDATE_EMAIL',
                                `code_expire_at` datetime NULL DEFAULT NULL COMMENT '验证码过期时间',
                                `created_at` datetime NULL DEFAULT NULL COMMENT '创建时间',
                                `updated_at` datetime NULL DEFAULT NULL COMMENT '更新时间',
@@ -142,6 +142,7 @@ CREATE TABLE `users`  (
                           `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '密码',
                           `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '邮箱',
                           `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '头像 URL',
+                          `bio` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '个人简介',
                           `role` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'USER' COMMENT '角色：USER/ADMIN',
                           `enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
                           `created_at` datetime NULL DEFAULT NULL COMMENT '创建时间',
@@ -155,8 +156,8 @@ CREATE TABLE `users`  (
 -- ----------------------------
 -- Records of users
 -- ----------------------------
-INSERT INTO `users` VALUES (1, 'admin', '$2a$10$b9Z8YSgrEKt7mRaJtgr2rOpCehkPOM3.dc5gvJ5Md6D.Rpx3MS5CK', 'admin@qq.com', NULL, 'ADMIN', 1, '2026-03-08 17:16:36', '2026-03-08 17:16:36', 0);
-INSERT INTO `users` VALUES (2, 'user', '$2a$10$d1nzggZk4u2S5aLMTanjFeB5XPuwpTEr8xM11sdDdjSARgsrRHW2.', 'user@qq.com', NULL, 'USER', 1, '2026-03-08 17:15:54', '2026-03-08 17:15:54', 0);
-INSERT INTO `users` VALUES (3, 'test', '$2a$10$Z14viQZe4IGLeuv150JeyeL6CUinkFSSnVPdgLR9GE8GjBHDpw5ny', 'lileyaoqianxu@gmail.com', NULL, 'USER', 1, '2026-03-08 16:46:08', '2026-03-08 16:46:08', 0);
+INSERT INTO `users` VALUES (1, 'admin', '$2a$10$b9Z8YSgrEKt7mRaJtgr2rOpCehkPOM3.dc5gvJ5Md6D.Rpx3MS5CK', 'admin@qq.com', NULL, '系统管理员，负责平台整体运营。', 'ADMIN', 1, '2026-03-08 17:16:36', '2026-03-08 17:16:36', 0);
+INSERT INTO `users` VALUES (2, 'user', '$2a$10$d1nzggZk4u2S5aLMTanjFeB5XPuwpTEr8xM11sdDdjSARgsrRHW2.', 'user@qq.com', NULL, '热爱城市骑行的默认体验用户。', 'USER', 1, '2026-03-08 17:15:54', '2026-03-08 17:15:54', 0);
+INSERT INTO `users` VALUES (3, 'test', '$2a$10$Z14viQZe4IGLeuv150JeyeL6CUinkFSSnVPdgLR9GE8GjBHDpw5ny', 'lileyaoqianxu@gmail.com', NULL, '喜欢探索不同路线的测试账号。', 'USER', 1, '2026-03-08 16:46:08', '2026-03-08 16:46:08', 0);
 
 SET FOREIGN_KEY_CHECKS = 1;

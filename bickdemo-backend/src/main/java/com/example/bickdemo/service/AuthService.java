@@ -6,6 +6,7 @@ import com.example.bickdemo.dto.EmailLoginRequest;
 import com.example.bickdemo.dto.EmailResetPasswordRequest;
 import com.example.bickdemo.dto.LoginRequest;
 import com.example.bickdemo.dto.RegisterRequest;
+import com.example.bickdemo.dto.UpdatePasswordRequest;
 import com.example.bickdemo.dto.UpdateUserRequest;
 import com.example.bickdemo.entity.EmailAuth;
 import com.example.bickdemo.entity.User;
@@ -74,8 +75,7 @@ public class AuthService {
 
         clearEmailCode(email);
 
-        String jwtToken = jwtService.generateToken(user);
-        return new AuthResponse(jwtToken, user.getUsername(), user.getRole().name(), user.getId());
+        return buildAuthResponse(user);
     }
 
     /**
@@ -91,6 +91,9 @@ public class AuthService {
         }
         if ("RESET_PASSWORD".equals(type) && userMapper.findByEmail(email) == null) {
             throw new RuntimeException("该邮箱尚未注册");
+        }
+        if ("UPDATE_EMAIL".equals(type) && userMapper.existsByEmail(email)) {
+            throw new RuntimeException("邮箱已被使用");
         }
 
         String code = generateVerifyCode();
@@ -128,8 +131,7 @@ public class AuthService {
             throw new RuntimeException("用户不存在");
         }
 
-        String jwtToken = jwtService.generateToken(user);
-        return new AuthResponse(jwtToken, user.getUsername(), user.getRole().name(), user.getId());
+        return buildAuthResponse(user);
     }
 
     /**
@@ -145,8 +147,7 @@ public class AuthService {
             throw new RuntimeException("邮箱或密码错误");
         }
 
-        String jwtToken = jwtService.generateToken(user);
-        return new AuthResponse(jwtToken, user.getUsername(), user.getRole().name(), user.getId());
+        return buildAuthResponse(user);
     }
 
     /**
@@ -179,33 +180,70 @@ public class AuthService {
      * 更新用户信息
      */
     @Transactional
-    public User updateUser(String username, UpdateUserRequest request) {
+    public AuthResponse updateUser(String username, UpdateUserRequest request) {
         User user = userMapper.findByUsername(username);
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
 
-        if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
-            if (userMapper.existsByUsername(request.getUsername())) {
+        String currentEmail = user.getEmail() == null ? "" : user.getEmail().trim().toLowerCase();
+        String nextUsername = StringUtils.hasText(request.getUsername()) ? request.getUsername().trim() : user.getUsername();
+
+        if (!nextUsername.equals(user.getUsername())) {
+            if (userMapper.existsByUsername(nextUsername)) {
                 throw new RuntimeException("用户名已被使用");
             }
-            user.setUsername(request.getUsername());
+            user.setUsername(nextUsername);
         }
 
         if (StringUtils.hasText(request.getEmail())) {
             String normalizedEmail = normalizeEmail(request.getEmail());
-            if (!normalizedEmail.equals(user.getEmail()) && userMapper.existsByEmail(normalizedEmail)) {
-                throw new RuntimeException("邮箱已被使用");
+            if (!normalizedEmail.equals(currentEmail)) {
+                if (userMapper.existsByEmail(normalizedEmail)) {
+                    throw new RuntimeException("邮箱已被使用");
+                }
+                if (!StringUtils.hasText(request.getCode())) {
+                    throw new RuntimeException("修改邮箱需要先填写验证码");
+                }
+                validateEmailCode(normalizedEmail, request.getCode(), "UPDATE_EMAIL");
+                clearEmailCode(normalizedEmail);
+                user.setEmail(normalizedEmail);
             }
-            user.setEmail(normalizedEmail);
         }
 
         if (request.getAvatar() != null) {
             user.setAvatar(request.getAvatar());
         }
 
+        if (request.getBio() != null) {
+            String normalizedBio = request.getBio().trim();
+            user.setBio(StringUtils.hasText(normalizedBio) ? normalizedBio : null);
+        }
+
         userMapper.updateById(user);
-        return user;
+        return buildAuthResponse(user);
+    }
+
+    /**
+     * 修改当前用户密码
+     */
+    @Transactional
+    public void updatePassword(String username, UpdatePasswordRequest request) {
+        User user = userMapper.findByUsername(username);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new RuntimeException("当前密码错误");
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new RuntimeException("新密码不能与当前密码相同");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userMapper.updateById(user);
     }
 
     /**
@@ -300,7 +338,7 @@ public class AuthService {
             throw new RuntimeException("验证码用途不能为空");
         }
         String normalized = type.trim().toUpperCase();
-        if (!"REGISTER".equals(normalized) && !"RESET_PASSWORD".equals(normalized)) {
+        if (!"REGISTER".equals(normalized) && !"RESET_PASSWORD".equals(normalized) && !"UPDATE_EMAIL".equals(normalized)) {
             throw new RuntimeException("不支持的验证码用途");
         }
         return normalized;
@@ -308,5 +346,10 @@ public class AuthService {
 
     private String generateVerifyCode() {
         return String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
+    }
+
+    private AuthResponse buildAuthResponse(User user) {
+        String jwtToken = jwtService.generateToken(user);
+        return new AuthResponse(jwtToken, user.getUsername(), user.getRole().name(), user.getId());
     }
 }

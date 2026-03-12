@@ -45,11 +45,19 @@ public class EmailMailService {
         if ("RESET_PASSWORD".equalsIgnoreCase(type)) {
             return "BikeShare 找回密码验证码";
         }
+        if ("UPDATE_EMAIL".equalsIgnoreCase(type)) {
+            return "BikeShare 修改邮箱验证码";
+        }
         return "BikeShare 邮箱注册验证码";
     }
 
     private String buildHtml(String code, String type, int expireMinutes) {
-        String scene = "RESET_PASSWORD".equalsIgnoreCase(type) ? "重置密码" : "注册账号";
+        String scene = "注册账号";
+        if ("RESET_PASSWORD".equalsIgnoreCase(type)) {
+            scene = "重置密码";
+        } else if ("UPDATE_EMAIL".equalsIgnoreCase(type)) {
+            scene = "修改邮箱";
+        }
         return """
                 <div style="font-family: Arial, sans-serif; padding: 24px; color: #0f172a;">
                   <h2 style="margin: 0 0 16px; color: #ff6b35;">BikeShare</h2>

@@ -43,6 +43,10 @@ public class User implements UserDetails {
     @TableField(value = "avatar", exist = true)
     private String avatar;
 
+    /** 个人简介 */
+    @TableField(value = "bio", exist = true)
+    private String bio;
+
     /** 用户角色 */
     @TableField(value = "role", exist = true, typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)
     private UserRole role = UserRole.USER;

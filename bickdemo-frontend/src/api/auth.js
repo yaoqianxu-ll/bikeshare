@@ -55,6 +55,14 @@ export function updateUser(data) {
   })
 }
 
+export function changePassword(data) {
+  return request({
+    url: '/auth/password',
+    method: 'put',
+    data
+  })
+}
+
 // 上传/更新头像（写入 users.avatar）
 export function uploadAvatar(file) {
   const formData = new FormData()

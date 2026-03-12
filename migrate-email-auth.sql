@@ -19,6 +19,21 @@ FROM `qq_email_auth` q
 LEFT JOIN `email_auth` e ON e.`email` = q.`qq_email`
 WHERE e.`id` IS NULL;
 
-ALTER TABLE `users` DROP COLUMN IF EXISTS `phone`;
+SET @drop_phone_sql = (
+  SELECT IF(
+    EXISTS(
+      SELECT 1
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'users'
+        AND COLUMN_NAME = 'phone'
+    ),
+    'ALTER TABLE `users` DROP COLUMN `phone`',
+    'SELECT 1'
+  )
+);
+PREPARE stmt FROM @drop_phone_sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 DROP TABLE IF EXISTS `qq_email_auth`;
