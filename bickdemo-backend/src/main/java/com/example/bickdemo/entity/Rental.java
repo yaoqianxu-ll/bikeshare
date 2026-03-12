@@ -45,6 +45,10 @@ public class Rental {
     @TableField(value = "status", typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)
     private RentalStatus status = RentalStatus.ACTIVE;
 
+    /** 租赁数量 */
+    @TableField("quantity")
+    private Integer quantity = 1;
+
     /** 总价格 */
     @TableField("total_price")
     private Double totalPrice;

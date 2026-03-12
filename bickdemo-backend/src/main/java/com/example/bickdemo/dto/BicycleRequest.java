@@ -2,6 +2,7 @@ package com.example.bickdemo.dto;
 
 import com.example.bickdemo.entity.BicycleStatus;
 import com.example.bickdemo.entity.BicycleType;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -26,6 +27,10 @@ public class BicycleRequest {
     /** 自行车状态 */
     @NotNull(message = "自行车状态不能为空")
     private BicycleStatus status;
+
+    /** 数量（库存） */
+    @Min(value = 0, message = "数量不能小于 0")
+    private Integer quantity;
 
     /** 停放位置 */
     private String location;

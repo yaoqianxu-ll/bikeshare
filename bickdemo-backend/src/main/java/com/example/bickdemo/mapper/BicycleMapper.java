@@ -7,6 +7,7 @@ import com.example.bickdemo.entity.BicycleType;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -47,6 +48,30 @@ public interface BicycleMapper extends BaseMapper<Bicycle> {
      */
     @Select("SELECT type, COUNT(*) as count FROM bicycles WHERE deleted = 0 GROUP BY type")
     List<TypeCountVO> countByType();
+
+    /**
+     * 原子扣减库存（仅当数量足够时）
+     */
+    @Update("UPDATE bicycles SET quantity = quantity - #{qty} WHERE id = #{id} AND deleted = 0 AND quantity >= #{qty}")
+    int decrementQuantity(@Param("id") Long id, @Param("qty") int qty);
+
+    /**
+     * 增加库存
+     */
+    @Update("UPDATE bicycles SET quantity = quantity + #{qty} WHERE id = #{id} AND deleted = 0")
+    int incrementQuantity(@Param("id") Long id, @Param("qty") int qty);
+
+    /**
+     * 按状态汇总数量（库存）
+     */
+    @Select("SELECT COALESCE(SUM(quantity),0) FROM bicycles WHERE status = #{status} AND deleted = 0")
+    Long sumQuantityByStatus(@Param("status") BicycleStatus status);
+
+    /**
+     * 按类型汇总数量（库存）
+     */
+    @Select("SELECT type, COALESCE(SUM(quantity),0) as count FROM bicycles WHERE deleted = 0 GROUP BY type")
+    List<TypeCountVO> sumQuantityByType();
 
     /**
      * 类型统计 VO

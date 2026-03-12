@@ -58,12 +58,12 @@
             </div>
           </div>
           <div class="stat-body">
-            <div class="stat-label">总租赁次数</div>
-            <div class="stat-value">{{ statistics.totalRentals || 0 }}<span class="stat-unit">次</span></div>
+            <div class="stat-label">维修中车辆</div>
+            <div class="stat-value">{{ statistics.maintenanceBicycles || 0 }}<span class="stat-unit">辆</span></div>
           </div>
           <div class="stat-footer">
-            <span class="footer-label">最受欢迎</span>
-            <span class="footer-value truncate">{{ topBicycleName }}</span>
+            <span class="footer-label">占比</span>
+            <span class="footer-value">{{ maintenancePercent }}%</span>
           </div>
         </el-card>
       </el-col>
@@ -76,12 +76,12 @@
             </div>
           </div>
           <div class="stat-body">
-            <div class="stat-label">进行中租赁</div>
-            <div class="stat-value">{{ statistics.activeRentals || 0 }}<span class="stat-unit">单</span></div>
+            <div class="stat-label">不可用车辆</div>
+            <div class="stat-value">{{ statistics.disabledBicycles || 0 }}<span class="stat-unit">辆</span></div>
           </div>
           <div class="stat-footer">
-            <span class="footer-label">今日订单</span>
-            <span class="footer-value">{{ todayRentals }} 单</span>
+            <span class="footer-label">占比</span>
+            <span class="footer-value">{{ disabledPercent }}%</span>
           </div>
         </el-card>
       </el-col>
@@ -122,6 +122,7 @@
             </div>
           </template>
           <div class="table-container">
+            <div class="table-scroll">
             <el-table :data="popularBicycles" style="width: 100%" :show-header="true" stripe>
               <el-table-column type="index" label="排名" width="100" align="center">
                 <template #default="{ $index }">
@@ -149,6 +150,7 @@
                 </template>
               </el-table-column>
             </el-table>
+            </div>
           </div>
         </el-card>
       </el-col>
@@ -176,8 +178,8 @@
                 <el-icon><DataLine /></el-icon>
               </div>
               <div class="overview-content">
-                <div class="overview-label">平均每车租赁</div>
-                <div class="overview-value">{{ avgRentalsPerBicycle }} 次</div>
+                <div class="overview-label">总租赁次数</div>
+                <div class="overview-value">{{ statistics.totalRentals }} 次</div>
               </div>
             </div>
             <el-divider />
@@ -186,8 +188,8 @@
                 <el-icon><User /></el-icon>
               </div>
               <div class="overview-content">
-                <div class="overview-label">服务类型</div>
-                <div class="overview-value">{{ statistics.typeStats?.length || 0 }} 种</div>
+                <div class="overview-label">进行中租赁</div>
+                <div class="overview-value">{{ statistics.activeRentals }} 单</div>
               </div>
             </div>
           </div>
@@ -212,6 +214,8 @@ const statistics = reactive({
   activeRentals: 0,
   availableBicycles: 0,
   totalBicycles: 0,
+  maintenanceBicycles: 0,
+  disabledBicycles: 0,
   typeStats: [],
   popularBicycles: []
 })
@@ -228,20 +232,25 @@ const availablePercent = computed(() => {
   return ((statistics.availableBicycles / statistics.totalBicycles) * 100).toFixed(1)
 })
 
+const maintenancePercent = computed(() => {
+  if (!statistics.totalBicycles) return 0
+  return ((statistics.maintenanceBicycles / statistics.totalBicycles) * 100).toFixed(1)
+})
+
+const disabledPercent = computed(() => {
+  if (!statistics.totalBicycles) return 0
+  return ((statistics.disabledBicycles / statistics.totalBicycles) * 100).toFixed(1)
+})
+
 const utilizationRate = computed(() => {
   if (!statistics.totalBicycles) return 0
-  const rented = statistics.totalBicycles - statistics.availableBicycles
-  return ((rented / statistics.totalBicycles) * 100).toFixed(1)
+  const inService = statistics.availableBicycles
+  return ((inService / statistics.totalBicycles) * 100).toFixed(1)
 })
 
 const avgRentalsPerBicycle = computed(() => {
   if (!statistics.totalBicycles) return 0
   return (statistics.totalRentals / statistics.totalBicycles).toFixed(1)
-})
-
-const todayRentals = computed(() => {
-  // 简化：显示活跃租赁数
-  return statistics.activeRentals
 })
 
 const topBicycleName = computed(() => {
@@ -270,6 +279,8 @@ const loadStatistics = async () => {
     statistics.activeRentals = data.activeRentals || 0
     statistics.availableBicycles = data.availableBicycles || 0
     statistics.totalBicycles = data.totalBicycles || 0
+    statistics.maintenanceBicycles = data.maintenanceBicycles || 0
+    statistics.disabledBicycles = data.disabledBicycles || 0
     statistics.typeStats = data.typeStats || []
     statistics.popularBicycles = data.popularBicycles || []
     popularBicycles.value = data.popularBicycles || []
@@ -715,6 +726,18 @@ onMounted(() => {
 /* 表格容器 */
 .table-container {
   padding: 8px 0;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .table-scroll :deep(.el-table) {
+    min-width: 760px;
+  }
 }
 
 :deep(.el-table) {

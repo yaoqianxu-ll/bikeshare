@@ -16,6 +16,7 @@
         </div>
       </template>
 
+      <div class="table-scroll">
       <el-table :data="rentals" style="width: 100%" v-loading="loading" stripe>
         <el-table-column prop="id" label="订单号" width="80" />
         <el-table-column prop="bicycleName" label="自行车" min-width="170" show-overflow-tooltip />
@@ -23,6 +24,9 @@
           <template #default="{ row }">
             {{ getTypeText(row.bicycleType) }}
           </template>
+        </el-table-column>
+        <el-table-column prop="quantity" label="数量" width="90" align="center">
+          <template #default="{ row }">{{ row.quantity ?? 1 }}</template>
         </el-table-column>
         <el-table-column label="开始时间" width="180">
           <template #default="{ row }">
@@ -75,6 +79,7 @@
           </template>
         </el-table-column>
       </el-table>
+      </div>
 
       <!-- 分页 -->
       <div class="pagination-wrapper">
@@ -93,14 +98,15 @@
     <!-- 详情对话框 -->
     <el-dialog v-model="detailDialogVisible" title="租赁详情" width="500px">
       <div v-if="selectedRental">
-        <el-descriptions :column="1" border :label-width="100">
-          <el-descriptions-item label="订单号">{{ selectedRental.id }}</el-descriptions-item>
-          <el-descriptions-item label="自行车">{{ formatText(selectedRental.bicycleName) }}</el-descriptions-item>
-          <el-descriptions-item label="类型">{{ getTypeText(selectedRental.bicycleType) }}</el-descriptions-item>
-          <el-descriptions-item label="开始时间">{{ formatDateTime(selectedRental.startTime) }}</el-descriptions-item>
-          <el-descriptions-item label="结束时间">
-            {{ formatDateTime(selectedRental.endTime) }}
-          </el-descriptions-item>
+          <el-descriptions :column="1" border :label-width="100">
+            <el-descriptions-item label="订单号">{{ selectedRental.id }}</el-descriptions-item>
+            <el-descriptions-item label="自行车">{{ formatText(selectedRental.bicycleName) }}</el-descriptions-item>
+            <el-descriptions-item label="类型">{{ getTypeText(selectedRental.bicycleType) }}</el-descriptions-item>
+            <el-descriptions-item label="数量">{{ selectedRental.quantity ?? 1 }}</el-descriptions-item>
+            <el-descriptions-item label="开始时间">{{ formatDateTime(selectedRental.startTime) }}</el-descriptions-item>
+            <el-descriptions-item label="结束时间">
+              {{ formatDateTime(selectedRental.endTime) }}
+            </el-descriptions-item>
           <el-descriptions-item label="预计归还">
             {{ formatDateTime(selectedRental.expectedEndTime) }}
           </el-descriptions-item>
@@ -389,6 +395,29 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .table-scroll :deep(.el-table) {
+    min-width: 980px;
+  }
+
+  .pagination-wrapper {
+    justify-content: center;
+    padding-right: 0;
+  }
+
+  :deep(.el-radio-group) {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 .pagination-wrapper {

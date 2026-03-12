@@ -20,6 +20,10 @@ public class StatisticsResponse {
     private Long availableBicycles;
     /** 总自行车数 */
     private Long totalBicycles;
+    /** 维修中车辆数 */
+    private Long maintenanceBicycles;
+    /** 不可用车辆数 */
+    private Long disabledBicycles;
     /** 自行车类型统计 */
     private BicycleTypeStats[] typeStats;
     /** 热门自行车排行 */

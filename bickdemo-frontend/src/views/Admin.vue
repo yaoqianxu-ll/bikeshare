@@ -20,6 +20,14 @@
           <div class="kpi-value">{{ availableBikeCount }}</div>
         </div>
         <div class="kpi">
+          <div class="kpi-label">维修</div>
+          <div class="kpi-value">{{ maintenanceBikeCount }}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">不可用</div>
+          <div class="kpi-value">{{ disabledBikeCount }}</div>
+        </div>
+        <div class="kpi">
           <div class="kpi-label">订单</div>
           <div class="kpi-value">{{ rentalCount }}</div>
         </div>
@@ -37,16 +45,20 @@
             <el-button type="primary" size="small" @click="openDialog()" :icon="Plus">添加自行车</el-button>
           </div>
 
+          <div class="table-scroll">
           <el-table :data="bicycles" style="width: 100%" v-loading="loading" stripe>
             <el-table-column prop="id" label="ID" width="80" />
             <el-table-column prop="name" label="名称" min-width="170" show-overflow-tooltip />
             <el-table-column label="类型" width="100" align="center">
               <template #default="{ row }">{{ getTypeText(row.type) }}</template>
             </el-table-column>
-            <el-table-column label="状态" width="100" align="center" class-name="col-status">
+          <el-table-column label="状态" width="100" align="center" class-name="col-status">
               <template #default="{ row }">
                 <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
               </template>
+            </el-table-column>
+            <el-table-column prop="quantity" label="数量" width="90" align="center">
+              <template #default="{ row }">{{ row.quantity ?? 0 }}</template>
             </el-table-column>
             <el-table-column label="位置" min-width="140" show-overflow-tooltip>
               <template #default="{ row }">{{ formatText(row.location) }}</template>
@@ -63,6 +75,7 @@
               </template>
             </el-table-column>
           </el-table>
+          </div>
 
           <!-- 分页 -->
           <div class="pagination-wrapper">
@@ -82,12 +95,16 @@
           <div class="rental-toolbar">
             <el-button type="primary" plain :icon="Refresh" @click="loadRentals" size="small">刷新</el-button>
           </div>
+          <div class="table-scroll">
           <el-table :data="rentals" style="width: 100%" v-loading="loading" stripe>
             <el-table-column prop="id" label="订单号" width="80" />
             <el-table-column prop="username" label="用户" width="120" show-overflow-tooltip />
             <el-table-column prop="bicycleName" label="自行车" min-width="170" show-overflow-tooltip />
             <el-table-column label="类型" width="100" align="center">
               <template #default="{ row }">{{ getTypeText(row.bicycleType) }}</template>
+            </el-table-column>
+            <el-table-column prop="quantity" label="数量" width="90" align="center">
+              <template #default="{ row }">{{ row.quantity ?? 1 }}</template>
             </el-table-column>
             <el-table-column label="开始时间" width="180">
               <template #default="{ row }">{{ formatDateTime(row.startTime) }}</template>
@@ -101,6 +118,7 @@
             <template #default="{ row }"><span class="price-text">{{ formatMoney(row.totalPrice) }}</span></template>
           </el-table-column>
           </el-table>
+          </div>
           <!-- 分页 -->
           <div class="pagination-wrapper">
             <el-pagination
@@ -139,6 +157,9 @@
             <el-option label="维修中" value="MAINTENANCE" />
             <el-option label="不可用" value="DISABLED" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="数量" prop="quantity">
+          <el-input-number v-model="bikeForm.quantity" :min="0" :step="1" />
         </el-form-item>
         <el-form-item label="位置" prop="location">
           <el-input v-model="bikeForm.location" placeholder="请输入位置" />
@@ -215,6 +236,8 @@ const rentalTotal = ref(0)
 const stats = ref({
   totalBicycles: null,
   availableBicycles: null,
+  maintenanceBicycles: null,
+  disabledBicycles: null,
   totalRentals: null,
   activeRentals: null
 })
@@ -229,6 +252,18 @@ const availableBikeCount = computed(() => {
   const v = stats.value?.availableBicycles
   if (v === 0 || (typeof v === 'number' && Number.isFinite(v))) return v
   return (bicycles.value || []).filter(b => b?.status === 'AVAILABLE').length
+})
+
+const maintenanceBikeCount = computed(() => {
+  const v = stats.value?.maintenanceBicycles
+  if (v === 0 || (typeof v === 'number' && Number.isFinite(v))) return v
+  return (bicycles.value || []).filter(b => b?.status === 'MAINTENANCE').length
+})
+
+const disabledBikeCount = computed(() => {
+  const v = stats.value?.disabledBicycles
+  if (v === 0 || (typeof v === 'number' && Number.isFinite(v))) return v
+  return (bicycles.value || []).filter(b => b?.status === 'DISABLED').length
 })
 const rentalCount = computed(() => {
   const v = stats.value?.totalRentals
@@ -270,6 +305,7 @@ const bikeForm = reactive({
   name: '',
   type: 'CITY',
   status: 'AVAILABLE',
+  quantity: 1,
   location: '',
   description: '',
   pricePerHour: 0,
@@ -325,7 +361,8 @@ const customUpload = async (options) => {
 const rules = {
   name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
   type: [{ required: true, message: '请选择类型', trigger: 'change' }],
-  status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+  status: [{ required: true, message: '请选择状态', trigger: 'change' }],
+  quantity: [{ required: true, message: '请输入数量', trigger: 'blur' }]
 }
 
 const loadStats = async () => {
@@ -335,6 +372,8 @@ const loadStats = async () => {
       stats.value = {
         totalBicycles: res.data.totalBicycles,
         availableBicycles: res.data.availableBicycles,
+        maintenanceBicycles: res.data.maintenanceBicycles,
+        disabledBicycles: res.data.disabledBicycles,
         totalRentals: res.data.totalRentals,
         activeRentals: res.data.activeRentals
       }
@@ -407,6 +446,7 @@ const openDialog = (row = null) => {
     bikeForm.name = row.name
     bikeForm.type = row.type
     bikeForm.status = row.status
+    bikeForm.quantity = row.quantity ?? 1
     bikeForm.location = row.location
     bikeForm.description = row.description
     bikeForm.pricePerHour = row.pricePerHour
@@ -417,6 +457,7 @@ const openDialog = (row = null) => {
       name: '',
       type: 'CITY',
       status: 'AVAILABLE',
+      quantity: 1,
       location: '',
       description: '',
       pricePerHour: 0,
@@ -659,6 +700,22 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .table-scroll :deep(.el-table) {
+    min-width: 860px;
+  }
+
+  .pagination-wrapper {
+    justify-content: center;
+  }
 }
 
 /* Tabs 样式 */

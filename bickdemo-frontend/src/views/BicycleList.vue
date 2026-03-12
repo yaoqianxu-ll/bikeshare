@@ -38,7 +38,7 @@
           v-for="bike in bicycles"
           :key="bike.id"
           class="bike-card"
-          :class="{ 'unavailable': bike.status !== 'AVAILABLE' }"
+          :class="{ 'unavailable': bike.status !== 'AVAILABLE' || (bike.quantity ?? 0) <= 0 }"
         >
           <div class="bike-card-image">
             <div class="image-wrapper">
@@ -76,13 +76,21 @@
             </p>
             <div class="bike-actions">
               <el-button
-                v-if="userStore.isLoggedIn && bike.status === 'AVAILABLE'"
+                v-if="userStore.isLoggedIn && bike.status === 'AVAILABLE' && (bike.quantity ?? 0) > 0"
                 type="primary"
                 class="rent-btn"
                 @click="handleRent(bike)"
               >
                 <el-icon><Right /></el-icon>
                 立即租用
+              </el-button>
+              <el-button
+                v-if="userStore.isLoggedIn && bike.status === 'AVAILABLE' && (bike.quantity ?? 0) <= 0"
+                type="primary"
+                class="rent-btn"
+                disabled
+              >
+                无库存
               </el-button>
               <el-button
                 v-if="userStore.isLoggedIn && bike.rentedByCurrentUser"
@@ -119,6 +127,17 @@
           <p class="bike-subinfo">{{ getTypeText(selectedBicycle.type) }} · ¥{{ selectedBicycle.pricePerHour }}/小时</p>
         </div>
         <el-form :model="rentForm" label-width="0" style="margin-top: 20px">
+          <el-form-item>
+            <el-input-number
+              v-model="rentForm.quantity"
+              :min="1"
+              :max="Math.max(1, selectedBicycle.quantity || 1)"
+              :step="1"
+              controls-position="right"
+              style="width: 100%"
+            />
+            <div class="qty-hint">可租数量：{{ selectedBicycle.quantity ?? 0 }}</div>
+          </el-form-item>
           <el-form-item>
             <el-date-picker
               v-model="rentForm.expectedEndTime"
@@ -187,6 +206,9 @@
           </div>
           <!-- Vertical: label on top, content below (avoids narrow 2-column squeeze that makes CJK wrap per character) -->
           <el-descriptions :column="1" direction="vertical" border class="detail-descriptions">
+            <el-descriptions-item label="可租数量">
+              {{ selectedBicycle.quantity ?? 0 }}
+            </el-descriptions-item>
             <el-descriptions-item label="位置">
               <el-icon><Location /></el-icon>
               {{ selectedBicycle.location || '暂无' }}
@@ -255,7 +277,8 @@ const dateShortcuts = [
 ]
 
 const rentForm = reactive({
-  expectedEndTime: null
+  expectedEndTime: null,
+  quantity: 1
 })
 
 const loadBicycles = async () => {
@@ -265,7 +288,11 @@ const loadBicycles = async () => {
     if (filterStatus.value) params.status = filterStatus.value
 
     const res = await getBicycles(params)
-    bicycles.value = res.data
+    bicycles.value = (res.data || []).filter(b => {
+      // When user explicitly filters "可租赁", only show in-stock items.
+      if (filterStatus.value === 'AVAILABLE') return (b?.quantity ?? 0) > 0
+      return true
+    })
 
     // 应用排序：可租赁 > 维修中 > 不可用 > 已租出
     sortBicycles()
@@ -297,7 +324,12 @@ const sortBicycles = () => {
     'RENTED': 4
   }
   bicycles.value.sort((a, b) => {
-    return (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99)
+    const rank = (bike) => {
+      const base = statusOrder[bike.status] || 99
+      if (bike.status === 'AVAILABLE' && (bike.quantity ?? 0) <= 0) return 4.5
+      return base
+    }
+    return rank(a) - rank(b)
   })
 }
 
@@ -352,6 +384,7 @@ const getTypeText = (type) => {
 const handleRent = (bike) => {
   selectedBicycle.value = bike
   rentForm.expectedEndTime = null
+  rentForm.quantity = 1
   rentDialogVisible.value = true
 }
 
@@ -373,7 +406,8 @@ const confirmRent = async () => {
   try {
     await createRental({
       bicycleId: selectedBicycle.value.id,
-      expectedEndTime: rentForm.expectedEndTime
+      expectedEndTime: rentForm.expectedEndTime,
+      quantity: rentForm.quantity
     })
     ElMessage.success('租赁成功')
     rentDialogVisible.value = false
@@ -680,6 +714,12 @@ onMounted(() => {
   font-size: 13px;
   margin-bottom: 18px;
   font-weight: 500;
+}
+
+.qty-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6c757d;
 }
 
 .bike-location .el-icon {

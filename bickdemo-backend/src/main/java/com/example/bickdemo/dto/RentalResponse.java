@@ -43,6 +43,8 @@ public class RentalResponse {
 
     /** 租赁状态 */
     private RentalStatus status;
+    /** 租赁数量 */
+    private Integer quantity;
     /** 总价格 */
     private Double totalPrice;
 

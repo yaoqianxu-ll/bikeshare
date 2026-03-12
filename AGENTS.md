@@ -74,4 +74,13 @@ This repo currently contains credentials/secrets in config and compose files. Fo
 
 - If `rg` (ripgrep) is blocked in your environment ("Access denied"), use PowerShell alternatives:
   - `Get-ChildItem -Recurse -File | Select-String -Pattern "..."` for search.
+- If Chinese text looks garbled in terminal output, prefer explicit UTF-8 reads:
+  - `Get-Content -Encoding UTF8 path/to/file`
+
+## Database Migrations (Common)
+
+When pulling newer commits into an existing MySQL volume, you may need to apply schema changes manually.
+
+- Bicycle inventory: `ALTER TABLE bicycles ADD COLUMN quantity INT NOT NULL DEFAULT 1 COMMENT '数量（库存）';`
+- Rental quantity: `ALTER TABLE rentals ADD COLUMN quantity INT NOT NULL DEFAULT 1 COMMENT '租赁数量';`
 

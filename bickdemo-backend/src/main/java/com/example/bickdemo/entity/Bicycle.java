@@ -33,6 +33,10 @@ public class Bicycle {
     @TableField(value = "status", typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)
     private BicycleStatus status = BicycleStatus.AVAILABLE;
 
+    /** 数量（库存） */
+    @TableField("quantity")
+    private Integer quantity = 1;
+
     /** 停放位置 */
     @TableField("location")
     private String location;

@@ -22,6 +22,8 @@ public class BicycleResponse {
     private BicycleType type;
     /** 自行车状态 */
     private BicycleStatus status;
+    /** 数量（库存） */
+    private Integer quantity;
     /** 停放位置 */
     private String location;
     /** 描述信息 */

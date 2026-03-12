@@ -40,7 +40,7 @@ public interface RentalMapper extends BaseMapper<Rental> {
      * 查询最受欢迎的自行车 TOP10
      */
     @Select("""
-        SELECT r.bicycle_id, b.name as bicycleName, COUNT(*) as rentalCount
+        SELECT r.bicycle_id, b.name as bicycleName, COALESCE(SUM(r.quantity),0) as rentalCount
         FROM rentals r
         LEFT JOIN bicycles b ON r.bicycle_id = b.id
         WHERE r.deleted = 0

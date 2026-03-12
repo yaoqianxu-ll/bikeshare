@@ -73,7 +73,11 @@ public class BicycleService {
      */
     public List<BicycleResponse> getAvailableBicycles() {
         log.debug("查询可用自行车");
-        return bicycleMapper.findByStatus(BicycleStatus.AVAILABLE).stream()
+        return bicycleMapper.selectList(new LambdaQueryWrapper<Bicycle>()
+                        .eq(Bicycle::getDeleted, 0)
+                        .eq(Bicycle::getStatus, BicycleStatus.AVAILABLE)
+                        .gt(Bicycle::getQuantity, 0))
+                .stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
@@ -119,6 +123,7 @@ public class BicycleService {
         bicycle.setName(request.getName());
         bicycle.setType(request.getType());
         bicycle.setStatus(request.getStatus());
+        bicycle.setQuantity(request.getQuantity() == null ? 1 : request.getQuantity());
         bicycle.setLocation(request.getLocation());
         bicycle.setDescription(request.getDescription());
         bicycle.setPricePerHour(request.getPricePerHour() != null ? request.getPricePerHour().doubleValue() : null);
@@ -146,6 +151,9 @@ public class BicycleService {
         }
         if (request.getStatus() != null) {
             bicycle.setStatus(request.getStatus());
+        }
+        if (request.getQuantity() != null) {
+            bicycle.setQuantity(request.getQuantity());
         }
         if (request.getLocation() != null) {
             bicycle.setLocation(request.getLocation());
@@ -196,6 +204,7 @@ public class BicycleService {
         response.setName(bicycle.getName());
         response.setType(bicycle.getType());
         response.setStatus(bicycle.getStatus());
+        response.setQuantity(bicycle.getQuantity());
         response.setLocation(bicycle.getLocation());
         response.setDescription(bicycle.getDescription());
         response.setPricePerHour(bicycle.getPricePerHour() != null ?
