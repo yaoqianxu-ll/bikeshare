@@ -77,3 +77,7 @@ management:
   endpoint:
     health:
       show-details: when_authorized
+
+app:
+  redis:
+    key-prefix: ${APP_REDIS_KEY_PREFIX:bickdemo:prod:}

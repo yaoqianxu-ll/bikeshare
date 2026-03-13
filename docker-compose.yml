@@ -45,6 +45,10 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=yaoqianxu
       - RABBITMQ_PASSWORD=Lile200623
+      - REDIS_HOST=124.221.113.208
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=Lile200623
+      - "APP_REDIS_KEY_PREFIX=bickdemo:prod:"
       - JWT_SECRET=c2VjcmV0LWtleS1mb3Itand0LXRva2VuLWdlbmVyYXRpb24tbWluaW11bS0yNTYtYml0cw==
       - TZ=Asia/Shanghai
     volumes:

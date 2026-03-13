@@ -47,9 +47,9 @@ spring:
     password: ${RABBITMQ_PASSWORD:Lile200623}
   data:
     redis:
-      host: ${REDIS_HOST:124.221.113.208}
+      host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:Lile200623}
+      password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
       timeout: 5s
   cache:
@@ -92,3 +92,5 @@ app:
   mail:
     from-name: BikeShare
     code-expire-minutes: 10
+  redis:
+    key-prefix: ${APP_REDIS_KEY_PREFIX:bickdemo:local:}

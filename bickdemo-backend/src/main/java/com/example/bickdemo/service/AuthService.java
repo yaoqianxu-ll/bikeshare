@@ -55,6 +55,9 @@ public class AuthService {
     @Value("${app.mail.code-expire-minutes:10}")
     private int emailCodeExpireMinutes;
 
+    @Value("${app.redis.key-prefix:bickdemo:}")
+    private String redisKeyPrefix;
+
     /**
      * 用户注册（邮箱验证码）
      */
@@ -344,7 +347,7 @@ public class AuthService {
     }
 
     private String buildEmailCodeKey(String email, String type) {
-        return EMAIL_CODE_KEY_PREFIX + type + ":" + email;
+        return redisKeyPrefix + EMAIL_CODE_KEY_PREFIX + type + ":" + email;
     }
 
     private String normalizeEmail(String email) {
