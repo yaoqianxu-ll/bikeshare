@@ -209,6 +209,16 @@ import {
 } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 
+const TYPE_COLOR_MAP = {
+  MOUNTAIN: '#409EFF',
+  ROAD: '#67C23A',
+  CITY: '#E6A23C',
+  ELECTRIC: '#F56C6C',
+  TANDEM: '#909399'
+}
+
+const TYPE_ORDER = ['MOUNTAIN', 'ROAD', 'CITY', 'ELECTRIC', 'TANDEM']
+
 const statistics = reactive({
   totalRentals: 0,
   activeRentals: 0,
@@ -225,6 +235,17 @@ const pieChart = ref(null)
 const barChart = ref(null)
 let pieInstance = null
 let barInstance = null
+
+const orderedTypeStats = computed(() => {
+  const source = Array.isArray(statistics.typeStats) ? statistics.typeStats : []
+  return [...source].sort((a, b) => {
+    const left = TYPE_ORDER.indexOf(a.type)
+    const right = TYPE_ORDER.indexOf(b.type)
+    const leftIndex = left === -1 ? Number.MAX_SAFE_INTEGER : left
+    const rightIndex = right === -1 ? Number.MAX_SAFE_INTEGER : right
+    return leftIndex - rightIndex
+  })
+})
 
 // 计算衍生数据
 const availablePercent = computed(() => {
@@ -305,6 +326,8 @@ const getTypeText = (type) => {
   return texts[type] || type
 }
 
+const getTypeColor = (type) => TYPE_COLOR_MAP[type] || '#909399'
+
 const initPieChart = () => {
   if (!pieChart.value) return
   if (pieInstance) pieInstance.dispose()
@@ -342,7 +365,7 @@ const initPieChart = () => {
         color: muted
       }
     },
-    color: [brand, '#0ea5a4', '#6366f1', '#64748b', '#94a3b8'],
+    color: orderedTypeStats.value.map(stat => getTypeColor(stat.type)),
     series: [
       {
         name: '自行车类型',
@@ -369,9 +392,12 @@ const initPieChart = () => {
         labelLine: {
           show: false
         },
-        data: statistics.typeStats.map(stat => ({
+        data: orderedTypeStats.value.map(stat => ({
           name: getTypeText(stat.type),
-          value: stat.count
+          value: stat.count,
+          itemStyle: {
+            color: getTypeColor(stat.type)
+          }
         }))
       }
     ],
@@ -418,7 +444,7 @@ const initBarChart = () => {
     },
     xAxis: {
       type: 'category',
-      data: statistics.typeStats.map(stat => getTypeText(stat.type)),
+      data: orderedTypeStats.value.map(stat => getTypeText(stat.type)),
       axisLabel: {
         color: muted,
         fontSize: 12
@@ -450,9 +476,9 @@ const initBarChart = () => {
         barWidth: '50%',
         itemStyle: {
           borderRadius: [10, 10, 0, 0],
-          color: brand
+          color: params => getTypeColor(orderedTypeStats.value[params.dataIndex]?.type)
         },
-        data: statistics.typeStats.map(stat => stat.count)
+        data: orderedTypeStats.value.map(stat => stat.count)
       }
     ],
     animationDuration: 450,

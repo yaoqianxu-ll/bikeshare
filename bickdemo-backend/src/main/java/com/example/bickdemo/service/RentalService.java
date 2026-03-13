@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
@@ -250,20 +251,32 @@ public class RentalService {
         long totalRentals = rentalMapper.selectCount(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Rental>()
                 .eq(Rental::getDeleted, 0));
         long activeRentals = rentalMapper.findByStatus(RentalStatus.ACTIVE).size();
+        long activeRentalQuantity = safeLong(rentalMapper.sumQuantityByStatus(RentalStatus.ACTIVE));
 
-        // Stock-based counts (sum of quantity per status)
+        // quantity 字段表示当前库存，进行中租赁会被扣减，所以总量统计需要把 ACTIVE 租赁加回去
         long availableBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.AVAILABLE)
                 + bicycleMapper.sumQuantityByStatus(BicycleStatus.RENTED);
         long maintenanceBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.MAINTENANCE);
         long disabledBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.DISABLED);
-        long totalBicycles = bicycleMapper.sumAllQuantity();
+        long totalBicycles = bicycleMapper.sumAllQuantity() + activeRentalQuantity;
 
-        // 自行车类型统计
-        List<BicycleMapper.TypeCountVO> typeCounts = bicycleMapper.sumQuantityByType();
-        StatisticsResponse.BicycleTypeStats[] typeStats = typeCounts.stream()
-                .map(vo -> new StatisticsResponse.BicycleTypeStats(
-                        vo.getType().name(),
-                        vo.getCount()
+        // 自行车类型统计：库存数量 + 进行中租赁数量
+        LinkedHashMap<String, Long> typeCountMap = new LinkedHashMap<>();
+        for (BicycleMapper.TypeCountVO vo : bicycleMapper.sumQuantityByType()) {
+            if (vo.getType() != null) {
+                typeCountMap.put(vo.getType().name(), safeLong(vo.getCount()));
+            }
+        }
+        for (RentalMapper.ActiveTypeCountVO vo : rentalMapper.sumQuantityByTypeForStatus(RentalStatus.ACTIVE)) {
+            if (vo.getType() != null) {
+                typeCountMap.merge(vo.getType().name(), safeLong(vo.getCount()), Long::sum);
+            }
+        }
+
+        StatisticsResponse.BicycleTypeStats[] typeStats = typeCountMap.entrySet().stream()
+                .map(entry -> new StatisticsResponse.BicycleTypeStats(
+                        entry.getKey(),
+                        entry.getValue()
                 ))
                 .toArray(StatisticsResponse.BicycleTypeStats[]::new);
 
@@ -288,6 +301,10 @@ public class RentalService {
                 typeStats,
                 popularBikes
         );
+    }
+
+    private long safeLong(Long value) {
+        return value == null ? 0L : value;
     }
 
     private double calculateBillableHours(LocalDateTime startTime, LocalDateTime endTime) {

@@ -1,6 +1,7 @@
 package com.example.bickdemo.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.example.bickdemo.entity.BicycleType;
 import com.example.bickdemo.entity.Rental;
 import com.example.bickdemo.entity.RentalStatus;
 import org.apache.ibatis.annotations.Mapper;
@@ -31,6 +32,17 @@ public interface RentalMapper extends BaseMapper<Rental> {
     List<Rental> findByStatus(@Param("status") RentalStatus status);
 
     /**
+     * 统计进行中租赁中的车辆数量
+     */
+    @Select("""
+        SELECT COALESCE(SUM(quantity), 0)
+        FROM rentals
+        WHERE status = #{status}
+          AND deleted = 0
+    """)
+    Long sumQuantityByStatus(@Param("status") RentalStatus status);
+
+    /**
      * 查询用户的租赁历史
      */
     @Select("SELECT * FROM rentals WHERE user_id = #{userId} AND status = #{status} AND deleted = 0 ORDER BY start_time DESC")
@@ -57,6 +69,20 @@ public interface RentalMapper extends BaseMapper<Rental> {
     Long countRentalsInPeriod(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     /**
+     * 统计进行中租赁按类型分布的数量
+     */
+    @Select("""
+        SELECT b.type AS type, COALESCE(SUM(r.quantity), 0) AS count
+        FROM rentals r
+        INNER JOIN bicycles b ON r.bicycle_id = b.id
+        WHERE r.status = #{status}
+          AND r.deleted = 0
+          AND b.deleted = 0
+        GROUP BY b.type
+    """)
+    List<ActiveTypeCountVO> sumQuantityByTypeForStatus(@Param("status") RentalStatus status);
+
+    /**
      * 热门自行车 VO
      */
     class PopularBicycleVO {
@@ -69,5 +95,14 @@ public interface RentalMapper extends BaseMapper<Rental> {
         public void setBicycleName(String bicycleName) { this.bicycleName = bicycleName; }
         public Long getRentalCount() { return rentalCount; }
         public void setRentalCount(Long rentalCount) { this.rentalCount = rentalCount; }
+    }
+
+    class ActiveTypeCountVO {
+        private BicycleType type;
+        private Long count;
+        public BicycleType getType() { return type; }
+        public void setType(BicycleType type) { this.type = type; }
+        public Long getCount() { return count; }
+        public void setCount(Long count) { this.count = count; }
     }
 }
