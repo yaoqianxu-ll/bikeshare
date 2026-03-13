@@ -4,7 +4,6 @@
       <div class="hero-copy">
         <span class="hero-kicker">BikeShare Social</span>
         <h1>快和你心仪的好友聊天吧！</h1>
-        <p>支持图片和表情包发送</p>
       </div>
       <div class="hero-metrics">
         <div class="metric-chip">
@@ -24,7 +23,7 @@
     </section>
 
     <div class="workspace-grid">
-      <aside class="sidebar-column">
+      <aside ref="sidebarColumnRef" class="sidebar-column">
         <section class="panel panel-search">
           <div class="panel-head">
             <div>
@@ -79,6 +78,9 @@
                 </div>
 
                 <div class="search-actions">
+                  <el-button size="small" plain @click="openFriendProfile(buildContactFromSearch(user))">
+                    资料
+                  </el-button>
                   <el-button
                     v-if="user.relationStatus === 'NONE'"
                     type="primary"
@@ -216,6 +218,9 @@
                 </div>
 
                 <div class="request-actions">
+                  <el-button size="small" plain @click="openFriendProfile(buildContactFromRequest(request, 'INCOMING'))">
+                    资料
+                  </el-button>
                   <el-button size="small" @click="openChatWithRequest(request, 'INCOMING')">私信</el-button>
                   <el-button size="small" type="success" @click="handleAcceptRequest(request)">同意</el-button>
                   <el-button size="small" type="danger" plain @click="handleRejectRequest(request)">拒绝</el-button>
@@ -247,6 +252,9 @@
                 </div>
 
                 <div class="request-actions">
+                  <el-button size="small" plain @click="openFriendProfile(buildContactFromRequest(request, 'OUTGOING'))">
+                    资料
+                  </el-button>
                   <el-tag size="small" type="warning" effect="plain">等待通过</el-tag>
                   <el-button size="small" @click="openChatWithRequest(request, 'OUTGOING')">私信</el-button>
                 </div>
@@ -258,7 +266,7 @@
       </aside>
 
       <section class="chat-column">
-        <div v-if="activeContact" class="chat-card">
+        <div v-if="activeContact" class="chat-card" :style="chatPanelStyle">
           <header class="chat-head">
             <div class="chat-head__main">
               <div class="avatar-shell avatar-shell--xl" :style="buildAvatarStyle(activeContact.avatar)">
@@ -276,9 +284,10 @@
               </div>
             </div>
 
-            <div v-if="false" class="chat-head__side">
-              <span class="head-stat">{{ messageTotal }} 条消息</span>
-              <span class="head-stat">未读 {{ activeContact.unreadCount || 0 }}</span>
+            <div class="chat-head__side">
+              <el-button plain class="profile-view-button" @click="openFriendProfile(activeContact)">
+                查看好友信息
+              </el-button>
             </div>
           </header>
 
@@ -388,7 +397,7 @@
                   :class="{ active: pickerVisible }"
                   @click="togglePickerPanel"
                 >
-                  <el-icon><Smile /></el-icon>
+                  <el-icon><ChatDotRound /></el-icon>
                   <span>表情</span>
                 </button>
                 <button v-if="false"
@@ -414,8 +423,12 @@
 
             </div>
 
-            <div v-if="false && pickerVisible" class="picker-panel">
-              <div class="picker-switch">
+            <div v-if="pickerVisible" class="picker-panel">
+              <div class="picker-panel__head">
+                <span>常用表情</span>
+              </div>
+
+              <div v-if="false" class="picker-switch">
                 <button
                   class="picker-switch__button"
                   :class="{ active: pickerTab === 'emoji' }"
@@ -432,10 +445,11 @@
                 </button>
               </div>
 
-              <div v-if="pickerTab === 'emoji'" class="emoji-grid">
+              <div class="emoji-grid">
                 <button
                   v-for="emoji in emojiPresets"
                   :key="emoji.value"
+                  type="button"
                   class="emoji-card"
                   @click="handleEmojiSend(emoji)"
                 >
@@ -444,10 +458,11 @@
                 </button>
               </div>
 
-              <div v-else class="sticker-grid">
+              <div v-if="false" class="sticker-grid">
                 <button
                   v-for="sticker in stickerPresets"
                   :key="sticker.key"
+                  type="button"
                   class="sticker-card"
                   @click="handleStickerSend(sticker)"
                 >
@@ -458,6 +473,14 @@
             </div>
 
             <div class="composer-input-wrap">
+              <button
+                type="button"
+                class="composer-sticker-button"
+                :class="{ active: pickerVisible }"
+                @click="togglePicker('emoji')"
+              >
+                <span class="composer-emoji-mark" aria-hidden="true">😊</span>
+              </button>
               <button type="button" class="composer-image-button" :disabled="imageUploading" @click="triggerImagePicker">
                 <el-icon><PictureFilled /></el-icon>
               </button>
@@ -487,12 +510,84 @@
           </footer>
         </div>
 
-        <div v-else class="chat-placeholder panel">
+        <div v-else class="chat-placeholder panel" :style="chatPanelStyle">
           <div class="placeholder-mark">BikeShare Chat</div>
           <h2>从左侧搜一个好友，或者直接点开已有会话</h2>
         </div>
       </section>
     </div>
+
+    <el-drawer
+      v-model="profileDrawerVisible"
+      :with-header="false"
+      :modal="false"
+      :size="profileDrawerSize"
+      class="friend-profile-drawer"
+    >
+      <div v-if="friendProfile" class="friend-profile">
+        <div class="friend-profile__top">
+          <span class="friend-profile__eyebrow">好友资料</span>
+          <button type="button" class="friend-profile__close" @click="closeFriendProfile">关闭</button>
+        </div>
+
+        <div class="friend-profile__hero">
+          <div class="avatar-shell avatar-shell--profile" :style="buildAvatarStyle(friendProfile.avatar)">
+            <img v-if="friendProfile.avatar" :src="friendProfile.avatar" :alt="friendProfile.username" />
+            <span v-else>{{ getInitial(friendProfile.username) }}</span>
+          </div>
+
+          <div class="friend-profile__hero-copy">
+            <div class="friend-profile__title">
+              <h3>{{ friendProfile.username }}</h3>
+              <el-tag size="small" effect="plain" :type="getRelationTagType(friendProfile.relationStatus)">
+                {{ getRelationLabel(friendProfile.relationStatus) }}
+              </el-tag>
+            </div>
+            <p>{{ friendProfile.bio || '这个好友还没有填写个人简介。' }}</p>
+          </div>
+        </div>
+
+        <div class="friend-profile__stats">
+          <div class="friend-profile__stat">
+            <span>私信状态</span>
+            <strong>{{ getProfileChatLabel(friendProfile) }}</strong>
+          </div>
+          <div class="friend-profile__stat">
+            <span>未读消息</span>
+            <strong>{{ friendProfile.unreadCount || 0 }}</strong>
+          </div>
+          <div class="friend-profile__stat">
+            <span>{{ getProfileActivityLabel(friendProfile) }}</span>
+            <strong>{{ getProfileActivityTime(friendProfile) }}</strong>
+          </div>
+          <div class="friend-profile__stat">
+            <span>用户编号</span>
+            <strong>#{{ friendProfile.userId }}</strong>
+          </div>
+        </div>
+
+        <div class="friend-profile__section">
+          <span class="friend-profile__section-label">资料说明</span>
+          <p>{{ buildRelationCopy(friendProfile) }}</p>
+        </div>
+
+        <div class="friend-profile__section">
+          <span class="friend-profile__section-label">最近一条</span>
+          <p>{{ friendProfile.lastMessagePreview || '当前还没有聊天记录。' }}</p>
+        </div>
+
+        <div class="friend-profile__footer">
+<!--          <el-button @click="closeFriendProfile">关闭</el-button>-->
+<!--          <el-button
+            v-if="friendProfile.canChat"
+            type="primary"
+            @click="openChatFromProfile"
+          >
+            打开会话
+          </el-button>-->
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
@@ -506,7 +601,6 @@ import {
   PictureFilled,
   Promotion,
   Search,
-  Sunny,
   UserFilled
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
@@ -526,7 +620,6 @@ import { uploadImage } from '@/api/file'
 import { createChatSocket } from '@/utils/chatSocket'
 
 const MESSAGE_PAGE_SIZE = 24
-const Smile = Sunny
 
 const userStore = useUserStore()
 
@@ -552,8 +645,13 @@ const pickerVisible = ref(false)
 const pickerTab = ref('emoji')
 const imageUploading = ref(false)
 const socketState = ref('CONNECTING')
+const profileDrawerVisible = ref(false)
+const friendProfile = ref(null)
+const sidebarColumnRef = ref(null)
 const messageListRef = ref(null)
 const imageInputRef = ref(null)
+const chatPanelHeight = ref(0)
+const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440)
 
 const emojiPresets = [
   { label: '开心', value: '😄' },
@@ -581,6 +679,18 @@ const totalUnreadCount = computed(() =>
   contacts.value.reduce((sum, contact) => sum + Number(contact.unreadCount || 0), 0)
 )
 
+const chatPanelStyle = computed(() => {
+  if (viewportWidth.value <= 1280 || !chatPanelHeight.value) return {}
+  const height = `${chatPanelHeight.value}px`
+  return {
+    height,
+    minHeight: height,
+    maxHeight: height
+  }
+})
+
+const profileDrawerSize = computed(() => (viewportWidth.value <= 768 ? '92%' : '380px'))
+
 const socketStateLabel = computed(() => {
   if (socketState.value === 'ONLINE') return '实时在线'
   if (socketState.value === 'ERROR') return '连接异常'
@@ -597,6 +707,7 @@ const socketStateType = computed(() => {
 
 let searchTimer = null
 let socketClient = null
+let layoutObserver = null
 
 const getInitial = (value) => {
   const text = String(value || '').trim()
@@ -700,6 +811,20 @@ const scrollMessageBoard = async (position = 'bottom', smooth = true) => {
   })
 }
 
+const syncChatPanelHeight = () => {
+  if (typeof window === 'undefined') return
+
+  viewportWidth.value = window.innerWidth
+  if (viewportWidth.value <= 1280) {
+    chatPanelHeight.value = 0
+    return
+  }
+
+  const sidebar = sidebarColumnRef.value
+  if (!sidebar) return
+  chatPanelHeight.value = Math.ceil(sidebar.getBoundingClientRect().height)
+}
+
 const resetConversationState = () => {
   messages.value = []
   messagePage.value = 1
@@ -720,6 +845,13 @@ const clearUnreadState = (targetUserId) => {
       unreadCount: 0
     }
   }
+
+  if (friendProfile.value?.userId === targetUserId) {
+    friendProfile.value = {
+      ...friendProfile.value,
+      unreadCount: 0
+    }
+  }
 }
 
 const buildMessagePreview = (message) => {
@@ -729,7 +861,29 @@ const buildMessagePreview = (message) => {
   return message.content || ''
 }
 
+const buildProfileSnapshot = (contact = {}) => {
+  const matched = contacts.value.find((item) => item.userId === contact.userId)
+  return {
+    ...(matched || {}),
+    ...contact,
+    bio: contact.bio || matched?.bio || '',
+    lastMessagePreview: contact.lastMessagePreview || matched?.lastMessagePreview || '',
+    lastMessageTime: contact.lastMessageTime || matched?.lastMessageTime || null,
+    activityTime: contact.activityTime || matched?.activityTime || matched?.lastMessageTime || null,
+    unreadCount: Number(contact.unreadCount ?? matched?.unreadCount ?? 0),
+    canChat: Boolean(contact.canChat ?? matched?.canChat ?? contact.relationStatus !== 'NONE')
+  }
+}
+
 const getConversationUserId = (message) => (message?.mine ? message.receiverId : message.senderId)
+
+const syncFriendProfile = (contact) => {
+  if (!friendProfile.value?.userId || friendProfile.value.userId !== contact?.userId) return
+  friendProfile.value = buildProfileSnapshot({
+    ...friendProfile.value,
+    ...contact
+  })
+}
 
 const touchContactActivity = (message, { incrementUnread = false } = {}) => {
   const contactUserId = getConversationUserId(message)
@@ -765,6 +919,8 @@ const touchContactActivity = (message, { incrementUnread = false } = {}) => {
       ...nextContact
     }
   }
+
+  syncFriendProfile(nextContact)
 }
 
 const applyReadReceipt = (receipt) => {
@@ -801,6 +957,12 @@ const loadContacts = async ({ silent = false } = {}) => {
           ...activeContact.value,
           ...matched
         }
+      }
+    }
+    if (friendProfile.value) {
+      const profileMatch = contacts.value.find((item) => item.userId === friendProfile.value.userId)
+      if (profileMatch) {
+        syncFriendProfile(profileMatch)
       }
     }
   } finally {
@@ -873,6 +1035,7 @@ const selectContact = async (contact) => {
   sidebarTab.value = 'contacts'
   pickerVisible.value = false
   resetConversationState()
+  await acknowledgeConversation(contact.userId)
   await loadMessages(contact.userId, {
     page: 1,
     scroll: 'bottom'
@@ -908,6 +1071,30 @@ const buildContactFromRequest = (request, direction) => ({
   unreadCount: 0,
   canChat: true
 })
+
+const closeFriendProfile = () => {
+  profileDrawerVisible.value = false
+}
+
+const openFriendProfile = (contact) => {
+  if (!contact?.userId) return
+  friendProfile.value = buildProfileSnapshot(contact)
+  profileDrawerVisible.value = true
+}
+
+const getProfileActivityLabel = (profile = {}) => (profile.lastMessageTime ? '最近消息' : '最近互动')
+
+const getProfileActivityTime = (profile = {}) => {
+  const value = profile.lastMessageTime || profile.activityTime
+  return value ? formatTime(value) : '暂无'
+}
+
+const getProfileChatLabel = (profile = {}) => {
+  if (profile.canChat) return '可直接私信'
+  if (profile.relationStatus === 'REQUEST_SENT') return '等待对方通过'
+  if (profile.relationStatus === 'REQUEST_RECEIVED') return '待你处理申请'
+  return '需要先加好友'
+}
 
 const resetSearch = () => {
   searchKeyword.value = ''
@@ -946,6 +1133,13 @@ const openChatWithRequest = async (request, direction) => {
 const openChatFromSearch = async (user) => {
   const matched = contacts.value.find((item) => item.userId === user.id)
   await selectContact(matched || buildContactFromSearch(user))
+}
+
+const openChatFromProfile = async () => {
+  if (!friendProfile.value?.canChat) return
+  closeFriendProfile()
+  const matched = contacts.value.find((item) => item.userId === friendProfile.value.userId)
+  await selectContact(matched || buildProfileSnapshot(friendProfile.value))
 }
 
 const handleCreateFriendRequest = async (user) => {
@@ -1045,6 +1239,10 @@ const togglePickerPanel = () => {
 }
 
 const togglePicker = (tab) => {
+  if (!activeContact.value) {
+    ElMessage.warning('请先选择一个聊天对象')
+    return
+  }
   if (pickerVisible.value && pickerTab.value === tab) {
     pickerVisible.value = false
     return
@@ -1058,6 +1256,7 @@ const triggerImagePicker = () => {
     ElMessage.warning('请先选择一个聊天对象')
     return
   }
+  pickerVisible.value = false
   imageInputRef.value?.click()
 }
 
@@ -1173,11 +1372,26 @@ const connectSocket = () => {
 
 onMounted(async () => {
   await Promise.allSettled([loadRequests(), loadContacts()])
+  await nextTick()
+  syncChatPanelHeight()
+  if (typeof ResizeObserver !== 'undefined' && sidebarColumnRef.value) {
+    layoutObserver = new ResizeObserver(() => {
+      syncChatPanelHeight()
+    })
+    layoutObserver.observe(sidebarColumnRef.value)
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', syncChatPanelHeight)
+  }
   connectSocket()
 })
 
 onBeforeUnmount(async () => {
   clearTimeout(searchTimer)
+  layoutObserver?.disconnect()
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', syncChatPanelHeight)
+  }
   if (socketClient?.disconnect) {
     await socketClient.disconnect()
   }
@@ -1280,7 +1494,7 @@ onBeforeUnmount(async () => {
   display: grid;
   grid-template-columns: minmax(380px, 430px) minmax(0, 1fr);
   gap: 24px;
-  align-items: stretch;
+  align-items: start;
   min-height: calc(100vh - 170px);
 }
 
@@ -1293,7 +1507,6 @@ onBeforeUnmount(async () => {
 .chat-column {
   min-width: 0;
   min-height: 0;
-  display: flex;
 }
 
 .panel {
@@ -1616,12 +1829,22 @@ onBeforeUnmount(async () => {
   height: 78px;
   min-width: 78px;
   min-height: 78px;
+  max-width: 78px;
+  max-height: 78px;
+}
+
+.avatar-shell--profile {
+  width: 96px;
+  height: 96px;
+  min-width: 96px;
+  min-height: 96px;
+  max-width: 96px;
+  max-height: 96px;
 }
 
 .chat-card {
-  flex: 1;
-  height: auto;
-  max-height: none;
+  height: calc(100vh - 170px);
+  max-height: calc(100vh - 170px);
   min-height: calc(100vh - 170px);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
@@ -1645,20 +1868,124 @@ onBeforeUnmount(async () => {
   font-size: 26px;
 }
 
+.friend-profile {
+  display: grid;
+  gap: 18px;
+  padding: 8px 4px 8px;
+}
+
+.friend-profile__top,
+.friend-profile__title,
+.friend-profile__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.friend-profile__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 107, 53, 0.10);
+  color: var(--brand-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.friend-profile__close {
+  border: 0;
+  background: transparent;
+  color: var(--bs-muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.friend-profile__hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  padding: 20px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.84));
+  border: 1px solid rgba(255, 107, 53, 0.12);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+}
+
+.friend-profile__hero-copy {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.friend-profile__hero-copy h3 {
+  margin: 0;
+  color: var(--bs-ink);
+  font-size: 24px;
+}
+
+.friend-profile__hero-copy p,
+.friend-profile__section p {
+  margin: 0;
+  color: var(--bs-muted);
+  line-height: 1.7;
+}
+
+.friend-profile__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.friend-profile__stat,
+.friend-profile__section {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.friend-profile__stat span,
+.friend-profile__section-label {
+  color: var(--bs-muted);
+  font-size: 12px;
+}
+
+.friend-profile__stat strong {
+  color: var(--bs-ink);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.friend-profile__footer {
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
 .chat-head__side {
   display: grid;
   gap: 8px;
   justify-items: end;
 }
 
-.head-stat {
-  display: inline-flex;
-  align-items: center;
-  padding: 10px 12px;
+.profile-view-button {
+  min-width: 112px;
+  padding-left: 18px;
+  padding-right: 18px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.04);
-  color: var(--bs-muted);
-  font-size: 12px;
+  border-color: rgba(255, 107, 53, 0.18);
+  background: rgba(255, 107, 53, 0.08);
+  color: var(--bs-ink);
+}
+
+.profile-view-button:hover {
+  border-color: rgba(255, 107, 53, 0.32);
+  background: rgba(255, 107, 53, 0.14);
 }
 
 .message-board {
@@ -1848,10 +2175,10 @@ onBeforeUnmount(async () => {
   position: relative;
 }
 
-.composer-image-button {
+.composer-image-button,
+.composer-sticker-button {
   position: absolute;
   top: 14px;
-  right: 14px;
   z-index: 3;
   width: 40px;
   height: 40px;
@@ -1866,27 +2193,45 @@ onBeforeUnmount(async () => {
   transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
-.composer-image-button:hover {
+.composer-image-button {
+  right: 14px;
+}
+
+.composer-sticker-button {
+  right: 62px;
+}
+
+.composer-image-button:hover,
+.composer-sticker-button:hover,
+.composer-sticker-button.active {
   transform: translateY(-1px);
   border-color: rgba(255, 107, 53, 0.20);
   background: rgba(255, 107, 53, 0.10);
 }
 
-.composer-image-button:disabled {
+.composer-image-button:disabled,
+.composer-sticker-button:disabled {
   cursor: wait;
   opacity: 0.65;
   transform: none;
 }
 
-.composer-image-button .el-icon {
+.composer-image-button .el-icon,
+.composer-sticker-button .el-icon {
   font-size: 18px;
+}
+
+.composer-emoji-mark {
+  display: inline-block;
+  font-size: 18px;
+  line-height: 1;
 }
 
 .composer-textarea :deep(.el-textarea__inner) {
   border-radius: 22px;
   min-height: 152px !important;
   max-height: 152px !important;
-  padding: 18px 64px 64px 18px;
+  padding: 18px 112px 64px 18px;
   line-height: 1.7;
   text-align: left;
   vertical-align: top;
@@ -1926,12 +2271,24 @@ onBeforeUnmount(async () => {
 }
 
 .picker-panel {
+  justify-self: end;
+  width: min(420px, 100%);
   padding: 14px;
   border-radius: 22px;
   border: 1px solid rgba(15, 23, 42, 0.06);
-  background: rgba(15, 23, 42, 0.03);
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.10);
   display: grid;
   gap: 14px;
+}
+
+.picker-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--bs-ink);
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .picker-switch {
@@ -2041,7 +2398,6 @@ onBeforeUnmount(async () => {
 }
 
 .chat-placeholder {
-  height: 100%;
   min-height: calc(100vh - 170px);
   align-content: center;
   justify-items: start;
@@ -2131,6 +2487,11 @@ onBeforeUnmount(async () => {
     max-width: 88%;
   }
 
+  .friend-profile__hero,
+  .friend-profile__stats {
+    grid-template-columns: 1fr;
+  }
+
   .composer-actions {
     right: 12px;
     bottom: 12px;
@@ -2139,6 +2500,11 @@ onBeforeUnmount(async () => {
   .composer-image-button {
     top: 12px;
     right: 12px;
+  }
+
+  .composer-sticker-button {
+    top: 12px;
+    right: 60px;
   }
 
   .composer-actions :deep(.el-button) {
@@ -2150,7 +2516,7 @@ onBeforeUnmount(async () => {
   .composer-textarea :deep(.el-textarea__inner) {
     min-height: 148px !important;
     max-height: 148px !important;
-    padding: 16px 60px 66px 16px;
+    padding: 16px 108px 66px 16px;
   }
 
   .composer-textarea :deep(.el-input__count) {

@@ -35,7 +35,7 @@
 
         <section class="profile-panel">
           <div class="panel-title">头像与资料</div>
-          <p class="panel-desc">用户名可以直接修改，个人简介会同步保存到数据库。</p>
+          <p class="panel-desc">用户名可以直接修改 </p>
 
           <div class="avatar-actions">
             <el-upload
@@ -126,7 +126,6 @@
 
         <section class="profile-panel profile-panel-wide">
           <div class="panel-title">安全设置</div>
-          <p class="panel-desc">修改密码后，本地保存的旧密码也会自动清除，避免下次继续填充旧值。</p>
 
           <el-form
             :model="passwordForm"
