@@ -375,11 +375,12 @@ public class SocialService {
         chatMessageMapper.insert(message);
 
         ChatMessageResponse response = toChatMessageResponse(message, currentUser.getId(), currentUser, receiver);
+        ChatMessageResponse receiverResponse = toChatMessageResponse(message, receiver.getId(), receiver, currentUser);
         socialEventPublisher.publish(new SocialWsEvent(
                 SocialEventType.CHAT_MESSAGE,
                 receiver.getUsername(),
                 null,
-                response,
+                receiverResponse,
                 currentUser.getId(),
                 "New private message",
                 null

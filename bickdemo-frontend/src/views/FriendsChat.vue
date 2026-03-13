@@ -679,6 +679,8 @@ const totalUnreadCount = computed(() =>
   contacts.value.reduce((sum, contact) => sum + Number(contact.unreadCount || 0), 0)
 )
 
+const currentUserId = computed(() => Number(userStore.userId || 0))
+
 const chatPanelStyle = computed(() => {
   if (viewportWidth.value <= 1280 || !chatPanelHeight.value) return {}
   const height = `${chatPanelHeight.value}px`
@@ -861,6 +863,8 @@ const buildMessagePreview = (message) => {
   return message.content || ''
 }
 
+const isCurrentUserContact = (userId) => Number(userId || 0) === currentUserId.value
+
 const buildProfileSnapshot = (contact = {}) => {
   const matched = contacts.value.find((item) => item.userId === contact.userId)
   return {
@@ -887,6 +891,8 @@ const syncFriendProfile = (contact) => {
 
 const touchContactActivity = (message, { incrementUnread = false } = {}) => {
   const contactUserId = getConversationUserId(message)
+  if (!contactUserId || isCurrentUserContact(contactUserId)) return
+
   const existing = contacts.value.find((item) => item.userId === contactUserId)
   const fallbackContact = activeContact.value?.userId === contactUserId ? activeContact.value : null
   const nextPreview = buildMessagePreview(message)
@@ -1031,11 +1037,14 @@ const loadOlderMessages = async () => {
 }
 
 const selectContact = async (contact) => {
+  if (!contact?.userId || isCurrentUserContact(contact.userId)) {
+    return
+  }
   activeContact.value = { ...contact }
   sidebarTab.value = 'contacts'
   pickerVisible.value = false
   resetConversationState()
-  await acknowledgeConversation(contact.userId)
+  clearUnreadState(contact.userId)
   await loadMessages(contact.userId, {
     page: 1,
     scroll: 'bottom'
@@ -1322,6 +1331,10 @@ const handleSocketEvent = async (event) => {
   if (event.eventType === 'CHAT_MESSAGE' && event.message) {
     const incomingMessage = normalizeMessage(event.message)
     const conversationUserId = getConversationUserId(incomingMessage)
+    if (!conversationUserId || isCurrentUserContact(conversationUserId)) {
+      loadContacts({ silent: true }).catch(() => {})
+      return
+    }
     const isActiveConversation = activeContact.value?.userId === conversationUserId
 
     touchContactActivity(incomingMessage, {
@@ -2034,6 +2047,7 @@ onBeforeUnmount(async () => {
   max-width: min(640px, 80%);
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
 }
 
@@ -2068,6 +2082,8 @@ onBeforeUnmount(async () => {
 .message-bubble {
   border-radius: 24px;
   padding: 14px 16px;
+  max-width: 100%;
+  width: fit-content;
   background: rgba(15, 23, 42, 0.05);
   color: var(--bs-ink);
   line-height: 1.7;
