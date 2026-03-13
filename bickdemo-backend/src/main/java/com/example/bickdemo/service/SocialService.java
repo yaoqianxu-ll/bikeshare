@@ -355,6 +355,7 @@ public class SocialService {
         }
 
         ensureChatAllowed(currentUser.getId(), receiver.getId());
+        markConversationReadInternal(currentUser, receiver);
 
         ChatMessageType messageType = resolveMessageType(request.getType());
         String content = normalizeNullable(request.getContent());
@@ -472,6 +473,7 @@ public class SocialService {
         boolean mine = Objects.equals(message.getSenderId(), currentUserId);
         User sender = mine ? currentUser : targetUser;
         User receiver = mine ? targetUser : currentUser;
+        boolean read = isMessageRead(message);
 
         return new ChatMessageResponse(
                 message.getId(),
@@ -484,11 +486,16 @@ public class SocialService {
                 message.getType(),
                 message.getContent(),
                 message.getMediaUrl(),
-                Boolean.TRUE.equals(message.getRead()),
+                read,
                 message.getReadAt(),
                 mine,
                 message.getCreatedAt()
         );
+    }
+
+    private boolean isMessageRead(ChatMessage message) {
+        return message != null
+                && (Boolean.TRUE.equals(message.getRead()) || message.getReadAt() != null);
     }
 
     private String buildRequestRemark(String username, String remark) {

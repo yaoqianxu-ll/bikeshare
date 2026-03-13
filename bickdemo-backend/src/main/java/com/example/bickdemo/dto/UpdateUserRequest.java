@@ -1,6 +1,7 @@
 package com.example.bickdemo.dto;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -13,6 +14,7 @@ public class UpdateUserRequest {
 
     /** 用户名 */
     @Size(min = 3, max = 50, message = "用户名长度必须在 3-50 个字符之间")
+    @Pattern(regexp = "^[A-Za-z0-9\\u4E00-\\u9FFF]+$", message = "用户名只能包含中文、英文和数字")
     private String username;
 
     /** 邮箱 */

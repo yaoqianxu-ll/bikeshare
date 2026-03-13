@@ -18,12 +18,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
@@ -38,6 +40,9 @@ import java.util.concurrent.ThreadLocalRandom;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final String EMAIL_CODE_KEY_PREFIX = "auth:email:code:";
+    private static final String[] EMAIL_CODE_TYPES = {"REGISTER", "RESET_PASSWORD", "UPDATE_EMAIL"};
+
     private final UserMapper userMapper;
     private final EmailAuthMapper emailAuthMapper;
     private final PasswordEncoder passwordEncoder;
@@ -45,6 +50,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final MinioService minioService;
     private final EmailMailService emailMailService;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Value("${app.mail.code-expire-minutes:10}")
     private int emailCodeExpireMinutes;
@@ -97,21 +103,12 @@ public class AuthService {
         }
 
         String code = generateVerifyCode();
-        EmailAuth record = emailAuthMapper.findByEmail(email);
-        if (record == null) {
-            record = new EmailAuth();
-            record.setEmail(email);
-            record.setVerifyCode(code);
-            record.setCodeType(type);
-            record.setCodeExpireAt(LocalDateTime.now().plusMinutes(emailCodeExpireMinutes));
-            emailAuthMapper.insert(record);
-        } else {
-            record.setVerifyCode(code);
-            record.setCodeType(type);
-            record.setCodeExpireAt(LocalDateTime.now().plusMinutes(emailCodeExpireMinutes));
-            emailAuthMapper.updateById(record);
-        }
-
+        clearEmailCode(email);
+        stringRedisTemplate.opsForValue().set(
+                buildEmailCodeKey(email, type),
+                code,
+                Duration.ofMinutes(emailCodeExpireMinutes)
+        );
         emailMailService.sendVerificationCode(email, code, type, emailCodeExpireMinutes);
     }
 
@@ -302,6 +299,19 @@ public class AuthService {
     }
 
     private void validateEmailCode(String email, String code, String type) {
+        String normalizedType = normalizeCodeType(type);
+        String redisCode = stringRedisTemplate.opsForValue().get(buildEmailCodeKey(email, normalizedType));
+        if (StringUtils.hasText(redisCode)) {
+            if (!redisCode.equals(code)) {
+                throw new RuntimeException("验证码错误");
+            }
+            return;
+        }
+
+        validateEmailCodeFromDatabase(email, code, normalizedType);
+    }
+
+    private void validateEmailCodeFromDatabase(String email, String code, String type) {
         EmailAuth record = emailAuthMapper.findByEmail(email);
         if (record == null) {
             throw new RuntimeException("请先获取验证码");
@@ -318,12 +328,23 @@ public class AuthService {
     }
 
     private void clearEmailCode(String email) {
+        for (String type : EMAIL_CODE_TYPES) {
+            stringRedisTemplate.delete(buildEmailCodeKey(email, type));
+        }
+        clearEmailCodeFromDatabase(email);
+    }
+
+    private void clearEmailCodeFromDatabase(String email) {
         EmailAuth record = emailAuthMapper.findByEmail(email);
         if (record == null) return;
         record.setVerifyCode(null);
         record.setCodeType(null);
         record.setCodeExpireAt(null);
         emailAuthMapper.updateById(record);
+    }
+
+    private String buildEmailCodeKey(String email, String type) {
+        return EMAIL_CODE_KEY_PREFIX + type + ":" + email;
     }
 
     private String normalizeEmail(String email) {

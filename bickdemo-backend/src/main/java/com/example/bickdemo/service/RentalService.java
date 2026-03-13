@@ -3,6 +3,7 @@ package com.example.bickdemo.service;
 import com.example.bickdemo.dto.RentalRequest;
 import com.example.bickdemo.dto.RentalResponse;
 import com.example.bickdemo.dto.StatisticsResponse;
+import com.example.bickdemo.config.CacheNames;
 import com.example.bickdemo.entity.Bicycle;
 import com.example.bickdemo.entity.BicycleStatus;
 import com.example.bickdemo.entity.Rental;
@@ -14,6 +15,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +46,7 @@ public class RentalService {
      * 创建租赁
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
     public RentalResponse createRental(Long userId, RentalRequest request) {
         Bicycle bicycle = bicycleMapper.selectById(request.getBicycleId());
         if (bicycle == null) {
@@ -82,6 +86,7 @@ public class RentalService {
      * 结束租赁
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
     public RentalResponse endRental(Long rentalId) {
         Rental rental = rentalMapper.selectById(rentalId);
         if (rental == null) {
@@ -114,6 +119,7 @@ public class RentalService {
      * 取消租赁
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
     public RentalResponse cancelRental(Long rentalId) {
         Rental rental = rentalMapper.selectById(rentalId);
         if (rental == null) {
@@ -239,6 +245,7 @@ public class RentalService {
     /**
      * 获取统计数据
      */
+    @Cacheable(cacheNames = CacheNames.STATISTICS_OVERVIEW)
     public StatisticsResponse getStatistics() {
         long totalRentals = rentalMapper.selectCount(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Rental>()
                 .eq(Rental::getDeleted, 0));

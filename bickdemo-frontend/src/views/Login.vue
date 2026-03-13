@@ -209,6 +209,20 @@ const resetForm = reactive({
   newPassword: ''
 })
 
+const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,100}$/
+
+const validatePassword = (_rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入新密码'))
+    return
+  }
+  if (!passwordPattern.test(value)) {
+    callback(new Error('密码必须为 6 位以上英文和数字组合，且不能包含其他符号'))
+    return
+  }
+  callback()
+}
+
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
@@ -230,7 +244,8 @@ const resetRules = {
   code: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于 6 个字符', trigger: 'blur' }
+    { min: 6, message: '密码长度不能少于 6 个字符', trigger: 'blur' },
+    { validator: validatePassword, trigger: 'blur' }
   ]
 }
 

@@ -60,3 +60,8 @@ SET @chat_messages_add_read_at_sql := IF(
 PREPARE stmt_chat_messages_add_read_at FROM @chat_messages_add_read_at_sql;
 EXECUTE stmt_chat_messages_add_read_at;
 DEALLOCATE PREPARE stmt_chat_messages_add_read_at;
+
+UPDATE `chat_messages`
+SET `is_read` = 1
+WHERE `read_at` IS NOT NULL
+  AND (`is_read` = 0 OR `is_read` IS NULL);

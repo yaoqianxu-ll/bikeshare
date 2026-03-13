@@ -2,6 +2,7 @@ package com.example.bickdemo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 
 /**
  * 自行车租借系统启动类
@@ -9,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author Administrator
  */
 @SpringBootApplication
+@EnableCaching
 public class BickdemoApplication {
 
     public static void main(String[] args) {

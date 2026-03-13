@@ -152,6 +152,33 @@ const form = reactive({
   confirmPassword: ''
 })
 
+const usernamePattern = /^[A-Za-z0-9\u4E00-\u9FFF]+$/
+const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,100}$/
+
+const validateUsername = (_rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入用户名'))
+    return
+  }
+  if (!usernamePattern.test(value)) {
+    callback(new Error('用户名只能包含中文、英文和数字'))
+    return
+  }
+  callback()
+}
+
+const validatePassword = (_rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入密码'))
+    return
+  }
+  if (!passwordPattern.test(value)) {
+    callback(new Error('密码必须为 6 位以上英文和数字组合，且不能包含其他符号'))
+    return
+  }
+  callback()
+}
+
 const validateConfirmPassword = (rule, value, callback) => {
   if (value !== form.password) {
     callback(new Error('两次输入的密码不一致'))
@@ -163,7 +190,8 @@ const validateConfirmPassword = (rule, value, callback) => {
 const rules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 50, message: '用户名长度必须在 3-50 个字符之间', trigger: 'blur' }
+    { min: 3, max: 50, message: '用户名长度必须在 3-50 个字符之间', trigger: 'blur' },
+    { validator: validateUsername, trigger: 'blur' }
   ],
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
@@ -172,7 +200,8 @@ const rules = {
   code: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于 6 个字符', trigger: 'blur' }
+    { min: 6, message: '密码长度不能少于 6 个字符', trigger: 'blur' },
+    { validator: validatePassword, trigger: 'blur' }
   ],
   confirmPassword: [
     { required: true, message: '请确认密码', trigger: 'blur' },

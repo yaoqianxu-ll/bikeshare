@@ -224,6 +224,33 @@ const passwordForm = reactive({
   confirmPassword: ''
 })
 
+const usernamePattern = /^[A-Za-z0-9\u4E00-\u9FFF]+$/
+const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,100}$/
+
+const validateUsername = (_rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入用户名'))
+    return
+  }
+  if (!usernamePattern.test(value)) {
+    callback(new Error('用户名只能包含中文、英文和数字'))
+    return
+  }
+  callback()
+}
+
+const validatePassword = (_rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入新密码'))
+    return
+  }
+  if (!passwordPattern.test(value)) {
+    callback(new Error('新密码必须为 6 位以上英文和数字组合，且不能包含其他符号'))
+    return
+  }
+  callback()
+}
+
 const validateConfirmPassword = (_rule, value, callback) => {
   if (!value) {
     callback(new Error('请再次输入新密码'))
@@ -239,7 +266,8 @@ const validateConfirmPassword = (_rule, value, callback) => {
 const profileRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 50, message: '用户名长度必须在 3-50 个字符之间', trigger: 'blur' }
+    { min: 3, max: 50, message: '用户名长度必须在 3-50 个字符之间', trigger: 'blur' },
+    { validator: validateUsername, trigger: 'blur' }
   ],
   bio: [
     { max: 500, message: '个人简介长度不能超过 500 个字符', trigger: 'blur' }
@@ -263,7 +291,8 @@ const passwordRules = {
   ],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, max: 100, message: '新密码长度必须在 6-100 个字符之间', trigger: 'blur' }
+    { min: 6, max: 100, message: '新密码长度必须在 6-100 个字符之间', trigger: 'blur' },
+    { validator: validatePassword, trigger: 'blur' }
   ],
   confirmPassword: [
     { validator: validateConfirmPassword, trigger: 'blur' }

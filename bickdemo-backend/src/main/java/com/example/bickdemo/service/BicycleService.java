@@ -1,6 +1,7 @@
 package com.example.bickdemo.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.example.bickdemo.config.CacheNames;
 import com.example.bickdemo.dto.BicycleRequest;
 import com.example.bickdemo.dto.BicycleResponse;
 import com.example.bickdemo.entity.Bicycle;
@@ -10,6 +11,7 @@ import com.example.bickdemo.mapper.BicycleMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -130,6 +132,7 @@ public class BicycleService {
      * 创建自行车
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
     public BicycleResponse createBicycle(BicycleRequest request) {
         Bicycle bicycle = new Bicycle();
         bicycle.setName(request.getName());
@@ -149,6 +152,7 @@ public class BicycleService {
      * 更新自行车
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
     public BicycleResponse updateBicycle(Long id, BicycleRequest request) {
         Bicycle bicycle = bicycleMapper.selectById(id);
         if (bicycle == null) {
@@ -188,6 +192,7 @@ public class BicycleService {
      * 删除自行车
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
     public void deleteBicycle(Long id) {
         Bicycle bicycle = bicycleMapper.selectById(id);
         if (bicycle == null) {
@@ -200,6 +205,7 @@ public class BicycleService {
      * 更新自行车状态
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
     public BicycleResponse updateBicycleStatus(Long id, BicycleStatus status) {
         Bicycle bicycle = bicycleMapper.selectById(id);
         if (bicycle == null) {

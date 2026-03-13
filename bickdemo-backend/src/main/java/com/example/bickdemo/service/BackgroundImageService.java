@@ -1,9 +1,13 @@
 package com.example.bickdemo.service;
 
+import com.example.bickdemo.config.CacheNames;
 import com.example.bickdemo.entity.BackgroundImage;
 import com.example.bickdemo.mapper.BackgroundImageMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +26,7 @@ public class BackgroundImageService {
     /**
      * 获取所有启用的背景图片
      */
+    @Cacheable(cacheNames = CacheNames.BACKGROUND_ENABLED)
     public List<BackgroundImage> getAllEnabled() {
         return backgroundImageMapper.findAllEnabled();
     }
@@ -29,6 +34,7 @@ public class BackgroundImageService {
     /**
      * 获取所有可选择的背景图片（用于游客/普通用户的本地选择）
      */
+    @Cacheable(cacheNames = CacheNames.BACKGROUND_SELECTABLE)
     public List<BackgroundImage> getAllSelectable() {
         return backgroundImageMapper.findAllSelectable();
     }
@@ -36,6 +42,7 @@ public class BackgroundImageService {
     /**
      * 获取所有背景图片（管理员）
      */
+    @Cacheable(cacheNames = CacheNames.BACKGROUND_ALL)
     public List<BackgroundImage> getAll() {
         return backgroundImageMapper.selectList(null);
     }
@@ -51,6 +58,11 @@ public class BackgroundImageService {
      * 创建背景图片
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.BACKGROUND_ENABLED, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.BACKGROUND_SELECTABLE, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.BACKGROUND_ALL, allEntries = true)
+    })
     public BackgroundImage create(BackgroundImage image) {
         backgroundImageMapper.insert(image);
         return image;
@@ -60,6 +72,11 @@ public class BackgroundImageService {
      * 更新背景图片
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.BACKGROUND_ENABLED, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.BACKGROUND_SELECTABLE, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.BACKGROUND_ALL, allEntries = true)
+    })
     public BackgroundImage update(Long id, BackgroundImage image) {
         BackgroundImage existing = backgroundImageMapper.selectById(id);
         if (existing == null) {
@@ -90,6 +107,11 @@ public class BackgroundImageService {
      * 删除背景图片
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.BACKGROUND_ENABLED, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.BACKGROUND_SELECTABLE, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.BACKGROUND_ALL, allEntries = true)
+    })
     public void delete(Long id) {
         backgroundImageMapper.deleteById(id);
     }
@@ -98,6 +120,11 @@ public class BackgroundImageService {
      * 设置启用的背景图片
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.BACKGROUND_ENABLED, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.BACKGROUND_SELECTABLE, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.BACKGROUND_ALL, allEntries = true)
+    })
     public void setEnabled(Long id, Boolean enabled) {
         // 先禁用所有图片
         List<BackgroundImage> all = backgroundImageMapper.selectList(null);

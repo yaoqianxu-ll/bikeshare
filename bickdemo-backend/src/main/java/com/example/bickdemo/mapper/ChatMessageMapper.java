@@ -79,7 +79,8 @@ public interface ChatMessageMapper extends BaseMapper<ChatMessage> {
             FROM chat_messages
             WHERE sender_id = #{senderId}
               AND receiver_id = #{receiverId}
-              AND is_read = 0
+              AND (is_read = 0 OR is_read IS NULL)
+              AND read_at IS NULL
               AND deleted = 0
             """)
     int countUnreadFromUser(@Param("senderId") Long senderId, @Param("receiverId") Long receiverId);
@@ -89,7 +90,8 @@ public interface ChatMessageMapper extends BaseMapper<ChatMessage> {
             FROM chat_messages
             WHERE sender_id = #{senderId}
               AND receiver_id = #{receiverId}
-              AND is_read = 0
+              AND (is_read = 0 OR is_read IS NULL)
+              AND read_at IS NULL
               AND deleted = 0
             ORDER BY created_at ASC, id ASC
             """)
@@ -102,7 +104,7 @@ public interface ChatMessageMapper extends BaseMapper<ChatMessage> {
                 updated_at = NOW()
             WHERE sender_id = #{senderId}
               AND receiver_id = #{receiverId}
-              AND is_read = 0
+              AND ((is_read = 0 OR is_read IS NULL) OR read_at IS NULL)
               AND deleted = 0
             """)
     int markConversationRead(
@@ -110,4 +112,14 @@ public interface ChatMessageMapper extends BaseMapper<ChatMessage> {
             @Param("receiverId") Long receiverId,
             @Param("readAt") LocalDateTime readAt
     );
+
+    @Update("""
+            UPDATE chat_messages
+            SET is_read = 1,
+                updated_at = NOW()
+            WHERE read_at IS NOT NULL
+              AND (is_read = 0 OR is_read IS NULL)
+              AND deleted = 0
+            """)
+    int syncReadFlagFromReadAt();
 }

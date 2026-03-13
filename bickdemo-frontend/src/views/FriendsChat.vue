@@ -333,7 +333,7 @@
                     <div class="message-meta message-meta--head">
                       <span>{{ message.mine ? '我' : message.senderUsername }}</span>
                       <span>{{ formatTime(message.createdAt) }}</span>
-                      <span v-if="message.mine" class="message-read-state" :class="{ read: message.read }">
+                      <span v-if="message.mine" class="message-read-state" :class="{ read: isMessageRead(message) }">
                         {{ formatReadState(message) }}
                       </span>
                     </div>
@@ -374,7 +374,7 @@
                   <div v-if="false" class="message-meta">
                     <span>{{ message.mine ? '我' : message.senderUsername }}</span>
                     <span>{{ formatTime(message.createdAt) }}</span>
-                    <span v-if="message.mine" class="message-read-state" :class="{ read: message.read }">
+                    <span v-if="message.mine" class="message-read-state" :class="{ read: isMessageRead(message) }">
                       {{ formatReadState(message) }}
                     </span>
                   </div>
@@ -771,16 +771,19 @@ const formatTime = (value) => {
 
 const formatReadState = (message) => {
   if (!message?.mine) return ''
-  if (message.read && message.readAt) return `已读 ${formatTime(message.readAt)}`
-  if (message.read) return '已读'
+  if (isMessageRead(message) && message.readAt) return `已读 ${formatTime(message.readAt)}`
+  if (isMessageRead(message)) return '已读'
   return '未读'
 }
+
+const isMessageRead = (message) => Boolean(message?.read) || Boolean(message?.readAt)
 
 const normalizeMessage = (message) => ({
   ...message,
   type: String(message?.type || 'TEXT').toUpperCase(),
   mine: Boolean(message?.mine),
-  read: Boolean(message?.read)
+  read: isMessageRead(message),
+  readAt: message?.readAt || null
 })
 
 const mergeMessages = (baseMessages, incomingMessages) => {
@@ -930,12 +933,12 @@ const touchContactActivity = (message, { incrementUnread = false } = {}) => {
 }
 
 const applyReadReceipt = (receipt) => {
-  const messageIds = new Set(receipt?.messageIds || [])
+  const messageIds = new Set((receipt?.messageIds || []).map((id) => Number(id)))
   if (!messageIds.size) return
 
   messages.value = messages.value.map((message) =>
-    messageIds.has(message.id)
-      ? { ...message, read: true, readAt: receipt.readAt || message.readAt }
+    messageIds.has(Number(message.id))
+      ? normalizeMessage({ ...message, read: true, readAt: receipt.readAt || message.readAt })
       : message
   )
 }
@@ -1049,6 +1052,7 @@ const selectContact = async (contact) => {
     page: 1,
     scroll: 'bottom'
   })
+  await acknowledgeConversation(contact.userId)
 }
 
 const buildContactFromSearch = (user) => ({
@@ -1202,6 +1206,8 @@ const sendPayload = async (payload) => {
     ElMessage.warning('请先选择一个聊天对象')
     return
   }
+
+  await acknowledgeConversation(activeContact.value.userId)
 
   const res = await sendChatMessage({
     receiverId: activeContact.value.userId,

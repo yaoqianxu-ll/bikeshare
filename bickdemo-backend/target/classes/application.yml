@@ -45,6 +45,15 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:yaoqianxu}
     password: ${RABBITMQ_PASSWORD:Lile200623}
+  data:
+    redis:
+      host: ${REDIS_HOST:124.221.113.208}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:Lile200623}
+      database: ${REDIS_DATABASE:0}
+      timeout: 5s
+  cache:
+    type: redis
 
 
 mybatis-plus:
