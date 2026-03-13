@@ -2554,4 +2554,135 @@ onBeforeUnmount(async () => {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+html.dark .friends-page .hero-card,
+html.dark .friends-page .panel,
+html.dark .friends-page .chat-card {
+  background: rgba(17, 25, 40, 0.82);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.28);
+}
+
+html.dark .friends-page .hero-card {
+  background:
+    radial-gradient(circle at top right, rgba(64, 158, 255, 0.18), transparent 28%),
+    linear-gradient(135deg, rgba(17, 25, 40, 0.94), rgba(11, 18, 32, 0.90));
+}
+
+html.dark .friends-page .metric-chip,
+html.dark .friends-page .panel-badge,
+html.dark .friends-page .summary-pill,
+html.dark .friends-page .search-placeholder,
+html.dark .friends-page .friend-profile__stat,
+html.dark .friends-page .friend-profile__section,
+html.dark .friends-page .message-bubble,
+html.dark .friends-page .history-button,
+html.dark .friends-page .profile-view-button,
+html.dark .friends-page .composer-image-button,
+html.dark .friends-page .composer-sticker-button,
+html.dark .friends-page .tool-button,
+html.dark .friends-page .picker-switch,
+html.dark .friends-page .picker-panel,
+html.dark .friends-page .emoji-card,
+html.dark .friends-page .sticker-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+html.dark .friends-page .metric-chip--accent,
+html.dark .friends-page .hero-kicker,
+html.dark .friends-page .placeholder-mark,
+html.dark .friends-page .friend-profile__eyebrow,
+html.dark .friends-page .sidebar-tab.active,
+html.dark .friends-page .tool-button.active,
+html.dark .friends-page .composer-image-button:hover,
+html.dark .friends-page .composer-sticker-button:hover,
+html.dark .friends-page .composer-sticker-button.active,
+html.dark .friends-page .profile-view-button:hover,
+html.dark .friends-page .history-button:hover {
+  background: rgba(64, 158, 255, 0.16);
+  border-color: rgba(64, 158, 255, 0.26);
+}
+
+html.dark .friends-page .search-card,
+html.dark .friends-page .request-card,
+html.dark .friends-page .conversation-card,
+html.dark .friends-page .friend-profile__hero,
+html.dark .friends-page .chat-placeholder {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.20);
+}
+
+html.dark .friends-page .conversation-card {
+  background: linear-gradient(180deg, rgba(24, 34, 52, 0.96), rgba(16, 23, 37, 0.92));
+}
+
+html.dark .friends-page .conversation-card:hover,
+html.dark .friends-page .conversation-card.active {
+  border-color: rgba(64, 158, 255, 0.28);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
+}
+
+html.dark .friends-page .request-card--soft {
+  background: rgba(64, 158, 255, 0.10);
+  border-color: rgba(64, 158, 255, 0.18);
+}
+
+html.dark .friends-page .sidebar-tab {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .friends-page .sidebar-tab__count {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .friends-page .avatar-shell {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+}
+
+html.dark .friends-page .chat-placeholder {
+  background:
+    radial-gradient(circle at top right, rgba(64, 158, 255, 0.16), transparent 30%),
+    linear-gradient(135deg, rgba(17, 25, 40, 0.92), rgba(11, 18, 32, 0.88));
+}
+
+html.dark .friends-page .message-bubble {
+  color: var(--el-text-color-primary);
+}
+
+html.dark .friends-page .message-row.mine .message-bubble {
+  background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
+  color: #ffffff;
+}
+
+html.dark .friends-page .message-bubble--image,
+html.dark .friends-page .message-bubble--sticker,
+html.dark .friends-page .message-row.mine .message-bubble--image,
+html.dark .friends-page .message-row.mine .message-bubble--sticker {
+  background: transparent;
+}
+
+html.dark .friends-page .message-board,
+html.dark .friends-page .composer {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .friends-page .composer-textarea :deep(.el-textarea__inner) {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--el-text-color-primary);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+html.dark .friends-page .composer-textarea :deep(.el-textarea__inner::placeholder) {
+  color: var(--el-text-color-secondary);
+}
+
+html.dark .friends-page .picker-switch__button.active {
+  background: rgba(255, 255, 255, 0.10);
+  color: var(--el-text-color-primary);
+}
 </style>

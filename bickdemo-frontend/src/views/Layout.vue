@@ -89,6 +89,10 @@
             <span class="nav-icon-bg"><el-icon><DataAnalysis /></el-icon></span>
             <span>统计</span>
           </router-link>
+          <router-link to="/forum" class="nav-link" @click="closeNav">
+            <span class="nav-icon-bg"><el-icon><Document /></el-icon></span>
+            <span>论坛</span>
+          </router-link>
           <router-link to="/my-rentals" class="nav-link" v-if="userStore.isLoggedIn" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><Document /></el-icon></span>
             <span>我的</span>
@@ -109,6 +113,7 @@
         </nav>
 
         <div class="header-actions">
+          <ThemeToggle variant="inline" />
           <div class="user-section" v-if="userStore.isLoggedIn">
             <el-dropdown trigger="click">
               <span class="user-name">
@@ -162,6 +167,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, SwitchButton, Bicycle, DataAnalysis, Document, Setting, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound } from '@element-plus/icons-vue'
 import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
 import { getCurrentUser } from '@/api/auth'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -336,8 +342,8 @@ onMounted(() => {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-stroke);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -392,7 +398,7 @@ onMounted(() => {
   height: 120px;
   background-size: cover;
   background-position: center;
-  background-color: #f5f7fa;
+  background-color: var(--el-fill-color-light);
   position: relative;
 }
 
@@ -437,7 +443,7 @@ onMounted(() => {
 
 .selector-title {
   font-size: 14px;
-  color: #909399;
+  color: var(--bs-muted);
   margin-bottom: 12px;
   padding: 0 4px;
 }
@@ -445,8 +451,8 @@ onMounted(() => {
 .bg-name {
   padding: 10px 12px;
   font-size: 14px;
-  color: #303133;
-  background: #fff;
+  color: var(--bs-ink);
+  background: var(--bs-surface-solid);
   text-align: center;
   font-weight: 500;
 }
@@ -459,7 +465,7 @@ onMounted(() => {
 .upload-title {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--bs-ink);
   margin-bottom: 12px;
 }
 
@@ -478,8 +484,8 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  border: 2px dashed #e0e0e0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(250, 250, 250, 0.8) 100%);
+  border: 2px dashed var(--bs-stroke);
+  background: linear-gradient(135deg, var(--bs-surface) 0%, color-mix(in srgb, var(--bs-surface-solid) 82%, transparent) 100%);
   transition: all 0.3s ease;
 }
 
@@ -503,7 +509,7 @@ onMounted(() => {
 
 .uploader-content .el-upload__text {
   text-align: center;
-  color: #666;
+  color: var(--bs-muted);
   font-size: 13px;
 }
 
@@ -515,7 +521,7 @@ onMounted(() => {
 
 .uploader-content .el-upload__tip {
   text-align: center;
-  color: #999;
+  color: var(--bs-muted);
   font-size: 12px;
   margin-top: 6px;
 }
@@ -534,11 +540,11 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 72px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 90%, transparent) 0%, var(--bs-surface) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   box-shadow:
-    0 4px 30px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+    0 4px 30px rgba(15, 23, 42, 0.12),
+    0 0 0 1px var(--bs-stroke) inset;
   z-index: 1000;
 }
 
@@ -568,8 +574,8 @@ onMounted(() => {
 .logo-icon-box {
   width: 44px;
   height: 44px;
-  background: rgba(255, 107, 53, 0.14);
-  border: 1px solid rgba(255, 107, 53, 0.20);
+  background: rgba(var(--brand-primary-rgb), 0.14);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.20);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -596,14 +602,14 @@ onMounted(() => {
 .logo {
   font-size: 22px;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--bs-ink);
   margin: 0;
   letter-spacing: -0.5px;
 }
 
 .slogan {
   font-size: 12px;
-  color: #6c757d;
+  color: var(--bs-muted);
   margin-top: 2px;
   font-weight: 500;
 }
@@ -612,11 +618,11 @@ onMounted(() => {
 .nav-links {
   display: flex;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--bs-surface);
   backdrop-filter: blur(16px) saturate(140%);
   padding: 6px;
   border-radius: 16px;
-  border: 1px solid rgba(15, 23, 42, 0.10);
+  border: 1px solid var(--bs-stroke);
 }
 
 .nav-link {
@@ -625,7 +631,7 @@ onMounted(() => {
   gap: 8px;
   padding: 10px 18px;
   text-decoration: none;
-  color: #6c757d;
+  color: var(--bs-muted);
   font-size: 14px;
   border-radius: 12px;
   transition: all 0.3s ease;
@@ -655,9 +661,9 @@ onMounted(() => {
 }
 
 .nav-link.router-link-active {
-  background: rgba(255, 107, 53, 0.14);
+  background: rgba(var(--brand-primary-rgb), 0.14);
   color: var(--bs-ink);
-  border: 1px solid rgba(255, 107, 53, 0.22);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.22);
   box-shadow: none;
 }
 
@@ -703,15 +709,15 @@ onMounted(() => {
 }
 
 .user-name:hover {
-  background: rgba(15, 23, 42, 0.04);
+  background: rgba(var(--brand-primary-rgb), 0.08);
 }
 
 .user-avatar {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: rgba(255, 107, 53, 0.14);
-  border: 1px solid rgba(255, 107, 53, 0.20);
+  background: rgba(var(--brand-primary-rgb), 0.14);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.20);
   color: var(--brand-primary);
   display: flex;
   align-items: center;
@@ -724,12 +730,12 @@ onMounted(() => {
 .user-avatar-img {
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255, 107, 53, 0.20);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.20);
   box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
 }
 
 .user-text {
-  color: #1a1a2e;
+  color: var(--bs-ink);
   font-size: 14px;
   font-weight: 600;
 }
@@ -772,7 +778,7 @@ onMounted(() => {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22);
-  background: #ff7b4a;
+  background: var(--brand-primary-light);
 }
 
 /* 汉堡菜单 */
@@ -790,7 +796,7 @@ onMounted(() => {
 .menu-toggle span {
   width: 24px;
   height: 2px;
-  background: rgba(15, 23, 42, 0.62);
+  background: var(--bs-muted);
   border-radius: 2px;
   transition: all 0.3s ease;
 }
@@ -815,7 +821,7 @@ onMounted(() => {
 }
 
 :deep(.el-dropdown-menu__item:hover) {
-  background: rgba(15, 23, 42, 0.04);
+  background: rgba(var(--brand-primary-rgb), 0.08);
 }
 
 :deep(.el-dropdown-menu__item a) {
@@ -836,16 +842,16 @@ onMounted(() => {
 
 /* 底部 */
 .app-footer {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 86%, transparent) 0%, var(--bs-surface) 100%);
   backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.5);
+  border-top: 1px solid var(--bs-stroke);
   padding: 24px 32px;
   text-align: center;
 }
 
 .app-footer p {
   margin: 0;
-  color: #6c757d;
+  color: var(--bs-muted);
   font-size: 14px;
 }
 
@@ -861,7 +867,7 @@ onMounted(() => {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.95);
+    background: color-mix(in srgb, var(--bs-surface-solid) 92%, transparent);
     backdrop-filter: blur(20px);
     flex-direction: column;
     padding: 20px;
@@ -882,7 +888,7 @@ onMounted(() => {
   }
 
   .nav-link.router-link-active {
-    background: rgba(255, 107, 53, 0.1);
+    background: rgba(var(--brand-primary-rgb), 0.10);
     box-shadow: none;
   }
 

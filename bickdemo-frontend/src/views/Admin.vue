@@ -97,7 +97,7 @@
           </div>
           <div class="table-scroll">
           <el-table :data="rentals" style="width: 100%" v-loading="loading" stripe>
-            <el-table-column prop="id" label="订单号" width="80" />
+            <el-table-column prop="id" label="订单号" width="100" />
             <el-table-column prop="username" label="用户" width="120" show-overflow-tooltip />
             <el-table-column prop="bicycleName" label="自行车" min-width="170" show-overflow-tooltip />
             <el-table-column label="类型" width="100" align="center">
@@ -1150,5 +1150,178 @@ onMounted(() => {
 
 :deep(.el-pagination li:hover) {
   transform: translateY(-2px);
+}
+
+html.dark .admin .kpi {
+  background: rgba(17, 25, 40, 0.82);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22);
+}
+
+html.dark .admin :deep(.el-card) {
+  background: rgba(17, 25, 40, 0.84);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.26);
+}
+
+html.dark .admin :deep(.el-card::before) {
+  background: rgba(64, 158, 255, 0.72);
+}
+
+html.dark .admin :deep(.el-card__header) {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .admin :deep(.el-tabs__header) {
+  background: rgba(17, 25, 40, 0.74);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html.dark .admin :deep(.el-tabs__item),
+html.dark .admin :deep(.el-tabs--top .el-tabs__item.is-top) {
+  color: var(--el-text-color-secondary);
+}
+
+html.dark .admin :deep(.el-tabs__item:hover) {
+  color: var(--el-text-color-primary);
+}
+
+html.dark .admin :deep(.el-tabs__item.is-active) {
+  background: rgba(64, 158, 255, 0.16);
+  color: var(--el-text-color-primary);
+  border-color: rgba(64, 158, 255, 0.28);
+}
+
+html.dark .admin :deep(.el-table) {
+  --el-table-border-color: rgba(255, 255, 255, 0.08);
+  --el-table-header-bg-color: rgba(255, 255, 255, 0.04);
+  --el-table-row-hover-bg-color: rgba(64, 158, 255, 0.06);
+  --el-table-tr-border-color: rgba(255, 255, 255, 0.06);
+}
+
+html.dark .admin :deep(.el-table th) {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--el-text-color-secondary);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .admin :deep(.el-table__row:hover > td.el-table__cell) {
+  background: rgba(64, 158, 255, 0.06) !important;
+}
+
+html.dark .admin :deep(.el-table__cell) {
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--el-text-color-primary);
+}
+
+html.dark .admin :deep(.el-table--striped .el-table__row--striped) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+html.dark .admin :deep(.el-button--primary.is-plain) {
+  background: rgba(64, 158, 255, 0.12);
+  border-color: rgba(64, 158, 255, 0.28);
+  color: var(--el-color-primary-light-3);
+}
+
+html.dark .admin :deep(.el-button--primary.is-plain:hover) {
+  background: rgba(64, 158, 255, 0.18);
+  border-color: rgba(64, 158, 255, 0.38);
+  color: #ffffff;
+}
+
+html.dark .admin :deep(.el-button--danger.is-plain) {
+  background: rgba(245, 108, 108, 0.12);
+  border-color: rgba(245, 108, 108, 0.26);
+  color: #fca5a5;
+}
+
+html.dark .admin :deep(.el-button--danger.is-plain:hover) {
+  background: rgba(245, 108, 108, 0.18);
+  border-color: rgba(245, 108, 108, 0.34);
+  color: #ffffff;
+}
+
+html.dark .admin :deep(.el-button--default) {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: var(--el-text-color-primary);
+}
+
+html.dark .admin :deep(.el-button--default:hover) {
+  background: rgba(64, 158, 255, 0.10);
+}
+
+html.dark .admin :deep(.el-tag--success) {
+  background: rgba(103, 194, 58, 0.16);
+  color: #bef264;
+  border-color: rgba(103, 194, 58, 0.30);
+}
+
+html.dark .admin :deep(.el-tag--warning) {
+  background: rgba(230, 162, 60, 0.16);
+  color: #fcd34d;
+  border-color: rgba(230, 162, 60, 0.30);
+}
+
+html.dark .admin :deep(.el-tag--info) {
+  background: rgba(144, 147, 153, 0.16);
+  color: #d1d5db;
+  border-color: rgba(144, 147, 153, 0.28);
+}
+
+html.dark .admin :deep(.el-tag--danger) {
+  background: rgba(245, 108, 108, 0.16);
+  color: #fca5a5;
+  border-color: rgba(245, 108, 108, 0.30);
+}
+
+html.dark .admin :deep(.el-upload-dragger) {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+html.dark .admin .image-preview {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.dark .admin .uploader-content .el-upload__text,
+html.dark .admin :deep(.el-form-item__label),
+html.dark .admin :deep(.el-pagination) {
+  color: var(--el-text-color-regular);
+}
+
+html.dark .admin :deep(.el-dialog__header) {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .admin :deep(.el-dialog__footer) {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .admin :deep(.el-input__wrapper),
+html.dark .admin :deep(.el-select .el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.dark .admin :deep(.el-input__wrapper:hover),
+html.dark .admin :deep(.el-select:hover .el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html.dark .admin :deep(.el-input__wrapper.is-focus) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(64, 158, 255, 0.58);
+  box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.12);
+}
+
+html.dark .admin :deep(.el-pagination .btn-prev),
+html.dark .admin :deep(.el-pagination .btn-next),
+html.dark .admin :deep(.el-pagination li) {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: var(--el-text-color-primary);
 }
 </style>

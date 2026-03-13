@@ -217,4 +217,79 @@ CREATE TABLE `chat_messages` (
   KEY `idx_chat_messages_read` (`is_read`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='私信消息表';
 
+-- ----------------------------
+-- Table structure for forum_posts
+-- ----------------------------
+DROP TABLE IF EXISTS `forum_posts`;
+CREATE TABLE `forum_posts` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '帖子 ID',
+  `user_id` bigint NOT NULL COMMENT '发布人用户 ID',
+  `title` varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '帖子标题',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '帖子内容',
+  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '帖子图片地址',
+  `view_count` bigint NOT NULL DEFAULT 0 COMMENT '阅读数量',
+  `like_count` bigint NOT NULL DEFAULT 0 COMMENT '点赞数量',
+  `favorite_count` bigint NOT NULL DEFAULT 0 COMMENT '收藏数量',
+  `comment_count` bigint NOT NULL DEFAULT 0 COMMENT '评论数量',
+  `created_at` datetime DEFAULT NULL COMMENT '创建时间',
+  `updated_at` datetime DEFAULT NULL COMMENT '更新时间',
+  `deleted` tinyint(1) DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_forum_posts_user` (`user_id`) USING BTREE,
+  KEY `idx_forum_posts_created_at` (`created_at`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='论坛帖子表';
+
+-- ----------------------------
+-- Table structure for forum_post_comments
+-- ----------------------------
+DROP TABLE IF EXISTS `forum_post_comments`;
+CREATE TABLE `forum_post_comments` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '评论 ID',
+  `post_id` bigint NOT NULL COMMENT '帖子 ID',
+  `user_id` bigint NOT NULL COMMENT '评论人用户 ID',
+  `parent_comment_id` bigint DEFAULT NULL COMMENT '父评论 ID',
+  `reply_to_user_id` bigint DEFAULT NULL COMMENT '被回复的用户 ID',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '评论内容',
+  `created_at` datetime DEFAULT NULL COMMENT '创建时间',
+  `updated_at` datetime DEFAULT NULL COMMENT '更新时间',
+  `deleted` tinyint(1) DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_forum_comments_post` (`post_id`) USING BTREE,
+  KEY `idx_forum_comments_user` (`user_id`) USING BTREE,
+  KEY `idx_forum_comments_parent` (`parent_comment_id`) USING BTREE,
+  KEY `idx_forum_comments_created_at` (`created_at`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='论坛评论表';
+
+-- ----------------------------
+-- Table structure for forum_post_reactions
+-- ----------------------------
+DROP TABLE IF EXISTS `forum_post_reactions`;
+CREATE TABLE `forum_post_reactions` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '帖子互动 ID',
+  `post_id` bigint NOT NULL COMMENT '帖子 ID',
+  `user_id` bigint NOT NULL COMMENT '用户 ID',
+  `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '互动类型：LIKE/FAVORITE',
+  `created_at` datetime DEFAULT NULL COMMENT '创建时间',
+  `updated_at` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_forum_reaction_pair` (`post_id`, `user_id`, `type`) USING BTREE,
+  KEY `idx_forum_reactions_user` (`user_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='论坛点赞收藏表';
+
+-- ----------------------------
+-- Table structure for forum_post_images
+-- ----------------------------
+DROP TABLE IF EXISTS `forum_post_images`;
+CREATE TABLE `forum_post_images` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '帖子图片 ID',
+  `post_id` bigint NOT NULL COMMENT '帖子 ID',
+  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '图片地址',
+  `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序',
+  `created_at` datetime DEFAULT NULL COMMENT '创建时间',
+  `updated_at` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_forum_post_images_pair` (`post_id`, `image_url`) USING BTREE,
+  KEY `idx_forum_post_images_post` (`post_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='论坛帖子图片表';
+
 SET FOREIGN_KEY_CHECKS = 1;

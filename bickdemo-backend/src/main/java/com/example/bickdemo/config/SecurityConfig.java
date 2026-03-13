@@ -116,6 +116,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/backgrounds/all").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/backgrounds/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/bicycles/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/forum/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/statistics/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

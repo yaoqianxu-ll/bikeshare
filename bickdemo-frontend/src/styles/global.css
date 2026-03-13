@@ -622,3 +622,177 @@ body {
 .el-card {
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
 }
+
+/* =====================================================
+   Theme System
+   - Element Plus official palette
+   - Auto dark mode via html.dark
+   ===================================================== */
+
+:root {
+  --el-color-primary: #409eff;
+  --el-color-primary-dark-2: #337ecc;
+  --el-color-primary-light-3: #79bbff;
+  --el-color-primary-light-5: #a0cfff;
+  --el-color-primary-light-7: #c6e2ff;
+  --el-color-primary-light-8: #d9ecff;
+  --el-color-primary-light-9: #ecf5ff;
+  --el-color-success: #67c23a;
+  --el-color-warning: #e6a23c;
+  --el-color-danger: #f56c6c;
+  --el-color-error: #f56c6c;
+  --el-color-info: #909399;
+
+  --brand-primary: var(--el-color-primary);
+  --brand-primary-dark: var(--el-color-primary-dark-2);
+  --brand-primary-light: var(--el-color-primary-light-3);
+  --brand-secondary: var(--el-color-success);
+  --brand-accent: var(--el-color-info);
+  --brand-primary-rgb: 64, 158, 255;
+
+  --color-success: var(--el-color-success);
+  --color-warning: var(--el-color-warning);
+  --color-error: var(--el-color-danger);
+  --color-info: var(--el-color-info);
+
+  --bs-ink: var(--el-text-color-primary);
+  --bs-muted: var(--el-text-color-regular);
+  --bs-stroke: var(--el-border-color);
+  --bs-surface: rgba(255, 255, 255, 0.78);
+  --bs-surface-solid: var(--el-bg-color-overlay);
+
+  --gradient-primary: linear-gradient(135deg, var(--el-color-primary) 0%, #66b1ff 100%);
+  --gradient-primary-reverse: linear-gradient(135deg, #66b1ff 0%, var(--el-color-primary) 100%);
+  --gradient-slate: linear-gradient(135deg, #4f8cff 0%, #7ab8ff 100%);
+  --gradient-ocean: linear-gradient(135deg, #38bdf8 0%, #409eff 100%);
+  --gradient-sunset: linear-gradient(135deg, #67c23a 0%, #95d475 100%);
+  --gradient-gold: linear-gradient(135deg, #e6a23c 0%, #f3d19e 100%);
+
+  --shadow-brand: 0 10px 28px rgba(var(--brand-primary-rgb), 0.28);
+  --shadow-brand-hover: 0 14px 36px rgba(var(--brand-primary-rgb), 0.36);
+}
+
+html {
+  color-scheme: light;
+}
+
+body,
+#app,
+.el-card,
+.el-dialog,
+.el-drawer,
+.el-dropdown-menu,
+.el-input__wrapper,
+.el-button {
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+body {
+  color: var(--bs-ink);
+  background:
+    radial-gradient(900px 500px at 10% 10%, rgba(var(--brand-primary-rgb), 0.14), transparent 60%),
+    radial-gradient(900px 500px at 90% 20%, rgba(103, 194, 58, 0.08), transparent 60%),
+    linear-gradient(135deg, #f5f7fa 0%, #edf2f7 100%);
+  background-attachment: fixed;
+}
+
+html.dark {
+  color-scheme: dark;
+  --brand-primary-rgb: 64, 158, 255;
+  --bs-ink: var(--el-text-color-primary);
+  --bs-muted: var(--el-text-color-regular);
+  --bs-stroke: rgba(255, 255, 255, 0.10);
+  --bs-surface: rgba(17, 25, 40, 0.82);
+  --bs-surface-solid: #141a24;
+  --shadow-brand: 0 12px 30px rgba(var(--brand-primary-rgb), 0.20);
+  --shadow-brand-hover: 0 16px 38px rgba(var(--brand-primary-rgb), 0.28);
+}
+
+html.dark body {
+  background:
+    radial-gradient(900px 560px at 12% 10%, rgba(var(--brand-primary-rgb), 0.16), transparent 60%),
+    radial-gradient(760px 420px at 88% 16%, rgba(56, 189, 248, 0.12), transparent 58%),
+    linear-gradient(135deg, #0b1220 0%, #111827 52%, #0f172a 100%);
+}
+
+html.dark .el-card,
+html.dark .el-dialog,
+html.dark .el-drawer,
+html.dark .el-dropdown-menu,
+html.dark .el-popover,
+html.dark .el-picker-panel {
+  background: var(--bs-surface-solid);
+  border-color: var(--bs-stroke);
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.28);
+}
+
+html.dark .el-card__header,
+html.dark .el-dialog__header,
+html.dark .el-dialog__footer,
+html.dark .el-drawer__header,
+html.dark .el-dropdown-menu__item,
+html.dark .el-table th.el-table__cell {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: var(--bs-stroke);
+}
+
+html.dark .el-input__wrapper,
+html.dark .el-textarea__inner,
+html.dark .el-select__wrapper {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+html.dark .el-input__wrapper:hover,
+html.dark .el-textarea__inner:hover,
+html.dark .el-select__wrapper:hover {
+  box-shadow: 0 0 0 1px rgba(var(--brand-primary-rgb), 0.45) inset;
+}
+
+html.dark .el-input__wrapper.is-focus,
+html.dark .el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px rgba(var(--brand-primary-rgb), 0.68) inset;
+}
+
+html.dark .el-table,
+html.dark .el-table tr,
+html.dark .el-table th,
+html.dark .el-table td,
+html.dark .el-table__body-wrapper,
+html.dark .el-table__inner-wrapper::before {
+  background-color: transparent;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .el-table {
+  --el-table-border-color: rgba(255, 255, 255, 0.08);
+  --el-table-header-bg-color: rgba(255, 255, 255, 0.04);
+  --el-table-row-hover-bg-color: rgba(var(--brand-primary-rgb), 0.08);
+  --el-table-tr-border-color: rgba(255, 255, 255, 0.06);
+}
+
+html.dark .el-loading-mask.is-fullscreen {
+  background: rgba(9, 15, 26, 0.74);
+  backdrop-filter: blur(8px);
+}
+
+html.dark .el-message {
+  background: rgba(17, 25, 40, 0.92);
+  color: var(--bs-ink);
+}
+
+html.dark .el-pagination .btn-prev,
+html.dark .el-pagination .btn-next,
+html.dark .el-pagination .el-pager li {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--bs-ink);
+}
+
+html.dark .el-pagination .el-pager li.active {
+  background: var(--el-color-primary);
+  color: #fff;
+}
