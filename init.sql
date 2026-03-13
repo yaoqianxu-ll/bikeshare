@@ -231,11 +231,16 @@ CREATE TABLE `forum_posts` (
   `like_count` bigint NOT NULL DEFAULT 0 COMMENT '点赞数量',
   `favorite_count` bigint NOT NULL DEFAULT 0 COMMENT '收藏数量',
   `comment_count` bigint NOT NULL DEFAULT 0 COMMENT '评论数量',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'APPROVED' COMMENT '审核状态：PENDING/APPROVED/REJECTED',
+  `reviewer_id` bigint DEFAULT NULL COMMENT '审核人用户 ID',
+  `reviewed_at` datetime DEFAULT NULL COMMENT '审核时间',
+  `review_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '审核备注',
   `created_at` datetime DEFAULT NULL COMMENT '创建时间',
   `updated_at` datetime DEFAULT NULL COMMENT '更新时间',
   `deleted` tinyint(1) DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
   PRIMARY KEY (`id`) USING BTREE,
   KEY `idx_forum_posts_user` (`user_id`) USING BTREE,
+  KEY `idx_forum_posts_status` (`status`) USING BTREE,
   KEY `idx_forum_posts_created_at` (`created_at`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='论坛帖子表';
 

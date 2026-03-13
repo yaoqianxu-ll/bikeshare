@@ -92,8 +92,8 @@
               </el-upload>
             </div>
             <div class="composer-footer">
-              <span>支持文字加最多 9 张配图，缩略图会自动收紧展示。</span>
-              <el-button type="primary" :loading="publishLoading" @click="submitPost">发布体验</el-button>
+              <span>支持文字加最多 9 张配图。普通用户发帖后会先进入管理员审核。</span>
+              <el-button type="primary" :loading="publishLoading" @click="submitPost">发布帖子</el-button>
             </div>
           </template>
           <div v-else class="guest-tip">
@@ -105,7 +105,7 @@
         <div class="feed-header">
           <div>
             <h2>社区动态</h2>
-            <p>共 {{ total }} 条体验内容，点开作者头像可以查看对方资料。</p>
+            <p>共 {{ total }} 条体验内容。公开展示的帖子都已通过审核，你自己的待审核帖子也会在这里看到。</p>
           </div>
           <el-tag effect="plain">最新评论在详情里查看</el-tag>
         </div>
@@ -130,7 +130,10 @@
                     <span>{{ formatDate(post.createdAt) }} 发布</span>
                   </div>
                 </button>
-                <el-tag v-if="post.mine" type="primary" effect="light">我的帖子</el-tag>
+                <div class="post-badges">
+                  <el-tag :type="getPostStatusType(post.status)" effect="light">{{ getPostStatusText(post.status) }}</el-tag>
+                  <el-tag v-if="post.mine" type="primary" effect="light">我的帖子</el-tag>
+                </div>
               </div>
 
               <h3 class="post-title">{{ post.title }}</h3>
@@ -156,26 +159,70 @@
               <p class="post-content">{{ getExcerpt(post.content, 180) }}</p>
 
               <div class="post-stats">
-                <span><el-icon><View /></el-icon>{{ post.viewCount }}</span>
-                <span><el-icon><CaretTop /></el-icon>{{ post.likeCount }}</span>
-                <span><el-icon><Star /></el-icon>{{ post.favoriteCount }}</span>
-                <span><el-icon><ChatDotRound /></el-icon>{{ post.commentCount }}</span>
+                <span class="stat-pill">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M1.5 12s3.8-6.5 10.5-6.5S22.5 12 22.5 12s-3.8 6.5-10.5 6.5S1.5 12 1.5 12Z" />
+                    <circle cx="12" cy="12" r="3.2" />
+                  </svg>
+                  <strong>{{ post.viewCount }}</strong>
+                </span>
+                <button
+                  type="button"
+                  class="stat-pill stat-action"
+                  :class="{ 'is-active': post.liked }"
+                  :disabled="!isPostApproved(post)"
+                  @click.stop="handleToggleLike(post)"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9 10V22H4.5A1.5 1.5 0 0 1 3 20.5v-9A1.5 1.5 0 0 1 4.5 10H9Zm2.1 12H17a3 3 0 0 0 2.9-2.2l1.6-5.7A2.5 2.5 0 0 0 19.1 11H15V7.5A2.5 2.5 0 0 0 12.5 5L11 10.1V22h.1Z" />
+                  </svg>
+                  <strong>{{ post.likeCount }}</strong>
+                </button>
+                <button
+                  type="button"
+                  class="stat-pill stat-action"
+                  :class="{ 'is-active': post.favorited }"
+                  :disabled="!isPostApproved(post)"
+                  @click.stop="handleToggleFavorite(post)"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m12 3.6 2.5 5.2 5.8.8-4.2 4.1 1 5.8L12 16.9l-5.1 2.6 1-5.8-4.2-4.1 5.8-.8L12 3.6Z" />
+                  </svg>
+                  <strong>{{ post.favoriteCount }}</strong>
+                </button>
+                <span class="stat-pill">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v6A2.5 2.5 0 0 1 17.5 15H11l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 12.5v-6Z" />
+                  </svg>
+                  <strong>{{ post.commentCount }}</strong>
+                </span>
               </div>
 
               <div class="post-actions">
                 <el-button
+                  v-if="post.canReview"
                   size="small"
-                  :type="post.liked ? 'primary' : 'default'"
-                  @click.stop="handleToggleLike(post)"
+                  type="success"
+                  @click.stop="handleReviewPost(post, true)"
                 >
-                  {{ post.liked ? '已点赞' : '点赞' }}
+                  通过
                 </el-button>
                 <el-button
+                  v-if="post.canReview"
                   size="small"
-                  :type="post.favorited ? 'warning' : 'default'"
-                  @click.stop="handleToggleFavorite(post)"
+                  type="warning"
+                  @click.stop="handleReviewPost(post, false)"
                 >
-                  {{ post.favorited ? '已收藏' : '收藏' }}
+                  驳回
+                </el-button>
+                <el-button
+                  v-if="post.canDelete"
+                  size="small"
+                  type="danger"
+                  plain
+                  @click.stop="handleDeletePost(post)"
+                >
+                  删除
                 </el-button>
                 <el-button size="small" text type="primary" @click.stop="openPost(post.id)">查看详情</el-button>
               </div>
@@ -198,13 +245,44 @@
       </section>
 
       <aside class="forum-side">
+        <el-card v-if="userStore.isAdmin" class="side-card review-card" shadow="never">
+          <div class="review-card-head">
+            <div>
+              <h3>待审核帖子</h3>
+              <p>新帖子默认先进入这里，管理员通过后才会公开展示。</p>
+            </div>
+            <el-tag type="warning" effect="light">{{ pendingPosts.length }}</el-tag>
+          </div>
+          <div v-loading="pendingLoading">
+            <div v-if="pendingPosts.length" class="review-list">
+              <article
+                v-for="pendingPost in pendingPosts"
+                :key="`pending-${pendingPost.id}`"
+                class="review-item"
+              >
+                <div class="review-item-head">
+                  <strong class="review-item-title">{{ pendingPost.title }}</strong>
+                  <span class="review-item-meta">{{ pendingPost.authorName }} · {{ formatDate(pendingPost.createdAt) }}</span>
+                </div>
+                <p class="review-item-content">{{ getExcerpt(pendingPost.content, 72) }}</p>
+                <div class="review-item-actions">
+                  <el-button size="small" text type="primary" @click="openPost(pendingPost.id)">查看</el-button>
+                  <el-button size="small" type="success" @click="handleReviewPost(pendingPost, true)">通过</el-button>
+                  <el-button size="small" type="warning" @click="handleReviewPost(pendingPost, false)">驳回</el-button>
+                </div>
+              </article>
+            </div>
+            <el-empty v-else description="当前没有待审核帖子" :image-size="72" />
+          </div>
+        </el-card>
+
         <el-card class="side-card" shadow="never">
           <h3>社区提示</h3>
           <ul class="side-list">
             <li>点击发帖人头像可以查看基本资料。</li>
             <li>阅读数会在打开帖子详情时增长。</li>
             <li>评论框支持 Enter 发送，Shift + Enter 换行。</li>
-            <li>点赞、收藏会实时回写到当前帖子数据。</li>
+            <li>普通用户发帖后需要管理员审核，审核通过后才会公开。</li>
           </ul>
         </el-card>
 
@@ -219,10 +297,10 @@
               <span>当前页数</span>
               <strong>{{ pagination.page }}</strong>
             </div>
-            <div class="metric-item">
+<!--            <div class="metric-item">
               <span>当前用户</span>
               <strong>{{ userStore.isLoggedIn ? userStore.username : '游客' }}</strong>
-            </div>
+            </div>-->
           </div>
         </el-card>
       </aside>
@@ -248,27 +326,73 @@
               </div>
             </button>
             <div class="detail-toolbar">
+              <el-tag :type="getPostStatusType(selectedPost.status)" effect="light">
+                {{ getPostStatusText(selectedPost.status) }}
+              </el-tag>
               <el-button
-                :type="selectedPost.liked ? 'primary' : 'default'"
-                @click="handleToggleLike(selectedPost)"
+                v-if="selectedPost.canReview"
+                type="success"
+                @click="handleReviewPost(selectedPost, true)"
               >
-                {{ selectedPost.liked ? '已点赞' : '点赞' }}
+                审核通过
               </el-button>
               <el-button
-                :type="selectedPost.favorited ? 'warning' : 'default'"
-                @click="handleToggleFavorite(selectedPost)"
+                v-if="selectedPost.canReview"
+                type="warning"
+                @click="handleReviewPost(selectedPost, false)"
               >
-                {{ selectedPost.favorited ? '已收藏' : '收藏' }}
+                驳回帖子
+              </el-button>
+              <el-button
+                v-if="selectedPost.canDelete"
+                type="danger"
+                plain
+                @click="handleDeletePost(selectedPost)"
+              >
+                删除帖子
               </el-button>
             </div>
           </div>
 
           <h2 class="detail-title">{{ selectedPost.title }}</h2>
           <div class="detail-stats">
-            <span><el-icon><View /></el-icon>{{ selectedPost.viewCount }} 阅读</span>
-            <span><el-icon><CaretTop /></el-icon>{{ selectedPost.likeCount }} 点赞</span>
-            <span><el-icon><Star /></el-icon>{{ selectedPost.favoriteCount }} 收藏</span>
-            <span><el-icon><ChatDotRound /></el-icon>{{ selectedPost.commentCount }} 评论</span>
+            <span class="stat-pill">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M1.5 12s3.8-6.5 10.5-6.5S22.5 12 22.5 12s-3.8 6.5-10.5 6.5S1.5 12 1.5 12Z" />
+                <circle cx="12" cy="12" r="3.2" />
+              </svg>
+              <strong>{{ selectedPost.viewCount }}</strong>
+            </span>
+            <button
+              type="button"
+              class="stat-pill stat-action"
+              :class="{ 'is-active': selectedPost.liked }"
+              :disabled="!isPostApproved(selectedPost)"
+              @click="handleToggleLike(selectedPost)"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 10V22H4.5A1.5 1.5 0 0 1 3 20.5v-9A1.5 1.5 0 0 1 4.5 10H9Zm2.1 12H17a3 3 0 0 0 2.9-2.2l1.6-5.7A2.5 2.5 0 0 0 19.1 11H15V7.5A2.5 2.5 0 0 0 12.5 5L11 10.1V22h.1Z" />
+              </svg>
+              <strong>{{ selectedPost.likeCount }}</strong>
+            </button>
+            <button
+              type="button"
+              class="stat-pill stat-action"
+              :class="{ 'is-active': selectedPost.favorited }"
+              :disabled="!isPostApproved(selectedPost)"
+              @click="handleToggleFavorite(selectedPost)"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m12 3.6 2.5 5.2 5.8.8-4.2 4.1 1 5.8L12 16.9l-5.1 2.6 1-5.8-4.2-4.1 5.8-.8L12 3.6Z" />
+              </svg>
+              <strong>{{ selectedPost.favoriteCount }}</strong>
+            </button>
+            <span class="stat-pill">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v6A2.5 2.5 0 0 1 17.5 15H11l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 12.5v-6Z" />
+              </svg>
+              <strong>{{ selectedPost.commentCount }}</strong>
+            </span>
           </div>
           <div v-if="getImageUrls(selectedPost).length" class="detail-image-grid">
             <div
@@ -287,6 +411,10 @@
             </div>
           </div>
           <div class="detail-content">{{ selectedPost.content }}</div>
+          <div v-if="selectedPost.status !== 'APPROVED'" class="detail-review-note">
+            <span>{{ getPostStatusHint(selectedPost.status) }}</span>
+            <strong v-if="selectedPost.reviewRemark">{{ selectedPost.reviewRemark }}</strong>
+          </div>
 
           <section class="comments-panel">
             <div class="comments-header">
@@ -297,7 +425,10 @@
               <el-tag effect="plain">{{ detailComments.length }} 条评论</el-tag>
             </div>
 
-            <div v-if="userStore.isLoggedIn" class="comment-editor">
+            <div v-if="selectedPost.status !== 'APPROVED'" class="comment-login-tip">
+              <span>帖子审核通过后才会开放评论、点赞和收藏。</span>
+            </div>
+            <div v-else-if="userStore.isLoggedIn" class="comment-editor">
               <div v-if="replyTarget" class="reply-banner">
                 <span>正在回复 <strong>{{ replyTarget.authorName }}</strong></span>
                 <el-button type="primary" link @click="cancelReply">取消</el-button>
@@ -382,6 +513,55 @@
             </div>
           </div>
 
+          <div class="profile-actions">
+            <el-button
+              v-if="authorProfile.self"
+              plain
+              disabled
+            >
+              这是你自己
+            </el-button>
+            <el-button
+              v-else-if="!userStore.isLoggedIn"
+              type="primary"
+              plain
+              @click="router.push('/login')"
+            >
+              登录后加好友
+            </el-button>
+            <el-button
+              v-else-if="authorProfile.canAddFriend"
+              type="primary"
+              :loading="friendActionLoading"
+              @click="handleAddFriend"
+            >
+              添加好友
+            </el-button>
+            <el-button
+              v-else-if="authorProfile.relationStatus === 'FRIEND'"
+              type="success"
+              plain
+              @click="goToFriends"
+            >
+              已是好友
+            </el-button>
+            <el-button
+              v-else-if="authorProfile.relationStatus === 'REQUEST_RECEIVED'"
+              type="warning"
+              plain
+              @click="goToFriends"
+            >
+              去处理申请
+            </el-button>
+            <el-button
+              v-else-if="authorProfile.relationStatus === 'REQUEST_SENT'"
+              plain
+              disabled
+            >
+              申请已发送
+            </el-button>
+          </div>
+
           <div class="profile-bio">
             {{ authorProfile.bio || '这个用户还没有填写个人简介。' }}
           </div>
@@ -410,18 +590,23 @@
 <script setup>
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { CaretTop, ChatDotRound, Picture, Refresh, Search, Star, View } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Picture, Refresh, Search } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import {
+  approveForumPost,
   createForumComment,
   createForumPost,
+  deleteForumPost,
   getForumAuthorProfile,
   getForumPostDetail,
   getForumPosts,
+  getPendingForumPosts,
+  rejectForumPost,
   toggleForumFavorite,
   toggleForumLike
 } from '@/api/forum'
+import { createFriendRequest } from '@/api/social'
 import { deleteImage, uploadImage } from '@/api/file'
 
 const router = useRouter()
@@ -433,10 +618,13 @@ const imageUploadingCount = ref(0)
 const detailLoading = ref(false)
 const commentLoading = ref(false)
 const profileLoading = ref(false)
+const pendingLoading = ref(false)
+const friendActionLoading = ref(false)
 
 const searchKeyword = ref('')
 const total = ref(0)
 const posts = ref([])
+const pendingPosts = ref([])
 const selectedPost = ref(null)
 const detailComments = ref([])
 const commentDraft = ref('')
@@ -469,13 +657,29 @@ const loadPosts = async (page = pagination.page) => {
       keyword: searchKeyword.value.trim() || undefined
     })
     posts.value = res.data.records || []
-    total.value = res.data.total || 0
+    total.value = Number(res.data.total || 0)
     pagination.page = Number(res.data.current || page || 1)
     pagination.size = Number(res.data.size || pagination.size)
   } catch (error) {
     console.error(error)
   } finally {
     loading.value = false
+  }
+}
+
+const loadPendingPosts = async () => {
+  if (!userStore.isAdmin) {
+    pendingPosts.value = []
+    return
+  }
+  pendingLoading.value = true
+  try {
+    const res = await getPendingForumPosts({ limit: 12 })
+    pendingPosts.value = res.data || []
+  } catch (error) {
+    console.error(error)
+  } finally {
+    pendingLoading.value = false
   }
 }
 
@@ -488,14 +692,7 @@ const openPost = async (postId) => {
     detailComments.value = res.data.comments || []
     commentDraft.value = ''
     replyTarget.value = null
-    syncPostState(res.data.post.id, {
-      viewCount: res.data.post.viewCount,
-      likeCount: res.data.post.likeCount,
-      favoriteCount: res.data.post.favoriteCount,
-      commentCount: res.data.post.commentCount,
-      liked: res.data.post.liked,
-      favorited: res.data.post.favorited
-    })
+    syncPostState(res.data.post.id, res.data.post)
   } catch (error) {
     detailOpen.value = false
     console.error(error)
@@ -506,7 +703,7 @@ const openPost = async (postId) => {
 
 const submitPost = async () => {
   if (!canPublish.value) {
-    ElMessage.warning('请先登录后再发布体验')
+    ElMessage.warning('请先登录后再发布帖子')
     return
   }
   if (!publishForm.title.trim() || !publishForm.content.trim()) {
@@ -521,14 +718,20 @@ const submitPost = async () => {
       content: publishForm.content.trim(),
       imageUrls: [...publishForm.imageUrls]
     })
+    const createdPost = res.data
     publishForm.title = ''
     publishForm.content = ''
     publishForm.imageUrls = []
-    ElMessage.success('体验已发布')
+    ElMessage.success(
+      createdPost?.status === 'APPROVED'
+        ? '体验已发布'
+        : '体验已提交，等待管理员审核'
+    )
     pagination.page = 1
     await loadPosts(1)
-    if (res.data?.id) {
-      openPost(res.data.id)
+    await loadPendingPosts()
+    if (createdPost?.id) {
+      await openPost(createdPost.id)
     }
   } catch (error) {
     console.error(error)
@@ -542,6 +745,9 @@ const submitComment = async () => {
     return
   }
   if (!selectedPost.value) {
+    return
+  }
+  if (!ensurePostInteractive(selectedPost.value, '评论')) {
     return
   }
 
@@ -685,7 +891,7 @@ const handlePageChange = (page) => {
 }
 
 const handleToggleLike = async (post) => {
-  if (!ensureLoggedIn('点赞')) {
+  if (!ensureLoggedIn('点赞') || !ensurePostInteractive(post, '点赞')) {
     return
   }
   try {
@@ -697,7 +903,7 @@ const handleToggleLike = async (post) => {
 }
 
 const handleToggleFavorite = async (post) => {
-  if (!ensureLoggedIn('收藏')) {
+  if (!ensureLoggedIn('收藏') || !ensurePostInteractive(post, '收藏')) {
     return
   }
   try {
@@ -706,6 +912,96 @@ const handleToggleFavorite = async (post) => {
   } catch (error) {
     console.error(error)
   }
+}
+
+const handleReviewPost = async (post, approved) => {
+  if (!userStore.isAdmin || !post?.canReview) {
+    return
+  }
+  const actionText = approved ? '通过' : '驳回'
+  try {
+    await ElMessageBox.confirm(
+      `确认${actionText}《${post.title}》吗？`,
+      `${actionText}帖子`,
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: approved ? 'success' : 'warning'
+      }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    const res = approved
+      ? await approveForumPost(post.id)
+      : await rejectForumPost(post.id)
+    syncPostState(post.id, res.data)
+    await loadPendingPosts()
+    ElMessage.success(approved ? '帖子已通过审核' : '帖子已驳回')
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const handleDeletePost = async (post) => {
+  if (!post?.canDelete) {
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `确认删除《${post.title}》吗？删除后将无法恢复。`,
+      '删除帖子',
+      {
+        confirmButtonText: '删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    const existedInList = posts.value.some(item => item.id === post.id)
+    await deleteForumPost(post.id)
+    removePostState(post.id)
+    if (existedInList) {
+      total.value = Math.max(0, total.value - 1)
+    }
+    await loadPendingPosts()
+    ElMessage.success('帖子已删除')
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const handleAddFriend = async () => {
+  if (!authorProfile.value || !authorProfile.value.canAddFriend) {
+    return
+  }
+  friendActionLoading.value = true
+  try {
+    await createFriendRequest({
+      receiverId: authorProfile.value.id
+    })
+    authorProfile.value = {
+      ...authorProfile.value,
+      canAddFriend: false,
+      relationStatus: 'REQUEST_SENT'
+    }
+    ElMessage.success('好友申请已发送')
+  } catch (error) {
+    console.error(error)
+  } finally {
+    friendActionLoading.value = false
+  }
+}
+
+const goToFriends = () => {
+  profileOpen.value = false
+  router.push('/friends')
 }
 
 const applyReactionState = (postId, data) => {
@@ -726,8 +1022,19 @@ const applyReactionState = (postId, data) => {
 
 const syncPostState = (postId, patch) => {
   posts.value = posts.value.map(post => (post.id === postId ? { ...post, ...patch } : post))
+  pendingPosts.value = pendingPosts.value.map(post => (post.id === postId ? { ...post, ...patch } : post))
   if (selectedPost.value && selectedPost.value.id === postId) {
     selectedPost.value = { ...selectedPost.value, ...patch }
+  }
+}
+
+const removePostState = (postId) => {
+  posts.value = posts.value.filter(post => post.id !== postId)
+  pendingPosts.value = pendingPosts.value.filter(post => post.id !== postId)
+  if (selectedPost.value?.id === postId) {
+    selectedPost.value = null
+    detailComments.value = []
+    detailOpen.value = false
   }
 }
 
@@ -754,6 +1061,14 @@ const ensureLoggedIn = (action) => {
     return true
   }
   ElMessage.warning(`请先登录后再${action}`)
+  return false
+}
+
+const ensurePostInteractive = (post, action) => {
+  if (isPostApproved(post)) {
+    return true
+  }
+  ElMessage.warning(`帖子审核通过后才可以${action}`)
   return false
 }
 
@@ -787,8 +1102,46 @@ const roleText = (role) => {
   return role === 'ADMIN' ? '管理员' : '普通用户'
 }
 
+const getPostStatusText = (status) => {
+  switch (status) {
+    case 'PENDING':
+      return '审核中'
+    case 'REJECTED':
+      return '未通过'
+    default:
+      return '已通过'
+  }
+}
+
+const getPostStatusType = (status) => {
+  switch (status) {
+    case 'PENDING':
+      return 'warning'
+    case 'REJECTED':
+      return 'danger'
+    default:
+      return 'success'
+  }
+}
+
+const getPostStatusHint = (status) => {
+  switch (status) {
+    case 'PENDING':
+      return '这条帖子正在等待管理员审核，审核通过后才会公开展示。'
+    case 'REJECTED':
+      return '这条帖子暂时没有通过审核，你可以调整内容后重新发布。'
+    default:
+      return '这条帖子已经通过审核并公开展示。'
+  }
+}
+
+const isPostApproved = (post) => {
+  return !!post && post.status === 'APPROVED'
+}
+
 onMounted(() => {
   loadPosts()
+  loadPendingPosts()
 })
 </script>
 
@@ -951,20 +1304,23 @@ onMounted(() => {
 
 .upload-placeholder {
   min-height: 116px;
-  border: 1px dashed rgba(var(--brand-primary-rgb), 0.28);
+  border: 1px dashed color-mix(in srgb, var(--el-color-primary) 28%, var(--bs-stroke));
   border-radius: 18px;
-  background: rgba(var(--brand-primary-rgb), 0.07);
-  color: var(--brand-primary);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--bs-surface) 88%, transparent) 100%);
+  color: var(--bs-ink);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
   font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .upload-placeholder .el-icon {
   font-size: 28px;
+  color: var(--el-color-primary);
 }
 
 .preview-image {
@@ -1012,8 +1368,10 @@ onMounted(() => {
   align-items: center;
   padding: 18px 20px;
   border-radius: 20px;
-  background: rgba(var(--brand-primary-rgb), 0.08);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.14);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 95%, transparent) 0%, color-mix(in srgb, var(--bs-surface) 88%, transparent) 100%);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 14%, var(--bs-stroke));
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
 
 .guest-tip p {
@@ -1052,6 +1410,13 @@ onMounted(() => {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
+}
+
+.post-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .author-chip {
@@ -1149,16 +1514,63 @@ onMounted(() => {
   margin-top: 18px;
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 10px;
   color: var(--bs-muted);
   font-size: 13px;
 }
 
-.post-stats span,
-.detail-stats span {
+.stat-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--bs-stroke) 88%, transparent);
+  background: color-mix(in srgb, var(--bs-surface-solid) 95%, transparent);
+  color: var(--bs-muted);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.stat-pill svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.stat-pill strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: inherit;
+}
+
+.stat-action {
+  appearance: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.stat-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  color: var(--bs-ink);
+  border-color: color-mix(in srgb, var(--el-color-primary) 20%, var(--bs-stroke));
+}
+
+.stat-action.is-active {
+  color: var(--el-color-primary);
+  border-color: color-mix(in srgb, var(--el-color-primary) 30%, var(--bs-stroke));
+  background: color-mix(in srgb, var(--el-color-primary-light-9) 78%, var(--bs-surface-solid));
+}
+
+.stat-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .post-actions {
@@ -1173,9 +1585,73 @@ onMounted(() => {
   gap: 18px;
 }
 
+.review-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.review-card-head h3 {
+  margin: 0;
+  color: var(--bs-ink);
+}
+
+.review-card-head p {
+  margin: 8px 0 0;
+  color: var(--bs-muted);
+  line-height: 1.7;
+  font-size: 13px;
+}
+
 .side-card h3 {
   margin: 0 0 14px;
   color: var(--bs-ink);
+}
+
+.review-list {
+  display: grid;
+  gap: 12px;
+}
+
+.review-item {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--bs-stroke);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--bs-surface) 90%, transparent) 100%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.review-item-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.review-item-title {
+  color: var(--bs-ink);
+  line-height: 1.5;
+}
+
+.review-item-meta {
+  color: var(--bs-muted);
+  font-size: 12px;
+}
+
+.review-item-content {
+  margin: 10px 0 0;
+  color: var(--bs-muted);
+  line-height: 1.7;
+  font-size: 13px;
+}
+
+.review-item-actions {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .side-list {
@@ -1201,8 +1677,10 @@ onMounted(() => {
   align-items: center;
   padding: 14px 16px;
   border-radius: 18px;
-  background: rgba(var(--brand-primary-rgb), 0.08);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--bs-surface) 88%, transparent) 100%);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 10%, var(--bs-stroke));
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
 }
 
 .metric-item span {
@@ -1211,7 +1689,8 @@ onMounted(() => {
 }
 
 .metric-item strong {
-  color: var(--bs-ink);
+  color: var(--el-color-primary);
+  font-weight: 700;
 }
 
 .pagination-wrap {
@@ -1245,6 +1724,24 @@ onMounted(() => {
   font-size: 15px;
 }
 
+.detail-review-note {
+  margin-top: 18px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--el-color-warning) 26%, var(--bs-stroke));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--el-color-warning-light-9) 52%, var(--bs-surface)) 100%);
+  color: var(--bs-muted);
+  display: grid;
+  gap: 6px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+}
+
+.detail-review-note strong {
+  color: var(--bs-ink);
+  font-size: 13px;
+}
+
 .comments-panel {
   margin-top: 28px;
   padding-top: 24px;
@@ -1259,13 +1756,15 @@ onMounted(() => {
   margin-bottom: 12px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.10) 0%, rgba(var(--brand-primary-rgb), 0.04) 100%);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.16);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--el-color-primary-light-9) 68%, var(--bs-surface)) 100%);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 18%, var(--bs-stroke));
   display: flex;
   justify-content: space-between;
   gap: 12px;
   align-items: center;
   color: var(--bs-muted);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
 }
 
 .reply-banner strong {
@@ -1280,9 +1779,11 @@ onMounted(() => {
   align-items: center;
   padding: 14px 16px;
   border-radius: 16px;
-  background: rgba(var(--brand-primary-rgb), 0.08);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--el-fill-color-light) 82%, var(--bs-surface)) 100%);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 12%, var(--bs-stroke));
   color: var(--bs-muted);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
 }
 
 .comment-list {
@@ -1345,14 +1846,14 @@ onMounted(() => {
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
-  color: var(--bs-muted);
-  background: rgba(var(--brand-primary-rgb), 0.08);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+  color: var(--el-color-primary-dark-2);
+  background: color-mix(in srgb, var(--el-color-primary-light-9) 72%, var(--bs-surface-solid));
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 18%, var(--bs-stroke));
 }
 
 .reply-pill strong,
 .reply-pill {
-  color: var(--brand-primary);
+  color: var(--el-color-primary-dark-2);
 }
 
 .comment-content {
@@ -1372,14 +1873,23 @@ onMounted(() => {
   color: var(--bs-ink);
 }
 
+.profile-actions {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .profile-bio {
   margin-top: 20px;
   padding: 18px;
   border-radius: 18px;
-  background: rgba(var(--brand-primary-rgb), 0.08);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--bs-surface) 88%, transparent) 100%);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 10%, var(--bs-stroke));
   color: var(--bs-muted);
   line-height: 1.8;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
 }
 
 .profile-stats {
@@ -1473,6 +1983,10 @@ onMounted(() => {
     align-items: flex-start;
   }
 
+  .post-badges {
+    justify-content: flex-start;
+  }
+
   .composer-image-grid,
   .post-image-grid,
   .detail-image-grid {
@@ -1484,8 +1998,15 @@ onMounted(() => {
     width: 100%;
   }
 
+  .review-item-actions,
+  .profile-actions {
+    width: 100%;
+  }
+
   .detail-toolbar :deep(.el-button),
-  .post-actions :deep(.el-button) {
+  .post-actions :deep(.el-button),
+  .review-item-actions :deep(.el-button),
+  .profile-actions :deep(.el-button) {
     flex: 1;
   }
 

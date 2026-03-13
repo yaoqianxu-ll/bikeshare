@@ -45,6 +45,18 @@ public class ForumPost {
     @TableField("comment_count")
     private Long commentCount = 0L;
 
+    @TableField(value = "status", typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)
+    private ForumPostStatus status = ForumPostStatus.APPROVED;
+
+    @TableField("reviewer_id")
+    private Long reviewerId;
+
+    @TableField("reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    @TableField("review_remark")
+    private String reviewRemark;
+
     @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 

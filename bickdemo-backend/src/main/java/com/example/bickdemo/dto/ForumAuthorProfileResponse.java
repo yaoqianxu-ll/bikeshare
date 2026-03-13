@@ -18,5 +18,9 @@ public class ForumAuthorProfileResponse {
     private String role;
     private Long postCount;
     private Long commentCount;
+    private String relationStatus;
+    private Long pendingRequestId;
+    private boolean self;
+    private boolean canAddFriend;
     private LocalDateTime joinedAt;
 }

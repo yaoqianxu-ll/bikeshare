@@ -25,9 +25,14 @@ public class ForumPostResponse {
     private Long likeCount;
     private Long favoriteCount;
     private Long commentCount;
+    private String status;
+    private String reviewRemark;
+    private LocalDateTime reviewedAt;
     private boolean liked;
     private boolean favorited;
     private boolean mine;
+    private boolean canDelete;
+    private boolean canReview;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

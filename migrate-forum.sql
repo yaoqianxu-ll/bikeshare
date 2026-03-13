@@ -10,11 +10,16 @@ CREATE TABLE IF NOT EXISTS `forum_posts` (
   `like_count` bigint NOT NULL DEFAULT 0 COMMENT '点赞数量',
   `favorite_count` bigint NOT NULL DEFAULT 0 COMMENT '收藏数量',
   `comment_count` bigint NOT NULL DEFAULT 0 COMMENT '评论数量',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'APPROVED' COMMENT '审核状态：PENDING/APPROVED/REJECTED',
+  `reviewer_id` bigint DEFAULT NULL COMMENT '审核人用户 ID',
+  `reviewed_at` datetime DEFAULT NULL COMMENT '审核时间',
+  `review_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '审核备注',
   `created_at` datetime DEFAULT NULL COMMENT '创建时间',
   `updated_at` datetime DEFAULT NULL COMMENT '更新时间',
   `deleted` tinyint(1) DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
   PRIMARY KEY (`id`) USING BTREE,
   KEY `idx_forum_posts_user` (`user_id`) USING BTREE,
+  KEY `idx_forum_posts_status` (`status`) USING BTREE,
   KEY `idx_forum_posts_created_at` (`created_at`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='论坛帖子表';
 
@@ -34,6 +39,79 @@ SET @add_forum_image_url_sql = (
 PREPARE stmt FROM @add_forum_image_url_sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
+
+SET @add_forum_status_sql = (
+  SELECT IF(
+    EXISTS(
+      SELECT 1
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'forum_posts'
+        AND COLUMN_NAME = 'status'
+    ),
+    'SELECT 1',
+    "ALTER TABLE `forum_posts` ADD COLUMN `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'APPROVED' COMMENT '审核状态：PENDING/APPROVED/REJECTED' AFTER `comment_count`"
+  )
+);
+PREPARE stmt FROM @add_forum_status_sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @add_forum_reviewer_id_sql = (
+  SELECT IF(
+    EXISTS(
+      SELECT 1
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'forum_posts'
+        AND COLUMN_NAME = 'reviewer_id'
+    ),
+    'SELECT 1',
+    "ALTER TABLE `forum_posts` ADD COLUMN `reviewer_id` bigint DEFAULT NULL COMMENT '审核人用户 ID' AFTER `status`"
+  )
+);
+PREPARE stmt FROM @add_forum_reviewer_id_sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @add_forum_reviewed_at_sql = (
+  SELECT IF(
+    EXISTS(
+      SELECT 1
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'forum_posts'
+        AND COLUMN_NAME = 'reviewed_at'
+    ),
+    'SELECT 1',
+    "ALTER TABLE `forum_posts` ADD COLUMN `reviewed_at` datetime DEFAULT NULL COMMENT '审核时间' AFTER `reviewer_id`"
+  )
+);
+PREPARE stmt FROM @add_forum_reviewed_at_sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @add_forum_review_remark_sql = (
+  SELECT IF(
+    EXISTS(
+      SELECT 1
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'forum_posts'
+        AND COLUMN_NAME = 'review_remark'
+    ),
+    'SELECT 1',
+    "ALTER TABLE `forum_posts` ADD COLUMN `review_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '审核备注' AFTER `reviewed_at`"
+  )
+);
+PREPARE stmt FROM @add_forum_review_remark_sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+UPDATE `forum_posts`
+SET `status` = 'APPROVED'
+WHERE `status` IS NULL
+   OR `status` = '';
 
 CREATE TABLE IF NOT EXISTS `forum_post_comments` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '评论 ID',

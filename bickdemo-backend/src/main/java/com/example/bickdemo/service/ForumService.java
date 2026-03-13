@@ -14,9 +14,13 @@ import com.example.bickdemo.dto.ForumPostResponse;
 import com.example.bickdemo.entity.ForumPost;
 import com.example.bickdemo.entity.ForumPostComment;
 import com.example.bickdemo.entity.ForumPostImage;
+import com.example.bickdemo.entity.ForumPostStatus;
 import com.example.bickdemo.entity.ForumPostReaction;
 import com.example.bickdemo.entity.ForumReactionType;
 import com.example.bickdemo.entity.User;
+import com.example.bickdemo.entity.UserRole;
+import com.example.bickdemo.mapper.FriendRequestMapper;
+import com.example.bickdemo.mapper.FriendshipMapper;
 import com.example.bickdemo.mapper.ForumPostCommentMapper;
 import com.example.bickdemo.mapper.ForumPostImageMapper;
 import com.example.bickdemo.mapper.ForumPostMapper;
@@ -35,6 +39,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -45,13 +50,22 @@ public class ForumService {
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_SIZE = 10;
     private static final int MAX_SIZE = 30;
+    private static final int DEFAULT_PENDING_LIMIT = 12;
+    private static final int MAX_PENDING_LIMIT = 30;
     private static final int MAX_POST_IMAGES = 9;
     private static final String REMOVED_USERNAME = "已注销用户";
+    private static final String RELATION_NONE = "NONE";
+    private static final String RELATION_FRIEND = "FRIEND";
+    private static final String RELATION_REQUEST_SENT = "REQUEST_SENT";
+    private static final String RELATION_REQUEST_RECEIVED = "REQUEST_RECEIVED";
+    private static final String RELATION_SELF = "SELF";
 
     private final ForumPostMapper forumPostMapper;
     private final ForumPostCommentMapper forumPostCommentMapper;
     private final ForumPostImageMapper forumPostImageMapper;
     private final ForumPostReactionMapper forumPostReactionMapper;
+    private final FriendshipMapper friendshipMapper;
+    private final FriendRequestMapper friendRequestMapper;
     private final UserMapper userMapper;
 
     public ForumPostListResponse getPosts(String currentUsername, Integer page, Integer size, String keyword) {
@@ -64,6 +78,11 @@ public class ForumService {
         if (StringUtils.hasText(keyword)) {
             String trimmedKeyword = keyword.trim();
             wrapper.and(item -> item.like("title", trimmedKeyword).or().like("content", trimmedKeyword));
+        }
+        if (currentUser == null) {
+            wrapper.eq("status", ForumPostStatus.APPROVED.name());
+        } else if (!isAdmin(currentUser)) {
+            wrapper.and(item -> item.eq("status", ForumPostStatus.APPROVED.name()).or().eq("user_id", currentUser.getId()));
         }
         wrapper.orderByDesc("created_at").orderByDesc("id");
 
@@ -92,9 +111,11 @@ public class ForumService {
     @Transactional
     public ForumPostDetailResponse getPostDetail(Long postId, String currentUsername) {
         User currentUser = resolveCurrentUser(currentUsername);
-        ForumPost post = requirePost(postId);
-        forumPostMapper.updateViewCount(postId, 1L);
-        post = requirePost(postId);
+        ForumPost post = requireAccessiblePost(postId, currentUser);
+        if (post.getStatus() == ForumPostStatus.APPROVED) {
+            forumPostMapper.updateViewCount(postId, 1L);
+            post = requireAccessiblePost(postId, currentUser);
+        }
 
         List<ForumPostComment> comments = forumPostCommentMapper.selectList(new LambdaQueryWrapper<ForumPostComment>()
                 .eq(ForumPostComment::getPostId, postId)
@@ -145,16 +166,59 @@ public class ForumService {
         post.setLikeCount(0L);
         post.setFavoriteCount(0L);
         post.setCommentCount(0L);
+        post.setStatus(isAdmin(currentUser) ? ForumPostStatus.APPROVED : ForumPostStatus.PENDING);
+        post.setReviewRemark(isAdmin(currentUser) ? "管理员发布，已直接通过审核" : "等待管理员审核后展示");
+        if (isAdmin(currentUser)) {
+            post.setReviewerId(currentUser.getId());
+            post.setReviewedAt(LocalDateTime.now());
+        }
         forumPostMapper.insert(post);
         savePostImages(post.getId(), imageUrls);
 
         return toPostResponse(post, currentUser, currentUser, Collections.emptySet(), Collections.emptySet(), imageUrls);
     }
 
+    public List<ForumPostResponse> getPendingPosts(String currentUsername, Integer limit) {
+        User currentUser = requireUser(currentUsername);
+        ensureAdmin(currentUser);
+
+        int resolvedLimit = limit == null ? DEFAULT_PENDING_LIMIT : Math.max(1, Math.min(limit, MAX_PENDING_LIMIT));
+        QueryWrapper<ForumPost> wrapper = new QueryWrapper<>();
+        wrapper.eq("deleted", 0)
+                .eq("status", ForumPostStatus.PENDING.name())
+                .orderByAsc("created_at")
+                .last("LIMIT " + resolvedLimit);
+
+        List<ForumPost> posts = forumPostMapper.selectList(wrapper);
+        Map<Long, User> userMap = loadUsers(posts.stream().map(ForumPost::getUserId).toList());
+        Map<Long, List<String>> postImagesMap = loadPostImages(posts);
+
+        return posts.stream()
+                .map(post -> toPostResponse(
+                        post,
+                        userMap.get(post.getUserId()),
+                        currentUser,
+                        Collections.emptySet(),
+                        Collections.emptySet(),
+                        postImagesMap.get(post.getId())
+                ))
+                .toList();
+    }
+
+    @Transactional
+    public ForumPostResponse approvePost(String currentUsername, Long postId) {
+        return reviewPost(currentUsername, postId, ForumPostStatus.APPROVED, "管理员已通过审核");
+    }
+
+    @Transactional
+    public ForumPostResponse rejectPost(String currentUsername, Long postId) {
+        return reviewPost(currentUsername, postId, ForumPostStatus.REJECTED, "管理员未通过审核");
+    }
+
     @Transactional
     public ForumPostCommentResponse createComment(String currentUsername, Long postId, ForumPostCommentCreateRequest request) {
         User currentUser = requireUser(currentUsername);
-        requirePost(postId);
+        requireApprovedPost(postId);
         ForumPostComment parentComment = resolveParentComment(postId, request.getParentCommentId());
         if (parentComment != null && Objects.equals(parentComment.getUserId(), currentUser.getId())) {
             throw new RuntimeException("不能回复自己的评论");
@@ -175,19 +239,37 @@ public class ForumService {
 
     @Transactional
     public ForumPostReactionResponse toggleLike(String currentUsername, Long postId) {
+        requireApprovedPost(postId);
         return toggleReaction(currentUsername, postId, ForumReactionType.LIKE);
     }
 
     @Transactional
     public ForumPostReactionResponse toggleFavorite(String currentUsername, Long postId) {
+        requireApprovedPost(postId);
         return toggleReaction(currentUsername, postId, ForumReactionType.FAVORITE);
     }
 
-    public ForumAuthorProfileResponse getUserProfile(Long userId) {
+    @Transactional
+    public void deletePost(String currentUsername, Long postId) {
+        User currentUser = requireUser(currentUsername);
+        ForumPost post = requirePost(postId);
+        if (!canDeletePost(currentUser, post)) {
+            throw new RuntimeException("你没有权限删除这条帖子");
+        }
+
+        forumPostImageMapper.deleteByPostId(postId);
+        forumPostMapper.deleteById(postId);
+    }
+
+    public ForumAuthorProfileResponse getUserProfile(Long userId, String currentUsername) {
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
+        User currentUser = resolveCurrentUser(currentUsername);
+        boolean self = currentUser != null && Objects.equals(currentUser.getId(), userId);
+        String relationStatus = resolveRelationStatus(currentUser, user);
+        Long pendingRequestId = resolvePendingRequestId(currentUser, user);
 
         long postCount = forumPostMapper.countByUserId(userId);
         long commentCount = forumPostCommentMapper.countByUserId(userId);
@@ -200,6 +282,10 @@ public class ForumService {
                 user.getRole() == null ? "USER" : user.getRole().name(),
                 postCount,
                 commentCount,
+                relationStatus,
+                pendingRequestId,
+                self,
+                currentUser != null && !self && RELATION_NONE.equals(relationStatus),
                 user.getCreatedAt()
         );
     }
@@ -244,6 +330,22 @@ public class ForumService {
         return post;
     }
 
+    private ForumPost requireApprovedPost(Long postId) {
+        ForumPost post = requirePost(postId);
+        if (post.getStatus() != ForumPostStatus.APPROVED) {
+            throw new RuntimeException("帖子审核通过后才可以互动");
+        }
+        return post;
+    }
+
+    private ForumPost requireAccessiblePost(Long postId, User currentUser) {
+        ForumPost post = requirePost(postId);
+        if (canAccessPost(currentUser, post)) {
+            return post;
+        }
+        throw new RuntimeException("帖子正在审核中，暂时不能查看");
+    }
+
     private User requireUser(String username) {
         User user = resolveCurrentUser(username);
         if (user == null) {
@@ -257,6 +359,12 @@ public class ForumService {
             return null;
         }
         return userMapper.findByUsername(username);
+    }
+
+    private void ensureAdmin(User user) {
+        if (!isAdmin(user)) {
+            throw new RuntimeException("只有管理员可以执行该操作");
+        }
     }
 
     private Map<Long, User> loadUsers(Collection<Long> userIds) {
@@ -313,9 +421,14 @@ public class ForumService {
                 safeLong(post.getLikeCount()),
                 safeLong(post.getFavoriteCount()),
                 safeLong(post.getCommentCount()),
+                post.getStatus() == null ? ForumPostStatus.APPROVED.name() : post.getStatus().name(),
+                post.getReviewRemark(),
+                post.getReviewedAt(),
                 likedIds.contains(post.getId()),
                 favoritedIds.contains(post.getId()),
                 currentUser != null && Objects.equals(currentUser.getId(), post.getUserId()),
+                canDeletePost(currentUser, post),
+                canReviewPost(currentUser, post),
                 post.getCreatedAt(),
                 post.getUpdatedAt()
         );
@@ -438,5 +551,79 @@ public class ForumService {
             return requestedReplyToUserId;
         }
         return parentComment.getUserId();
+    }
+
+    private ForumPostResponse reviewPost(String currentUsername, Long postId, ForumPostStatus nextStatus, String remark) {
+        User currentUser = requireUser(currentUsername);
+        ensureAdmin(currentUser);
+
+        ForumPost post = requirePost(postId);
+        post.setStatus(nextStatus);
+        post.setReviewerId(currentUser.getId());
+        post.setReviewedAt(LocalDateTime.now());
+        post.setReviewRemark(remark);
+        forumPostMapper.updateById(post);
+
+        post = requirePost(postId);
+        User author = userMapper.selectById(post.getUserId());
+        List<String> imageUrls = resolveImageUrls(post, forumPostImageMapper.findByPostId(postId));
+        return toPostResponse(post, author, currentUser, Collections.emptySet(), Collections.emptySet(), imageUrls);
+    }
+
+    private boolean canAccessPost(User currentUser, ForumPost post) {
+        if (post.getStatus() == ForumPostStatus.APPROVED) {
+            return true;
+        }
+        if (currentUser == null) {
+            return false;
+        }
+        return isAdmin(currentUser) || Objects.equals(currentUser.getId(), post.getUserId());
+    }
+
+    private boolean canDeletePost(User currentUser, ForumPost post) {
+        if (currentUser == null || post == null) {
+            return false;
+        }
+        if (Objects.equals(currentUser.getId(), post.getUserId())) {
+            return true;
+        }
+        return isAdmin(currentUser) && post.getStatus() != ForumPostStatus.APPROVED;
+    }
+
+    private boolean canReviewPost(User currentUser, ForumPost post) {
+        return currentUser != null
+                && isAdmin(currentUser)
+                && post.getStatus() == ForumPostStatus.PENDING;
+    }
+
+    private boolean isAdmin(User user) {
+        return user != null && user.getRole() == UserRole.ADMIN;
+    }
+
+    private String resolveRelationStatus(User currentUser, User targetUser) {
+        if (currentUser == null || targetUser == null) {
+            return RELATION_NONE;
+        }
+        if (Objects.equals(currentUser.getId(), targetUser.getId())) {
+            return RELATION_SELF;
+        }
+        if (friendshipMapper.existsFriendship(currentUser.getId(), targetUser.getId())) {
+            return RELATION_FRIEND;
+        }
+        var pendingRequest = friendRequestMapper.findPendingBetweenUsers(currentUser.getId(), targetUser.getId());
+        if (pendingRequest == null) {
+            return RELATION_NONE;
+        }
+        return Objects.equals(pendingRequest.getSenderId(), currentUser.getId())
+                ? RELATION_REQUEST_SENT
+                : RELATION_REQUEST_RECEIVED;
+    }
+
+    private Long resolvePendingRequestId(User currentUser, User targetUser) {
+        if (currentUser == null || targetUser == null || Objects.equals(currentUser.getId(), targetUser.getId())) {
+            return null;
+        }
+        var pendingRequest = friendRequestMapper.findPendingBetweenUsers(currentUser.getId(), targetUser.getId());
+        return pendingRequest == null ? null : pendingRequest.getId();
     }
 }

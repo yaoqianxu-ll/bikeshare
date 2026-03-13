@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,6 +46,19 @@ public class ForumController {
                 keyword
         );
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/posts/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<java.util.List<ForumPostResponse>>> getPendingPosts(
+            @RequestParam(defaultValue = "12") Integer limit,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        try {
+            return ResponseEntity.ok(ApiResponse.success(forumService.getPendingPosts(userDetails.getUsername(), limit)));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
+        }
     }
 
     @GetMapping("/posts/{postId}")
@@ -77,6 +91,34 @@ public class ForumController {
         }
     }
 
+    @PostMapping("/posts/{postId}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ForumPostResponse>> approvePost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        try {
+            ForumPostResponse response = forumService.approvePost(userDetails.getUsername(), postId);
+            return ResponseEntity.ok(ApiResponse.success("审核通过", response));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/posts/{postId}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ForumPostResponse>> rejectPost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        try {
+            ForumPostResponse response = forumService.rejectPost(userDetails.getUsername(), postId);
+            return ResponseEntity.ok(ApiResponse.success("已驳回帖子", response));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
+        }
+    }
+
     @PostMapping("/posts/{postId}/comments")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<ApiResponse<ForumPostCommentResponse>> createComment(
@@ -87,6 +129,20 @@ public class ForumController {
         try {
             ForumPostCommentResponse response = forumService.createComment(userDetails.getUsername(), postId, request);
             return ResponseEntity.ok(ApiResponse.success("评论成功", response));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/posts/{postId}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deletePost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        try {
+            forumService.deletePost(userDetails.getUsername(), postId);
+            return ResponseEntity.ok(ApiResponse.success("帖子已删除", null));
         } catch (RuntimeException ex) {
             return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
         }
@@ -121,9 +177,15 @@ public class ForumController {
     }
 
     @GetMapping("/users/{userId}")
-    public ResponseEntity<ApiResponse<ForumAuthorProfileResponse>> getUserProfile(@PathVariable Long userId) {
+    public ResponseEntity<ApiResponse<ForumAuthorProfileResponse>> getUserProfile(
+            @PathVariable Long userId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
         try {
-            ForumAuthorProfileResponse response = forumService.getUserProfile(userId);
+            ForumAuthorProfileResponse response = forumService.getUserProfile(
+                    userId,
+                    userDetails == null ? null : userDetails.getUsername()
+            );
             return ResponseEntity.ok(ApiResponse.success(response));
         } catch (RuntimeException ex) {
             return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));

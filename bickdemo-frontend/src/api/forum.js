@@ -23,6 +23,35 @@ export function createForumPost(data) {
   })
 }
 
+export function getPendingForumPosts(params = {}) {
+  return request({
+    url: '/forum/posts/pending',
+    method: 'get',
+    params
+  })
+}
+
+export function approveForumPost(postId) {
+  return request({
+    url: `/forum/posts/${postId}/approve`,
+    method: 'post'
+  })
+}
+
+export function rejectForumPost(postId) {
+  return request({
+    url: `/forum/posts/${postId}/reject`,
+    method: 'post'
+  })
+}
+
+export function deleteForumPost(postId) {
+  return request({
+    url: `/forum/posts/${postId}`,
+    method: 'delete'
+  })
+}
+
 export function createForumComment(postId, data) {
   return request({
     url: `/forum/posts/${postId}/comments`,
