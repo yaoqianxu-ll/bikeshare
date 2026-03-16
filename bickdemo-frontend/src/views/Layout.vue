@@ -66,10 +66,10 @@
     </el-drawer>
 
     <!-- 固定导航栏 -->
-    <header class="app-header">
+    <header class="app-header" :class="{ 'is-home-header': isHomePage }">
       <div class="header-content">
         <div class="logo-section">
-          <div class="logo-wrapper">
+          <router-link to="/" class="logo-wrapper logo-link" @click="closeNav">
             <div class="logo-icon-box">
               <el-icon class="logo-icon"><Bicycle /></el-icon>
             </div>
@@ -77,10 +77,14 @@
               <h1 class="logo">BikeShare</h1>
               <span class="slogan">探索城市，从骑行开始</span>
             </div>
-          </div>
+          </router-link>
         </div>
 
         <nav class="nav-links" :class="{ active: navOpen }">
+          <router-link to="/" class="nav-link" @click="closeNav">
+            <span class="nav-icon-bg"><el-icon><House /></el-icon></span>
+            <span>首页</span>
+          </router-link>
           <router-link to="/bicycles" class="nav-link" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><Bicycle /></el-icon></span>
             <span>单车</span>
@@ -101,10 +105,6 @@
             <span class="nav-icon-bg"><el-icon><ChatDotRound /></el-icon></span>
             <span>好友</span>
           </router-link>
-          <router-link to="/admin" class="nav-link" v-if="userStore.isAdmin" @click="closeNav">
-            <span class="nav-icon-bg"><el-icon><Setting /></el-icon></span>
-            <span>管理</span>
-          </router-link>
           <!-- Mobile: the header login button is hidden, so keep a nav item. -->
           <router-link to="/login" class="nav-link nav-link-auth" v-if="!userStore.isLoggedIn" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><User /></el-icon></span>
@@ -113,7 +113,7 @@
         </nav>
 
         <div class="header-actions">
-          <ThemeToggle variant="inline" />
+          <ThemeToggle variant="inline" :tone="isHomePage ? 'ghost' : 'solid'" />
           <div class="user-section" v-if="userStore.isLoggedIn">
             <el-dropdown trigger="click">
               <span class="user-name">
@@ -148,7 +148,7 @@
     </header>
 
     <!-- 主内容区 -->
-    <main class="main-content">
+    <main class="main-content" :class="{ 'is-home-main': isHomePage }">
       <router-view />
     </main>
 
@@ -161,15 +161,16 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, SwitchButton, Bicycle, DataAnalysis, Document, Setting, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound } from '@element-plus/icons-vue'
+import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House } from '@element-plus/icons-vue'
 import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
 import { getCurrentUser } from '@/api/auth'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const navOpen = ref(false)
 const showBgSelector = ref(false)
@@ -178,6 +179,7 @@ const backgrounds = ref([])
 const uploading = ref(false)
 
 const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
+const isHomePage = computed(() => route.name === 'Home')
 
 // 上传配置
 const uploadUrl = '/api/backgrounds/upload'
@@ -309,7 +311,7 @@ const handleLogout = () => {
   userStore.logout()
   ElMessage.success('已退出登录')
   // Logout should land on a public page (not force re-login).
-  router.push('/bicycles')
+  router.push('/')
   closeNav()
 }
 
@@ -548,6 +550,12 @@ onMounted(() => {
   z-index: 1000;
 }
 
+.app-header.is-home-header {
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
 .header-content {
   display: flex;
   justify-content: space-between;
@@ -569,6 +577,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+.logo-link {
+  color: inherit;
+  text-decoration: none;
 }
 
 .logo-icon-box {
@@ -614,6 +627,31 @@ onMounted(() => {
   font-weight: 500;
 }
 
+.app-header.is-home-header .logo,
+.app-header.is-home-header .user-text {
+  color: #f8fbff;
+}
+
+.app-header.is-home-header .slogan {
+  color: rgba(226, 236, 248, 0.72);
+}
+
+.app-header.is-home-header .logo-icon-box,
+.app-header.is-home-header .user-avatar {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+.app-header.is-home-header .logo-icon,
+.app-header.is-home-header .user-avatar {
+  color: #f8fbff;
+}
+
+.app-header.is-home-header .menu-toggle span {
+  background: rgba(248, 251, 255, 0.86);
+}
+
 /* 导航链接 */
 .nav-links {
   display: flex;
@@ -623,6 +661,13 @@ onMounted(() => {
   padding: 6px;
   border-radius: 16px;
   border: 1px solid var(--bs-stroke);
+}
+
+.app-header.is-home-header .nav-links {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .nav-link {
@@ -660,15 +705,29 @@ onMounted(() => {
   color: var(--bs-ink);
 }
 
-.nav-link.router-link-active {
+.app-header.is-home-header .nav-link {
+  color: rgba(235, 242, 252, 0.80);
+}
+
+.app-header.is-home-header .nav-link:hover {
+  color: #ffffff;
+}
+
+.nav-link.router-link-exact-active {
   background: rgba(var(--brand-primary-rgb), 0.14);
   color: var(--bs-ink);
   border: 1px solid rgba(var(--brand-primary-rgb), 0.22);
   box-shadow: none;
 }
 
-.nav-link.router-link-active::before {
+.nav-link.router-link-exact-active::before {
   display: none;
+}
+
+.app-header.is-home-header .nav-link.router-link-exact-active {
+  color: #ffffff;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .nav-icon-bg {
@@ -840,6 +899,10 @@ onMounted(() => {
   min-height: calc(100vh - 120px);
 }
 
+.main-content.is-home-main {
+  margin-top: 0;
+}
+
 /* 底部 */
 .app-footer {
   background: linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 86%, transparent) 0%, var(--bs-surface) 100%);
@@ -887,7 +950,7 @@ onMounted(() => {
     font-size: 16px;
   }
 
-  .nav-link.router-link-active {
+  .nav-link.router-link-exact-active {
     background: rgba(var(--brand-primary-rgb), 0.10);
     box-shadow: none;
   }

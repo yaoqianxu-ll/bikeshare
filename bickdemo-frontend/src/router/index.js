@@ -8,7 +8,8 @@ const routes = [
     children: [
       {
         path: '',
-        redirect: '/bicycles'
+        name: 'Home',
+        component: () => import('@/views/Home.vue')
       },
       {
         path: '/bicycles',
@@ -26,12 +27,6 @@ const routes = [
         name: 'Friends',
         component: () => import('@/views/FriendsChat.vue'),
         meta: { requiresAuth: true }
-      },
-      {
-        path: '/admin',
-        name: 'Admin',
-        component: () => import('@/views/Admin.vue'),
-        meta: { requiresAuth: true, requiresAdmin: true }
       },
       {
         path: '/statistics',

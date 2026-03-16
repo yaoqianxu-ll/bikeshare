@@ -4,6 +4,7 @@ import com.example.bickdemo.dto.*;
 import com.example.bickdemo.entity.User;
 import com.example.bickdemo.service.AuthService;
 import com.example.bickdemo.service.JwtService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -43,8 +44,9 @@ public class AuthController {
      * 用户登录
      */
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
-        AuthResponse response = authService.login(request);
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request,
+                                                           HttpServletRequest servletRequest) {
+        AuthResponse response = authService.login(request, servletRequest);
         return ResponseEntity.ok(ApiResponse.success("登录成功", response));
     }
 
@@ -55,8 +57,9 @@ public class AuthController {
     }
 
     @PostMapping("/email/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> loginByEmail(@Valid @RequestBody EmailLoginRequest request) {
-        AuthResponse response = authService.loginByEmail(request);
+    public ResponseEntity<ApiResponse<AuthResponse>> loginByEmail(@Valid @RequestBody EmailLoginRequest request,
+                                                                  HttpServletRequest servletRequest) {
+        AuthResponse response = authService.loginByEmail(request, servletRequest);
         return ResponseEntity.ok(ApiResponse.success("登录成功", response));
     }
 

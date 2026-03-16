@@ -1,5 +1,6 @@
 package com.example.bickdemo.controller;
 
+import com.example.bickdemo.annotation.AdminOperationLog;
 import com.example.bickdemo.dto.ApiResponse;
 import com.example.bickdemo.entity.BackgroundImage;
 import com.example.bickdemo.service.BackgroundImageService;
@@ -65,6 +66,7 @@ public class BackgroundImageController {
      */
     @PostMapping("/upload")
     @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "背景管理", action = "上传背景")
     public ResponseEntity<ApiResponse<BackgroundImage>> uploadBackground(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "name", required = false) String name,
@@ -93,6 +95,7 @@ public class BackgroundImageController {
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "背景管理", action = "编辑背景")
     public ResponseEntity<ApiResponse<BackgroundImage>> updateBackground(
             @PathVariable Long id,
             @RequestBody BackgroundImage image) {
@@ -105,6 +108,7 @@ public class BackgroundImageController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "背景管理", action = "删除背景")
     public ResponseEntity<ApiResponse<Void>> deleteBackground(@PathVariable Long id) {
         backgroundImageService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("删除成功", null));
@@ -115,6 +119,7 @@ public class BackgroundImageController {
      */
     @PostMapping("/{id}/enabled")
     @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "背景管理", action = "切换背景启用状态")
     public ResponseEntity<ApiResponse<Void>> setEnabledBackground(
             @PathVariable Long id,
             @RequestParam Boolean enabled) {

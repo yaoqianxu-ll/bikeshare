@@ -1,5 +1,5 @@
 <template>
-  <div class="theme-toggle" :class="`theme-toggle--${variant}`">
+  <div class="theme-toggle" :class="[ `theme-toggle--${variant}`, `theme-toggle--tone-${tone}` ]">
     <el-dropdown placement="top-end" trigger="click" @command="handleCommand">
       <button type="button" class="theme-toggle__button" :aria-label="themeLabel" :title="themeLabel">
         <el-icon>
@@ -51,6 +51,10 @@ defineProps({
   variant: {
     type: String,
     default: 'floating'
+  },
+  tone: {
+    type: String,
+    default: 'solid'
   }
 })
 
@@ -102,10 +106,24 @@ const handleCommand = (command) => {
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
+.theme-toggle--tone-ghost .theme-toggle__button {
+  background: transparent;
+  color: #f8fbff;
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
 .theme-toggle__button:hover {
   transform: translateY(-2px);
   border-color: color-mix(in srgb, var(--el-color-primary) 35%, transparent);
   box-shadow: 0 16px 34px rgba(15, 23, 42, 0.24);
+}
+
+.theme-toggle--tone-ghost .theme-toggle__button:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 10px 24px rgba(6, 18, 40, 0.08);
 }
 
 .theme-toggle__button .el-icon {

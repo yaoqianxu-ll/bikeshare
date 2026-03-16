@@ -1,5 +1,6 @@
 package com.example.bickdemo.controller;
 
+import com.example.bickdemo.annotation.AdminOperationLog;
 import com.example.bickdemo.dto.ApiResponse;
 import com.example.bickdemo.dto.ForumAuthorProfileResponse;
 import com.example.bickdemo.dto.ForumPostCommentCreateRequest;
@@ -93,6 +94,7 @@ public class ForumController {
 
     @PostMapping("/posts/{postId}/approve")
     @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "论坛审核", action = "通过帖子审核")
     public ResponseEntity<ApiResponse<ForumPostResponse>> approvePost(
             @PathVariable Long postId,
             @AuthenticationPrincipal UserDetails userDetails
@@ -107,6 +109,7 @@ public class ForumController {
 
     @PostMapping("/posts/{postId}/reject")
     @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "论坛审核", action = "驳回帖子审核")
     public ResponseEntity<ApiResponse<ForumPostResponse>> rejectPost(
             @PathVariable Long postId,
             @AuthenticationPrincipal UserDetails userDetails
@@ -136,6 +139,7 @@ public class ForumController {
 
     @DeleteMapping("/posts/{postId}")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @AdminOperationLog(module = "论坛审核", action = "删除帖子")
     public ResponseEntity<ApiResponse<Void>> deletePost(
             @PathVariable Long postId,
             @AuthenticationPrincipal UserDetails userDetails

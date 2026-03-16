@@ -6,6 +6,7 @@ pipeline {
         PROJECT_NAME = 'bickdemo'
         BACKEND_DIR = 'bickdemo-backend'
         FRONTEND_DIR = 'bickdemo-frontend'
+        ADMIN_DIR = 'bickdemo-admin'
 
         // 服务器配置
         DEPLOY_HOST = '124.221.113.208'
@@ -119,6 +120,24 @@ pipeline {
             }
         }
 
+        stage('Build Admin') {
+            when { expression { !params.SKIP_BUILD } }
+            steps {
+                echo '🛠️ 构建管理端...'
+                dir("${ADMIN_DIR}") {
+                    sh '''
+                        echo "当前目录：" && pwd &&
+                        echo "文件列表：" && ls -la &&
+                        echo "安装依赖..." &&
+                        npm install --legacy-peer-deps &&
+                        echo "构建..." &&
+                        npx vite build &&
+                        echo "检查产物：" && ls -lh dist/
+                    '''
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             when { expression { !params.SKIP_BUILD } }
             steps {
@@ -160,6 +179,7 @@ pipeline {
                     echo "等待后端启动..."
                     sleep 10
                     curl -f http://localhost:8080/actuator/health || echo "健康检查失败，但继续..."
+                    curl -f http://localhost:3001/health || echo "管理端健康检查失败，但继续..."
                 '''
             }
         }
@@ -186,6 +206,7 @@ pipeline {
                 echo "部署完成时间：${currentTime}"
                 echo "访问地址："
                 echo "  前端：http://124.221.113.208"
+                echo "  管理端：http://124.221.113.208:3001"
                 echo "  后端：http://124.221.113.208:8080"
                 echo "  Jenkins: http://124.221.113.208:8081"
                 echo "  Gitea: http://124.221.113.208:3000"

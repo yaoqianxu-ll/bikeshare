@@ -74,6 +74,18 @@ services:
     depends_on:
       - app
 
+  admin:
+    build:
+      context: ./bickdemo-admin
+      dockerfile: Dockerfile.simple
+    ports:
+      - "3001:80"
+    restart: always
+    networks:
+      - bikeshare-network
+    depends_on:
+      - app
+
 networks:
   bikeshare-network:
     driver: bridge

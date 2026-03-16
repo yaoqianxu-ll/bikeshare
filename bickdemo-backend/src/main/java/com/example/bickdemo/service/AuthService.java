@@ -15,6 +15,7 @@ import com.example.bickdemo.mapper.EmailAuthMapper;
 import com.example.bickdemo.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -51,6 +52,7 @@ public class AuthService {
     private final MinioService minioService;
     private final EmailMailService emailMailService;
     private final StringRedisTemplate stringRedisTemplate;
+    private final SystemLogService systemLogService;
 
     @Value("${app.mail.code-expire-minutes:10}")
     private int emailCodeExpireMinutes;
@@ -118,36 +120,48 @@ public class AuthService {
     /**
      * 用户名登录
      */
-    public AuthResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
+    public AuthResponse login(LoginRequest request, HttpServletRequest servletRequest) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(),
+                            request.getPassword()
+                    )
+            );
 
-        User user = userMapper.findByUsername(request.getUsername());
-        if (user == null) {
-            throw new RuntimeException("用户不存在");
+            User user = userMapper.findByUsername(request.getUsername());
+            if (user == null) {
+                throw new RuntimeException("用户不存在");
+            }
+
+            systemLogService.recordLoginSuccess(user, "USERNAME", servletRequest, "用户名登录成功");
+            return buildAuthResponse(user);
+        } catch (RuntimeException ex) {
+            systemLogService.recordLoginFailure(request.getUsername(), "USERNAME", servletRequest, ex.getMessage());
+            throw ex;
         }
-
-        return buildAuthResponse(user);
     }
 
     /**
      * 邮箱登录
      */
-    public AuthResponse loginByEmail(EmailLoginRequest request) {
+    public AuthResponse loginByEmail(EmailLoginRequest request, HttpServletRequest servletRequest) {
         String email = normalizeEmail(request.getEmail());
-        User user = userMapper.findByEmail(email);
-        if (user == null) {
-            throw new RuntimeException("该邮箱尚未注册");
-        }
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("邮箱或密码错误");
-        }
+        try {
+            User user = userMapper.findByEmail(email);
+            if (user == null) {
+                throw new RuntimeException("该邮箱尚未注册");
+            }
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new RuntimeException("邮箱或密码错误");
+            }
 
-        return buildAuthResponse(user);
+            systemLogService.recordLoginSuccess(user, "EMAIL", servletRequest, "邮箱登录成功");
+            return buildAuthResponse(user);
+        } catch (RuntimeException ex) {
+            systemLogService.recordLoginFailure(email, "EMAIL", servletRequest, ex.getMessage());
+            throw ex;
+        }
     }
 
     /**

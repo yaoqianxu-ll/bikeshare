@@ -3,6 +3,7 @@ package com.example.bickdemo.controller;
 import com.example.bickdemo.dto.ApiResponse;
 import com.example.bickdemo.dto.BicycleRequest;
 import com.example.bickdemo.dto.BicycleResponse;
+import com.example.bickdemo.annotation.AdminOperationLog;
 import com.example.bickdemo.entity.BicycleStatus;
 import com.example.bickdemo.entity.BicycleType;
 import com.example.bickdemo.service.BicycleService;
@@ -92,6 +93,7 @@ public class BicycleController {
      */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "车辆管理", action = "新增车辆")
     public ResponseEntity<ApiResponse<BicycleResponse>> createBicycle(@Valid @RequestBody BicycleRequest request) {
         BicycleResponse bicycle = bicycleService.createBicycle(request);
         return ResponseEntity.ok(ApiResponse.success("创建成功", bicycle));
@@ -102,6 +104,7 @@ public class BicycleController {
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "车辆管理", action = "编辑车辆")
     public ResponseEntity<ApiResponse<BicycleResponse>> updateBicycle(@PathVariable Long id,
                                                                        @Valid @RequestBody BicycleRequest request) {
         BicycleResponse bicycle = bicycleService.updateBicycle(id, request);
@@ -113,6 +116,7 @@ public class BicycleController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "车辆管理", action = "删除车辆")
     public ResponseEntity<ApiResponse<Void>> deleteBicycle(@PathVariable Long id) {
         bicycleService.deleteBicycle(id);
         return ResponseEntity.ok(ApiResponse.success("删除成功", null));
@@ -123,6 +127,7 @@ public class BicycleController {
      */
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "车辆管理", action = "更新车辆状态")
     public ResponseEntity<ApiResponse<BicycleResponse>> updateBicycleStatus(@PathVariable Long id,
                                                                              @RequestParam BicycleStatus status) {
         BicycleResponse bicycle = bicycleService.updateBicycleStatus(id, status);
