@@ -6,9 +6,9 @@ spring:
       max-file-size: 50MB
       max-request-size: 50MB
   datasource:
-    url: jdbc:mysql://localhost:3306/bickdemo?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true
-    username: root
-    password: 123456
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:bickdemo}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:change-me-db-password}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       # 连接池名称
@@ -29,10 +29,10 @@ spring:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss
   mail:
-    host: smtp.qq.com
-    port: 587
-    username: 3539323716@qq.com
-    password: znpntdjnjprddagd
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     default-encoding: UTF-8
     properties:
       mail:
@@ -41,10 +41,10 @@ spring:
           starttls:
             enable: true
   rabbitmq:
-    host: ${RABBITMQ_HOST:124.221.113.208}
+    host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:yaoqianxu}
-    password: ${RABBITMQ_PASSWORD:Lile200623}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -71,16 +71,16 @@ server:
   port: 8080
 
 jwt:
-  secret: c2VjcmV0LWtleS1mb3Itand0LXRva2VuLWdlbmVyYXRpb24tbWluaW11bS0yNTYtYml0cw==
+  secret: ${JWT_SECRET:change-me-jwt-secret-with-at-least-32-bytes}
   expiration: 86400000
 
 
 # MinIO 配置
 minio:
-  endpoint: http://124.221.113.208:9000
-  accessKey: Cg6huvLg5AuW8ShqQoAr
-  secretKey: j8AoV6yOOUXVNPWVcIpJLuuZJidCeurCiBwg1c1z
-  bucket-name: bicycles
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  accessKey: ${MINIO_ACCESS_KEY:change-me-minio-access-key}
+  secretKey: ${MINIO_SECRET_KEY:change-me-minio-secret-key}
+  bucket-name: ${MINIO_BUCKET:bicycles}
 
 logging:
   level:
@@ -90,7 +90,7 @@ logging:
 
 app:
   mail:
-    from-name: BikeShare
+    from-name: ${MAIL_FROM_NAME:BikeShare}
     code-expire-minutes: 10
   redis:
     key-prefix: ${APP_REDIS_KEY_PREFIX:bickdemo:local:}

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-stack">
     <section class="page-hero">
       <div class="hero-head">
@@ -77,7 +77,7 @@
     <el-dialog v-model="dialogVisible" title="手动加入黑名单" width="480px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="IP 地址" prop="ip">
-          <el-input v-model="form.ip" placeholder="例如 124.221.113.208" />
+          <el-input v-model="form.ip" placeholder="例如 203.0.113.10" />
         </el-form-item>
         <el-form-item label="时长(分钟)" prop="durationMinutes">
           <el-input-number v-model="form.durationMinutes" :min="1" :max="1440" class="full-width" />
@@ -191,3 +191,4 @@ const remainText = (seconds) => {
 
 onMounted(load)
 </script>
+

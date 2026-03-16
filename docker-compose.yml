@@ -2,8 +2,8 @@ services:
   mysql:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: Lile200623
-      MYSQL_DATABASE: bickdemo
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-root-password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-bickdemo}
       TZ: Asia/Shanghai
     ports:
       - "3306:3306"
@@ -18,7 +18,7 @@ services:
     networks:
       - bikeshare-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pLile200623"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-change-me-root-password}"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -31,23 +31,24 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - MYSQL_HOST=mysql
-      - MYSQL_PORT=3306
-      - MYSQL_USERNAME=root
-      - MYSQL_PASSWORD=Lile200623
-      - MINIO_ENDPOINT=http://124.221.113.208:9000
-      - MINIO_ACCESS_KEY=Cg6huvLg5AuW8ShqQoAr
-      - MINIO_SECRET_KEY=j8AoV6yOOUXVNPWVcIpJLuuZJidCeurCiBwg1c1z
-      - MINIO_BUCKET=bicycles
-      - RABBITMQ_HOST=124.221.113.208
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USERNAME=yaoqianxu
-      - RABBITMQ_PASSWORD=Lile200623
-      - REDIS_HOST=124.221.113.208
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=Lile200623
-      - "APP_REDIS_KEY_PREFIX=bickdemo:prod:"
-      - JWT_SECRET=c2VjcmV0LWtleS1mb3Itand0LXRva2VuLWdlbmVyYXRpb24tbWluaW11bS0yNTYtYml0cw==
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-bickdemo}
+      - MYSQL_USERNAME=${MYSQL_USERNAME:-root}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-change-me-db-password}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-http://localhost:9000}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-change-me-minio-access-key}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-change-me-minio-secret-key}
+      - MINIO_BUCKET=${MINIO_BUCKET:-bicycles}
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-localhost}
+      - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      - REDIS_HOST=${REDIS_HOST:-localhost}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - "APP_REDIS_KEY_PREFIX=${APP_REDIS_KEY_PREFIX:-bickdemo:prod:}"
+      - JWT_SECRET=${JWT_SECRET:-change-me-jwt-secret-with-at-least-32-bytes}
       - TZ=Asia/Shanghai
     volumes:
       - ./logs:/app/logs

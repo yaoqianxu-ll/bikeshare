@@ -17,8 +17,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 自行车管理控制器
- * 处理自行车相关的 CRUD 操作
+ * 自行车管理接口。
+ * 面向前台租车页和后台车辆管理页暴露车辆查询、创建、修改、删除等能力。
+ *
  * @author Administrator
  */
 @RestController
@@ -29,7 +30,8 @@ public class BicycleController {
     private final BicycleService bicycleService;
 
     /**
-     * 获取所有自行车列表（支持筛选）
+     * 获取车辆列表。
+     * 普通用户和管理员都可访问，可按车型和状态筛选。
      */
     @GetMapping
     public ResponseEntity<ApiResponse<List<BicycleResponse>>> getAllBicycles(
@@ -40,7 +42,8 @@ public class BicycleController {
     }
 
     /**
-     * 获取自行车列表（分页，支持筛选）
+     * 分页查询车辆列表。
+     * 主要供后台管理表格使用，并记录管理员查询日志。
      */
     @GetMapping("/page")
     @AdminOperationLog(module = "车辆管理", action = "获取车辆列表", type = "查询")
@@ -54,7 +57,7 @@ public class BicycleController {
     }
 
     /**
-     * 获取可用自行车列表
+     * 获取当前可租车辆列表。
      */
     @GetMapping("/available")
     public ResponseEntity<ApiResponse<List<BicycleResponse>>> getAvailableBicycles() {
@@ -63,7 +66,7 @@ public class BicycleController {
     }
 
     /**
-     * 根据 ID 获取自行车详情
+     * 根据车辆 ID 获取详情。
      */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<BicycleResponse>> getBicycleById(@PathVariable Long id) {
@@ -72,7 +75,7 @@ public class BicycleController {
     }
 
     /**
-     * 根据类型获取自行车列表
+     * 根据车型筛选车辆。
      */
     @GetMapping("/type/{type}")
     public ResponseEntity<ApiResponse<List<BicycleResponse>>> getBicyclesByType(@PathVariable BicycleType type) {
@@ -81,7 +84,7 @@ public class BicycleController {
     }
 
     /**
-     * 根据状态获取自行车列表
+     * 根据状态筛选车辆。
      */
     @GetMapping("/status/{status}")
     public ResponseEntity<ApiResponse<List<BicycleResponse>>> getBicyclesByStatus(@PathVariable BicycleStatus status) {
@@ -90,7 +93,7 @@ public class BicycleController {
     }
 
     /**
-     * 创建自行车（仅管理员）
+     * 新增车辆，仅管理员可调用。
      */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -101,7 +104,7 @@ public class BicycleController {
     }
 
     /**
-     * 更新自行车信息（仅管理员）
+     * 更新车辆信息，仅管理员可调用。
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -113,7 +116,7 @@ public class BicycleController {
     }
 
     /**
-     * 删除自行车（仅管理员）
+     * 删除车辆，仅管理员可调用。
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -124,7 +127,7 @@ public class BicycleController {
     }
 
     /**
-     * 更新自行车状态（仅管理员）
+     * 单独更新车辆状态，仅管理员可调用。
      */
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")

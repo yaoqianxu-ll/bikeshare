@@ -19,8 +19,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 自行车服务类
- * 处理自行车相关的业务逻辑，带 Redis 缓存支持
+ * 自行车管理服务。
+ * 负责车辆查询、创建、更新、删除以及状态兼容处理，并在关键写操作后清理统计缓存，
+ * 确保后台首页、车辆概览等统计数据不会读取到旧值。
+ *
  * @author Administrator
  */
 @Service
@@ -31,9 +33,9 @@ public class BicycleService {
     private final BicycleMapper bicycleMapper;
 
     /**
-     * Legacy compatibility:
-     * Older versions used {@code BicycleStatus.RENTED}. With inventory-based renting,
-     * we treat RENTED as AVAILABLE and rely on {@code quantity} + rental records instead.
+     * 兼容旧状态枚举。
+     * 早期版本会把“被租出”直接写进车辆状态；现在系统改成“库存扣减 + 租赁记录”模型，
+     * 因此历史上的 RENTED 在大部分查询场景里都视为 AVAILABLE，避免老数据影响展示。
      */
     private BicycleStatus normalizeStatus(BicycleStatus status) {
         if (status == null) return null;
@@ -41,12 +43,14 @@ public class BicycleService {
     }
 
     /**
-     * 获取所有自行车（支持筛选）
+     * 获取车辆列表，支持按类型和状态筛选。
+     * 当筛选“可用”状态时，除了状态本身，还会额外要求库存 quantity > 0。
      */
     public List<BicycleResponse> getBicycles(BicycleType type, BicycleStatus status) {
         LambdaQueryWrapper<Bicycle> wrapper = new LambdaQueryWrapper<Bicycle>()
                 .eq(Bicycle::getDeleted, 0)
                 .eq(type != null, Bicycle::getType, type)
+                // “可用”是业务态，不只看 status，还要看库存是否还剩余。
                 .in(status == BicycleStatus.AVAILABLE, Bicycle::getStatus, BicycleStatus.AVAILABLE, BicycleStatus.RENTED)
                 .gt(status == BicycleStatus.AVAILABLE, Bicycle::getQuantity, 0)
                 .eq(status != null && status != BicycleStatus.AVAILABLE, Bicycle::getStatus, status);
@@ -56,7 +60,7 @@ public class BicycleService {
     }
 
     /**
-     * 获取自行车列表（分页，支持筛选）
+     * 分页获取车辆列表，供管理端表格使用。
      */
     public Page<BicycleResponse> getBicyclesPage(BicycleType type, BicycleStatus status, int page, int size) {
         LambdaQueryWrapper<Bicycle> wrapper = new LambdaQueryWrapper<Bicycle>()
@@ -75,7 +79,7 @@ public class BicycleService {
     }
 
     /**
-     * 获取所有自行车
+     * 获取全部未删除车辆，不做类型和状态限制。
      */
     public List<BicycleResponse> getAllBicycles() {
         log.debug("查询所有自行车");
@@ -85,7 +89,8 @@ public class BicycleService {
     }
 
     /**
-     * 获取可用自行车
+     * 获取当前可租车辆。
+     * 这里把 RENTED 也纳入兼容查询，但必须库存大于 0 才会真正展示给用户。
      */
     public List<BicycleResponse> getAvailableBicycles() {
         log.debug("查询可用自行车");
@@ -99,7 +104,7 @@ public class BicycleService {
     }
 
     /**
-     * 根据 ID 获取自行车
+     * 按主键获取车辆详情。
      */
     public BicycleResponse getBicycleById(Long id) {
         log.debug("根据 ID 查询自行车：{}", id);
@@ -111,7 +116,7 @@ public class BicycleService {
     }
 
     /**
-     * 根据类型获取自行车
+     * 按车型查询车辆。
      */
     public List<BicycleResponse> getBicyclesByType(BicycleType type) {
         log.debug("根据类型查询自行车：{}", type);
@@ -121,7 +126,7 @@ public class BicycleService {
     }
 
     /**
-     * 根据状态获取自行车
+     * 按状态查询车辆。
      */
     public List<BicycleResponse> getBicyclesByStatus(BicycleStatus status) {
         log.debug("根据状态查询自行车：{}", status);
@@ -131,7 +136,8 @@ public class BicycleService {
     }
 
     /**
-     * 创建自行车
+     * 新增车辆。
+     * 创建后会清理统计缓存，因为车辆总量、可用量、类型分布都会受到影响。
      */
     @Transactional
     @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
@@ -139,6 +145,7 @@ public class BicycleService {
         Bicycle bicycle = new Bicycle();
         bicycle.setName(request.getName());
         bicycle.setType(request.getType());
+        // 创建时就先把旧的 RENTED 状态归一化掉，避免存进新脏数据。
         bicycle.setStatus(normalizeStatus(request.getStatus()));
         bicycle.setQuantity(request.getQuantity() == null ? 1 : request.getQuantity());
         bicycle.setLocation(request.getLocation());
@@ -151,7 +158,8 @@ public class BicycleService {
     }
 
     /**
-     * 更新自行车
+     * 更新车辆信息。
+     * 只覆盖前端显式传入的字段，未传值的属性保持原状。
      */
     @Transactional
     @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
@@ -191,7 +199,7 @@ public class BicycleService {
     }
 
     /**
-     * 删除自行车
+     * 删除车辆。
      */
     @Transactional
     @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
@@ -204,7 +212,7 @@ public class BicycleService {
     }
 
     /**
-     * 更新自行车状态
+     * 单独更新车辆状态，常用于管理端快速切换“维修中/停用”等状态。
      */
     @Transactional
     @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
@@ -219,6 +227,7 @@ public class BicycleService {
     }
 
     private BicycleResponse convertToResponse(Bicycle bicycle) {
+        // 统一做实体到 DTO 的转换，避免控制器直接暴露数据库实体。
         BicycleResponse response = new BicycleResponse();
         response.setId(bicycle.getId());
         response.setName(bicycle.getName());

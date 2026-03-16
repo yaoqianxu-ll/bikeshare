@@ -16,8 +16,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * MinIO 对象存储服务类
- * 提供图片上传、删除等功能
+ * MinIO 对象存储服务。
+ * 负责处理头像、背景图、论坛配图等图片资源的上传和删除，并统一做文件类型与大小校验。
+ *
  * @author Administrator
  */
 @Service
@@ -33,30 +34,36 @@ public class MinioService {
     @Value("${minio.endpoint}")
     private String endpoint;
 
-    // 允许的图片类型
+    /**
+     * 系统允许上传的图片 MIME 类型。
+     */
     private static final List<String> ALLOWED_IMAGE_TYPES = Arrays.asList(
             "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"
     );
 
-    // 最大文件大小 5MB
+    /**
+     * 上传图片大小上限，防止超大文件占用对象存储和网络带宽。
+     */
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
 
     /**
-     * 上传图片到 MinIO
+     * 上传图片到 MinIO。
+     * 上传前会做文件类型和大小校验，上传成功后返回可直接访问的 URL。
+     *
      * @param file 图片文件
      * @return 图片访问 URL
      */
     public String uploadImage(MultipartFile file) {
         try {
-            // 验证文件类型
+            // 先校验 MIME 类型，避免把非图片文件当成资源存入对象存储。
             validateImageType(file);
 
-            // 验证文件大小
+            // 再校验文件大小，限制单文件上传体积。
             if (file.getSize() > MAX_FILE_SIZE) {
                 throw new RuntimeException("图片大小不能超过 5MB");
             }
 
-            // 生成唯一文件名
+            // 用 UUID 生成对象名，避免原始文件名冲突。
             String originalFilename = file.getOriginalFilename();
             String extension = "";
             if (originalFilename != null && originalFilename.contains(".")) {
@@ -64,7 +71,7 @@ public class MinioService {
             }
             String filename = UUID.randomUUID().toString() + extension;
 
-            // 上传到 MinIO
+            // 文件流直接写入 MinIO，不在本地磁盘落临时副本。
             minioClient.putObject(PutObjectArgs.builder()
                     .bucket(bucketName)
                     .object(filename)
@@ -72,7 +79,7 @@ public class MinioService {
                     .contentType(file.getContentType())
                     .build());
 
-            // 返回图片访问 URL
+            // 返回完整访问 URL，前端后续可以直接把这个地址写入业务表字段。
             return getImageUrl(filename);
         } catch (Exception e) {
             log.error("上传图片失败", e);
@@ -81,7 +88,8 @@ public class MinioService {
     }
 
     /**
-     * 删除图片
+     * 根据图片 URL 删除对应对象。
+     *
      * @param imageUrl 图片 URL
      */
     public void deleteImage(String imageUrl) {
@@ -100,18 +108,20 @@ public class MinioService {
     }
 
     /**
-     * 获取图片访问 URL
+     * 按对象名拼接出完整访问地址。
+     *
      * @param filename 文件名
      * @return 图片访问 URL
      */
     public String getImageUrl(String filename) {
-        // 确保 endpoint 不以 / 结尾
+        // endpoint 配置可能带末尾斜杠，这里做一次标准化，避免 URL 出现双斜杠。
         String baseUrl = endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
         return baseUrl + "/" + bucketName + "/" + filename;
     }
 
     /**
-     * 从 URL 中提取文件名
+     * 从图片 URL 中提取对象名。
+     *
      * @param imageUrl 图片 URL
      * @return 文件名
      */
@@ -120,13 +130,13 @@ public class MinioService {
             return null;
         }
         try {
-            // 从 URL 中提取 bucket 后面的部分
+            // 优先按当前 MinIO endpoint + bucket 的前缀提取对象名。
             String baseUrl = endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
             String prefix = baseUrl + "/" + bucketName + "/";
             if (imageUrl.startsWith(prefix)) {
                 return imageUrl.substring(prefix.length());
             }
-            // 如果没有匹配前缀，尝试直接从末尾获取文件名
+            // 如果 URL 不是标准前缀格式，则退化为取最后一个 / 之后的部分。
             return imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
         } catch (Exception e) {
             log.error("从 URL 提取文件名失败：{}", imageUrl, e);
@@ -135,7 +145,8 @@ public class MinioService {
     }
 
     /**
-     * 验证图片类型
+     * 校验上传文件是否属于允许的图片类型。
+     *
      * @param file 文件
      */
     private void validateImageType(MultipartFile file) {

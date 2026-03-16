@@ -1,11 +1,22 @@
 #!/bin/bash
 
 # BikeShare 部署脚本
-# 服务器 IP: 124.221.113.208
+# 通过环境变量覆盖部署地址
 
 set -e
 
 ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+
+if [ -f "$ROOT_DIR/.env" ]; then
+    set -a
+    . "$ROOT_DIR/.env"
+    set +a
+fi
+
+DEPLOY_HOST="${DEPLOY_HOST:-your-server-host}"
+APP_PUBLIC_HOST="${APP_PUBLIC_HOST:-http://localhost}"
+BACKEND_PUBLIC_HOST="${BACKEND_PUBLIC_HOST:-http://localhost:8080}"
+MINIO_PUBLIC_HOST="${MINIO_PUBLIC_HOST:-http://localhost:9000}"
 
 if command -v docker-compose &> /dev/null; then
     DOCKER_COMPOSE_CMD="docker-compose"
@@ -18,7 +29,7 @@ fi
 
 echo "=========================================="
 echo "  BikeShare 部署脚本"
-echo "  服务器：124.221.113.208"
+echo "  服务器：${DEPLOY_HOST}"
 echo "=========================================="
 
 # 1. 构建后端
@@ -50,9 +61,9 @@ echo "  部署完成！"
 echo "=========================================="
 echo ""
 echo "服务访问地址："
-echo "  前端：http://124.221.113.208"
-echo "  后端：http://124.221.113.208:8080"
-echo "  MinIO: http://124.221.113.208:9000"
+echo "  前端：${APP_PUBLIC_HOST}"
+echo "  后端：${BACKEND_PUBLIC_HOST}"
+echo "  MinIO: ${MINIO_PUBLIC_HOST}"
 echo ""
 echo "默认账号："
 echo "  管理员：admin / admin123"

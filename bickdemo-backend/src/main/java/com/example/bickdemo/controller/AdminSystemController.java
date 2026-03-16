@@ -36,16 +36,26 @@ import java.util.List;
 @RequestMapping("/api/admin/system")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
+/**
+ * 后台系统管理接口。
+ * 包含系统总览、用户管理、黑名单管理以及登录/访问/操作日志等后台能力。
+ */
 public class AdminSystemController {
 
     private final SystemLogService systemLogService;
 
+    /**
+     * 获取后台系统总览数据。
+     */
     @GetMapping("/overview")
     @AdminOperationLog(module = "系统总览", action = "获取系统总览", type = "查询")
     public ResponseEntity<ApiResponse<SystemLogOverviewResponse>> getOverview() {
         return ResponseEntity.ok(ApiResponse.success(systemLogService.getOverview()));
     }
 
+    /**
+     * 分页查询用户列表。
+     */
     @GetMapping("/users")
     @AdminOperationLog(module = "用户管理", action = "获取用户列表", type = "查询")
     public ResponseEntity<ApiResponse<Page<AdminUserResponse>>> getUsers(
@@ -58,6 +68,9 @@ public class AdminSystemController {
         return ResponseEntity.ok(ApiResponse.success(systemLogService.getUsers(page, size, keyword, role, enabled)));
     }
 
+    /**
+     * 修改用户资料、角色与启用状态。
+     */
     @PutMapping("/users/{id}")
     @AdminOperationLog(module = "用户管理", action = "编辑用户", type = "修改")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUser(
@@ -68,6 +81,9 @@ public class AdminSystemController {
         return ResponseEntity.ok(ApiResponse.success("更新成功", systemLogService.updateUser(id, request, userDetails.getUsername())));
     }
 
+    /**
+     * 删除指定用户。
+     */
     @DeleteMapping("/users/{id}")
     @AdminOperationLog(module = "用户管理", action = "删除用户", type = "删除")
     public ResponseEntity<ApiResponse<Void>> deleteUser(
@@ -78,6 +94,9 @@ public class AdminSystemController {
         return ResponseEntity.ok(ApiResponse.success("删除成功", null));
     }
 
+    /**
+     * 分页查询黑名单。
+     */
     @GetMapping("/blacklist")
     @AdminOperationLog(module = "黑名单管理", action = "获取黑名单列表", type = "查询")
     public ResponseEntity<ApiResponse<Page<BlacklistEntryResponse>>> getBlacklist(
@@ -88,6 +107,9 @@ public class AdminSystemController {
         return ResponseEntity.ok(ApiResponse.success(systemLogService.getBlacklistEntries(page, size, keyword)));
     }
 
+    /**
+     * 手动把某个 IP 加入黑名单。
+     */
     @PostMapping("/blacklist")
     @AdminOperationLog(module = "黑名单管理", action = "手动加入黑名单", type = "新增")
     public ResponseEntity<ApiResponse<Void>> addBlacklist(@Valid @RequestBody BlacklistRequest request) {
@@ -95,6 +117,9 @@ public class AdminSystemController {
         return ResponseEntity.ok(ApiResponse.success("已加入黑名单", null));
     }
 
+    /**
+     * 移除黑名单中的 IP。
+     */
     @DeleteMapping("/blacklist/{ip}")
     @AdminOperationLog(module = "黑名单管理", action = "移除黑名单", type = "删除")
     public ResponseEntity<ApiResponse<Void>> removeBlacklist(@PathVariable String ip) {
@@ -102,6 +127,9 @@ public class AdminSystemController {
         return ResponseEntity.ok(ApiResponse.success("已移除黑名单", null));
     }
 
+    /**
+     * 分页查询登录日志。
+     */
     @GetMapping("/login-logs")
     @AdminOperationLog(module = "登录日志管理", action = "获取登录日志列表", type = "查询")
     public ResponseEntity<ApiResponse<Page<LoginLog>>> getLoginLogs(
@@ -119,6 +147,9 @@ public class AdminSystemController {
         ));
     }
 
+    /**
+     * 分页查询访问日志。
+     */
     @GetMapping("/visit-logs")
     @AdminOperationLog(module = "访客日志管理", action = "获取访客日志列表", type = "查询")
     public ResponseEntity<ApiResponse<Page<VisitLog>>> getVisitLogs(
@@ -137,6 +168,9 @@ public class AdminSystemController {
         ));
     }
 
+    /**
+     * 分页查询操作日志。
+     */
     @GetMapping("/operation-logs")
     @AdminOperationLog(module = "操作日志管理", action = "获取操作日志列表", type = "查询")
     public ResponseEntity<ApiResponse<Page<OperationLog>>> getOperationLogs(
@@ -157,6 +191,9 @@ public class AdminSystemController {
         ));
     }
 
+    /**
+     * 删除单条操作日志。
+     */
     @DeleteMapping("/operation-logs/{id}")
     @AdminOperationLog(module = "操作日志管理", action = "删除操作日志", type = "删除")
     public ResponseEntity<ApiResponse<Void>> deleteOperationLog(@PathVariable Long id) {
@@ -164,6 +201,9 @@ public class AdminSystemController {
         return ResponseEntity.ok(ApiResponse.success("删除成功", null));
     }
 
+    /**
+     * 批量删除操作日志。
+     */
     @PostMapping("/operation-logs/batch-delete")
     @AdminOperationLog(module = "操作日志管理", action = "批量删除操作日志", type = "删除")
     public ResponseEntity<ApiResponse<Void>> batchDeleteOperationLogs(@RequestBody List<Long> ids) {

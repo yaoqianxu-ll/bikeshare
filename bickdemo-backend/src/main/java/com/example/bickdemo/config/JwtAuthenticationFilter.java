@@ -18,8 +18,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * JWT 认证过滤器
- * 拦截请求，解析 JWT Token，设置用户认证信息
+ * JWT 认证过滤器。
+ * 在每个请求进入控制器前尝试解析 Authorization 头中的 Bearer Token，
+ * 如果 token 有效，就把认证主体写入 Spring Security 上下文。
+ *
  * @author Administrator
  */
 @Component
@@ -49,6 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             final String username;
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                // 没带 token 的请求直接放过，是否允许访问交给后续鉴权规则决定。
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -57,6 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             username = jwtService.extractUsername(jwt);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                // 只有当前上下文还没有认证主体时才尝试填充，避免覆盖已建立的认证信息。
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     var authToken = new UsernamePasswordAuthenticationToken(
@@ -71,6 +75,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
+            // token 异常不直接中断请求，让后续鉴权流程以“未登录”状态处理即可。
             log.error("JWT Authentication filter error", e);
         }
         filterChain.doFilter(request, response);

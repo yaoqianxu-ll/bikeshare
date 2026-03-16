@@ -10,8 +10,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 统计接口控制器
- * 提供系统统计数据的查询接口
+ * 统计接口控制器。
+ * 对外暴露系统概览统计，供前台仪表盘和后台总览页复用。
+ *
  * @author Administrator
  */
 @RestController
@@ -22,8 +23,8 @@ public class StatisticsController {
     private final RentalService rentalService;
 
     /**
-     * 获取统计数据
-     * 包括总租赁数、活跃租赁数、可用自行车数等
+     * 获取系统统计数据。
+     * 返回值包含租赁总量、活跃租赁量、车辆库存概览、车型分布与热门车辆等信息。
      */
     @GetMapping
     public ResponseEntity<ApiResponse<StatisticsResponse>> getStatistics() {

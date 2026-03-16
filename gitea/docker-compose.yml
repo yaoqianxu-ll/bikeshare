@@ -10,10 +10,10 @@ services:
       - USER_GID=1000
       - TZ=Asia/Shanghai
       - GITEA_DATABASE_TYPE=mysql
-      - GITEA_DATABASE_HOST=mysql:3306
-      - GITEA_DATABASE_NAME=gitea
-      - GITEA_DATABASE_USER=gitea
-      - GITEA_DATABASE_PASSWD=Lile200623
+      - GITEA_DATABASE_HOST=${GITEA_DATABASE_HOST:-mysql:3306}
+      - GITEA_DATABASE_NAME=${GITEA_DATABASE_NAME:-gitea}
+      - GITEA_DATABASE_USER=${GITEA_DATABASE_USER:-gitea}
+      - GITEA_DATABASE_PASSWD=${GITEA_DATABASE_PASSWORD:-change-me-gitea-db-password}
     networks:
       - gitea-network
     volumes:
@@ -32,17 +32,17 @@ services:
     container_name: gitea-mysql
     restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=Lile200623
-      - MYSQL_USER=gitea
-      - MYSQL_PASSWORD=Lile200623
-      - MYSQL_DATABASE=gitea
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-change-me-root-password}
+      - MYSQL_USER=${GITEA_DATABASE_USER:-gitea}
+      - MYSQL_PASSWORD=${GITEA_DATABASE_PASSWORD:-change-me-gitea-db-password}
+      - MYSQL_DATABASE=${GITEA_DATABASE_NAME:-gitea}
       - TZ=Asia/Shanghai
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
       - gitea-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pLile200623"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-change-me-root-password}"]
       interval: 5s
       timeout: 3s
       retries: 10

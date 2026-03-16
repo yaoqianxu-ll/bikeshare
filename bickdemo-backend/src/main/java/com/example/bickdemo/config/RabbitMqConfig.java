@@ -15,23 +15,27 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * RabbitMQ 配置
+ * RabbitMQ 配置。
+ * 社交模块通过 RabbitMQ 解耦“业务写库”和“实时推送”两个动作，便于后续扩展为多实例部署。
  */
 @Configuration
 public class RabbitMqConfig {
 
     @Bean
     public TopicExchange socialExchange() {
+        // 社交事件统一发送到同一个 topic exchange。
         return new TopicExchange(SocialMessagingConstants.SOCIAL_EXCHANGE, true, false);
     }
 
     @Bean
     public Queue socialQueue() {
+        // 持久化队列，保证 RabbitMQ 重启后事件通道仍然存在。
         return new Queue(SocialMessagingConstants.SOCIAL_QUEUE, true);
     }
 
     @Bean
     public Binding socialBinding(Queue socialQueue, TopicExchange socialExchange) {
+        // 用固定 routing key 绑定，当前只处理社交实时事件这一类消息。
         return BindingBuilder.bind(socialQueue)
                 .to(socialExchange)
                 .with(SocialMessagingConstants.SOCIAL_ROUTING_KEY);
@@ -39,6 +43,7 @@ public class RabbitMqConfig {
 
     @Bean
     public MessageConverter rabbitMessageConverter(ObjectMapper objectMapper) {
+        // 统一用 JSON 序列化事件对象，便于调试和跨服务兼容。
         return new Jackson2JsonMessageConverter(objectMapper);
     }
 
@@ -58,6 +63,7 @@ public class RabbitMqConfig {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         configurer.configure(factory, connectionFactory);
         factory.setMessageConverter(rabbitMessageConverter);
+        // 消费失败不自动重新入队，避免格式错误的坏消息无限重试。
         factory.setDefaultRequeueRejected(false);
         return factory;
     }

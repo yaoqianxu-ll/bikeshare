@@ -146,7 +146,7 @@ spring:
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:mysql}:3306/bickdemo
     username: ${MYSQL_USERNAME:root}
-    password: ${MYSQL_PASSWORD:Lile200623}
+    password: ${MYSQL_PASSWORD:change-me-db-password}
 ```
 
 ## Docker 部署配置

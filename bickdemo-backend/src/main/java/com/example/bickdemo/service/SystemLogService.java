@@ -35,6 +35,10 @@ import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * 系统日志与后台管理服务。
+ * 负责记录登录日志、访问日志、操作日志，并提供后台所需的用户管理、黑名单管理和系统概览统计。
+ */
 public class SystemLogService {
 
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[A-Za-z0-9\\u4e00-\\u9fa5]+$");
@@ -46,6 +50,9 @@ public class SystemLogService {
     private final ForumPostMapper forumPostMapper;
     private final IpBlacklistService ipBlacklistService;
 
+    /**
+     * 记录登录成功日志。
+     */
     @Transactional
     public void recordLoginSuccess(User user, String loginMethod, HttpServletRequest request, String message) {
         LoginLog log = buildLoginLog(user != null ? user.getId() : null, user != null ? user.getUsername() : null, loginMethod, request);
@@ -54,6 +61,9 @@ public class SystemLogService {
         loginLogMapper.insert(log);
     }
 
+    /**
+     * 记录登录失败日志。
+     */
     @Transactional
     public void recordLoginFailure(String username, String loginMethod, HttpServletRequest request, String message) {
         LoginLog log = buildLoginLog(null, username, loginMethod, request);
@@ -62,6 +72,10 @@ public class SystemLogService {
         loginLogMapper.insert(log);
     }
 
+    /**
+     * 记录后台操作日志。
+     * 操作日志主要由切面在管理员接口执行后调用，用于审计“谁在什么时间做了什么操作”。
+     */
     @Transactional
     public void recordOperation(String username, String module, String operationName, String operationType,
                                 String requestMethod, String requestUri, String requestParams, HttpServletRequest request,
@@ -87,6 +101,10 @@ public class SystemLogService {
         operationLogMapper.insert(log);
     }
 
+    /**
+     * 记录访问日志。
+     * 每次 API 请求结束后由访问控制过滤器统一调用，用于统计访问量和排查异常请求。
+     */
     @Transactional
     public void recordVisit(HttpServletRequest request, int statusCode, long durationMs, String message) {
         if (request == null) {
@@ -112,6 +130,9 @@ public class SystemLogService {
         visitLogMapper.insert(log);
     }
 
+    /**
+     * 分页查询登录日志。
+     */
     public Page<LoginLog> getLoginLogs(int page, int size, String username, String method, String status,
                                        String ip, LocalDateTime startTime, LocalDateTime endTime) {
         LambdaQueryWrapper<LoginLog> wrapper = new LambdaQueryWrapper<LoginLog>()
@@ -126,6 +147,9 @@ public class SystemLogService {
         return loginLogMapper.selectPage(new Page<>(page, size), wrapper);
     }
 
+    /**
+     * 分页查询操作日志。
+     */
     public Page<OperationLog> getOperationLogs(int page, int size, String username, String module, String status,
                                                String operationType, String roleName, String ip, String requestUri,
                                                LocalDateTime startTime, LocalDateTime endTime) {
@@ -144,6 +168,9 @@ public class SystemLogService {
         return operationLogMapper.selectPage(new Page<>(page, size), wrapper);
     }
 
+    /**
+     * 分页查询访问日志。
+     */
     public Page<VisitLog> getVisitLogs(int page, int size, String username, String method, String status,
                                        String ip, String requestUri, LocalDateTime startTime, LocalDateTime endTime) {
         LambdaQueryWrapper<VisitLog> wrapper = new LambdaQueryWrapper<VisitLog>()
@@ -159,6 +186,9 @@ public class SystemLogService {
         return visitLogMapper.selectPage(new Page<>(page, size), wrapper);
     }
 
+    /**
+     * 分页查询后台用户列表，并支持按关键字、角色和启用状态筛选。
+     */
     public Page<AdminUserResponse> getUsers(int page, int size, String keyword, String role, Boolean enabled) {
         UserRole roleValue = null;
         if (StringUtils.hasText(role)) {
@@ -180,6 +210,10 @@ public class SystemLogService {
         return result;
     }
 
+    /**
+     * 更新后台用户信息。
+     * 这里额外保护了当前登录管理员自己，防止误改用户名、角色或把自己禁用掉。
+     */
     @Transactional
     public AdminUserResponse updateUser(Long id, AdminUserUpdateRequest request, String currentUsername) {
         User target = userMapper.selectById(id);
@@ -201,6 +235,7 @@ public class SystemLogService {
             throw new RuntimeException("邮箱已被使用");
         }
 
+        // 后台不允许管理员把当前登录账号改名，否则会影响当前认证上下文与后续操作。
         if (target.getUsername().equals(currentUsername) && !nextUsername.equals(currentUsername)) {
             throw new RuntimeException("不能修改当前登录账号用户名");
         }
@@ -223,6 +258,9 @@ public class SystemLogService {
         return toAdminUserResponse(target);
     }
 
+    /**
+     * 删除后台用户。
+     */
     @Transactional
     public void deleteUser(Long id, String currentUsername) {
         User target = userMapper.selectById(id);
@@ -235,24 +273,39 @@ public class SystemLogService {
         userMapper.deleteById(id);
     }
 
+    /**
+     * 查询黑名单分页数据。
+     */
     public Page<BlacklistEntryResponse> getBlacklistEntries(int page, int size, String keyword) {
         return ipBlacklistService.getEntries(page, size, keyword);
     }
 
+    /**
+     * 手动封禁 IP。
+     */
     public void addBlacklist(BlacklistRequest request) {
         int durationMinutes = request.getDurationMinutes() == null ? 60 : request.getDurationMinutes();
         ipBlacklistService.banIp(request.getIp(), request.getReason(), Duration.ofMinutes(durationMinutes));
     }
 
+    /**
+     * 解除 IP 封禁。
+     */
     public void removeBlacklist(String ip) {
         ipBlacklistService.unbanIp(ip);
     }
 
+    /**
+     * 删除单条操作日志。
+     */
     @Transactional
     public void deleteOperationLog(Long id) {
         operationLogMapper.deleteById(id);
     }
 
+    /**
+     * 批量删除操作日志。
+     */
     @Transactional
     public void deleteOperationLogs(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
@@ -261,6 +314,10 @@ public class SystemLogService {
         operationLogMapper.deleteBatchIds(ids);
     }
 
+    /**
+     * 统计后台总览数据。
+     * 这里聚合的是“今天”的登录、操作、访问增量，以及系统总量指标。
+     */
     public SystemLogOverviewResponse getOverview() {
         LocalDateTime start = LocalDate.now().atStartOfDay();
         LocalDateTime end = start.plusDays(1);
@@ -291,6 +348,7 @@ public class SystemLogService {
     }
 
     private AdminUserResponse toAdminUserResponse(User user) {
+        // 用户管理页需要展示最近一次登录信息，这里统一补齐。
         LoginLog latestLogin = findLatestLogin(user.getId());
         return new AdminUserResponse(
                 user.getId(),
@@ -333,6 +391,7 @@ public class SystemLogService {
     }
 
     private User resolveCurrentUser() {
+        // 访问日志可能发生在匿名请求中，因此这里允许返回 null。
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !StringUtils.hasText(authentication.getName()) || "anonymousUser".equals(authentication.getName())) {
             return null;
@@ -368,6 +427,7 @@ public class SystemLogService {
     }
 
     private String resolveOperationType(String explicitType, String requestMethod, String operationName) {
+        // 如果注解里没有显式指定操作类型，则按 HTTP 方法和操作名推断一个合理值。
         if (StringUtils.hasText(explicitType)) {
             return explicitType.trim();
         }

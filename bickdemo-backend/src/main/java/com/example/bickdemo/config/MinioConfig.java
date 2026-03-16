@@ -6,8 +6,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * MinIO 对象存储配置类
- * 配置 MinIO 客户端用于文件上传
+ * MinIO 客户端配置。
+ * 把 endpoint、accessKey、secretKey 组装成可注入的 MinioClient，供上传服务复用。
+ *
  * @author Administrator
  */
 @Configuration
@@ -23,7 +24,7 @@ public class MinioConfig {
     private String secretKey;
 
     /**
-     * MinIO 客户端 Bean
+     * 创建 MinIO 客户端 Bean。
      */
     @Bean
     public MinioClient minioClient() {

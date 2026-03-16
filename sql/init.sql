@@ -1,4 +1,4 @@
-/*
+﻿/*
  Navicat Premium Data Transfer
 
  Source Server         : root
@@ -44,7 +44,7 @@ CREATE TABLE `background_images`  (
 -- Records of background_images
 -- ----------------------------
 INSERT INTO `background_images` VALUES (1, '默认背景 1', '', 'DEFAULT', 0, 1, '2026-03-09 18:25:11', '2026-03-09 18:25:11', 0);
-INSERT INTO `background_images` VALUES (10, 'tiank.jpg', 'http://124.221.113.208:9000/bicycles/473de4c7-176c-494c-a749-bf2212f77c70.jpg', 'CUSTOM', 1, 0, '2026-03-10 17:50:06', '2026-03-10 17:50:06', 0);
+INSERT INTO `background_images` VALUES (10, 'tiank.jpg', 'http://localhost:9000/bicycles/473de4c7-176c-494c-a749-bf2212f77c70.jpg', 'CUSTOM', 1, 0, '2026-03-10 17:50:06', '2026-03-10 17:50:06', 0);
 
 -- ----------------------------
 -- Table structure for bicycles
@@ -69,14 +69,14 @@ CREATE TABLE `bicycles`  (
 -- ----------------------------
 -- Records of bicycles
 -- ----------------------------
-INSERT INTO `bicycles` VALUES (1, '山地车 X1', 'MOUNTAIN', 'AVAILABLE', '北京市朝阳区', '专业山地自行车，适合越野骑行', 25.00, 'http://124.221.113.208:9000/bicycles/5fe1bdd5-37ef-4b9c-8705-c6ce7882cfb5.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (2, '公路车 Pro', 'ROAD', 'AVAILABLE', '北京市海淀区', '轻量化公路车，适合长途骑行', 35.00, 'http://124.221.113.208:9000/bicycles/c0460e9b-bbbb-47c7-a89a-5544b961e908.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (3, '城市单车 C1', 'CITY', 'AVAILABLE', '北京市东城区', '舒适城市自行车，适合日常通勤', 15.00, 'http://124.221.113.208:9000/bicycles/978e2c03-2a78-4085-bb9f-5d9d61aecff2.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (4, '电动车 E1', 'ELECTRIC', 'AVAILABLE', '北京市西城区', '电动助力自行车，省力便捷', 30.00, 'http://124.221.113.208:9000/bicycles/001f8da5-b139-406b-81ad-42b7c61c5f2b.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (5, '双人车 T1', 'TANDEM', 'AVAILABLE', '北京市丰台区', '双人协力自行车，适合情侣朋友', 40.00, 'http://124.221.113.208:9000/bicycles/5628005a-afdc-4172-9ee9-f0e55d370b04.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (6, '机车', 'ROAD', 'MAINTENANCE', '江西省九江市', '公路车最快速度', 50.00, 'http://124.221.113.208:9000/bicycles/fe89ad6b-920b-45fe-9150-ec0a48d3fe9f.jpg', '2026-03-08 18:10:08', '2026-03-08 18:10:08', 0);
-INSERT INTO `bicycles` VALUES (7, '自行车', 'CITY', 'AVAILABLE', '江西省九江市', '单车更方便出行，绝不堵车，畅通无阻', 5.00, 'http://124.221.113.208:9000/bicycles/d2ff510e-fdbc-42df-815f-e53a94d27994.jpg', '2026-03-09 18:00:03', '2026-03-09 18:00:03', 0);
-INSERT INTO `bicycles` VALUES (8, '劳斯莱斯幻影', 'CITY', 'DISABLED', '上海市外滩区', '享受不一样的体验', 188.00, 'http://124.221.113.208:9000/bicycles/5ab8287c-7802-42d3-8cd3-f6d94162956e.jpg', '2026-03-09 18:04:46', '2026-03-09 18:04:46', 0);
+INSERT INTO `bicycles` VALUES (1, '山地车 X1', 'MOUNTAIN', 'AVAILABLE', '北京市朝阳区', '专业山地自行车，适合越野骑行', 25.00, 'http://localhost:9000/bicycles/5fe1bdd5-37ef-4b9c-8705-c6ce7882cfb5.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
+INSERT INTO `bicycles` VALUES (2, '公路车 Pro', 'ROAD', 'AVAILABLE', '北京市海淀区', '轻量化公路车，适合长途骑行', 35.00, 'http://localhost:9000/bicycles/c0460e9b-bbbb-47c7-a89a-5544b961e908.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
+INSERT INTO `bicycles` VALUES (3, '城市单车 C1', 'CITY', 'AVAILABLE', '北京市东城区', '舒适城市自行车，适合日常通勤', 15.00, 'http://localhost:9000/bicycles/978e2c03-2a78-4085-bb9f-5d9d61aecff2.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
+INSERT INTO `bicycles` VALUES (4, '电动车 E1', 'ELECTRIC', 'AVAILABLE', '北京市西城区', '电动助力自行车，省力便捷', 30.00, 'http://localhost:9000/bicycles/001f8da5-b139-406b-81ad-42b7c61c5f2b.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
+INSERT INTO `bicycles` VALUES (5, '双人车 T1', 'TANDEM', 'AVAILABLE', '北京市丰台区', '双人协力自行车，适合情侣朋友', 40.00, 'http://localhost:9000/bicycles/5628005a-afdc-4172-9ee9-f0e55d370b04.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
+INSERT INTO `bicycles` VALUES (6, '机车', 'ROAD', 'MAINTENANCE', '江西省九江市', '公路车最快速度', 50.00, 'http://localhost:9000/bicycles/fe89ad6b-920b-45fe-9150-ec0a48d3fe9f.jpg', '2026-03-08 18:10:08', '2026-03-08 18:10:08', 0);
+INSERT INTO `bicycles` VALUES (7, '自行车', 'CITY', 'AVAILABLE', '江西省九江市', '单车更方便出行，绝不堵车，畅通无阻', 5.00, 'http://localhost:9000/bicycles/d2ff510e-fdbc-42df-815f-e53a94d27994.jpg', '2026-03-09 18:00:03', '2026-03-09 18:00:03', 0);
+INSERT INTO `bicycles` VALUES (8, '劳斯莱斯幻影', 'CITY', 'DISABLED', '上海市外滩区', '享受不一样的体验', 188.00, 'http://localhost:9000/bicycles/5ab8287c-7802-42d3-8cd3-f6d94162956e.jpg', '2026-03-09 18:04:46', '2026-03-09 18:04:46', 0);
 
 -- ----------------------------
 -- Table structure for rentals
@@ -156,9 +156,9 @@ CREATE TABLE `users`  (
 -- ----------------------------
 -- Records of users
 -- ----------------------------
-INSERT INTO `users` VALUES (1, 'admin', '$2a$10$b9Z8YSgrEKt7mRaJtgr2rOpCehkPOM3.dc5gvJ5Md6D.Rpx3MS5CK', 'admin@qq.com', NULL, '系统管理员，负责平台整体运营。', 'ADMIN', 1, '2026-03-08 17:16:36', '2026-03-08 17:16:36', 0);
-INSERT INTO `users` VALUES (2, 'user', '$2a$10$d1nzggZk4u2S5aLMTanjFeB5XPuwpTEr8xM11sdDdjSARgsrRHW2.', 'user@qq.com', NULL, '热爱城市骑行的默认体验用户。', 'USER', 1, '2026-03-08 17:15:54', '2026-03-08 17:15:54', 0);
-INSERT INTO `users` VALUES (3, 'test', '$2a$10$Z14viQZe4IGLeuv150JeyeL6CUinkFSSnVPdgLR9GE8GjBHDpw5ny', 'lileyaoqianxu@gmail.com', NULL, '喜欢探索不同路线的测试账号。', 'USER', 1, '2026-03-08 16:46:08', '2026-03-08 16:46:08', 0);
+INSERT INTO `users` VALUES (1, 'admin', '$2a$10$b9Z8YSgrEKt7mRaJtgr2rOpCehkPOM3.dc5gvJ5Md6D.Rpx3MS5CK', 'admin@example.com', NULL, '系统管理员，负责平台整体运营。', 'ADMIN', 1, '2026-03-08 17:16:36', '2026-03-08 17:16:36', 0);
+INSERT INTO `users` VALUES (2, 'user', '$2a$10$d1nzggZk4u2S5aLMTanjFeB5XPuwpTEr8xM11sdDdjSARgsrRHW2.', 'user@example.com', NULL, '热爱城市骑行的默认体验用户。', 'USER', 1, '2026-03-08 17:15:54', '2026-03-08 17:15:54', 0);
+INSERT INTO `users` VALUES (3, 'test', '$2a$10$Z14viQZe4IGLeuv150JeyeL6CUinkFSSnVPdgLR9GE8GjBHDpw5ny', 'test@example.com', NULL, '喜欢探索不同路线的测试账号。', 'USER', 1, '2026-03-08 16:46:08', '2026-03-08 16:46:08', 0);
 
 -- ----------------------------
 -- Table structure for friend_requests
@@ -385,3 +385,4 @@ CREATE TABLE `visit_logs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='访客日志表';
 
 SET FOREIGN_KEY_CHECKS = 1;
+

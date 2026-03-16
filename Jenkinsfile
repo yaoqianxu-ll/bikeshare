@@ -8,19 +8,25 @@ pipeline {
         FRONTEND_DIR = 'bickdemo-frontend'
         ADMIN_DIR = 'bickdemo-admin'
 
-        // 服务器配置
-        DEPLOY_HOST = '124.221.113.208'
-        DEPLOY_USER = 'root'
+        // 服务器配置（请在 Jenkins 全局环境变量或凭据中注入真实值）
+        DEPLOY_HOST = "${env.DEPLOY_HOST ?: 'your-server-host'}"
+        DEPLOY_USER = "${env.DEPLOY_USER ?: 'root'}"
 
         // 数据库配置
-        MYSQL_ROOT_PASSWORD = 'Lile200623'
-        MYSQL_DATABASE = 'bickdemo'
+        MYSQL_ROOT_PASSWORD = "${env.MYSQL_ROOT_PASSWORD ?: 'change-me-root-password'}"
+        MYSQL_DATABASE = "${env.MYSQL_DATABASE ?: 'bickdemo'}"
 
         // MinIO 配置
-        MINIO_ENDPOINT = 'http://124.221.113.208:9000'
-        MINIO_ACCESS_KEY = 'Cg6huvLg5AuW8ShqQoAr'
-        MINIO_SECRET_KEY = 'j8AoV6yOOUXVNPWVcIpJLuuZJidCeurCiBwg1c1z'
-        MINIO_BUCKET = 'bicycles'
+        MINIO_ENDPOINT = "${env.MINIO_ENDPOINT ?: 'http://localhost:9000'}"
+        MINIO_ACCESS_KEY = "${env.MINIO_ACCESS_KEY ?: 'change-me-minio-access-key'}"
+        MINIO_SECRET_KEY = "${env.MINIO_SECRET_KEY ?: 'change-me-minio-secret-key'}"
+        MINIO_BUCKET = "${env.MINIO_BUCKET ?: 'bicycles'}"
+
+        APP_PUBLIC_HOST = "${env.APP_PUBLIC_HOST ?: 'http://localhost'}"
+        ADMIN_PUBLIC_HOST = "${env.ADMIN_PUBLIC_HOST ?: 'http://localhost:3001'}"
+        BACKEND_PUBLIC_HOST = "${env.BACKEND_PUBLIC_HOST ?: 'http://localhost:8080'}"
+        JENKINS_PUBLIC_HOST = "${env.JENKINS_PUBLIC_HOST ?: 'http://localhost:8081'}"
+        GITEA_PUBLIC_HOST = "${env.GITEA_PUBLIC_HOST ?: 'http://localhost:3000'}"
     }
 
     options {
@@ -60,6 +66,22 @@ pipeline {
                 }
                 checkout scm
                 script {
+                    if (fileExists('.env')) {
+                        readFile('.env')
+                            .split('\n')
+                            .collect { it.trim() }
+                            .findAll { it && !it.startsWith('#') && it.contains('=') }
+                            .each { line ->
+                                int separatorIndex = line.indexOf('=')
+                                String key = line.substring(0, separatorIndex).trim()
+                                String value = line.substring(separatorIndex + 1).trim()
+                                env[key] = value
+                            }
+                        echo '已从工作区 .env 加载部署变量'
+                    } else {
+                        echo '未找到 .env，继续使用 Jenkins 环境变量/凭据'
+                    }
+
                     // 获取 Git 提交信息
                     env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
                     env.GIT_BRANCH_NAME = env.BRANCH_NAME ?: 'main'
@@ -205,11 +227,11 @@ pipeline {
                 def currentTime = new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('Asia/Shanghai'))
                 echo "部署完成时间：${currentTime}"
                 echo "访问地址："
-                echo "  前端：http://124.221.113.208"
-                echo "  管理端：http://124.221.113.208:3001"
-                echo "  后端：http://124.221.113.208:8080"
-                echo "  Jenkins: http://124.221.113.208:8081"
-                echo "  Gitea: http://124.221.113.208:3000"
+                echo "  前端：${APP_PUBLIC_HOST}"
+                echo "  管理端：${ADMIN_PUBLIC_HOST}"
+                echo "  后端：${BACKEND_PUBLIC_HOST}"
+                echo "  Jenkins: ${JENKINS_PUBLIC_HOST}"
+                echo "  Gitea: ${GITEA_PUBLIC_HOST}"
             }
         }
         failure {

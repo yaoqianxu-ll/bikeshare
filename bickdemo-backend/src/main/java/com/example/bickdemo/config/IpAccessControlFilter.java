@@ -21,6 +21,10 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+/**
+ * IP 访问控制过滤器。
+ * 在请求进入业务控制器之前完成访问频控和黑名单拦截，并在请求结束后统一记录访问日志。
+ */
 public class IpAccessControlFilter extends OncePerRequestFilter {
 
     private final IpBlacklistService ipBlacklistService;
@@ -30,6 +34,7 @@ public class IpAccessControlFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
+        // WebSocket 握手、H2 控制台、预检请求等不走 API 频控逻辑。
         return "OPTIONS".equalsIgnoreCase(request.getMethod())
                 || !uri.startsWith("/api/")
                 || uri.startsWith("/ws")
@@ -47,11 +52,13 @@ public class IpAccessControlFilter extends OncePerRequestFilter {
                 com.example.bickdemo.util.IpAddressUtils.resolveClientIp(request)
         );
         if (decision.blocked()) {
+            // 被拦截的请求不会进入后续业务链路，但仍然要记一条访问日志方便审计。
             writeBlockedResponse(response, decision.reason());
             systemLogService.recordVisit(request, 429, 0L, decision.reason());
             return;
         }
 
+        // 未被拦截则继续向后放行，同时统计整个请求处理耗时。
         long start = System.currentTimeMillis();
         int statusCode = 200;
         try {
@@ -74,6 +81,7 @@ public class IpAccessControlFilter extends OncePerRequestFilter {
     }
 
     private void writeBlockedResponse(HttpServletResponse response, String message) throws IOException {
+        // 统一返回前端约定的 ApiResponse 结构，便于页面直接弹出友好提示。
         response.setStatus(429);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

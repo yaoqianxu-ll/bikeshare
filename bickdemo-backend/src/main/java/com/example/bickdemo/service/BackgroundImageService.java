@@ -14,7 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * 背景图片服务类
+ * 背景图管理服务。
+ * 负责前台背景图展示、管理员背景图维护，以及相关缓存的读写与失效控制。
  */
 @Service
 @RequiredArgsConstructor
@@ -24,7 +25,8 @@ public class BackgroundImageService {
     private final BackgroundImageMapper backgroundImageMapper;
 
     /**
-     * 获取所有启用的背景图片
+     * 获取当前启用的背景图列表。
+     * 面向首页、登录页等直接展示场景，结果会缓存起来减少数据库压力。
      */
     @Cacheable(cacheNames = CacheNames.BACKGROUND_ENABLED)
     public List<BackgroundImage> getAllEnabled() {
@@ -32,7 +34,8 @@ public class BackgroundImageService {
     }
 
     /**
-     * 获取所有可选择的背景图片（用于游客/普通用户的本地选择）
+     * 获取所有可供游客/普通用户自行选择的背景图。
+     * 这类选择是前端本地偏好，不会改变系统全局启用状态。
      */
     @Cacheable(cacheNames = CacheNames.BACKGROUND_SELECTABLE)
     public List<BackgroundImage> getAllSelectable() {
@@ -40,7 +43,7 @@ public class BackgroundImageService {
     }
 
     /**
-     * 获取所有背景图片（管理员）
+     * 获取全部背景图，供管理员后台管理页面使用。
      */
     @Cacheable(cacheNames = CacheNames.BACKGROUND_ALL)
     public List<BackgroundImage> getAll() {
@@ -48,14 +51,15 @@ public class BackgroundImageService {
     }
 
     /**
-     * 根据 ID 获取背景图片
+     * 根据 ID 查询背景图详情。
      */
     public BackgroundImage getById(Long id) {
         return backgroundImageMapper.selectById(id);
     }
 
     /**
-     * 创建背景图片
+     * 新增背景图记录。
+     * 写操作后会同时清理三个背景图缓存，确保前台和后台读取到的是最新数据。
      */
     @Transactional
     @Caching(evict = {
@@ -69,7 +73,8 @@ public class BackgroundImageService {
     }
 
     /**
-     * 更新背景图片
+     * 更新背景图信息。
+     * 仅覆盖显式传入的字段，未提供的字段保持不变。
      */
     @Transactional
     @Caching(evict = {
@@ -104,7 +109,7 @@ public class BackgroundImageService {
     }
 
     /**
-     * 删除背景图片
+     * 删除背景图记录。
      */
     @Transactional
     @Caching(evict = {
@@ -117,7 +122,8 @@ public class BackgroundImageService {
     }
 
     /**
-     * 设置启用的背景图片
+     * 设置系统当前启用的背景图。
+     * 业务规则是全局同一时刻只允许一张背景图处于 enabled=true。
      */
     @Transactional
     @Caching(evict = {
@@ -126,7 +132,7 @@ public class BackgroundImageService {
             @CacheEvict(cacheNames = CacheNames.BACKGROUND_ALL, allEntries = true)
     })
     public void setEnabled(Long id, Boolean enabled) {
-        // 先禁用所有图片
+        // 先批量关闭所有启用项，保证全局启用背景图始终只有一个。
         List<BackgroundImage> all = backgroundImageMapper.selectList(null);
         for (BackgroundImage image : all) {
             if (image.getEnabled()) {
@@ -135,7 +141,7 @@ public class BackgroundImageService {
             }
         }
 
-        // 启用指定的图片
+        // 再按需启用目标背景图；如果 enabled=false，则效果就是“全部关闭”。
         if (enabled) {
             BackgroundImage image = backgroundImageMapper.selectById(id);
             if (image != null) {

@@ -28,8 +28,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 /**
- * 租赁服务类
- * 处理自行车租赁、归还、取消等业务逻辑，带 Redis 缓存支持
+ * 租赁服务。
+ * 负责从“发起租车”到“归还结算”整条业务链路，包括库存扣减、取消窗口、实时金额计算、
+ * 以及后台统计数据聚合，是整个骑行租赁场景的核心服务之一。
+ *
  * @author Administrator
  */
 @Service
@@ -41,10 +43,15 @@ public class RentalService {
     private final BicycleMapper bicycleMapper;
     private final UserMapper userMapper;
 
+    /**
+     * 免费取消窗口。
+     * 用户在租车开始后的 1 分钟内取消，不计费；超时后只能走归还流程。
+     */
     private static final long FREE_CANCEL_MINUTES = 1L;
 
     /**
-     * 创建租赁
+     * 创建租赁订单。
+     * 这里会先做车辆可租检查，再原子扣减库存，最后生成 ACTIVE 状态的租赁记录。
      */
     @Transactional
     @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
@@ -54,6 +61,7 @@ public class RentalService {
             throw new RuntimeException("自行车不存在：" + request.getBicycleId());
         }
 
+        // 只有业务状态为 AVAILABLE 的车辆才能创建租赁。
         if (bicycle.getStatus() != BicycleStatus.AVAILABLE) {
             throw new RuntimeException("自行车当前不可租赁");
         }
@@ -63,7 +71,7 @@ public class RentalService {
             throw new RuntimeException("租赁数量不能小于 1");
         }
 
-        // Atomic stock decrement (prevents over-rent under concurrency)
+        // 使用数据库原子扣减库存，避免并发下出现超卖/超租。
         int updated = bicycleMapper.decrementQuantity(bicycle.getId(), qty);
         if (updated != 1) {
             throw new RuntimeException("库存不足");
@@ -84,7 +92,8 @@ public class RentalService {
     }
 
     /**
-     * 结束租赁
+     * 结束租赁并归还车辆。
+     * 完成时会写入结束时间、把状态改为 COMPLETED、计算金额，并把库存归还给车辆。
      */
     @Transactional
     @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
@@ -101,14 +110,14 @@ public class RentalService {
         rental.setEndTime(LocalDateTime.now());
         rental.setStatus(RentalStatus.COMPLETED);
 
-        // 获取自行车信息并计算总价格
+        // 归还时按实际骑行时长计费，免费取消窗口的 1 分钟不会计入账单。
         Bicycle bicycle = bicycleMapper.selectById(rental.getBicycleId());
         double hours = calculateBillableHours(rental.getStartTime(), rental.getEndTime());
         int qty = rental.getQuantity() == null ? 1 : rental.getQuantity();
         double totalPrice = hours * (bicycle.getPricePerHour() != null ? bicycle.getPricePerHour() : 0) * qty;
         rental.setTotalPrice(totalPrice);
 
-        // Return stock
+        // 归还后把库存加回去，让车辆重新出现在可租列表中。
         bicycleMapper.incrementQuantity(rental.getBicycleId(), qty);
 
         rentalMapper.updateById(rental);
@@ -117,7 +126,8 @@ public class RentalService {
     }
 
     /**
-     * 取消租赁
+     * 取消租赁。
+     * 仅允许在 ACTIVE 且免费取消窗口内的订单取消，取消后会归还库存但不产生费用。
      */
     @Transactional
     @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
@@ -131,7 +141,7 @@ public class RentalService {
             throw new RuntimeException("只能取消进行中的租赁");
         }
 
-        // 检查是否超过 1 分钟，超过 1 分钟不能取消
+        // 超过免费取消窗口后，系统不再允许取消，避免用户长时间占车后直接撤单。
         LocalDateTime now = LocalDateTime.now();
         long minutesElapsed = java.time.Duration.between(rental.getStartTime(), now).toMinutes();
         if (minutesElapsed >= FREE_CANCEL_MINUTES) {
@@ -149,7 +159,7 @@ public class RentalService {
     }
 
     /**
-     * 获取用户租赁记录（分页）
+     * 分页查询当前用户的租赁记录。
      */
     public Page<RentalResponse> getUserRentalsPage(Long userId, int page, int size) {
         Page<Rental> rentalPage = new Page<>(page, size);
@@ -163,6 +173,7 @@ public class RentalService {
         Page<RentalResponse> responsePage = new Page<>(page, size, pageResult.getTotal());
         List<RentalResponse> responses = pageResult.getRecords().stream()
                 .map(rental -> {
+                    // DTO 中需要附带车辆名称、状态等展示信息，因此这里补查车辆。
                     Bicycle bicycle = bicycleMapper.selectById(rental.getBicycleId());
                     return convertToResponse(rental, bicycle);
                 })
@@ -172,7 +183,7 @@ public class RentalService {
     }
 
     /**
-     * 获取所有租赁记录（分页，仅管理员）
+     * 分页查询全量租赁记录，供管理员后台使用。
      */
     public Page<RentalResponse> getAllRentalsPage(int page, int size) {
         Page<Rental> rentalPage = new Page<>(page, size);
@@ -194,7 +205,7 @@ public class RentalService {
     }
 
     /**
-     * 获取用户租赁记录
+     * 查询当前用户全部租赁记录，不分页。
      */
     public List<RentalResponse> getUserRentals(Long userId) {
         return rentalMapper.findByUserId(userId).stream()
@@ -206,7 +217,7 @@ public class RentalService {
     }
 
     /**
-     * 获取用户活跃租赁记录
+     * 查询当前用户仍在进行中的租赁记录。
      */
     public List<RentalResponse> getUserActiveRentals(Long userId) {
         return rentalMapper.findByUserId(userId).stream()
@@ -219,7 +230,7 @@ public class RentalService {
     }
 
     /**
-     * 获取所有租赁记录
+     * 获取所有租赁记录，不分页。
      */
     public List<RentalResponse> getAllRentals() {
         return rentalMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Rental>()
@@ -232,7 +243,7 @@ public class RentalService {
     }
 
     /**
-     * 根据 ID 获取租赁记录
+     * 根据租赁 ID 获取详情。
      */
     public RentalResponse getRentalById(Long id) {
         Rental rental = rentalMapper.selectById(id);
@@ -244,7 +255,8 @@ public class RentalService {
     }
 
     /**
-     * 获取统计数据
+     * 聚合首页统计数据。
+     * 这里会把车辆库存和进行中的租赁数量合并计算，保证“总量”和“可用量”符合库存模型。
      */
     @Cacheable(cacheNames = CacheNames.STATISTICS_OVERVIEW)
     public StatisticsResponse getStatistics() {
@@ -253,14 +265,14 @@ public class RentalService {
         long activeRentals = rentalMapper.findByStatus(RentalStatus.ACTIVE).size();
         long activeRentalQuantity = safeLong(rentalMapper.sumQuantityByStatus(RentalStatus.ACTIVE));
 
-        // quantity 字段表示当前库存，进行中租赁会被扣减，所以总量统计需要把 ACTIVE 租赁加回去
+        // quantity 表示“当前库存”，正在租赁中的车辆已被扣减，因此做总量统计时要把 ACTIVE 数量补回来。
         long availableBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.AVAILABLE)
                 + bicycleMapper.sumQuantityByStatus(BicycleStatus.RENTED);
         long maintenanceBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.MAINTENANCE);
         long disabledBicycles = bicycleMapper.sumQuantityByStatus(BicycleStatus.DISABLED);
         long totalBicycles = bicycleMapper.sumAllQuantity() + activeRentalQuantity;
 
-        // 自行车类型统计：库存数量 + 进行中租赁数量
+        // 车型分布同理需要把库存中的数量和进行中租赁中的数量合并统计。
         LinkedHashMap<String, Long> typeCountMap = new LinkedHashMap<>();
         for (BicycleMapper.TypeCountVO vo : bicycleMapper.sumQuantityByType()) {
             if (vo.getType() != null) {
@@ -280,7 +292,7 @@ public class RentalService {
                 ))
                 .toArray(StatisticsResponse.BicycleTypeStats[]::new);
 
-        // 最受欢迎的自行车
+        // 热门车辆榜单按历史租赁次数聚合，只保留前 5 个用于前台展示。
         List<RentalMapper.PopularBicycleVO> popularBicycles = rentalMapper.findMostPopularBicycles();
         StatisticsResponse.PopularBicycle[] popularBikes = popularBicycles.stream()
                 .limit(5)
@@ -310,7 +322,7 @@ public class RentalService {
     private double calculateBillableHours(LocalDateTime startTime, LocalDateTime endTime) {
         if (startTime == null || endTime == null) return 0;
         long millis = java.time.Duration.between(startTime, endTime).toMillis();
-        // Billing starts after the free-cancel window (1 minute).
+        // 计费从免费取消窗口结束后开始，避免“刚下单马上取消”也产生费用。
         long billableMillis = Math.max(0L, millis - java.time.Duration.ofMinutes(FREE_CANCEL_MINUTES).toMillis());
         return billableMillis / 3600000.0;
     }
@@ -324,7 +336,7 @@ public class RentalService {
         LocalDateTime now = LocalDateTime.now();
         long minutesElapsed = java.time.Duration.between(rental.getStartTime(), now).toMinutes();
         if (minutesElapsed < FREE_CANCEL_MINUTES) {
-            // Within cancel window: no billing.
+            // 免费取消窗口内展示金额为 0，前端可以直接提示用户“此时取消不收费”。
             return 0.0;
         }
 
@@ -334,15 +346,16 @@ public class RentalService {
     }
 
     private RentalResponse convertToResponse(Rental rental, Bicycle bicycle) {
+        // 统一构造前端需要的租赁展示对象，避免控制器或 Mapper 拼装复杂展示字段。
         RentalResponse response = new RentalResponse();
         response.setId(rental.getId());
         response.setUserId(rental.getUserId());
 
-        // 获取用户名
+        // 响应里补上用户名，便于后台表格直接展示。
         var user = userMapper.selectById(rental.getUserId());
         response.setUsername(user != null ? user.getUsername() : "unknown");
 
-        // 处理自行车可能为 null 的情况
+        // 车辆可能已被删除，因此这里要兼容 bicycle 为空的情况。
         if (bicycle != null) {
             response.setBicycleId(bicycle.getId());
             response.setBicycleName(bicycle.getName() != null ? bicycle.getName() : "未知自行车");
@@ -360,7 +373,7 @@ public class RentalService {
         response.setExpectedEndTime(rental.getExpectedEndTime());
         response.setStatus(rental.getStatus());
         response.setQuantity(rental.getQuantity() == null ? 1 : rental.getQuantity());
-        // ACTIVE orders should show a running total so the UI can update in near real time.
+        // ACTIVE 状态下返回动态金额，让前端无需额外轮询结算接口也能展示实时费用。
         response.setTotalPrice(calculateRunningTotalPrice(rental, bicycle));
         response.setCreatedAt(rental.getCreatedAt());
         return response;

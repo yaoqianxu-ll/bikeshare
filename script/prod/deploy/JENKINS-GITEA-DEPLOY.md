@@ -1,8 +1,8 @@
-# Jenkins + Gitea 自动化部署详细教程
+﻿# Jenkins + Gitea 自动化部署详细教程
 
 ## 服务器环境
 
-- **服务器 IP**: 124.221.113.208 (腾讯云)
+- **服务器 IP**: your-server-host (腾讯云)
 - **Docker**: 已安装并配置 DNS
 - **项目**: BikeShare 自行车租赁系统
 
@@ -24,10 +24,10 @@ docker compose up -d
 docker compose ps
 ```
 
-**访问 Gitea**: `http://124.221.113.208:3000`
+**访问 Gitea**: `http://your-server-host:3000`
 
 **首次访问配置**:
-1. 打开浏览器访问 `http://124.221.113.208:3000`
+1. 打开浏览器访问 `http://your-server-host:3000`
 2. 设置管理员账号（建议）:
    - 管理员邮箱：`admin@example.com`
    - 管理员用户名：`admin`
@@ -47,7 +47,7 @@ docker compose up -d
 docker compose logs jenkins | grep "Please use the following password to proceed to installation"
 ```
 
-**访问 Jenkins**: `http://124.221.113.208:8081`
+**访问 Jenkins**: `http://your-server-host:8081`
 
 **获取初始密码**:
 ```bash
@@ -60,7 +60,7 @@ docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
 
 ### 2.1 首次登录 Jenkins
 
-1. 访问 `http://124.221.113.208:8081`
+1. 访问 `http://your-server-host:8081`
 2. 输入初始密码（见上方命令）
 3. 选择 **"Install suggested plugins"** (安装推荐插件)
 4. 等待插件安装完成
@@ -109,7 +109,7 @@ MAVEN_HOME: /usr/share/maven
 
 ### 3.1 创建组织和仓库
 
-1. 登录 Gitea: `http://124.221.113.208:3000`
+1. 登录 Gitea: `http://your-server-host:3000`
 2. 点击右上角 **+ -> 新建组织**
    - 组织名称：`bickdemo`
    - 描述：`BikeShare 项目`
@@ -128,10 +128,10 @@ cd F:\springbootStudy\bickdemo
 git init
 
 # 添加远程仓库 (替换为你的 Gitea 地址)
-git remote add gitea http://124.221.113.208:3000/bickdemo/bickdemo.git
+git remote add gitea http://your-server-host:3000/bickdemo/bickdemo.git
 
 # 或者使用 SSH (需要先配置 SSH key)
-# git remote add gitea ssh://git@124.221.113.208:222/bickdemo/bickdemo.git
+# git remote add gitea ssh://git@your-server-host:222/bickdemo/bickdemo.git
 
 # 添加所有文件
 git add .
@@ -246,10 +246,10 @@ docker compose -f script/prod/docker-compose.yml logs -f frontend
 ```
 
 **访问地址**:
-- 前端：`http://124.221.113.208`
-- 后端 API: `http://124.221.113.208:8080`
-- Jenkins: `http://124.221.113.208:8081`
-- Gitea: `http://124.221.113.208:3000`
+- 前端：`http://your-server-host`
+- 后端 API: `http://your-server-host:8080`
+- Jenkins: `http://your-server-host:8081`
+- Gitea: `http://your-server-host:3000`
 
 ### 5.3 测试自动部署
 
@@ -392,3 +392,4 @@ docker exec -it gitea bash
 5. ✅ 推送代码自动部署
 
 现在，每次推送到 Gitea 的代码都会自动构建并部署到服务器！
+

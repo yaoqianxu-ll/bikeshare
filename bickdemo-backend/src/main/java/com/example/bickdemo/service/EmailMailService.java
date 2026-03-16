@@ -11,6 +11,10 @@ import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * 邮件发送服务。
+ * 当前主要用于发送注册、找回密码、修改邮箱等场景的验证码邮件。
+ */
 public class EmailMailService {
 
     private final JavaMailSender mailSender;
@@ -21,6 +25,10 @@ public class EmailMailService {
     @Value("${app.mail.from-name:BikeShare}")
     private String fromName;
 
+    /**
+     * 发送验证码邮件。
+     * 不同业务场景会复用同一套邮件模板，但主题和场景描述会根据 type 自动切换。
+     */
     public void sendVerificationCode(String email, String code, String type, int expireMinutes) {
         if (!StringUtils.hasText(fromEmail)) {
             throw new RuntimeException("发信账号未配置，请先设置 spring.mail.username");
@@ -42,6 +50,7 @@ public class EmailMailService {
     }
 
     private String buildSubject(String type) {
+        // 主题按验证码用途区分，用户看到邮件标题就能知道当前在做什么操作。
         if ("RESET_PASSWORD".equalsIgnoreCase(type)) {
             return "BikeShare 找回密码验证码";
         }
@@ -58,6 +67,7 @@ public class EmailMailService {
         } else if ("UPDATE_EMAIL".equalsIgnoreCase(type)) {
             scene = "修改邮箱";
         }
+        // 邮件内容用简单的 HTML 模板拼接，突出验证码和有效期信息。
         return """
                 <div style="font-family: Arial, sans-serif; padding: 24px; color: #0f172a;">
                   <h2 style="margin: 0 0 16px; color: #ff6b35;">BikeShare</h2>

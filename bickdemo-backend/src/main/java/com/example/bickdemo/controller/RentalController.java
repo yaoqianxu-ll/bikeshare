@@ -18,8 +18,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 租赁管理控制器
- * 处理自行车租赁、归还、取消等操作
+ * 租赁订单接口。
+ * 暴露创建租赁、结束租赁、取消租赁、查询个人订单和后台订单列表等接口。
+ *
  * @author Administrator
  */
 @RestController
@@ -31,7 +32,8 @@ public class RentalController {
     private final UserMapper userMapper;
 
     /**
-     * 获取当前登录用户 ID
+     * 根据当前登录主体解析出用户 ID。
+     * 控制器只持有 UserDetails，因此这里补一层查询，把用户名映射成数据库主键。
      */
     private Long getCurrentUserId(UserDetails userDetails) {
         if (userDetails == null) return null;
@@ -40,7 +42,7 @@ public class RentalController {
     }
 
     /**
-     * 创建租赁订单
+     * 创建租赁订单。
      */
     @PostMapping
     public ResponseEntity<ApiResponse<RentalResponse>> createRental(@Valid @RequestBody RentalRequest request,
@@ -51,7 +53,7 @@ public class RentalController {
     }
 
     /**
-     * 结束租赁（归还自行车）
+     * 结束租赁并归还自行车。
      */
     @PostMapping("/{id}/end")
     public ResponseEntity<ApiResponse<RentalResponse>> endRental(@PathVariable Long id) {
@@ -60,7 +62,8 @@ public class RentalController {
     }
 
     /**
-     * 取消租赁订单
+     * 取消租赁订单。
+     * 仅在免费取消窗口内可成功。
      */
     @PostMapping("/{id}/cancel")
     public ResponseEntity<ApiResponse<RentalResponse>> cancelRental(@PathVariable Long id) {
@@ -69,7 +72,7 @@ public class RentalController {
     }
 
     /**
-     * 获取用户的租赁记录（分页）
+     * 分页获取当前用户的租赁记录。
      */
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<?>> getMyRentals(@AuthenticationPrincipal UserDetails userDetails,
@@ -81,7 +84,7 @@ public class RentalController {
     }
 
     /**
-     * 获取用户活跃的租赁记录（进行中）
+     * 获取当前用户仍在进行中的租赁记录。
      */
     @GetMapping("/my/active")
     public ResponseEntity<ApiResponse<List<RentalResponse>>> getMyActiveRentals(@AuthenticationPrincipal UserDetails userDetails) {
@@ -91,7 +94,7 @@ public class RentalController {
     }
 
     /**
-     * 根据 ID 获取租赁记录详情
+     * 根据租赁 ID 获取详情。
      */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<RentalResponse>> getRentalById(@PathVariable Long id) {
@@ -100,7 +103,7 @@ public class RentalController {
     }
 
     /**
-     * 获取所有租赁记录（仅管理员，分页）
+     * 获取所有租赁记录，仅管理员可访问。
      */
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")

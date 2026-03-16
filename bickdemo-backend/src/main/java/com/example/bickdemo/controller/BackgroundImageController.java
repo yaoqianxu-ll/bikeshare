@@ -14,7 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /**
- * 背景图片控制器
+ * 背景图接口控制器。
+ * 对外提供游客可见的背景图读取接口，以及管理员可用的上传、编辑、启停接口。
  */
 @RestController
 @RequestMapping("/api/backgrounds")
@@ -25,7 +26,7 @@ public class BackgroundImageController {
     private final MinioService minioService;
 
     /**
-     * 获取所有启用的背景图片
+     * 获取当前启用的背景图列表。
      */
     @GetMapping
     public ResponseEntity<ApiResponse<List<BackgroundImage>>> getAllBackgrounds() {
@@ -34,7 +35,7 @@ public class BackgroundImageController {
     }
 
     /**
-     * 获取所有可选择的背景图片（游客/普通用户，用于本地选择；不改变全局 enabled）
+     * 获取可供本地切换的背景图库，不改变系统全局启用状态。
      */
     @GetMapping("/selectable")
     public ResponseEntity<ApiResponse<List<BackgroundImage>>> getSelectableBackgrounds() {
@@ -43,7 +44,7 @@ public class BackgroundImageController {
     }
 
     /**
-     * 获取所有背景图片（管理员，包含未启用的）
+     * 管理员查看全部背景图，包括未启用项。
      */
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
@@ -54,7 +55,7 @@ public class BackgroundImageController {
     }
 
     /**
-     * 根据 ID 获取背景图片
+     * 根据 ID 获取背景图详情。
      */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<BackgroundImage>> getBackgroundById(@PathVariable Long id) {
@@ -63,7 +64,7 @@ public class BackgroundImageController {
     }
 
     /**
-     * 上传背景图片并创建（仅管理员）
+     * 上传背景图并创建记录，仅管理员可调用。
      */
     @PostMapping("/upload")
     @PreAuthorize("hasRole('ADMIN')")
@@ -73,10 +74,10 @@ public class BackgroundImageController {
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "sort", defaultValue = "0") Integer sort) {
         try {
-            // 上传图片到 MinIO
+            // 先把图片上传到对象存储，再把返回 URL 落入背景图表。
             String imageUrl = minioService.uploadImage(file);
 
-            // 创建背景图片记录
+            // 新上传的背景图默认不启用，避免直接覆盖当前线上背景。
             BackgroundImage image = new BackgroundImage();
             image.setName(name != null ? name : file.getOriginalFilename());
             image.setImageUrl(imageUrl);
@@ -92,7 +93,7 @@ public class BackgroundImageController {
     }
 
     /**
-     * 更新背景图片（仅管理员）
+     * 更新背景图信息，仅管理员可调用。
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -105,7 +106,7 @@ public class BackgroundImageController {
     }
 
     /**
-     * 删除背景图片（仅管理员）
+     * 删除背景图，仅管理员可调用。
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -116,7 +117,7 @@ public class BackgroundImageController {
     }
 
     /**
-     * 设置启用的背景图片（仅管理员）
+     * 设置某张背景图是否为全局启用项，仅管理员可调用。
      */
     @PostMapping("/{id}/enabled")
     @PreAuthorize("hasRole('ADMIN')")

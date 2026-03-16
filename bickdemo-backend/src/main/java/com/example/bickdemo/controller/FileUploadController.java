@@ -12,8 +12,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 文件上传控制器
- * 基于 MinIO 对象存储实现图片上传功能
+ * 文件上传接口。
+ * 当前主要承担富文本、头像、背景图等图片文件的上传与删除能力。
+ *
  * @author Administrator
  */
 @RestController
@@ -24,7 +25,8 @@ public class FileUploadController {
     private final MinioService minioService;
 
     /**
-     * 上传图片
+     * 上传图片到 MinIO，并返回前端可直接使用的访问 URL。
+     *
      * @param file 图片文件
      * @return 图片访问 URL
      */
@@ -45,7 +47,8 @@ public class FileUploadController {
     }
 
     /**
-     * 删除图片
+     * 根据图片 URL 删除对象存储中的文件。
+     *
      * @param imageUrl 图片 URL
      * @return 删除结果
      */

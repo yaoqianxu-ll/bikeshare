@@ -16,7 +16,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
- * STOMP 连接 JWT 鉴权
+ * STOMP 连接鉴权拦截器。
+ * 在 WebSocket CONNECT 阶段校验 JWT，并把当前用户写入 STOMP 会话。
  */
 @Component
 @RequiredArgsConstructor
@@ -33,6 +34,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         }
 
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+            // WebSocket 握手时要求前端带上 Bearer Token，否则不允许建立连接。
             String authorization = accessor.getFirstNativeHeader("Authorization");
             if (!StringUtils.hasText(authorization) || !authorization.startsWith("Bearer ")) {
                 throw new AccessDeniedException("Missing WebSocket authorization header");
@@ -49,6 +51,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
                 throw new AccessDeniedException("User not found");
             }
 
+            // 认证成功后把用户身份挂到 STOMP 会话，后续 convertAndSendToUser 才能精准投递。
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     user,
                     null,

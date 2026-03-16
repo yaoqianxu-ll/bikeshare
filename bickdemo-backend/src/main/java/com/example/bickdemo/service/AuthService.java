@@ -32,8 +32,13 @@ import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 认证服务类
- * 处理用户注册、登录、邮箱验证码、资料管理等业务逻辑
+ * 认证与用户资料服务。
+ * 这里集中处理注册、登录、邮箱验证码、头像维护、资料修改等账号生命周期相关能力，
+ * 控制器只负责接收请求并返回统一响应，真正的业务约束都下沉到这里统一管理。
+ *
+ * <p>之所以把邮箱验证码校验、资料唯一性校验、头像清理等细节放在同一个服务里，
+ * 是为了保证“账号信息修改”这条业务链路始终只维护一套规则，避免控制器层重复判断。
+ *
  * @author Administrator
  */
 @Slf4j
@@ -41,7 +46,16 @@ import java.util.concurrent.ThreadLocalRandom;
 @RequiredArgsConstructor
 public class AuthService {
 
+    /**
+     * Redis 中邮箱验证码的 key 前缀，最终会与用途和邮箱拼接成完整 key。
+     */
     private static final String EMAIL_CODE_KEY_PREFIX = "auth:email:code:";
+
+    /**
+     * 当前系统支持的验证码用途。
+     * 清理验证码时会遍历这个列表，把同一个邮箱在不同场景下的验证码一起清掉，
+     * 避免旧验证码残留导致业务混乱。
+     */
     private static final String[] EMAIL_CODE_TYPES = {"REGISTER", "RESET_PASSWORD", "UPDATE_EMAIL"};
 
     private final UserMapper userMapper;
@@ -61,12 +75,14 @@ public class AuthService {
     private String redisKeyPrefix;
 
     /**
-     * 用户注册（邮箱验证码）
+     * 用户注册。
+     * 先完成用户名/邮箱唯一性校验，再校验注册验证码，最后创建账号并签发 JWT。
      */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         String email = normalizeEmail(request.getEmail());
 
+        // 注册前先做唯一性检查，避免无意义地消耗验证码。
         if (userMapper.existsByUsername(request.getUsername())) {
             throw new RuntimeException("用户名已存在");
         }
@@ -74,6 +90,7 @@ public class AuthService {
             throw new RuntimeException("邮箱已被注册");
         }
 
+        // 只有验证码通过后才允许真正落库创建用户。
         validateEmailCode(email, request.getCode(), "REGISTER");
 
         User user = new User();
@@ -90,13 +107,15 @@ public class AuthService {
     }
 
     /**
-     * 发送邮箱验证码
+     * 发送邮箱验证码。
+     * 不同业务场景会走不同的前置校验，例如注册要求邮箱未注册、找回密码要求邮箱已存在。
      */
     @Transactional
     public void sendEmailCode(EmailCodeRequest request) {
         String email = normalizeEmail(request.getEmail());
         String type = normalizeCodeType(request.getType());
 
+        // 不同业务场景复用同一个发送接口，但规则不同，因此先按类型做前置拦截。
         if ("REGISTER".equals(type) && userMapper.existsByEmail(email)) {
             throw new RuntimeException("邮箱已被注册");
         }
@@ -108,6 +127,8 @@ public class AuthService {
         }
 
         String code = generateVerifyCode();
+
+        // 发新验证码前先清理旧验证码，保证同一邮箱同一时刻只有一份最新验证码可用。
         clearEmailCode(email);
         stringRedisTemplate.opsForValue().set(
                 buildEmailCodeKey(email, type),
@@ -118,7 +139,8 @@ public class AuthService {
     }
 
     /**
-     * 用户名登录
+     * 用户名密码登录。
+     * 认证成功后记录登录日志，再构造前端需要的 token + 用户基础信息响应。
      */
     public AuthResponse login(LoginRequest request, HttpServletRequest servletRequest) {
         try {
@@ -129,6 +151,7 @@ public class AuthService {
                     )
             );
 
+            // Spring Security 认证成功后，再把完整用户信息查出来用于组装返回值和记日志。
             User user = userMapper.findByUsername(request.getUsername());
             if (user == null) {
                 throw new RuntimeException("用户不存在");
@@ -143,7 +166,8 @@ public class AuthService {
     }
 
     /**
-     * 邮箱登录
+     * 邮箱密码登录。
+     * 这里没有走 AuthenticationManager，而是直接按邮箱查用户并手动做密码比对。
      */
     public AuthResponse loginByEmail(EmailLoginRequest request, HttpServletRequest servletRequest) {
         String email = normalizeEmail(request.getEmail());
@@ -165,7 +189,8 @@ public class AuthService {
     }
 
     /**
-     * 邮箱找回密码
+     * 通过邮箱验证码重置密码。
+     * 只有验证码与邮箱匹配并且未过期时，才允许更新密码。
      */
     @Transactional
     public void resetPasswordByEmail(EmailResetPasswordRequest request) {
@@ -184,14 +209,16 @@ public class AuthService {
     }
 
     /**
-     * 获取当前用户信息
+     * 根据当前登录用户名查询用户详情。
+     * 返回 Optional 是为了让控制器决定“找不到用户”时使用什么 HTTP 语义。
      */
     public Optional<User> getCurrentUser(String username) {
         return Optional.ofNullable(userMapper.findByUsername(username));
     }
 
     /**
-     * 更新用户信息
+     * 更新当前用户资料。
+     * 支持修改用户名、邮箱、头像和简介，其中邮箱变更必须通过验证码确认。
      */
     @Transactional
     public AuthResponse updateUser(String username, UpdateUserRequest request) {
@@ -203,6 +230,7 @@ public class AuthService {
         String currentEmail = user.getEmail() == null ? "" : user.getEmail().trim().toLowerCase();
         String nextUsername = StringUtils.hasText(request.getUsername()) ? request.getUsername().trim() : user.getUsername();
 
+        // 用户名改动需要重新做唯一性校验。
         if (!nextUsername.equals(user.getUsername())) {
             if (userMapper.existsByUsername(nextUsername)) {
                 throw new RuntimeException("用户名已被使用");
@@ -213,6 +241,7 @@ public class AuthService {
         if (StringUtils.hasText(request.getEmail())) {
             String normalizedEmail = normalizeEmail(request.getEmail());
             if (!normalizedEmail.equals(currentEmail)) {
+                // 修改邮箱属于高风险操作，必须校验目标邮箱唯一且要求提供验证码。
                 if (userMapper.existsByEmail(normalizedEmail)) {
                     throw new RuntimeException("邮箱已被使用");
                 }
@@ -225,6 +254,7 @@ public class AuthService {
             }
         }
 
+        // 头像字段允许前端直接传已上传好的 URL。
         if (request.getAvatar() != null) {
             user.setAvatar(request.getAvatar());
         }
@@ -239,7 +269,8 @@ public class AuthService {
     }
 
     /**
-     * 修改当前用户密码
+     * 修改当前登录用户密码。
+     * 需要验证旧密码，并防止把新密码改成与当前密码一致。
      */
     @Transactional
     public void updatePassword(String username, UpdatePasswordRequest request) {
@@ -261,8 +292,9 @@ public class AuthService {
     }
 
     /**
-     * 上传/更新用户头像（写入 users.avatar）
-     * - 会尽量删除旧头像（删除失败不影响更新）
+     * 上传或更新用户头像。
+     * 新头像上传成功后会写回 users.avatar，旧头像采用 best-effort 删除，
+     * 即旧文件删不掉也不阻塞用户完成头像更新。
      */
     @Transactional
     public User uploadAvatar(String username, MultipartFile file) {
@@ -284,6 +316,7 @@ public class AuthService {
             }
         }
 
+        // 只有新文件上传成功后才覆盖数据库中的头像地址。
         String url = minioService.uploadImage(file);
         user.setAvatar(url);
         userMapper.updateById(user);
@@ -291,8 +324,8 @@ public class AuthService {
     }
 
     /**
-     * 删除用户头像（清空 users.avatar）
-     * - 会尽量删除对象存储中的图片（删除失败不影响清空 DB 字段）
+     * 删除当前用户头像。
+     * 与上传逻辑类似，对象存储中的旧文件删除失败不会回滚数据库字段清空操作。
      */
     @Transactional
     public User deleteAvatar(String username) {
@@ -319,6 +352,7 @@ public class AuthService {
         String normalizedType = normalizeCodeType(type);
         String redisCode = stringRedisTemplate.opsForValue().get(buildEmailCodeKey(email, normalizedType));
         if (StringUtils.hasText(redisCode)) {
+            // 优先使用 Redis 中的最新验证码，兼容数据库旧数据只是兜底。
             if (!redisCode.equals(code)) {
                 throw new RuntimeException("验证码错误");
             }
@@ -329,6 +363,7 @@ public class AuthService {
     }
 
     private void validateEmailCodeFromDatabase(String email, String code, String type) {
+        // 数据库校验属于兼容历史实现的降级路径，避免旧环境因数据迁移问题无法登录/注册。
         EmailAuth record = emailAuthMapper.findByEmail(email);
         if (record == null) {
             throw new RuntimeException("请先获取验证码");
@@ -345,6 +380,7 @@ public class AuthService {
     }
 
     private void clearEmailCode(String email) {
+        // 同一个邮箱的验证码是“一次性凭证”，使用后要把全部场景缓存一起清理掉。
         for (String type : EMAIL_CODE_TYPES) {
             stringRedisTemplate.delete(buildEmailCodeKey(email, type));
         }
@@ -368,6 +404,7 @@ public class AuthService {
         if (!StringUtils.hasText(email)) {
             throw new RuntimeException("邮箱不能为空");
         }
+        // 邮箱统一转小写，避免大小写差异导致唯一性校验不一致。
         return email.trim().toLowerCase();
     }
 
@@ -383,10 +420,12 @@ public class AuthService {
     }
 
     private String generateVerifyCode() {
+        // 生成 6 位随机验证码。
         return String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
     }
 
     private AuthResponse buildAuthResponse(User user) {
+        // 统一封装登录/注册/更新资料后的返回结构，保证前端字段来源一致。
         String jwtToken = jwtService.generateToken(user);
         return new AuthResponse(jwtToken, user.getUsername(), user.getRole().name(), user.getId());
     }

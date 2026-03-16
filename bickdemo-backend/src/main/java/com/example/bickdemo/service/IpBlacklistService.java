@@ -28,6 +28,10 @@ import java.util.Set;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+/**
+ * IP 黑名单与访问频控服务。
+ * 通过 Redis 记录访问频率和封禁信息，既支持自动限流封禁，也支持后台手动封禁/解封。
+ */
 public class IpBlacklistService {
 
     private static final int MAX_REQUESTS_PER_MINUTE = 30;
@@ -43,6 +47,10 @@ public class IpBlacklistService {
     @Value("${app.redis.key-prefix:bickdemo:}")
     private String redisKeyPrefix;
 
+    /**
+     * 判断某个 IP 是否允许继续访问。
+     * 若一分钟内请求数超限，会自动加入黑名单并返回阻断结果。
+     */
     public AccessDecision evaluateAccess(String ip) {
         cleanupExpiredIndex();
         BanMeta meta = getBanMeta(ip);
@@ -57,6 +65,7 @@ public class IpBlacklistService {
         }
 
         if (currentCount != null && currentCount > MAX_REQUESTS_PER_MINUTE) {
+            // 访问频率超过阈值后立即封禁，防止恶意刷接口继续打到业务层。
             BanMeta banMeta = banInternal(ip, "1 分钟内访问超过 30 次，已自动封禁 1 小时", DEFAULT_BAN_DURATION);
             return new AccessDecision(true, true, banMeta.getReason(), banMeta.getExpireAt());
         }
@@ -64,6 +73,10 @@ public class IpBlacklistService {
         return new AccessDecision(false, false, null, null);
     }
 
+    /**
+     * 分页查询当前黑名单记录。
+     * 黑名单主体数据存 Redis，分页在内存里完成，因为数据规模通常较小。
+     */
     public Page<BlacklistEntryResponse> getEntries(int page, int size, String keyword) {
         cleanupExpiredIndex();
         Set<ZSetOperations.TypedTuple<String>> tuples = stringRedisTemplate.opsForZSet()
@@ -100,6 +113,9 @@ public class IpBlacklistService {
         return result;
     }
 
+    /**
+     * 手动封禁指定 IP。
+     */
     public void banIp(String ip, String reason, Duration duration) {
         if (!StringUtils.hasText(ip)) {
             throw new RuntimeException("IP 不能为空");
@@ -107,6 +123,9 @@ public class IpBlacklistService {
         banInternal(ip.trim(), reason, duration == null ? DEFAULT_BAN_DURATION : duration);
     }
 
+    /**
+     * 解除指定 IP 的封禁。
+     */
     public void unbanIp(String ip) {
         if (!StringUtils.hasText(ip)) {
             return;
@@ -116,6 +135,9 @@ public class IpBlacklistService {
         stringRedisTemplate.opsForZSet().remove(indexKey(), normalizedIp);
     }
 
+    /**
+     * 统计当前仍有效的封禁数量。
+     */
     public long countActiveBans() {
         cleanupExpiredIndex();
         Long count = stringRedisTemplate.opsForZSet().zCard(indexKey());
@@ -133,6 +155,7 @@ public class IpBlacklistService {
                 expireAt
         );
         try {
+            // 黑名单详情单独存成 JSON，方便后台展示封禁原因、创建时间和到期时间。
             stringRedisTemplate.opsForValue().set(
                     buildBanKey(ip),
                     objectMapper.writeValueAsString(meta),
@@ -153,6 +176,7 @@ public class IpBlacklistService {
         try {
             return objectMapper.readValue(raw, BanMeta.class);
         } catch (JsonProcessingException e) {
+            // 反序列化失败通常说明脏数据或结构升级，直接清掉避免持续报错。
             log.warn("Failed to parse blacklist metadata for ip {}", ip, e);
             stringRedisTemplate.delete(buildBanKey(ip));
             stringRedisTemplate.opsForZSet().remove(indexKey(), ip);
@@ -184,6 +208,7 @@ public class IpBlacklistService {
     }
 
     private void cleanupExpiredIndex() {
+        // 有效期到了就把索引移除，避免后台列表一直显示过期封禁。
         stringRedisTemplate.opsForZSet().removeRangeByScore(indexKey(), 0, Instant.now().getEpochSecond());
     }
 

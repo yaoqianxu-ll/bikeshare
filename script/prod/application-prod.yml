@@ -2,9 +2,9 @@ spring:
   application:
     name: bickdemo
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:mysql}:3306/bickdemo?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${MYSQL_HOST:mysql}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:bickdemo}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true
     username: ${MYSQL_USERNAME:root}
-    password: ${MYSQL_PASSWORD:Lile200623}
+    password: ${MYSQL_PASSWORD:change-me-db-password}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       pool-name: HikariCP-bickdemo
@@ -18,15 +18,15 @@ spring:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss
   rabbitmq:
-    host: ${RABBITMQ_HOST:124.221.113.208}
+    host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:yaoqianxu}
-    password: ${RABBITMQ_PASSWORD:Lile200623}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
   data:
     redis:
-      host: ${REDIS_HOST:124.221.113.208}
+      host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:Lile200623}
+      password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
       timeout: 5s
   cache:
@@ -46,7 +46,7 @@ server:
   port: 8080
 
 jwt:
-  secret: ${JWT_SECRET:c2VjcmV0LWtleS1mb3Itand0LXRva2VuLWdlbmVyYXRpb24tbWluaW11bS0yNTYtYml0cw==}
+  secret: ${JWT_SECRET:change-me-jwt-secret-with-at-least-32-bytes}
   expiration: 86400000
 
 cache:
@@ -56,9 +56,9 @@ cache:
     user: 1800000
 
 minio:
-  endpoint: ${MINIO_ENDPOINT:http://124.221.113.208:9000}
-  accessKey: ${MINIO_ACCESS_KEY:tTrQL3XQCic9Dc93jbQ7}
-  secretKey: ${MINIO_SECRET_KEY:AtFjrLwasDoEgr4yZFAgwQqRzqGXrDndFHHQLL7f}
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  accessKey: ${MINIO_ACCESS_KEY:change-me-minio-access-key}
+  secretKey: ${MINIO_SECRET_KEY:change-me-minio-secret-key}
   bucket-name: ${MINIO_BUCKET:bicycles}
 
 logging:

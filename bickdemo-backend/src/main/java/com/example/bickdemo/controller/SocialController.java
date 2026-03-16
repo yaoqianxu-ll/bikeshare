@@ -31,10 +31,17 @@ import java.util.List;
 @RequestMapping("/api/social")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+/**
+ * 社交接口控制器。
+ * 所有接口都要求登录后访问，统一承接好友关系和私聊消息相关请求。
+ */
 public class SocialController {
 
     private final SocialService socialService;
 
+    /**
+     * 按用户名关键字搜索用户。
+     */
     @GetMapping("/users/search")
     public ResponseEntity<ApiResponse<List<UserSearchResponse>>> searchUsers(
             @RequestParam("keyword") String keyword,
@@ -47,6 +54,9 @@ public class SocialController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    /**
+     * 发起好友申请。
+     */
     @PostMapping("/friend-requests")
     public ResponseEntity<ApiResponse<FriendRequestResponse>> createFriendRequest(
             @Valid @RequestBody FriendRequestCreateRequest request,
@@ -60,6 +70,9 @@ public class SocialController {
         }
     }
 
+    /**
+     * 获取收到的待处理好友申请。
+     */
     @GetMapping("/friend-requests/received")
     public ResponseEntity<ApiResponse<List<FriendRequestResponse>>> listPendingReceivedRequests(
             @AuthenticationPrincipal UserDetails userDetails
@@ -68,6 +81,9 @@ public class SocialController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    /**
+     * 获取自己发出的待处理好友申请。
+     */
     @GetMapping("/friend-requests/sent")
     public ResponseEntity<ApiResponse<List<FriendRequestResponse>>> listPendingSentRequests(
             @AuthenticationPrincipal UserDetails userDetails
@@ -76,6 +92,9 @@ public class SocialController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    /**
+     * 接受好友申请。
+     */
     @PostMapping("/friend-requests/{requestId}/accept")
     public ResponseEntity<ApiResponse<FriendRequestResponse>> acceptFriendRequest(
             @PathVariable Long requestId,
@@ -89,6 +108,9 @@ public class SocialController {
         }
     }
 
+    /**
+     * 拒绝好友申请。
+     */
     @PostMapping("/friend-requests/{requestId}/reject")
     public ResponseEntity<ApiResponse<FriendRequestResponse>> rejectFriendRequest(
             @PathVariable Long requestId,
@@ -102,6 +124,9 @@ public class SocialController {
         }
     }
 
+    /**
+     * 获取联系人列表及最近消息摘要。
+     */
     @GetMapping("/contacts")
     public ResponseEntity<ApiResponse<List<SocialContactResponse>>> listContacts(
             @AuthenticationPrincipal UserDetails userDetails
@@ -110,6 +135,9 @@ public class SocialController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    /**
+     * 分页获取与指定用户的会话消息。
+     */
     @GetMapping("/messages/{targetUserId}")
     public ResponseEntity<ApiResponse<ConversationMessagesResponse>> getConversationMessages(
             @PathVariable Long targetUserId,
@@ -130,6 +158,9 @@ public class SocialController {
         }
     }
 
+    /**
+     * 把与指定用户的会话标记为已读。
+     */
     @PostMapping("/messages/{targetUserId}/read")
     public ResponseEntity<ApiResponse<MessageReadReceiptResponse>> markConversationRead(
             @PathVariable Long targetUserId,
@@ -146,6 +177,9 @@ public class SocialController {
         }
     }
 
+    /**
+     * 发送私聊消息。
+     */
     @PostMapping("/messages")
     public ResponseEntity<ApiResponse<ChatMessageResponse>> sendMessage(
             @Valid @RequestBody ChatMessageRequest request,

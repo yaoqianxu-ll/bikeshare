@@ -19,8 +19,9 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * JWT 服务类
- * 提供 JWT Token 的生成、解析、验证等功能
+ * JWT 工具服务。
+ * 负责 token 的生成、解析、签名校验和有效期判断，是整个无状态认证方案的基础组件。
+ *
  * @author Administrator
  */
 @Service
@@ -35,14 +36,14 @@ public class JwtService {
     private long jwtExpiration;
 
     /**
-     * 从 token 中提取用户名
+     * 从 token 中提取用户名。
      */
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
     /**
-     * 从 token 中提取指定 claim
+     * 从 token 中提取指定 claim。
      */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
@@ -50,21 +51,22 @@ public class JwtService {
     }
 
     /**
-     * 生成 JWT Token
+     * 生成基础 JWT Token。
      */
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);
     }
 
     /**
-     * 生成 JWT Token（带额外 claims）
+     * 生成带扩展 claims 的 JWT Token。
      */
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
         return buildToken(extraClaims, userDetails, jwtExpiration);
     }
 
     /**
-     * 构建 JWT Token
+     * 构建 JWT。
+     * subject 固定写用户名，签名算法使用 HS256，过期时间由配置项控制。
      */
     private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
         return Jwts.builder()
@@ -77,7 +79,7 @@ public class JwtService {
     }
 
     /**
-     * 验证 token 是否有效
+     * 校验 token 是否属于指定用户且尚未过期。
      */
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
@@ -85,7 +87,8 @@ public class JwtService {
     }
 
     /**
-     * 检查 token 是否有效
+     * 粗粒度校验 token 是否可用。
+     * 主要给 WebSocket 握手这种只需要知道 token 是否过期/损坏的场景使用。
      */
     public boolean validateToken(String token) {
         try {
@@ -104,7 +107,8 @@ public class JwtService {
     }
 
     /**
-     * 将 token 加入黑名单（已禁用）
+     * 预留的 token 拉黑接口。
+     * 当前项目采用短期 JWT + 前端本地删除 token 的退出模式，因此这里暂未启用。
      */
     @SuppressWarnings("unused")
     public void blacklistToken(String token) {
@@ -128,6 +132,7 @@ public class JwtService {
     }
 
     private Key getSignInKey() {
+        // 配置中的 secret 以 Base64 形式存储，这里先解码再生成 HMAC 密钥。
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
         return Keys.hmacShaKeyFor(keyBytes);
     }

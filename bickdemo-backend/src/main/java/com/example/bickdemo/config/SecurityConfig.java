@@ -28,8 +28,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 /**
- * Spring Security 配置类
- * 配置认证、授权、CORS、JWT 过滤器等
+ * Spring Security 核心配置。
+ * 负责定义用户加载方式、认证提供者、JWT 过滤链、接口放行规则以及跨域策略。
+ *
  * @author Administrator
  */
 @Configuration
@@ -57,7 +58,8 @@ public class SecurityConfig {
     }
 
     /**
-     * 用户详情服务 - 从数据库加载用户信息
+     * 用户详情加载器。
+     * Spring Security 在登录认证和 JWT 续验时都会通过它从数据库查出完整用户信息。
      */
     @Bean
     @Lazy
@@ -72,7 +74,8 @@ public class SecurityConfig {
     }
 
     /**
-     * JWT 认证过滤器
+     * JWT 认证过滤器 Bean。
+     * 这里手动注入 UserDetailsService，保证过滤器能在解析 token 后补全认证主体。
      */
     @Bean
     @Lazy
@@ -83,7 +86,8 @@ public class SecurityConfig {
     }
 
     /**
-     * 认证提供者 - 使用 Dao 模式进行身份验证
+     * 认证提供者。
+     * 用户名密码登录走 DaoAuthenticationProvider，由它负责查库并校验 BCrypt 密码。
      */
     @Bean
     @Lazy
@@ -95,7 +99,7 @@ public class SecurityConfig {
     }
 
     /**
-     * 认证管理器
+     * 暴露 AuthenticationManager，供登录服务主动执行用户名密码认证。
      */
     @Bean
     public AuthenticationManager authenticationManager() throws Exception {
@@ -103,7 +107,8 @@ public class SecurityConfig {
     }
 
     /**
-     * 安全过滤链配置
+     * 安全过滤链配置。
+     * 当前系统采用 JWT 无状态认证，因此关闭 session，并把 JWT 与 IP 频控过滤器接入链路。
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -111,11 +116,12 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
+                        // 登录注册、公开查询和 WebSocket 握手接口允许匿名访问。
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/ws", "/ws/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
-                        // Background selection is allowed for guests/USER; admin endpoint keeps role check below.
+                        // 背景图普通读取对游客开放，但查看后台“全部背景图”仍然需要管理员权限。
                         .requestMatchers(HttpMethod.GET, "/api/backgrounds/all").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/backgrounds/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/bicycles/**").permitAll()
@@ -135,7 +141,8 @@ public class SecurityConfig {
     }
 
     /**
-     * CORS 配置 - 允许跨域请求
+     * 跨域配置。
+     * 本项目开发期允许任意来源访问，便于前后端分离调试。
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

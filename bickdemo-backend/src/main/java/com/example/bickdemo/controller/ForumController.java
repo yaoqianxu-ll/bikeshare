@@ -29,10 +29,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/forum")
 @RequiredArgsConstructor
+/**
+ * 论坛接口控制器。
+ * 负责接收帖子、评论、审核、互动等请求，并把运行时业务异常转换为统一 400 响应。
+ */
 public class ForumController {
 
     private final ForumService forumService;
 
+    /**
+     * 获取帖子列表，支持分页和关键字搜索。
+     */
     @GetMapping("/posts")
     public ResponseEntity<ApiResponse<ForumPostListResponse>> getPosts(
             @RequestParam(defaultValue = "1") Integer page,
@@ -49,6 +56,9 @@ public class ForumController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    /**
+     * 获取待审核帖子，仅管理员使用。
+     */
     @GetMapping("/posts/pending")
     @PreAuthorize("hasRole('ADMIN')")
     @AdminOperationLog(module = "论坛审核", action = "获取待审核帖子列表", type = "查询")
@@ -63,6 +73,9 @@ public class ForumController {
         }
     }
 
+    /**
+     * 获取帖子详情与评论列表。
+     */
     @GetMapping("/posts/{postId}")
     public ResponseEntity<ApiResponse<ForumPostDetailResponse>> getPostDetail(
             @PathVariable Long postId,
@@ -79,6 +92,9 @@ public class ForumController {
         }
     }
 
+    /**
+     * 发布帖子。
+     */
     @PostMapping("/posts")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<ApiResponse<ForumPostResponse>> createPost(
@@ -93,6 +109,9 @@ public class ForumController {
         }
     }
 
+    /**
+     * 审核通过帖子。
+     */
     @PostMapping("/posts/{postId}/approve")
     @PreAuthorize("hasRole('ADMIN')")
     @AdminOperationLog(module = "论坛审核", action = "通过帖子审核")
@@ -108,6 +127,9 @@ public class ForumController {
         }
     }
 
+    /**
+     * 驳回帖子。
+     */
     @PostMapping("/posts/{postId}/reject")
     @PreAuthorize("hasRole('ADMIN')")
     @AdminOperationLog(module = "论坛审核", action = "驳回帖子审核")
@@ -123,6 +145,9 @@ public class ForumController {
         }
     }
 
+    /**
+     * 发布评论或回复。
+     */
     @PostMapping("/posts/{postId}/comments")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<ApiResponse<ForumPostCommentResponse>> createComment(
@@ -138,6 +163,9 @@ public class ForumController {
         }
     }
 
+    /**
+     * 删除帖子。
+     */
     @DeleteMapping("/posts/{postId}")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @AdminOperationLog(module = "论坛审核", action = "删除帖子")
@@ -153,6 +181,9 @@ public class ForumController {
         }
     }
 
+    /**
+     * 点赞/取消点赞。
+     */
     @PostMapping("/posts/{postId}/like")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<ApiResponse<ForumPostReactionResponse>> toggleLike(
@@ -167,6 +198,9 @@ public class ForumController {
         }
     }
 
+    /**
+     * 收藏/取消收藏。
+     */
     @PostMapping("/posts/{postId}/favorite")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<ApiResponse<ForumPostReactionResponse>> toggleFavorite(
@@ -181,6 +215,9 @@ public class ForumController {
         }
     }
 
+    /**
+     * 获取论坛作者主页信息。
+     */
     @GetMapping("/users/{userId}")
     public ResponseEntity<ApiResponse<ForumAuthorProfileResponse>> getUserProfile(
             @PathVariable Long userId,

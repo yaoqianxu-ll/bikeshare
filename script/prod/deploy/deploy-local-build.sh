@@ -1,11 +1,20 @@
 #!/bin/bash
 
 # BikeShare 本地构建 + 服务器部署脚本
-# 服务器 IP: 124.221.113.208
+# 通过环境变量覆盖部署地址
 
 set -e
 
 ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+
+if [ -f "$ROOT_DIR/.env" ]; then
+    set -a
+    . "$ROOT_DIR/.env"
+    set +a
+fi
+
+DEPLOY_HOST="${DEPLOY_HOST:-your-server-host}"
+DEPLOY_USER="${DEPLOY_USER:-root}"
 
 echo "=========================================="
 echo "  BikeShare 部署脚本"
@@ -32,16 +41,16 @@ echo ""
 echo "[3/3] 请执行以下命令上传到服务器："
 echo ""
 echo "# 方式 1: 使用 scp 命令（Linux/Mac）"
-echo "scp -r ./* root@124.221.113.208:/opt/bickdemo/"
+echo "scp -r ./* ${DEPLOY_USER}@${DEPLOY_HOST}:/opt/bickdemo/"
 echo ""
 echo "# 方式 2: 使用 WinSCP（Windows）"
-echo "打开 WinSCP，连接到 root@124.221.113.208"
+echo "打开 WinSCP，连接到 ${DEPLOY_USER}@${DEPLOY_HOST}"
 echo "将整个项目目录拖拽到 /opt/bickdemo/"
 echo ""
 echo "=========================================="
 echo ""
 echo "上传完成后，在服务器上执行："
-echo "  ssh root@124.221.113.208"
+echo "  ssh ${DEPLOY_USER}@${DEPLOY_HOST}"
 echo "  cd /opt/bickdemo"
 echo "  docker-compose up -d"
 echo ""
