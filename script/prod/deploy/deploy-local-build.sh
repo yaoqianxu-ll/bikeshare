@@ -5,6 +5,8 @@
 
 set -e
 
+ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+
 echo "=========================================="
 echo "  BikeShare 部署脚本"
 echo "  步骤：本地构建 -> 上传服务器 -> 部署"
@@ -13,16 +15,14 @@ echo "=========================================="
 # 1. 本地构建后端
 echo ""
 echo "[1/3] 本地构建后端..."
-cd bickdemo-backend
+cd "$ROOT_DIR/bickdemo-backend"
 mvn clean package -DskipTests -B
-cd ..
 
 # 2. 本地构建前端
 echo ""
 echo "[2/3] 本地构建前端..."
-cd bickdemo-frontend
+cd "$ROOT_DIR/bickdemo-frontend"
 npm run build
-cd ..
 
 echo ""
 echo "=========================================="
@@ -43,6 +43,6 @@ echo ""
 echo "上传完成后，在服务器上执行："
 echo "  ssh root@124.221.113.208"
 echo "  cd /opt/bickdemo"
-echo "  docker-compose up -d"
+echo "  docker compose -f script/prod/docker-compose.yml up -d"
 echo ""
 echo "=========================================="

@@ -184,9 +184,12 @@ bickdemo/
 ├── jenkins/
 │   └── docker-compose.yml    # Jenkins Docker 配置
 ├── Jenkinsfile               # Jenkins 流水线配置
-├── deploy-jenkins.sh         # Jenkins 部署脚本
-├── docker-compose.yml        # 项目 Docker Compose 配置
-└── deploy.sh                 # 原手动部署脚本
+└── script/
+    └── prod/
+        ├── docker-compose.yml      # 项目 Docker Compose 配置
+        └── deploy/
+            ├── deploy-jenkins.sh   # Jenkins 部署脚本
+            └── deploy.sh           # 手动部署脚本
 ```
 
 ---
@@ -247,7 +250,7 @@ volumes:
 docker-compose logs -f jenkins
 
 # 应用日志
-docker-compose logs -f app
+docker compose -f script/prod/docker-compose.yml logs -f app
 ```
 
 ### 备份 Jenkins 数据
@@ -261,7 +264,7 @@ docker volume ls | grep jenkins
 
 ```bash
 # 从备份恢复
-docker-compose up -d  # Jenkins 会自动从卷中加载数据
+cd jenkins && docker-compose up -d  # Jenkins 会自动从卷中加载数据
 ```
 
 ---
@@ -303,16 +306,16 @@ docker container prune -f
 cd jenkins && docker-compose up -d
 
 # 停止 Jenkins
-docker-compose down
+cd jenkins && docker-compose down
 
 # 查看 Jenkins 状态
-docker-compose ps
+cd jenkins && docker-compose ps
 
 # 获取管理员密码
 docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
 
 # 重启 Jenkins
-docker-compose restart jenkins
+cd jenkins && docker-compose restart jenkins
 
 # 构建项目 (手动触发)
 # 在 Jenkins Web 界面点击 "立即构建"

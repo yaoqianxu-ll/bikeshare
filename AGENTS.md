@@ -4,7 +4,7 @@ This repository is a small monorepo for a BikeShare / bicycle rental demo:
 
 - `bickdemo-backend/`: Spring Boot 3 (Java 17, Maven), MyBatis-Plus, Spring Security + JWT, MySQL/H2, MinIO, Caffeine.
 - `bickdemo-frontend/`: Vue 3 + Vite + Element Plus + Pinia + Axios + ECharts.
-- Root `docker-compose.yml`: MySQL + backend + frontend deployment.
+- `script/prod/docker-compose.yml`: MySQL + backend + frontend deployment.
 
 ## Quick Start (Local Dev)
 
@@ -26,12 +26,12 @@ Frontend (default dev port `5173`):
 
 Database:
 
-- SQL bootstrap file: `init.sql` (root) and `bickdemo-backend/init-db/` (Docker init folder)
+- SQL bootstrap file: `sql/init.sql` and `bickdemo-backend/init-db/` (Docker init folder)
 - Local `application.yml` points to MySQL `bickdemo` on `localhost:3306`.
 
 ## Docker
 
-Root `docker-compose.yml` exposes:
+`script/prod/docker-compose.yml` exposes:
 
 - MySQL: `3306`
 - Backend: `8080` (profile `prod`)
@@ -39,9 +39,9 @@ Root `docker-compose.yml` exposes:
 
 Typical commands:
 
-- `docker-compose up -d --build`
-- `docker-compose logs -f --tail=100`
-- `docker-compose down`
+- `docker compose -f script/prod/docker-compose.yml up -d --build`
+- `docker compose -f script/prod/docker-compose.yml logs -f --tail=100`
+- `docker compose -f script/prod/docker-compose.yml down`
 
 Note: `bickdemo-frontend/nginx.conf` proxies `/api` to `http://bickdemo-app:8080`. Ensure the upstream name matches the backend service/container name defined in the compose setup you use (root compose uses service `app`).
 

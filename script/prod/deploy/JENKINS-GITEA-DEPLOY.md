@@ -241,8 +241,8 @@ Git 仓库：同上
 docker ps
 
 # 查看应用日志
-docker compose logs -f app
-docker compose logs -f frontend
+docker compose -f script/prod/docker-compose.yml logs -f app
+docker compose -f script/prod/docker-compose.yml logs -f frontend
 ```
 
 **访问地址**:
@@ -359,19 +359,19 @@ cat ~/.ssh/id_rsa.pub
 cd /opt/bickdemo
 docker compose -f gitea/docker-compose.yml up -d
 docker compose -f jenkins/docker-compose.yml up -d
-docker compose up -d
+docker compose -f script/prod/docker-compose.yml up -d
 
 # 查看服务状态
-docker compose ps
+docker compose -f script/prod/docker-compose.yml ps
 docker compose -f gitea/docker-compose.yml ps
 docker compose -f jenkins/docker-compose.yml ps
 
 # 查看日志
-docker compose logs -f
+docker compose -f script/prod/docker-compose.yml logs -f
 docker compose -f jenkins/docker-compose.yml logs -f jenkins
 
 # 重启服务
-docker compose restart
+docker compose -f script/prod/docker-compose.yml restart
 docker compose -f jenkins/docker-compose.yml restart jenkins
 
 # 进入容器

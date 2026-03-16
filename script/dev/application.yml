@@ -1,0 +1,86 @@
+spring:
+  application:
+    name: bickdemo
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  datasource:
+    url: jdbc:mysql://localhost:3306/bickdemo?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: HikariCP-bickdemo
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: 3539323716@qq.com
+    password: znpntdjnjprddagd
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:124.221.113.208}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:yaoqianxu}
+    password: ${RABBITMQ_PASSWORD:Lile200623}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: 5s
+  cache:
+    type: redis
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+server:
+  port: 8080
+
+jwt:
+  secret: c2VjcmV0LWtleS1mb3Itand0LXRva2VuLWdlbmVyYXRpb24tbWluaW11bS0yNTYtYml0cw==
+  expiration: 86400000
+
+minio:
+  endpoint: http://124.221.113.208:9000
+  accessKey: Cg6huvLg5AuW8ShqQoAr
+  secretKey: j8AoV6yOOUXVNPWVcIpJLuuZJidCeurCiBwg1c1z
+  bucket-name: bicycles
+
+logging:
+  level:
+    com.example.bickdemo: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.beans.factory.support: DEBUG
+
+app:
+  mail:
+    from-name: BikeShare
+    code-expire-minutes: 10
+  redis:
+    key-prefix: ${APP_REDIS_KEY_PREFIX:bickdemo:local:}

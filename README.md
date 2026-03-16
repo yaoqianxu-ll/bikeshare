@@ -1,641 +1,943 @@
-# 自行车租赁系统 (BikeShare)
+# BikeShare 自行车租赁系统
 
-一个基于 **Spring Boot 3 + Vue 3** 的全栈自行车租赁系统，支持完整的租赁业务流程、后台管理和数据统计分析。
+> 基于 Spring Boot 3 + Vue 3 的前后端分离单车租赁平台
 
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-green)
-![Vue](https://img.shields.io/badge/Vue-3.4.0-blue)
-![MyBatis-Plus](https://img.shields.io/badge/MyBatis--Plus-3.5.5-orange)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-6DB33F?logo=springboot)](https://spring.io/projects/spring-boot)
+[![Vue](https://img.shields.io/badge/Vue-3.4.0-4FC08D?logo=vue.js)](https://vuejs.org/)
+[![Element Plus](https://img.shields.io/badge/Element%20Plus-2.5.0-409EFF?logo=element)](https://element-plus.org/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-## 📋 目录
+## 项目简介
 
-- [功能特性](#-功能特性)
-- [技术栈](#-技术栈)
-- [项目结构](#-项目结构)
-- [本地部署教程](#-本地部署教程)
-- [Docker 部署教程](#-docker-部署教程)
-- [API 接口文档](#-api-接口文档)
-- [数据库设计](#-数据库设计)
-- [常见问题](#-常见问题)
+BikeShare 是一个完整的自行车租赁管理系统，涵盖用户租车、后台管理、社交互动、论坛交流等核心功能。采用前后端分离架构，支持 Docker 一键部署。
 
-## ✨ 功能特性
+### 核心功能
 
-### 用户端功能
-- 📱 用户注册/登录（JWT 认证）
-- 🚴 自行车浏览与搜索
-- 🔑 扫码/在线租赁自行车
-- 📝 租赁记录查询
-- 👤 个人中心（信息修改、密码修改）
-- 🖼️ 头像上传（支持图片压缩）
+| 模块 | 功能描述 |
+|------|----------|
+| 👤 用户系统 | 邮箱验证码注册/登录、个人资料管理、头像上传、密码找回 |
+| 🚲 租车服务 | 车辆浏览/筛选、租赁/归还、租赁记录查询、价格计算 |
+| 💬 社交聊天 | 好友搜索、好友申请、实时私信（WebSocket + RabbitMQ） |
+| 📝 论坛社区 | 发帖/评论、多图上传、点赞收藏、帖子审核、作者资料展示 |
+| 📊 数据统计 | 租赁统计、用户分析、图表可视化（ECharts） |
+| 🔧 后台管理 | 车辆管理、库存管理、租赁记录、论坛审核、背景图管理 |
 
-### 管理端功能
-- 🔐 管理员权限控制
-- 🚲 自行车管理（增删改查）
-- 📊 数据统计分析
-- 👥 用户管理
-- 📋 租赁订单管理
-- 🖼️ 背景图管理
+### 功能特性详解
 
-### 系统特性
-- 🔒 Spring Security + JWT 双重认证
-- 💾 MyBatis-Plus 高效数据访问
-- 🗄️ MySQL 8.0 数据存储
-- 📦 MinIO 对象存储（图片/文件）
-- 🎨 Element Plus 现代化 UI
-- 📱 响应式设计，支持移动端
+**用户端功能：**
+- ✅ 邮箱验证码注册与登录
+- ✅  JWT 令牌自动刷新与无感登录
+- ✅  自行车实时库存显示
+- ✅  租赁订单状态追踪
+- ✅  个人头像裁剪上传
+- ✅  好友关系链管理
+- ✅  实时聊天消息推送
+- ✅  论坛图文混排发帖
 
-## 🛠️ 技术栈
+**管理端功能：**
+- ✅  数据看板（今日订单、活跃用户、营收统计）
+- ✅  自行车批量导入/导出
+- ✅  租赁记录分页查询与导出
+- ✅  论坛内容审核（通过/拒绝/删除）
+- ✅  背景轮播图配置
+- ✅  用户数据可视化分析
 
-### 后端技术
+## 技术架构
 
-| 技术 | 版本 | 说明 |
+```
+┌─────────────────────────┐     ┌─────────────────────────┐     ┌─────────────────────────┐
+│      前端展示层          │     │      后端服务层          │     │      数据存储层          │
+│  Vue 3 + Vite 5         │ ──► │  Spring Boot 3.2        │ ──► │  MySQL 8.0 (主库)       │
+│  Element Plus 2.5       │ ◄── │  Spring Security 6      │ ◄── │  Redis 6.x (缓存)       │
+│  Pinia + ECharts 6      │     │  MyBatis-Plus 3.5       │     │  RabbitMQ (消息队列)    │
+└─────────────────────────┘     └─────────────────────────┘     └─────────────────────────┘
+                                         │
+                                         ▼
+                               ┌─────────────────────────┐
+                               │   外部服务               │
+                               │   MinIO (对象存储)       │
+                               │   SMTP (邮件服务)        │
+                               └─────────────────────────┘
+```
+
+### 后端技术栈
+
+| 技术 | 版本 | 用途 |
 |------|------|------|
 | Spring Boot | 3.2.0 | 核心框架 |
-| Spring Security | 6.x | 安全认证 |
-| JWT | - | Token 认证 |
-| MyBatis-Plus | 3.5.5 | ORM 框架 |
+| Spring Security | 6.x | 安全认证与授权 |
+| JWT | - | 无状态 Token 鉴权 |
+| MyBatis-Plus | 3.5.5 | ORM 框架 / 分页插件 |
 | MySQL | 8.0 | 关系型数据库 |
-| MinIO | - | 对象存储 |
-| Lombok | - | 简化代码 |
-| HikariCP | - | 数据库连接池 |
+| Redis | 6.x | 缓存/验证码/会话存储 |
+| RabbitMQ | - | 异步消息队列/聊天事件分发 |
+| WebSocket | - | 实时双向通信 |
+| MinIO | - | 分布式对象存储 |
+| Spring Mail | - | 邮件发送服务 |
+| HikariCP | - | 高性能数据库连接池 |
 
-### 前端技术
+### 前端技术栈
 
-| 技术 | 版本 | 说明 |
+| 技术 | 版本 | 用途 |
 |------|------|------|
-| Vue | 3.4.0 | 渐进式框架 |
-| Vue Router | 4.2.5 | 路由管理 |
-| Pinia | 2.1.7 | 状态管理 |
-| Element Plus | 2.5.0 | UI 组件库 |
-| Axios | 1.6.2 | HTTP 客户端 |
-| ECharts | 6.0.0 | 数据可视化 |
-| Vite | 5.0.8 | 构建工具 |
-| Sass | - | CSS 预处理器 |
+| Vue | 3.4.0 | 渐进式前端框架 |
+| Vue Router | 4.2.5 | 单页路由管理 |
+| Pinia | 2.1.7 | 轻量级状态管理 |
+| Element Plus | 2.5.0 | 企业级 UI 组件库 |
+| Axios | 1.6.2 | HTTP 请求封装 |
+| ECharts | 6.0.0 | 数据可视化图表 |
+| Vite | 5.0.8 | 下一代构建工具 |
 
-## 📁 项目结构
-
-```
-bickdemo/
-├── 📄 README.md                 # 项目说明文档
-├── 📄 DEPLOY.md                 # 服务器部署指南
-├── 📄 DOCKER-DEPLOY.md          # Docker 部署指南
-├── 📄 init.sql                  # 数据库初始化脚本
-├── 📄 docker-compose.yml        # Docker 编排配置
-├── 📄 deploy.bat                # Windows 一键部署脚本
-├── 📄 deploy.sh                 # Linux/Mac 一键部署脚本
-│
-├── 📂 bickdemo-backend/         # 后端项目
-│   ├── 📂 src/main/java/com/example/bickdemo/
-│   │   ├── 📂 component/        # 初始化组件
-│   │   │   ├── DataInitializer.java   # 数据初始化
-│   │   │   └── MinioInitializer.java  # MinIO 初始化
-│   │   ├── 📂 config/           # 配置类
-│   │   │   ├── SecurityConfig.java    # 安全配置
-│   │   │   ├── JwtAuthenticationFilter.java
-│   │   │   ├── ApplicationConfig.java
-│   │   │   └── MinioConfig.java
-│   │   ├── 📂 controller/       # 控制器层
-│   │   │   ├── AuthController.java    # 认证接口
-│   │   │   ├── BicycleController.java # 自行车接口
-│   │   │   ├── RentalController.java  # 租赁接口
-│   │   │   ├── StatisticsController.java
-│   │   │   └── FileUploadController.java
-│   │   ├── 📂 dto/              # 数据传输对象
-│   │   ├── 📂 entity/           # 实体类
-│   │   ├── 📂 exception/        # 异常处理
-│   │   ├── 📂 mapper/           # MyBatis Mapper
-│   │   └── 📂 service/          # 业务逻辑层
-│   ├── 📂 src/main/resources/
-│   │   ├── application.yml      # 配置文件
-│   │   ├── application-prod.yml # 生产环境配置
-│   │   └── schema.sql           # 数据库脚本
-│   ├── 📄 pom.xml               # Maven 配置
-│   └── 📄 Dockerfile            # Docker 镜像配置
-│
-└── 📂 bickdemo-frontend/        # 前端项目
-    ├── 📂 public/               # 静态资源
-    ├── 📂 src/
-    │   ├── 📂 api/              # API 接口封装
-    │   ├── 📂 assets/           # 资源文件
-    │   ├── 📂 components/       # 公共组件
-    │   ├── 📂 router/           # 路由配置
-    │   ├── 📂 stores/           # Pinia 状态管理
-    │   ├── 📂 styles/           # 全局样式
-    │   ├── 📂 views/            # 页面组件
-    │   │   ├── Login.vue        # 登录页
-    │   │   ├── Register.vue     # 注册页
-    │   │   ├── BicycleList.vue  # 自行车列表
-    │   │   ├── MyRentals.vue    # 我的租赁
-    │   │   ├── Admin.vue        # 管理后台
-    │   │   ├── Statistics.vue   # 统计页面
-    │   │   └── Profile.vue      # 个人中心
-    │   ├── App.vue              # 根组件
-    │   └── main.js              # 入口文件
-    ├── 📄 package.json          # 依赖配置
-    ├── 📄 vite.config.js        # Vite 配置
-    └── 📄 Dockerfile            # Docker 镜像配置
-```
-
-## 💻 本地部署教程
+## 快速开始
 
 ### 环境要求
 
 | 软件 | 最低版本 | 推荐版本 |
 |------|----------|----------|
 | JDK | 17 | 17+ |
-| Node.js | 16 | 18+ |
-| Maven | 3.6 | 3.8+ |
+| Maven | 3.8 | 3.9+ |
+| Node.js | 16 | 18+ LTS |
+| npm | 8 | 9+ |
 | MySQL | 8.0 | 8.0+ |
-| Git | - | 最新版 |
+| Redis | 5.0 | 6.x |
 
-### 第一步：安装 MySQL 数据库
+> 💡 **提示**：推荐使用 JDK 17（LTS 版本），Node.js 18 LTS 可获得最佳兼容性。
 
-**Windows 用户：**
-1. 访问 [MySQL 官网](https://dev.mysql.com/downloads/mysql/) 下载安装包
-2. 或使用 [MySQL Installer](https://dev.mysql.com/downloads/installer/) 一键安装
-3. 安装时记住 root 密码
+### 方式一：本地开发（推荐用于二次开发）
 
-**macOS 用户：**
+#### 1. 克隆项目
+
 ```bash
-brew install mysql@8.0
-brew services start mysql@8.0
+git clone <repository-url>
+cd bickdemo
 ```
 
-**Linux 用户：**
-```bash
-# Ubuntu/Debian
-sudo apt-get update
-sudo apt-get install mysql-server-8.0
+#### 2. 初始化数据库
 
-# CentOS/RHEL
-sudo yum install mysql-server
-sudo systemctl start mysqld
+```bash
+# 创建数据库
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS bickdemo
+  DEFAULT CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;"
+
+# 导入初始数据（包含基础表结构和测试数据）
+mysql -u root -p bickdemo < sql/init.sql
 ```
 
-### 第二步：创建数据库并导入数据
+#### 3. 配置后端
 
-方法一：使用命令行
-```bash
-# 登录 MySQL
-mysql -u root -p
-
-# 执行以下 SQL
-CREATE DATABASE IF NOT EXISTS bickdemo DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE bickdemo;
-source init.sql;
-```
-
-方法二：使用客户端工具（Navicat、DBeaver 等）
-1. 创建名为 `bickdemo` 的数据库
-2. 字符集选择 `utf8mb4`
-3. 运行 `init.sql` 脚本
-
-### 第三步：配置后端
-
-1. 编辑配置文件 `bickdemo-backend/src/main/resources/application.yml`
+编辑配置文件 `bickdemo-backend/src/main/resources/application.yml`：
 
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/bickdemo?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true
-    username: root          # 修改为你的数据库用户名
-    password: 你的密码       # 修改为你的数据库密码
+    url: jdbc:mysql://localhost:3306/bickdemo?useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: your_password
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+# MinIO 配置（图片上传功能需要）
+minio:
+  endpoint: http://localhost:9000
+  access-key: your_access_key
+  secret-key: your_secret_key
+  bucket: bickdemo
+
+# 邮箱配置（验证码功能需要）
+spring:
+  mail:
+    host: smtp.qq.com
+    username: your_email@qq.com
+    password: your_smtp_auth_code
 ```
 
-2. 如果不需要 MinIO 对象存储，可以暂时注释掉相关配置
+> ⚠️ **注意**：如果仅需测试基础租车功能，可先只配置 MySQL，Redis/MinIO/邮箱服务可后续补充。
 
-### 第四步：启动后端服务
+#### 4. 启动后端
 
 ```bash
-# 进入后端目录
 cd bickdemo-backend
 
-# 使用 Maven 启动（需要联网下载依赖）
+# 方式 1：Maven 直接运行
 mvn spring-boot:run
 
-# 或者先打包再运行
+# 方式 2：打包后运行
 mvn clean package -DskipTests
 java -jar target/bickdemo-0.0.1-SNAPSHOT.jar
 ```
 
-启动成功后会看到类似日志：
-```
-  .   ____          _            __ _ _
- /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
-( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
- \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
-  '  |____| .__|_| |_|_| |_\__, | / / / /
- =========|_|==============|___/=/_/_/_/
- :: Spring Boot ::                (v3.2.0)
+启动成功后，访问后端地址：http://localhost:8080
 
-BickdemoApplication Started in 5.123 seconds
-Tomcat started on port(s): 8080 (http)
+验证接口：
+```bash
+curl http://localhost:8080/api/health
 ```
 
-访问 `http://localhost:8080/actuator/health` 验证后端是否启动成功。
-
-### 第五步：启动前端服务
+#### 5. 启动前端
 
 ```bash
-# 进入前端目录
 cd bickdemo-frontend
 
-# 安装依赖（首次需要，耐心等待）
-npm install
-
-# 如果npm安装慢，可以使用国内镜像
+# 安装依赖（建议使用淘宝镜像）
 npm config set registry https://registry.npmmirror.com
 npm install
 
-# 启动开发服务器
+# 启动开发服务器（自动热重载）
 npm run dev
 ```
 
-启动成功后会看到：
-```
-  VITE v5.0.8  ready in 500 ms
+启动成功后，访问前端地址：http://localhost:5173
 
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
-```
+> 💡 **提示**：开发模式下，前端会自动将 `/api` 请求代理到后端 `http://localhost:8080`。
 
-### 第六步：访问系统
+### 方式二：Docker 部署（推荐用于生产环境）
 
-打开浏览器访问：
+#### 1. 前置要求
 
-- **前端开发地址**: http://localhost:5173
-- **后端 API 地址**: http://localhost:8080/api
+- Docker 20.10+
+- Docker Compose 2.0+
 
-### 默认账号
+#### 2. 配置文件
 
-| 角色 | 用户名 | 密码 | 权限 |
-|------|--------|------|------|
-| 管理员 | admin | admin123 | 全部权限 |
-| 普通用户 | user | user123 | 基础租赁功能 |
-
-## 🐳 Docker 部署教程
-
-### 方式一：一键部署（推荐）
-
-**Windows:**
+复制环境变量文件：
 ```bash
-deploy.bat
+cp .env.example .env
 ```
 
-**Linux/Mac:**
+编辑 `.env` 文件，配置你的环境变量：
 ```bash
-chmod +x deploy.sh
-./deploy.sh
+MYSQL_ROOT_PASSWORD=your_strong_password
+JWT_SECRET=your_jwt_secret_key
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
 ```
 
-### 方式二：手动部署
+#### 3. 一键启动
 
 ```bash
-# 1. 构建前端
-cd bickdemo-frontend
-npm install
-npm run build
-cd ..
+# 构建并启动所有服务
+docker compose -f script/prod/docker-compose.yml up -d --build
 
-# 2. 构建后端
-cd bickdemo-backend
-mvn clean package -DskipTests
-cd ..
+# 查看启动日志
+docker compose -f script/prod/docker-compose.yml logs -f
 
-# 3. 启动 Docker 容器
-docker-compose up -d
-
-# 4. 查看日志
-docker-compose logs -f
+# 查看单个服务日志
+docker compose -f script/prod/docker-compose.yml logs -f app
+docker compose -f script/prod/docker-compose.yml logs -f frontend
 ```
 
-### Docker 服务组成
+#### 4. 服务访问
 
-| 服务 | 容器名 | 端口 | 说明 |
-|------|--------|------|------|
-| MySQL | bickdemo-mysql | 3306 | 数据库 |
-| Backend | bickdemo-app | 8080 | Spring Boot 后端 |
-| Frontend | bickdemo-frontend | 80 | Nginx 前端 |
+| 服务 | 访问地址 | 说明 |
+|------|----------|------|
+| 前端页面 | http://localhost | Nginx 反向代理 |
+| 后端 API | http://localhost:8080 | Spring Boot |
+| MySQL | localhost:3306 | 数据库（建议不暴露外网） |
+| MinIO | http://localhost:9001 | 对象存储控制台 |
 
-### 访问地址
-
-| 服务 | 地址 |
-|------|------|
-| 前端 | http://localhost |
-| 后端 API | http://localhost:8080/api |
-
-### 常用 Docker 命令
+#### 5. 停止与清理
 
 ```bash
-# 查看服务状态
-docker-compose ps
+# 停止所有服务
+docker compose -f script/prod/docker-compose.yml down
 
-# 查看日志
-docker-compose logs -f app
-docker-compose logs -f frontend
-
-# 重启服务
-docker-compose restart
-
-# 停止服务
-docker-compose down
-
-# 重新构建
-docker-compose build --no-cache
+# 停止并删除数据卷（谨慎使用）
+docker compose -f script/prod/docker-compose.yml down -v
 ```
 
-## 📖 API 接口文档
+### 默认登录账号
 
-### 认证接口
+| 角色 | 用户名 | 密码 | 权限说明 |
+|------|--------|------|----------|
+| 管理员 | admin | admin123 | 全部权限（车辆管理、审核、统计） |
+| 普通用户 | user | user123 | 用户权限（租车、聊天、发帖） |
 
-| 方法 | 路径 | 说明 | 需要认证 |
-|------|------|------|----------|
-| POST | /api/auth/register | 用户注册 | ❌ |
-| POST | /api/auth/login | 用户登录 | ❌ |
-| GET | /api/auth/me | 获取当前用户 | ✅ |
-| PUT | /api/auth/update | 更新用户信息 | ✅ |
-| PUT | /api/auth/change-password | 修改密码 | ✅ |
+> ⚠️ **安全提醒**：首次部署后请立即修改默认密码！
 
-### 自行车接口
+## 项目结构详解
 
-| 方法 | 路径 | 说明 | 需要认证 |
-|------|------|------|----------|
-| GET | /api/bicycles | 获取所有自行车 | ❌ |
-| GET | /api/bicycles/available | 获取可租赁自行车 | ❌ |
-| GET | /api/bicycles/{id} | 获取自行车详情 | ❌ |
-| POST | /api/bicycles | 添加自行车 | ✅ 管理员 |
-| PUT | /api/bicycles/{id} | 更新自行车 | ✅ 管理员 |
-| DELETE | /api/bicycles/{id} | 删除自行车 | ✅ 管理员 |
-
-### 租赁接口
-
-| 方法 | 路径 | 说明 | 需要认证 |
-|------|------|------|----------|
-| POST | /api/rentals | 创建租赁 | ✅ |
-| POST | /api/rentals/{id}/end | 结束租赁 | ✅ |
-| POST | /api/rentals/{id}/cancel | 取消租赁 | ✅ |
-| GET | /api/rentals/my | 获取我的租赁记录 | ✅ |
-| GET | /api/rentals | 获取所有租赁记录 | ✅ 管理员 |
-
-### 统计接口
-
-| 方法 | 路径 | 说明 | 需要认证 |
-|------|------|------|----------|
-| GET | /api/statistics | 获取统计数据 | ✅ 管理员 |
-| GET | /api/statistics/revenue | 收益统计 | ✅ 管理员 |
-
-### 文件上传接口
-
-| 方法 | 路径 | 说明 | 需要认证 |
-|------|------|------|----------|
-| POST | /api/upload | 上传图片 | ✅ |
-| POST | /api/upload/background | 上传背景图 | ✅ 管理员 |
-
-### 请求示例
-
-**用户登录：**
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "admin",
-    "password": "admin123"
-  }'
+```
+bickdemo/
+│
+├── bickdemo-backend/                    # Spring Boot 后端模块
+│   ├── src/main/java/com/example/bickdemo/
+│   │   ├── BickdemoApplication.java     # 启动类
+│   │   ├── config/                      # 配置类
+│   │   │   ├── SecurityConfig.java      # Spring Security 配置
+│   │   │   ├── JwtConfig.java           # JWT 相关配置
+│   │   │   ├── WebSocketConfig.java     # WebSocket 配置
+│   │   │   ├── RedisConfig.java         # Redis 配置
+│   │   │   ├── MinioConfig.java         # MinIO 配置
+│   │   │   └── CorsConfig.java          # 跨域配置
+│   │   ├── controller/                  # REST API 控制器
+│   │   │   ├── AuthController.java      # 认证接口（登录/注册）
+│   │   │   ├── BicycleController.java   # 自行车接口
+│   │   │   ├── RentalController.java    # 租赁接口
+│   │   │   ├── UserController.java      # 用户接口
+│   │   │   ├── FriendController.java    # 好友接口
+│   │   │   ├── ChatController.java      # 聊天接口
+│   │   │   ├── ForumController.java     # 论坛接口
+│   │   │   └── AdminController.java     # 管理接口
+│   │   ├── service/                     # 业务逻辑层
+│   │   │   ├── AuthService.java         # 认证服务
+│   │   │   ├── BicycleService.java      # 自行车服务
+│   │   │   ├── RentalService.java       # 租赁服务
+│   │   │   ├── UserService.java         # 用户服务
+│   │   │   ├── FriendService.java       # 好友服务
+│   │   │   ├── ChatService.java         # 聊天服务
+│   │   │   ├── ForumService.java        # 论坛服务
+│   │   │   └── StatService.java         # 统计服务
+│   │   ├── mapper/                      # MyBatis Mapper
+│   │   ├── entity/                      # JPA 实体类
+│   │   ├── dto/                         # 数据传输对象
+│   │   │   ├── request/                 # 请求 DTO
+│   │   │   └── response/                # 响应 DTO
+│   │   ├── exception/                   # 异常处理
+│   │   │   ├── GlobalExceptionHandler.java  # 全局异常处理器
+│   │   │   ├── BusinessException.java   # 业务异常
+│   │   │   └── ApiException.java        # API 异常
+│   │   ├── component/                   # 组件
+│   │   │   ├── DataInitializer.java     # 数据初始化
+│   │   │   └── JwtAuthenticationFilter.java  # JWT 过滤器
+│   │   └── util/                        # 工具类
+│   │       ├── JwtUtil.java             # JWT 工具
+│   │       ├── RedisUtil.java           # Redis 工具
+│   │       └── MinioUtil.java           # MinIO 工具
+│   ├── src/main/resources/
+│   │   ├── application.yml              # 开发环境配置
+│   │   ├── application-prod.yml         # 生产环境配置
+│   │   └── mapper/                      # MyBatis XML 映射文件
+│   ├── init-db/                         # Docker 初始化脚本
+│   │   └── init.sql
+│   ├── Dockerfile                       # 后端 Docker 配置
+│   └── pom.xml                          # Maven 依赖配置
+│
+├── bickdemo-frontend/                   # Vue 3 前端模块
+│   ├── src/
+│   │   ├── api/                         # API 接口封装
+│   │   │   ├── auth.js                  # 认证接口
+│   │   │   ├── bicycle.js               # 自行车接口
+│   │   │   ├── rental.js                # 租赁接口
+│   │   │   ├── user.js                  # 用户接口
+│   │   │   ├── friend.js                # 好友接口
+│   │   │   ├── chat.js                  # 聊天接口
+│   │   │   └── forum.js                 # 论坛接口
+│   │   ├── components/                  # 公共组件
+│   │   │   ├── Layout/                  # 布局组件
+│   │   │   ├── BicycleCard/             # 自行车卡片
+│   │   │   ├── ChatBox/                 # 聊天窗口
+│   │   │   └── ImageUpload/             # 图片上传
+│   │   ├── router/                      # 路由配置
+│   │   │   └── index.js
+│   │   ├── stores/                      # Pinia 状态管理
+│   │   │   ├── user.js                  # 用户状态
+│   │   │   ├── auth.js                  # 认证状态
+│   │   │   └── app.js                   # 应用状态
+│   │   ├── views/                       # 页面组件
+│   │   │   ├── Home/                    # 首页
+│   │   │   ├── Bicycles/                # 自行车列表
+│   │   │   ├── Rentals/                 # 租赁记录
+│   │   │   ├── Friends/                 # 好友页面
+│   │   │   ├── Forum/                   # 论坛页面
+│   │   │   ├── Statistics/              # 统计页面
+│   │   │   ├── Admin/                   # 管理后台
+│   │   │   └── Profile/                 # 个人资料
+│   │   ├── utils/                       # 工具函数
+│   │   ├── App.vue                      # 根组件
+│   │   └── main.js                      # 入口文件
+│   ├── public/                          # 静态资源
+│   ├── nginx.conf                       # Nginx 配置
+│   ├── Dockerfile                       # 前端 Docker 配置
+│   ├── package.json                     # 依赖配置
+│   └── vite.config.js                   # Vite 配置
+│
+├── script/                              # 脚本工具目录
+│   ├── dev/                             # 开发环境脚本
+│   └── prod/                            # 生产环境脚本与 Docker 编排
+│       └── deploy/                      # Jenkins / 手动部署脚本与文档
+├── sql/                                 # SQL 初始化脚本
+│   └── init.sql
+├── Jenkinsfile                          # Jenkins 流水线配置
+└── README.md                            # 项目说明文档
 ```
 
-**响应：**
+## 页面路由与功能对应
+
+### 用户端路由
+
+| 路由 | 组件路径 | 功能描述 |
+|------|----------|----------|
+| `/` | `views/Home/index.vue` | 首页（轮播图、车辆推荐） |
+| `/bicycles` | `views/Bicycles/index.vue` | 自行车列表（筛选、搜索、分页） |
+| `/bicycles/:id` | `views/Bicycles/Detail.vue` | 自行车详情（库存、价格、租用按钮） |
+| `/my-rentals` | `views/Rentals/index.vue` | 我的租赁记录（进行中/已完成/已取消） |
+| `/friends` | `views/Friends/index.vue` | 好友列表（搜索、申请、聊天入口） |
+| `/chat/:friendId` | `views/Friends/Chat.vue` | 私聊窗口（消息历史、实时推送） |
+| `/forum` | `views/Forum/index.vue` | 论坛帖子列表（分类、搜索、分页） |
+| `/forum/:id` | `views/Forum/Detail.vue` | 帖子详情（评论、回复、点赞、收藏） |
+| `/forum/create` | `views/Forum/Create.vue` | 发帖页面（多图上传、富文本） |
+| `/statistics` | `views/Statistics/index.vue` | 统计分析（ECharts 图表展示） |
+| `/profile` | `views/Profile/index.vue` | 个人资料（头像裁剪、信息修改） |
+| `/login` | `views/Login/index.vue` | 登录页面 |
+| `/register` | `views/Register/index.vue` | 注册页面（邮箱验证码） |
+| `/forgot-password` | `views/ForgotPassword/index.vue` | 找回密码（邮箱验证 + 重置） |
+
+### 管理端路由
+
+| 路由 | 组件路径 | 功能描述 |
+|------|----------|----------|
+| `/admin` | `views/Admin/index.vue` | 管理后台首页（数据概览） |
+| `/admin/bicycles` | `views/Admin/Bicycles/index.vue` | 车辆管理（CRUD、批量操作、库存管理） |
+| `/admin/rentals` | `views/Admin/Rentals/index.vue` | 租赁记录（查询、导出） |
+| `/admin/users` | `views/Admin/Users/index.vue` | 用户管理（查询、禁用） |
+| `/admin/forum` | `views/Admin/Forum/index.vue` | 论坛审核（帖子审核、删除） |
+| `/admin/backgrounds` | `views/Admin/Backgrounds/index.vue` | 背景图管理（上传、排序） |
+
+## API 接口规范
+
+### 统一响应格式
+
+所有 API 接口返回统一 JSON 格式：
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": { ... }
+}
+```
+
+**字段说明：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| code | number | 状态码（200=成功，其他=失败） |
+| message | string | 响应消息/错误描述 |
+| data | object | 响应数据主体 |
+
+**成功响应示例：**
 ```json
 {
   "code": 200,
   "message": "success",
   "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": 1,
-      "username": "admin",
-      "email": "admin@example.com",
-      "role": "ADMIN"
-    }
+    "id": 1,
+    "username": "admin"
   }
 }
 ```
 
-**携带 Token 请求：**
-```bash
-curl -X GET http://localhost:8080/api/bicycles \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-## 🗄️ 数据库设计
-
-### users - 用户表
-
-```sql
-CREATE TABLE users (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    email VARCHAR(100),
-    phone VARCHAR(20),
-    avatar VARCHAR(255),
-    role VARCHAR(20) DEFAULT 'USER',
-    enabled TINYINT(1) DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-```
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | BIGINT | 主键 |
-| username | VARCHAR(50) | 用户名（唯一） |
-| password | VARCHAR(255) | 密码（BCrypt 加密） |
-| email | VARCHAR(100) | 邮箱 |
-| phone | VARCHAR(20) | 手机号 |
-| avatar | VARCHAR(255) | 头像 URL |
-| role | VARCHAR(20) | 角色（USER/ADMIN） |
-| enabled | TINYINT(1) | 是否启用 |
-
-### bicycles - 自行车表
-
-```sql
-CREATE TABLE bicycles (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL,
-    type VARCHAR(20) NOT NULL,
-    status VARCHAR(20) DEFAULT 'AVAILABLE',
-    location VARCHAR(255),
-    price_per_hour DECIMAL(10,2) NOT NULL,
-    image VARCHAR(255),
-    description TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-```
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | BIGINT | 主键 |
-| name | VARCHAR(100) | 自行车名称 |
-| type | VARCHAR(20) | 类型（MOUNTAIN/ROAD/CITY/ELECTRIC/TANDEM） |
-| status | VARCHAR(20) | 状态（AVAILABLE/RENTED/MAINTENANCE/DISABLED） |
-| location | VARCHAR(255) | 停放位置 |
-| price_per_hour | DECIMAL(10,2) | 每小时价格（元） |
-| image | VARCHAR(255) | 图片 URL |
-| description | TEXT | 描述 |
-
-### rentals - 租赁记录表
-
-```sql
-CREATE TABLE rentals (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT NOT NULL,
-    bicycle_id BIGINT NOT NULL,
-    start_time DATETIME NOT NULL,
-    end_time DATETIME,
-    status VARCHAR(20) DEFAULT 'ACTIVE',
-    total_price DECIMAL(10,2),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (bicycle_id) REFERENCES bicycles(id)
-);
-```
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | BIGINT | 主键 |
-| user_id | BIGINT | 用户 ID（外键） |
-| bicycle_id | BIGINT | 自行车 ID（外键） |
-| start_time | DATETIME | 租赁开始时间 |
-| end_time | DATETIME | 租赁结束时间 |
-| status | VARCHAR(20) | 状态（ACTIVE/COMPLETED/CANCELLED） |
-| total_price | DECIMAL(10,2) | 总价格 |
-
-## ❓ 常见问题
-
-### 1. 后端启动失败：找不到或无法加载主类
-
-**解决方案：**
-```bash
-# 清理 Maven 缓存
-mvn clean
-
-# 重新编译
-mvn clean package -DskipTests
-
-# 确保使用 JDK 17
-java -version
-```
-
-### 2. 数据库连接失败
-
-**错误信息：** `Communications link failure`
-
-**解决方案：**
-1. 确认 MySQL 服务已启动
-2. 检查配置文件中的数据库用户名密码
-3. 确认数据库 `bickdemo` 已创建
-4. 检查防火墙设置
-
-### 3. 前端 npm install 失败
-
-**解决方案：**
-```bash
-# 使用淘宝镜像
-npm config set registry https://registry.npmmirror.com
-
-# 删除 node_modules 重新安装
-rm -rf node_modules package-lock.json
-npm install
-```
-
-### 4. 跨域问题
-
-开发时前端需要配置代理：
-
-```javascript
-// vite.config.js
-export default {
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true
-      }
-    }
-  }
+**失败响应示例：**
+```json
+{
+  "code": 401,
+  "message": "未登录或 Token 已过期",
+  "data": null
 }
 ```
 
-### 5. JWT Token 过期
+### 认证方式
 
-Token 默认有效期为 24 小时，过期后需要重新登录。
+需要认证的接口需在请求头中携带 JWT Token：
 
-可以在配置文件中修改：
-```yaml
-jwt:
-  expiration: 86400000  # 毫秒单位
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-### 6. MinIO 连接失败
+### 主要 API 端点
 
-如果不需要图片上传功能，可以暂时注释掉 MinIO 相关配置。
+| 方法 | 端点 | 说明 | 认证 |
+|------|------|------|------|
+| POST | /api/auth/login | 用户登录 | ❌ |
+| POST | /api/auth/register | 用户注册 | ❌ |
+| POST | /api/auth/forgot-password | 找回密码 | ❌ |
+| GET | /api/auth/logout | 退出登录 | ✅ |
+| GET | /api/bicycles | 获取车辆列表 | ✅ |
+| GET | /api/bicycles/:id | 获取车辆详情 | ✅ |
+| POST | /api/rentals | 创建租赁订单 | ✅ |
+| POST | /api/rentals/:id/return | 归还车辆 | ✅ |
+| GET | /api/rentals/my | 我的租赁记录 | ✅ |
+| GET | /api/user/profile | 获取个人资料 | ✅ |
+| PUT | /api/user/profile | 更新个人资料 | ✅ |
+| POST | /api/user/avatar | 上传头像 | ✅ |
+| GET | /api/friends | 好友列表 | ✅ |
+| POST | /api/friends/apply | 好友申请 | ✅ |
+| GET | /api/chat/history/:friendId | 聊天历史 | ✅ |
+| GET | /api/forum/posts | 帖子列表 | ✅ |
+| POST | /api/forum/posts | 创建帖子 | ✅ |
+| POST | /api/forum/posts/:id/comment | 发表评论 | ✅ |
+| POST | /api/upload | 图片上传 | ✅ |
+| GET | /api/admin/statistics | 统计数据 | ✅ (ADMIN) |
 
-需要 MinIO 时：
-```bash
-# 启动 MinIO
-docker run -p 9000:9000 -p 9001:9001 \
-  -e "MINIO_ROOT_USER=admin" \
-  -e "MINIO_ROOT_PASSWORD=password" \
-  minio/minio server /data --console-address ":9001"
+## 数据库设计
+
+### 核心数据表
+
+| 表名 | 说明 |
+|------|------|
+| user | 用户基础表（账号、密码、邮箱） |
+| user_profile | 用户资料扩展表（头像、简介） |
+| bicycle | 自行车表（名称、描述、库存、价格） |
+| rental_order | 租赁订单表（用户、车辆、时间、金额） |
+| friend | 好友关系表 |
+| friend_request | 好友申请表 |
+| chat_message | 聊天消息表 |
+| forum_post | 论坛帖子表 |
+| forum_comment | 评论表 |
+| forum_like | 点赞记录表 |
+| forum_favorite | 收藏记录表 |
+| background_image | 背景图表 |
+| email_code | 邮箱验证码表 |
+
+### 表关系简述
+
+```
+user (1) ──► (N) rental_order
+user (1) ──► (1) user_profile
+user (M) ◄──► (M) friend (through friend_request)
+user (1) ──► (N) chat_message
+user (1) ──► (N) forum_post
+user (1) ──► (N) forum_comment
+bicycle (1) ──► (N) rental_order
 ```
 
-## 📝 开发指南
+## 数据库迁移
 
-### 后端开发
+当项目升级或拉取新代码后，如遇到字段或表不存在的问题，需要执行对应的迁移脚本。
+
+### 迁移脚本列表
+
+| 脚本文件 | 说明 | 执行命令示例 |
+|----------|------|--------------|
+| `sql/init.sql` | 全量初始化脚本 | `mysql -u root -p bickdemo < sql/init.sql` |
+
+> 💡 **提示**：当前仓库默认维护的是全量初始化脚本 `sql/init.sql`。
+
+## 常用开发命令速查
+
+### 后端命令
 
 ```bash
-# 运行后端
 cd bickdemo-backend
+
+# 开发模式启动（支持热重载）
 mvn spring-boot:run
 
-# 运行测试
+# 清理并打包（跳过测试）
+mvn clean package -DskipTests
+
+# 运行所有单元测试
 mvn test
 
-# 打包
-mvn clean package
+# 运行单个测试类
+mvn test -Dtest=UserServiceTest
+
+# 查看依赖树
+mvn dependency:tree
+
+# 格式化代码
+mvn spotless:apply
 ```
 
-### 前端开发
+### 前端命令
 
 ```bash
-# 安装依赖
 cd bickdemo-frontend
+
+# 安装依赖
 npm install
 
-# 开发模式
+# 开发模式（热重载）
 npm run dev
 
-# 构建生产版本
+# 生产构建
 npm run build
 
 # 预览生产构建
 npm run preview
+
+# 代码检查
+npm run lint
+
+# 代码格式化
+npm run format
 ```
 
-## 🔒 安全建议
+### Docker 命令
 
-1. **生产环境修改默认密码** - 数据库、JWT Secret、MinIO 密钥
-2. **启用 HTTPS** - 使用 Nginx 反向代理配置 SSL
-3. **定期备份数据** - 尤其是 MySQL 数据库
-4. **限制 API 访问频率** - 防止恶意请求
-5. **日志脱敏** - 不记录敏感信息
+```bash
+# 构建并启动
+docker compose -f script/prod/docker-compose.yml up -d --build
 
-## 📄 License
+# 查看服务状态
+docker compose -f script/prod/docker-compose.yml ps
 
-MIT License
+# 查看实时日志
+docker compose -f script/prod/docker-compose.yml logs -f --tail=100
 
-## 👥 联系方式
+# 重启单个服务
+docker compose -f script/prod/docker-compose.yml restart app
 
-如有问题，请提交 Issue 或联系开发者。
+# 停止并清理
+docker compose -f script/prod/docker-compose.yml down
+
+# 重新构建单个服务（不使用缓存）
+docker compose -f script/prod/docker-compose.yml build --no-cache frontend
+```
+
+## 配置说明
+
+### 后端核心配置
+
+| 配置项 | 文件位置 | 说明 |
+|--------|----------|------|
+| 数据库连接 | `application.yml` | MySQL 地址、用户名、密码 |
+| Redis 配置 | `application.yml` | Redis 主机、端口、密码 |
+| RabbitMQ | `application.yml` | MQ 主机、虚拟主机、账号 |
+| MinIO | `application.yml` | 端点、AccessKey、SecretKey、Bucket |
+| 邮件服务 | `application.yml` | SMTP 主机、发件人、授权码 |
+| JWT 密钥 | `application.yml` | Token 签名密钥（建议 32 位+） |
+| 服务端口 | `application.yml` | Spring Boot 端口（默认 8080） |
+
+### 前端核心配置
+
+| 配置项 | 文件位置 | 说明 |
+|--------|----------|------|
+| API 代理 | `vite.config.js` | 开发环境代理目标地址 |
+| 路由模式 | `router/index.js` | history/hash 模式选择 |
+| 请求超时 | `api/request.js` | Axios 超时时间配置 |
+| Token 存储 | `stores/auth.js` | Pinia 中管理 Token |
+
+## CI/CD 自动化部署
+
+项目内置了 Jenkins 持续集成支持，可实现代码推送后自动构建和部署。
+
+### 部署流程
+
+```
+代码提交 (Gitea/GitHub)
+        │
+        ▼
+  Webhook 触发
+        │
+        ▼
+   Jenkins 拉取
+        │
+        ▼
+   Maven 构建后端
+        │
+        ▼
+   NPM 构建前端
+        │
+        ▼
+  Docker 镜像构建
+        │
+        ▼
+  容器编排部署
+```
+
+### 相关文档
+
+详细部署步骤请参考：
+- 📄 [Jenkins 部署指南](script/prod/deploy/JENKINS-DEPLOY.md)
+- 📄 [Jenkins + Gitea 集成文档](script/prod/deploy/JENKINS-GITEA-DEPLOY.md)
+
+## 常见问题 (FAQ)
+
+<details>
+<summary>❓ 后端启动失败，提示数据库连接错误</summary>
+
+**排查步骤：**
+
+1. 确认 MySQL 服务已启动
+   ```bash
+   # Linux/Mac
+   sudo systemctl status mysql
+
+   # Windows
+   services.msc  # 查找 MySQL 服务
+   ```
+
+2. 检查数据库配置是否正确
+   ```yaml
+   spring:
+     datasource:
+       url: jdbc:mysql://localhost:3306/bickdemo?useSSL=false&serverTimezone=Asia/Shanghai
+       username: root
+       password: your_password
+   ```
+
+3. 验证数据库已创建并导入数据
+   ```bash
+   mysql -u root -p -e "SHOW DATABASES;"
+   mysql -u root -p bickdemo -e "SHOW TABLES;"
+   ```
+
+4. 检查数据库用户权限
+   ```sql
+   SHOW GRANTS FOR 'root'@'localhost';
+   ```
+
+</details>
+
+<details>
+<summary>❓ 前端能打开页面，但接口请求失败</summary>
+
+**排查步骤：**
+
+1. 确认后端服务运行在 8080 端口
+   ```bash
+   curl http://localhost:8080/api/health
+   ```
+
+2. 检查前端代理配置（vite.config.js）
+   ```javascript
+   server: {
+     proxy: {
+       '/api': {
+         target: 'http://localhost:8080',
+         changeOrigin: true
+       }
+     }
+   }
+   ```
+
+3. 浏览器开发者工具查看 Network 标签，确认请求 URL 是否正确
+
+4. 检查是否有跨域错误（CORS）
+
+</details>
+
+<details>
+<summary>❓ 图片上传失败</summary>
+
+**排查步骤：**
+
+1. 确认 MinIO 服务可访问
+   ```bash
+   curl http://localhost:9000/minio/health/live
+   ```
+
+2. 检查 Bucket 是否存在
+   - 登录 MinIO 控制台 http://localhost:9001
+   - 确认 `bickdemo` bucket 已创建
+
+3. 验证后端 MinIO 配置
+   ```yaml
+   minio:
+     endpoint: http://localhost:9000
+     access-key: minioadmin
+     secret-key: minioadmin
+     bucket: bickdemo
+   ```
+
+4. 检查上传文件大小限制
+   ```yaml
+   spring:
+     servlet:
+       multipart:
+         max-file-size: 50MB
+         max-request-size: 50MB
+   ```
+
+</details>
+
+<details>
+<summary>❓ 聊天/好友功能不可用</summary>
+
+**排查步骤：**
+
+1. 确认 RabbitMQ 服务状态
+   ```bash
+   # 访问管理界面
+   http://localhost:15672
+   # 默认账号：guest/guest
+   ```
+
+2. 检查 WebSocket 连接
+   - 打开浏览器开发者工具 → Network → WS
+   - 确认 WebSocket 连接成功
+
+3. 验证好友关系
+   - 确保已发送/接受好友申请
+   - 检查好友列表是否有目标好友
+
+4. 查看后端日志是否有 MQ 连接错误
+
+</details>
+
+<details>
+<summary>❓ 新代码拉取后页面或接口报字段不存在</summary>
+
+**解决方案：**
+
+这是数据库结构未同步导致的。根据新功能执行对应的迁移脚本：
+
+```bash
+# 查看当前有哪些迁移脚本
+ls sql
+
+# 执行对应功能的迁移脚本
+mysql -u root -p bickdemo < sql/init.sql
+```
+
+或者重新导入完整的 `sql/init.sql`（**注意：会清空现有数据**）：
+```bash
+mysql -u root -p -e "DROP DATABASE bickdemo; CREATE DATABASE bickdemo;"
+mysql -u root -p bickdemo < sql/init.sql
+```
+
+</details>
+
+<details>
+<summary>❓ Docker 部署后无法访问服务</summary>
+
+**排查步骤：**
+
+1. 检查容器是否正常运行
+   ```bash
+docker compose -f script/prod/docker-compose.yml ps
+   ```
+
+2. 查看问题容器日志
+   ```bash
+docker compose -f script/prod/docker-compose.yml logs app
+docker compose -f script/prod/docker-compose.yml logs frontend
+   ```
+
+3. 确认端口未被占用
+   ```bash
+   # Windows/Mac
+   netstat -ano | findstr :8080
+
+   # Linux
+   lsof -i :8080
+   ```
+
+4. 检查防火墙设置
+   ```bash
+   # Linux
+   sudo ufw status
+   sudo ufw allow 8080
+   ```
+
+5. 重新启动服务
+   ```bash
+docker compose -f script/prod/docker-compose.yml down
+docker compose -f script/prod/docker-compose.yml up -d --build
+   ```
+
+</details>
+
+## 安全建议
+
+⚠️ **生产环境部署前，请务必完成以下安全检查：**
+
+### 1. 敏感配置迁移
+
+不要将以下信息硬编码在配置文件中：
+
+- [ ] 数据库密码
+- [ ] JWT 密钥
+- [ ] MinIO 密钥
+- [ ] 邮箱 SMTP 授权码
+- [ ] Redis 密码
+
+**推荐做法：**
+- 使用环境变量
+- 使用密钥管理系统（如 HashiCorp Vault）
+- 使用配置中心（如 Nacos、Apollo）
+
+### 2. 修改默认账号
+
+```sql
+-- 修改管理员密码
+UPDATE user SET password = '加密后的新密码' WHERE username = 'admin';
+```
+
+### 3. 清理 Git 历史
+
+如果已提交过敏感信息：
+
+```bash
+# 使用 BFG Repo-Cleaner 清理
+bfg --delete-files .env
+# 或
+bfg --replace-text passwords.txt
+```
+
+### 4. 开启 HTTPS
+
+生产环境务必使用 HTTPS 加密传输：
+- 使用 Nginx 反向代理配置 SSL
+- 申请免费证书（Let's Encrypt）
+
+### 5. 限制访问
+
+- 数据库端口不要暴露在公网
+- 配置防火墙白名单
+- 使用反向代理隐藏真实端口
+
+## 性能优化建议
+
+### 后端优化
+
+1. **数据库索引**：为常用查询字段添加索引
+2. **缓存策略**：热点数据（如统计信息）使用 Redis 缓存
+3. **连接池调优**：根据并发量调整 HikariCP 参数
+4. **异步处理**：邮件发送、消息推送使用异步
+
+### 前端优化
+
+1. **路由懒加载**：按需加载页面组件
+2. **组件懒加载**：大型组件使用动态导入
+3. **图片压缩**：上传前压缩、CDN 加速
+4. **构建优化**：开启 Gzip、代码分割
+
+## 开发贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+### 开发流程
+
+1. Fork 本仓库
+2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add amazing feature'`)
+4. 推送到远程 (`git push origin feature/amazing-feature`)
+5. 创建 Pull Request
+
+### 代码规范
+
+- 后端：遵循 [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html)
+- 前端：遵循 [Vue.js Style Guide](https://vuejs.org/style-guide/)
+
+## 项目截图
+
+> 📸 此处可添加项目截图展示（首页、列表页、管理后台等）
+
+<!-- 示例：
+![首页预览](./screenshots/home.png)
+![管理后台](./screenshots/admin.png)
+-->
+
+## 许可证
+
+本项目采用 [MIT License](LICENSE) 协议开源。
+
+## 联系方式
+
+| 渠道 | 链接/说明 |
+|------|----------|
+| 📧 Email | your-email@example.com |
+| 📱 Issues | [GitHub Issues](https://github.com/yourname/bickdemo/issues) |
+| 📖 Wiki | [项目 Wiki](https://github.com/yourname/bickdemo/wiki) |
+
+---
+
+<p align="center">
+  Made with ❤️ by BikeShare Team
+</p>

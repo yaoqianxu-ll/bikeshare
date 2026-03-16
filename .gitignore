@@ -3,6 +3,9 @@
 .vscode/
 *.iml
 
+.claude
+.idea
+.gitignore
 # 编译产物
 target/
 *.class
@@ -27,3 +30,6 @@ Thumbs.db
 mysql-data/
 jenkins-data/
 gitea-data/
+
+# 临时参考目录
+_tmp_sidifensen_blog/

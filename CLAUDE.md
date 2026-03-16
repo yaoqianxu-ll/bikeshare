@@ -94,17 +94,17 @@ npm run preview
 
 ```bash
 # 一键部署
-docker-compose up -d --build
+docker compose -f script/prod/docker-compose.yml up -d --build
 
 # 查看日志
-docker-compose logs -f app
-docker-compose logs -f frontend
+docker compose -f script/prod/docker-compose.yml logs -f app
+docker compose -f script/prod/docker-compose.yml logs -f frontend
 
 # 重新构建单个服务
-docker-compose build --no-cache frontend
+docker compose -f script/prod/docker-compose.yml build --no-cache frontend
 
 # 停止服务
-docker-compose down -v
+docker compose -f script/prod/docker-compose.yml down -v
 ```
 
 ## 核心架构

@@ -1,5 +1,4 @@
 services:
-  # MySQL 数据库
   mysql:
     image: mysql:8.0
     environment:
@@ -10,7 +9,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ../../sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -24,10 +23,9 @@ services:
       timeout: 3s
       retries: 10
 
-  # 后端服务
   app:
     build:
-      context: ./bickdemo-backend
+      context: ../../bickdemo-backend
       dockerfile: Dockerfile.simple
     ports:
       - "8080:8080"
@@ -52,8 +50,8 @@ services:
       - JWT_SECRET=c2VjcmV0LWtleS1mb3Itand0LXRva2VuLWdlbmVyYXRpb24tbWluaW11bS0yNTYtYml0cw==
       - TZ=Asia/Shanghai
     volumes:
-      - ./logs:/app/logs
-      - ./bickdemo-backend/target:/app/target
+      - ../../logs:/app/logs
+      - ../../bickdemo-backend/target:/app/target
     restart: always
     networks:
       - bikeshare-network
@@ -61,10 +59,9 @@ services:
       mysql:
         condition: service_healthy
 
-  # 前端服务
   frontend:
     build:
-      context: ./bickdemo-frontend
+      context: ../../bickdemo-frontend
       dockerfile: Dockerfile.simple
     dns:
       - 183.60.83.19
