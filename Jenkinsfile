@@ -35,7 +35,7 @@ pipeline {
 
     parameters {
         // 仅用于“快速重启部署已构建版本”，正常推送上线请保持 false
-        booleanParam(name: 'SKIP_BUILD', defaultValue: false, description: '跳过前后端构建与镜像构建，仅执行 script/prod/docker-compose.yml 对应的部署')
+        booleanParam(name: 'SKIP_BUILD', defaultValue: false, description: '跳过前后端构建与镜像构建，仅执行 docker-compose up -d 进行部署')
         // 仅在你怀疑工作区脏了/依赖坏了时才打开
         booleanParam(name: 'CLEAN_WORKSPACE', defaultValue: false, description: '构建前清空 Jenkins 工作区（会导致每次重新 npm install）')
     }
@@ -128,7 +128,7 @@ pipeline {
                     cd ${WORKSPACE}
                     echo "当前目录：" && pwd
                     echo "构建镜像（使用缓存加速）..."
-                    docker-compose -f script/prod/docker-compose.yml build
+                    docker-compose build
                 '''
             }
         }
@@ -139,16 +139,16 @@ pipeline {
                 sh """
                     cd ${WORKSPACE}
                     echo "启动服务..."
-                    docker-compose -f script/prod/docker-compose.yml up -d --remove-orphans
+                    docker-compose up -d --remove-orphans
 
                     echo "等待服务启动..."
                     sleep 30
 
                     echo "检查容器状态..."
-                    docker-compose -f script/prod/docker-compose.yml ps
+                    docker-compose ps
 
                     echo "查看最近日志..."
-                    docker-compose -f script/prod/docker-compose.yml logs --tail=50
+                    docker-compose logs --tail=50
                 """
             }
         }

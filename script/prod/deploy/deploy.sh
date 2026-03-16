@@ -6,7 +6,6 @@
 set -e
 
 ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
-COMPOSE_FILE="$ROOT_DIR/script/prod/docker-compose.yml"
 
 if command -v docker-compose &> /dev/null; then
     DOCKER_COMPOSE_CMD="docker-compose"
@@ -37,12 +36,13 @@ npm run build
 # 3. 停止并清理旧容器
 echo ""
 echo "[3/4] 停止旧容器..."
-${DOCKER_COMPOSE_CMD} -f "$COMPOSE_FILE" down || true
+cd "$ROOT_DIR"
+${DOCKER_COMPOSE_CMD} down || true
 
 # 4. 启动新容器
 echo ""
 echo "[4/4] 启动新容器..."
-${DOCKER_COMPOSE_CMD} -f "$COMPOSE_FILE" up -d --build
+${DOCKER_COMPOSE_CMD} up -d --build
 
 echo ""
 echo "=========================================="
@@ -58,6 +58,6 @@ echo "默认账号："
 echo "  管理员：admin / admin123"
 echo "  用户：user / user123"
 echo ""
-echo "查看日志：${DOCKER_COMPOSE_CMD} -f script/prod/docker-compose.yml logs -f"
-echo "停止服务：${DOCKER_COMPOSE_CMD} -f script/prod/docker-compose.yml down"
+echo "查看日志：${DOCKER_COMPOSE_CMD} logs -f"
+echo "停止服务：${DOCKER_COMPOSE_CMD} down"
 echo "=========================================="

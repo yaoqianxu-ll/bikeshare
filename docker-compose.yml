@@ -1,7 +1,3 @@
-# Mirror of the repository root docker-compose.yml.
-# Keep this file in sync for reference/config management.
-# Normal deployment should still use the root docker-compose.yml.
-
 services:
   mysql:
     image: mysql:8.0

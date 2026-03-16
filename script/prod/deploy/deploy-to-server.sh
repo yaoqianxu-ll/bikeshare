@@ -7,7 +7,6 @@
 set -e
 
 ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
-COMPOSE_FILE="$ROOT_DIR/script/prod/docker-compose.yml"
 
 if command -v docker-compose &> /dev/null; then
     DOCKER_COMPOSE_CMD="docker-compose"
@@ -26,7 +25,8 @@ echo "=========================================="
 # 1. 停止并清理旧容器
 echo ""
 echo "[1/3] 停止旧容器..."
-${DOCKER_COMPOSE_CMD} -f "$COMPOSE_FILE" down || true
+cd "$ROOT_DIR"
+${DOCKER_COMPOSE_CMD} down || true
 
 # 2. 清理无用镜像
 echo ""
@@ -36,7 +36,7 @@ docker image prune -f || true
 # 3. 构建并启动新容器
 echo ""
 echo "[3/3] 启动新容器..."
-${DOCKER_COMPOSE_CMD} -f "$COMPOSE_FILE" up -d
+${DOCKER_COMPOSE_CMD} up -d
 
 echo ""
 echo "=========================================="
@@ -47,6 +47,6 @@ echo "服务访问地址："
 echo "  前端：http://124.221.113.208"
 echo "  后端：http://124.221.113.208:8080"
 echo ""
-echo "查看日志：${DOCKER_COMPOSE_CMD} -f script/prod/docker-compose.yml logs -f"
-echo "停止服务：${DOCKER_COMPOSE_CMD} -f script/prod/docker-compose.yml down"
+echo "查看日志：${DOCKER_COMPOSE_CMD} logs -f"
+echo "停止服务：${DOCKER_COMPOSE_CMD} down"
 echo "=========================================="

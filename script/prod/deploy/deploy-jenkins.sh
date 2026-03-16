@@ -14,7 +14,6 @@ NC='\033[0m' # No Color
 # 配置
 SERVER_IP="60.205.169.251"
 PROJECT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
-COMPOSE_FILE="${PROJECT_DIR}/script/prod/docker-compose.yml"
 
 echo_log() {
     echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
@@ -98,7 +97,8 @@ build_frontend() {
 # 停止旧容器
 stop_containers() {
     echo_log "[3/5] 停止旧容器..."
-    ${DOCKER_COMPOSE_CMD} -f "${COMPOSE_FILE}" down || true
+    cd "${PROJECT_DIR}"
+    ${DOCKER_COMPOSE_CMD} down || true
 }
 
 # 清理旧镜像
@@ -110,8 +110,9 @@ cleanup_images() {
 # 构建并启动
 start_containers() {
     echo_log "[4/5] 构建并启动新容器..."
-    ${DOCKER_COMPOSE_CMD} -f "${COMPOSE_FILE}" build --no-cache
-    ${DOCKER_COMPOSE_CMD} -f "${COMPOSE_FILE}" up -d
+    cd "${PROJECT_DIR}"
+    ${DOCKER_COMPOSE_CMD} build --no-cache
+    ${DOCKER_COMPOSE_CMD} up -d
 }
 
 # 健康检查
@@ -130,7 +131,7 @@ health_check() {
 
     error_log "后端服务健康检查失败"
     echo_log "查看日志："
-    ${DOCKER_COMPOSE_CMD} -f "${COMPOSE_FILE}" logs app
+    ${DOCKER_COMPOSE_CMD} logs app
     return 1
 }
 
@@ -158,8 +159,8 @@ main() {
         echo "  管理员：admin / admin123"
         echo "  用户：user / user123"
         echo ""
-        echo "查看日志：${DOCKER_COMPOSE_CMD} -f script/prod/docker-compose.yml logs -f"
-        echo "停止服务：${DOCKER_COMPOSE_CMD} -f script/prod/docker-compose.yml down"
+        echo "查看日志：${DOCKER_COMPOSE_CMD} logs -f"
+        echo "停止服务：${DOCKER_COMPOSE_CMD} down"
         echo "=========================================="
         exit 0
     else
@@ -188,11 +189,13 @@ case "${1:-deploy}" in
         ;;
     logs)
         check_docker
-        ${DOCKER_COMPOSE_CMD} -f "${COMPOSE_FILE}" logs -f
+        cd "${PROJECT_DIR}"
+        ${DOCKER_COMPOSE_CMD} logs -f
         ;;
     status)
         check_docker
-        ${DOCKER_COMPOSE_CMD} -f "${COMPOSE_FILE}" ps
+        cd "${PROJECT_DIR}"
+        ${DOCKER_COMPOSE_CMD} ps
         ;;
     clean)
         check_docker
