@@ -3,18 +3,13 @@
     <section class="console-head">
       <div class="console-copy">
         <h2>控制台</h2>
-        <p>BikeShare 独立管理系统</p>
+        <p>后台核心数据总览</p>
       </div>
       <el-button :icon="Refresh" class="refresh-btn" @click="loadDashboard">刷新数据</el-button>
     </section>
 
     <section class="dashboard-metrics">
-      <article
-        v-for="card in overviewCards"
-        :key="card.label"
-        class="metric-overview-card"
-        :class="card.accent"
-      >
+      <article v-for="card in overviewCards" :key="card.label" class="metric-overview-card">
         <div class="metric-overview-head">
           <span>{{ card.label }}</span>
           <div class="metric-overview-icon">
@@ -37,22 +32,31 @@
           </div>
         </template>
 
-        <div class="status-stack">
-          <article v-for="item in statusRows" :key="item.label" class="status-row">
-            <div class="status-meta">
-              <div class="status-label">
-                <span class="status-dot" :style="{ background: item.color }"></span>
+        <div class="status-panel">
+          <div class="status-summary">
+            <span>车辆总数</span>
+            <strong>{{ totalBikeCount }}</strong>
+          </div>
+
+          <div class="status-table">
+            <div class="status-table-head">
+              <span>状态</span>
+              <span>数量</span>
+              <span>占比</span>
+            </div>
+
+            <article v-for="item in statusRows" :key="item.label" class="status-table-row">
+              <div class="status-name">
+                <span class="status-marker" :style="{ background: item.color }"></span>
                 <strong>{{ item.label }}</strong>
               </div>
-              <div class="status-values">
-                <strong>{{ item.value }}</strong>
-                <span>{{ item.percent }}%</span>
+              <span class="status-count">{{ item.value }}</span>
+              <span class="status-percent">{{ item.percent }}%</span>
+              <div class="status-track">
+                <div class="status-track-fill" :style="{ width: `${item.percent}%`, background: item.color }"></div>
               </div>
-            </div>
-            <div class="status-bar">
-              <div class="status-bar-fill" :style="{ width: `${item.percent}%`, background: item.color }"></div>
-            </div>
-          </article>
+            </article>
+          </div>
         </div>
       </el-card>
 
@@ -85,24 +89,33 @@
         <template #header>
           <div class="card-head">
             <div>
-              <h3>快速操作</h3>
-              <p>常用管理动作从这里直接进入。</p>
+              <h3>待处理事项</h3>
+              <p>只保留当前真正需要处理的几项内容。</p>
             </div>
           </div>
         </template>
-        <div class="quick-actions">
+        <div class="todo-list">
           <button
-            v-for="item in quickActions"
-            :key="item.path"
-            class="quick-action"
+            v-for="item in todoRows"
+            :key="item.label"
+            class="todo-row"
             @click="router.push(item.path)"
           >
-            <div class="quick-action-icon" :class="item.accent">
-              <el-icon><component :is="item.icon" /></el-icon>
+            <div class="todo-left">
+              <div class="todo-icon">
+                <el-icon><component :is="item.icon" /></el-icon>
+              </div>
+              <div>
+                <div class="todo-title">
+                  <strong>{{ item.label }}</strong>
+                  <small>{{ item.tag }}</small>
+                </div>
+                <p>{{ item.desc }}</p>
+              </div>
             </div>
-            <div class="quick-action-copy">
-              <strong>{{ item.label }}</strong>
-              <span>{{ item.desc }}</span>
+            <div class="todo-right">
+              <span>{{ item.value }}</span>
+              <el-icon><ArrowRight /></el-icon>
             </div>
           </button>
         </div>
@@ -141,13 +154,15 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
-import { Bicycle, DataAnalysis, Document, Monitor, Picture, Refresh, Setting } from '@element-plus/icons-vue'
-import { getAllRentals, getStatistics } from '@/api/rental'
+import { ArrowRight, Collection, DataAnalysis, Histogram, Refresh, User, WarningFilled, Document } from '@element-plus/icons-vue'
 import { getPendingForumPosts } from '@/api/forum'
+import { getAllRentals, getStatistics } from '@/api/rental'
+import { getSystemOverview } from '@/api/system'
 import { formatDate, money, rentalStatusText, rentalStatusType } from '@/utils/format'
 
 const router = useRouter()
 
+const overview = ref({})
 const stats = ref({})
 const recentRentals = ref([])
 const trendSource = ref([])
@@ -159,43 +174,35 @@ let trendChart = null
 
 const overviewCards = computed(() => [
   {
-    label: '车辆总数',
-    value: Number(stats.value.totalBicycles || 0),
-    meta: `可租 ${Number(stats.value.availableBicycles || 0)} 辆`,
-    icon: Bicycle,
-    accent: 'accent-blue'
+    label: '用户总数',
+    value: Number(overview.value.totalUserCount || 0),
+    meta: `今日登录 ${Number(overview.value.todayLoginCount || 0)} 次`,
+    icon: Collection
   },
   {
-    label: '订单总数',
-    value: Number(stats.value.totalRentals || 0),
-    meta: `进行中 ${Number(stats.value.activeRentals || 0)} 单`,
-    icon: Monitor,
-    accent: 'accent-pink'
+    label: '帖子总数',
+    value: Number(overview.value.totalPostCount || 0),
+    meta: `待审核 ${pendingPosts.value.length} 篇`,
+    icon: Histogram
   },
   {
-    label: '待审核帖子',
-    value: pendingPosts.value.length,
-    meta: pendingPosts.value.length ? '等待管理员处理' : '当前已清空',
-    icon: Document,
-    accent: 'accent-cyan'
+    label: '总访问量',
+    value: Number(overview.value.totalVisitCount || 0),
+    meta: `今日访问 ${Number(overview.value.todayVisitCount || 0)}`,
+    icon: DataAnalysis
   },
   {
-    label: '当前可租',
-    value: Number(stats.value.availableBicycles || 0),
-    meta: `利用率 ${availabilityRate.value}%`,
-    icon: DataAnalysis,
-    accent: 'accent-green'
+    label: '黑名单',
+    value: Number(overview.value.blacklistCount || 0),
+    meta: `登录失败 ${Number(overview.value.todayLoginFailCount || 0)} 次`,
+    icon: Collection
   }
 ])
 
-const availabilityRate = computed(() => {
-  const total = Number(stats.value.totalBicycles || 0)
-  if (!total) return '0'
-  return ((Number(stats.value.availableBicycles || 0) / total) * 100).toFixed(0)
-})
+const totalBikeCount = computed(() => Number(stats.value.totalBicycles || 0))
 
 const statusRows = computed(() => {
-  const total = Math.max(Number(stats.value.totalBicycles || 0), 1)
+  const total = Math.max(totalBikeCount.value, 1)
   const rows = [
     { label: '可租赁', value: Number(stats.value.availableBicycles || 0), color: '#22c55e' },
     { label: '维修中', value: Number(stats.value.maintenanceBicycles || 0), color: '#f59e0b' },
@@ -207,13 +214,32 @@ const statusRows = computed(() => {
   }))
 })
 
-const quickActions = [
-  { label: '车辆管理', desc: '维护库存与车型信息', path: '/bicycles', icon: Bicycle, accent: 'accent-blue' },
-  { label: '租赁订单', desc: '查看订单和金额流转', path: '/rentals', icon: Monitor, accent: 'accent-cyan' },
-  { label: '论坛审核', desc: '处理社区发帖内容', path: '/forum', icon: Document, accent: 'accent-pink' },
-  { label: '系统管理', desc: '查看登录与操作日志', path: '/system/login-logs', icon: Setting, accent: 'accent-green' },
-  { label: '背景管理', desc: '维护站点背景资源', path: '/backgrounds', icon: Picture, accent: 'accent-orange' }
-]
+const todoRows = computed(() => [
+  {
+    label: '论坛审核',
+    desc: '待审核帖子',
+    value: pendingPosts.value.length,
+    path: '/forum',
+    icon: Document,
+    tag: '内容'
+  },
+  {
+    label: '黑名单管理',
+    desc: '当前封禁 IP',
+    value: Number(overview.value.blacklistCount || 0),
+    path: '/system/blacklist',
+    icon: WarningFilled,
+    tag: '安全'
+  },
+  {
+    label: '用户管理',
+    desc: '今日登录失败',
+    value: Number(overview.value.todayLoginFailCount || 0),
+    path: '/system/users',
+    icon: User,
+    tag: '账号'
+  }
+])
 
 const buildTrendSource = (records, days) => {
   const now = new Date()
@@ -277,8 +303,8 @@ const renderTrendChart = async () => {
         itemStyle: { color: '#2563eb' },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(37, 99, 235, 0.24)' },
-            { offset: 1, color: 'rgba(37, 99, 235, 0.04)' }
+            { offset: 0, color: 'rgba(37, 99, 235, 0.18)' },
+            { offset: 1, color: 'rgba(37, 99, 235, 0.03)' }
           ])
         }
       }
@@ -296,11 +322,13 @@ const handleResize = () => {
 }
 
 const loadDashboard = async () => {
-  const [statRes, rentalRes, pendingRes] = await Promise.all([
+  const [overviewRes, statRes, rentalRes, pendingRes] = await Promise.all([
+    getSystemOverview(),
     getStatistics(),
     getAllRentals({ page: 1, size: 120 }),
     getPendingForumPosts({ limit: 20 })
   ])
+  overview.value = overviewRes.data || {}
   stats.value = statRes.data || {}
   const rentalRecords = rentalRes.data?.records || []
   recentRentals.value = rentalRecords.slice(0, 6)
@@ -332,26 +360,20 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 16px;
   padding: 22px 24px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 20px;
+  background: #fff;
   border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
 }
 
 .console-copy h2 {
   margin: 0;
-  color: #1d4ed8;
-  font-size: 20px;
+  color: #0f172a;
+  font-size: 24px;
 }
 
 .console-copy p {
   margin: 8px 0 0;
-  color: #475569;
-  font-weight: 600;
-}
-
-.refresh-btn {
-  border-radius: 14px;
+  color: #64748b;
 }
 
 .dashboard-metrics {
@@ -361,42 +383,10 @@ onBeforeUnmount(() => {
 }
 
 .metric-overview-card {
-  padding: 20px 22px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.94);
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: #fff;
   border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
-  position: relative;
-  overflow: hidden;
-}
-
-.metric-overview-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-}
-
-.metric-overview-card.accent-blue::before {
-  background: linear-gradient(90deg, #2563eb, #38bdf8);
-}
-
-.metric-overview-card.accent-pink::before {
-  background: linear-gradient(90deg, #a855f7, #f43f5e);
-}
-
-.metric-overview-card.accent-cyan::before {
-  background: linear-gradient(90deg, #3b82f6, #22d3ee);
-}
-
-.metric-overview-card.accent-green::before {
-  background: linear-gradient(90deg, #22c55e, #2dd4bf);
-}
-
-.metric-overview-card.accent-orange::before {
-  background: linear-gradient(90deg, #f97316, #facc15);
 }
 
 .metric-overview-head {
@@ -418,25 +408,20 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   color: #64748b;
-  background: #f3f6fc;
+  background: #f5f7fb;
 }
 
 .metric-overview-card strong {
   display: block;
-  margin-top: 18px;
+  margin-top: 14px;
   font-size: 34px;
-  color: #1e3a8a;
+  color: #0f172a;
 }
 
 .metric-overview-card small {
-  display: inline-flex;
-  align-items: center;
-  margin-top: 14px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  color: #059669;
-  background: rgba(16, 185, 129, 0.10);
-  font-weight: 600;
+  display: block;
+  margin-top: 8px;
+  color: #64748b;
 }
 
 .dashboard-panels,
@@ -458,8 +443,8 @@ onBeforeUnmount(() => {
   display: inline-flex;
   gap: 6px;
   padding: 4px;
-  border-radius: 14px;
-  background: #eef4ff;
+  border-radius: 12px;
+  background: #f1f5f9;
 }
 
 .range-btn {
@@ -467,65 +452,110 @@ onBeforeUnmount(() => {
   background: transparent;
   color: #475569;
   padding: 8px 14px;
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .range-btn.active {
   color: #fff;
-  background: #1d4ed8;
+  background: #409eff;
 }
 
-.status-stack {
+.status-panel {
   display: grid;
-  gap: 20px;
+  gap: 18px;
 }
 
-.status-row {
-  display: grid;
-  gap: 10px;
-}
-
-.status-meta {
+.status-summary {
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 14px;
-  align-items: center;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
-.status-label,
-.status-values {
+.status-summary span {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.status-summary strong {
+  color: #0f172a;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.status-table {
+  display: grid;
+}
+
+.status-table-head,
+.status-table-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) 80px 80px;
+  align-items: center;
+  gap: 14px;
+}
+
+.status-table-head {
+  padding: 0 0 12px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.status-table-row {
+  position: relative;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.status-table-row:last-child {
+  border-bottom: none;
+}
+
+.status-name {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.status-label strong,
-.status-values strong {
+.status-name strong,
+.status-count,
+.status-percent {
   color: #0f172a;
-}
-
-.status-values span {
-  color: #64748b;
   font-weight: 600;
 }
 
-.status-dot {
-  width: 10px;
-  height: 10px;
+.status-count,
+.status-percent {
+  text-align: right;
+}
+
+.status-percent {
+  color: #64748b;
+}
+
+.status-marker {
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
   display: inline-flex;
 }
 
-.status-bar {
-  height: 10px;
+.status-track {
+  grid-column: 1 / -1;
+  height: 6px;
   border-radius: 999px;
-  background: #edf2f7;
+  background: #eef2f7;
   overflow: hidden;
 }
 
-.status-bar-fill {
+.status-track-fill {
   height: 100%;
   border-radius: inherit;
 }
@@ -534,73 +564,85 @@ onBeforeUnmount(() => {
   height: 320px;
 }
 
-.quick-actions {
+.todo-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
-.quick-action {
+.todo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  cursor: pointer;
+  text-align: left;
+}
+
+.todo-left {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 16px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 18px;
-  background: #f8fafc;
-  cursor: pointer;
-  text-align: left;
-  transition: 0.2s ease;
 }
 
-.quick-action:hover {
-  transform: translateY(-1px);
-  background: #f1f5f9;
-}
-
-.quick-action-icon {
+.todo-icon {
   width: 42px;
   height: 42px;
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: #409eff;
+  background: rgba(64, 158, 255, 0.10);
   flex: none;
 }
 
-.quick-action-icon.accent-blue {
-  background: linear-gradient(135deg, #2563eb, #38bdf8);
+.todo-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.quick-action-icon.accent-pink {
-  background: linear-gradient(135deg, #a855f7, #f43f5e);
-}
-
-.quick-action-icon.accent-cyan {
-  background: linear-gradient(135deg, #3b82f6, #22d3ee);
-}
-
-.quick-action-icon.accent-green {
-  background: linear-gradient(135deg, #16a34a, #2dd4bf);
-}
-
-.quick-action-icon.accent-orange {
-  background: linear-gradient(135deg, #f97316, #facc15);
-}
-
-.quick-action-copy {
-  display: grid;
-  gap: 4px;
-}
-
-.quick-action-copy strong {
+.todo-row strong {
   color: #0f172a;
 }
 
-.quick-action-copy span {
+.todo-row small {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #409eff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.todo-row p {
+  margin: 6px 0 0;
   color: #64748b;
-  font-size: 13px;
+}
+
+.todo-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.todo-right span {
+  min-width: 40px;
+  text-align: center;
+  color: #409eff;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.todo-right .el-icon {
+  color: #94a3b8;
 }
 
 @media (max-width: 1200px) {
@@ -611,8 +653,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 960px) {
   .dashboard-panels,
-  .dashboard-bottom,
-  .quick-actions {
+  .dashboard-bottom {
     grid-template-columns: 1fr;
   }
 }

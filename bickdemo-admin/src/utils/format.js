@@ -94,6 +94,14 @@ export function loginMethodText(value) {
   return map[value] || value || '--'
 }
 
+export function userRoleText(value) {
+  const map = {
+    ADMIN: '管理员',
+    USER: '普通用户'
+  }
+  return map[value] || value || '--'
+}
+
 export function logStatusText(value) {
   const map = {
     SUCCESS: '成功',
@@ -106,6 +114,24 @@ export function logStatusType(value) {
   const map = {
     SUCCESS: 'success',
     FAIL: 'danger'
+  }
+  return map[value] || 'info'
+}
+
+export function visitStatusText(value) {
+  const map = {
+    SUCCESS: '成功',
+    FAIL: '失败',
+    BLOCKED: '已拦截'
+  }
+  return map[value] || value || '--'
+}
+
+export function visitStatusType(value) {
+  const map = {
+    SUCCESS: 'success',
+    FAIL: 'danger',
+    BLOCKED: 'warning'
   }
   return map[value] || 'info'
 }

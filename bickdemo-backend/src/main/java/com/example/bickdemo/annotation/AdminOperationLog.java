@@ -12,4 +12,6 @@ public @interface AdminOperationLog {
     String module();
 
     String action();
+
+    String type() default "";
 }

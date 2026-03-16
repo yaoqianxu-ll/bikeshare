@@ -404,6 +404,20 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .my-rentals {
+    padding: 12px;
+  }
+
+  .card-header,
+  .title-wrap {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .filter-card {
+    border-radius: 16px;
+  }
+
   .table-scroll :deep(.el-table) {
     min-width: 980px;
   }
@@ -411,12 +425,31 @@ onMounted(() => {
   .pagination-wrapper {
     justify-content: center;
     padding-right: 0;
+    overflow-x: auto;
   }
 
   :deep(.el-radio-group) {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    display: block;
+  }
+
+  :deep(.el-radio-button) {
+    display: inline-flex;
+  }
+
+  :deep(.el-dialog) {
+    width: calc(100vw - 24px) !important;
+    margin: max(8vh, 24px) auto 0 !important;
+  }
+
+  :deep(.el-dialog__header),
+  :deep(.el-dialog__body),
+  :deep(.el-dialog__footer) {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }
 

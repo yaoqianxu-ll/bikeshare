@@ -23,7 +23,7 @@
     </section>
 
     <div class="workspace-grid">
-      <aside ref="sidebarColumnRef" class="sidebar-column">
+      <aside v-show="showSidebarPane" ref="sidebarColumnRef" class="sidebar-column">
         <section class="panel panel-search">
           <div class="panel-head">
             <div>
@@ -265,10 +265,19 @@
         </section>
       </aside>
 
-      <section class="chat-column">
+      <section v-show="showChatPane" class="chat-column">
         <div v-if="activeContact" class="chat-card" :style="chatPanelStyle">
           <header class="chat-head">
             <div class="chat-head__main">
+              <button
+                v-if="isMobile"
+                type="button"
+                class="mobile-pane-toggle"
+                @click="showConversationList"
+              >
+                <el-icon><ArrowLeft /></el-icon>
+                <span>返回会话</span>
+              </button>
               <div class="avatar-shell avatar-shell--xl" :style="buildAvatarStyle(activeContact.avatar)">
                 <img v-if="activeContact.avatar" :src="activeContact.avatar" :alt="activeContact.username" />
                 <span v-else>{{ getInitial(activeContact.username) }}</span>
@@ -595,6 +604,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
+  ArrowLeft,
   Bell,
   ChatDotRound,
   Loading,
@@ -652,6 +662,7 @@ const messageListRef = ref(null)
 const imageInputRef = ref(null)
 const chatPanelHeight = ref(0)
 const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440)
+const mobilePane = ref('sidebar')
 
 const emojiPresets = [
   { label: '开心', value: '😄' },
@@ -680,6 +691,9 @@ const totalUnreadCount = computed(() =>
 )
 
 const currentUserId = computed(() => Number(userStore.userId || 0))
+const isMobile = computed(() => viewportWidth.value <= 768)
+const showSidebarPane = computed(() => !isMobile.value || mobilePane.value === 'sidebar')
+const showChatPane = computed(() => !isMobile.value || mobilePane.value === 'chat')
 
 const chatPanelStyle = computed(() => {
   if (viewportWidth.value <= 1280 || !chatPanelHeight.value) return {}
@@ -820,6 +834,11 @@ const syncChatPanelHeight = () => {
   if (typeof window === 'undefined') return
 
   viewportWidth.value = window.innerWidth
+  if (viewportWidth.value > 768) {
+    mobilePane.value = 'sidebar'
+  } else if (!activeContact.value) {
+    mobilePane.value = 'sidebar'
+  }
   if (viewportWidth.value <= 1280) {
     chatPanelHeight.value = 0
     return
@@ -1043,6 +1062,9 @@ const selectContact = async (contact) => {
   if (!contact?.userId || isCurrentUserContact(contact.userId)) {
     return
   }
+  if (isMobile.value) {
+    mobilePane.value = 'chat'
+  }
   activeContact.value = { ...contact }
   sidebarTab.value = 'contacts'
   pickerVisible.value = false
@@ -1053,6 +1075,11 @@ const selectContact = async (contact) => {
     scroll: 'bottom'
   })
   await acknowledgeConversation(contact.userId)
+}
+
+const showConversationList = () => {
+  mobilePane.value = 'sidebar'
+  pickerVisible.value = false
 }
 
 const buildContactFromSearch = (user) => ({
@@ -1883,6 +1910,20 @@ onBeforeUnmount(async () => {
   min-width: 0;
 }
 
+.mobile-pane-toggle {
+  display: none;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--bs-ink);
+  border-radius: 999px;
+  padding: 8px 12px;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .chat-head__copy h2 {
   font-size: 26px;
 }
@@ -2552,6 +2593,161 @@ onBeforeUnmount(async () => {
 
   .sticker-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .friends-page {
+    padding: 12px;
+  }
+
+  .hero-card {
+    padding: 20px 18px;
+    border-radius: 20px;
+  }
+
+  .hero-copy h1 {
+    font-size: 24px;
+  }
+
+  .workspace-grid {
+    gap: 16px;
+    min-height: 0;
+  }
+
+  .panel,
+  .chat-card,
+  .chat-placeholder {
+    border-radius: 20px;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .chat-card,
+  .chat-placeholder {
+    height: calc(100vh - 140px);
+    max-height: calc(100vh - 140px);
+    min-height: calc(100vh - 140px);
+  }
+
+  .mobile-pane-toggle {
+    display: inline-flex;
+  }
+
+  .chat-head__main {
+    align-items: flex-start;
+  }
+
+  .chat-head__copy h2 {
+    font-size: 22px;
+  }
+
+  .chat-head__side {
+    width: 100%;
+    justify-items: stretch;
+  }
+
+  .profile-view-button {
+    width: 100%;
+  }
+
+  .message-board {
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .message-stack {
+    max-width: 92%;
+  }
+
+  .message-image {
+    width: min(240px, 100%);
+  }
+
+  .message-sticker {
+    width: min(180px, 100%);
+  }
+
+  .composer {
+    padding: 14px;
+  }
+
+  .composer-sticker-button {
+    right: 56px;
+  }
+
+  .composer-image-button,
+  .composer-sticker-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .composer-textarea :deep(.el-textarea__inner) {
+    min-height: 136px !important;
+    max-height: 136px !important;
+    padding: 14px 96px 58px 14px;
+  }
+
+  .composer-textarea :deep(.el-input__count) {
+    right: 100px;
+    bottom: 14px;
+  }
+
+  .composer-actions {
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .composer-actions :deep(.el-button) {
+    min-width: 80px;
+    min-height: 40px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .picker-panel {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .hero-card {
+    padding: 18px 16px;
+  }
+
+  .metric-chip {
+    padding: 14px 16px;
+  }
+
+  .metric-chip strong {
+    font-size: 22px;
+  }
+
+  .search-card,
+  .request-card,
+  .conversation-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .avatar-shell--xl {
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
+    min-height: 64px;
+    max-width: 64px;
+    max-height: 64px;
+  }
+
+  .chat-head__copy h2 {
+    font-size: 20px;
+  }
+
+  .message-bubble {
+    border-radius: 20px;
+    padding: 12px 14px;
   }
 }
 

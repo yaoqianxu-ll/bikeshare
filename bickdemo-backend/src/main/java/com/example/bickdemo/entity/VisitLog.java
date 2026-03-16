@@ -11,8 +11,8 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("operation_logs")
-public class OperationLog {
+@TableName("visit_logs")
+public class VisitLog {
 
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -26,41 +26,35 @@ public class OperationLog {
     @TableField("role_name")
     private String roleName;
 
-    @TableField("module")
-    private String module;
-
-    @TableField("operation_name")
-    private String operationName;
-
-    @TableField("operation_type")
-    private String operationType;
-
     @TableField("request_method")
     private String requestMethod;
 
     @TableField("request_uri")
     private String requestUri;
 
-    @TableField("operation_ip")
-    private String operationIp;
+    @TableField("visit_ip")
+    private String visitIp;
 
-    @TableField("operation_address")
-    private String operationAddress;
+    @TableField("visit_address")
+    private String visitAddress;
 
     @TableField("status")
     private String status;
 
-    @TableField("message")
-    private String message;
-
-    @TableField("request_params")
-    private String requestParams;
+    @TableField("status_code")
+    private Integer statusCode;
 
     @TableField("duration_ms")
     private Long durationMs;
 
-    @TableField("operation_time")
-    private LocalDateTime operationTime;
+    @TableField("user_agent")
+    private String userAgent;
+
+    @TableField("message")
+    private String message;
+
+    @TableField("visited_at")
+    private LocalDateTime visitedAt;
 
     @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

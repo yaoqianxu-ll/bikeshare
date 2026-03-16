@@ -44,17 +44,32 @@ const routes = [
       },
       {
         path: '/system',
-        redirect: '/system/login-logs'
+        redirect: '/system/users'
+      },
+      {
+        path: '/system/users',
+        name: 'SystemUsers',
+        component: () => import('@/views/Users.vue')
+      },
+      {
+        path: '/system/blacklist',
+        name: 'SystemBlacklist',
+        component: () => import('@/views/Blacklist.vue')
       },
       {
         path: '/system/login-logs',
         name: 'SystemLoginLogs',
-        component: () => import('@/views/SystemManage.vue')
+        component: () => import('@/views/LoginLogs.vue')
+      },
+      {
+        path: '/system/visitor-logs',
+        name: 'SystemVisitorLogs',
+        component: () => import('@/views/VisitorLogs.vue')
       },
       {
         path: '/system/operation-logs',
         name: 'SystemOperationLogs',
-        component: () => import('@/views/SystemManage.vue')
+        component: () => import('@/views/OperationLogs.vue')
       }
     ]
   },

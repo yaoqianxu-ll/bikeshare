@@ -286,7 +286,7 @@ const handleLogin = async () => {
         persistRememberedLogin()
         userStore.setUser(res.data.token, res.data.username, res.data.role, res.data.userId)
         ElMessage.success('登录成功')
-        router.push('/bicycles')
+        router.push('/')
       } catch (error) {
         console.error(error)
         ElMessage.error(error?.response?.data?.message || error?.message || '用户名或密码错误')
@@ -308,7 +308,7 @@ const handleEmailLogin = async () => {
       const res = await loginByEmail(emailLoginForm)
       userStore.setUser(res.data.token, res.data.username, res.data.role, res.data.userId)
       ElMessage.success('登录成功')
-      router.push('/bicycles')
+      router.push('/')
     } catch (error) {
       console.error(error)
     } finally {
@@ -754,8 +754,19 @@ onMounted(() => {
 
 /* ========== 响应式 ========== */
 @media (max-width: 768px) {
+  .login-container {
+    padding: 12px;
+    align-items: stretch;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .login-card {
+    max-width: 100%;
+  }
+
   .login-card-inner {
     grid-template-columns: 1fr;
+    border-radius: 20px;
   }
 
   .card-brand {
@@ -781,11 +792,73 @@ onMounted(() => {
   }
 
   .card-form {
-    padding: 40px 30px;
+    padding: 34px 24px;
   }
 
   .login-title {
     font-size: 24px;
+  }
+
+  .login-form {
+    margin-top: 24px;
+  }
+
+  .login-btn {
+    height: 50px;
+  }
+
+  :deep(.el-dialog) {
+    width: min(440px, calc(100vw - 24px)) !important;
+    margin: max(8vh, 32px) auto 0 !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .card-brand {
+    padding: 32px 22px;
+  }
+
+  .card-form {
+    padding: 28px 18px;
+  }
+
+  .form-header {
+    margin-bottom: 28px;
+  }
+
+  .auth-tabs :deep(.el-tabs__item) {
+    padding: 0 12px;
+    font-size: 14px;
+  }
+
+  .code-row {
+    grid-template-columns: 1fr;
+  }
+
+  .code-row :deep(.el-button) {
+    width: 100%;
+  }
+
+  .input-wrapper {
+    padding-left: 12px;
+  }
+
+  .input-icon {
+    margin-right: 10px;
+    font-size: 18px;
+  }
+
+  .login-options-between {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  :deep(.el-dialog__body),
+  :deep(.el-dialog__footer),
+  :deep(.el-dialog__header) {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }
 </style>

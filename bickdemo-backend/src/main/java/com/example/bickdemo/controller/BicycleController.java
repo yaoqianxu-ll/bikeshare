@@ -43,6 +43,7 @@ public class BicycleController {
      * 获取自行车列表（分页，支持筛选）
      */
     @GetMapping("/page")
+    @AdminOperationLog(module = "车辆管理", action = "获取车辆列表", type = "查询")
     public ResponseEntity<ApiResponse<?>> getBicyclesPage(
             @RequestParam(required = false) BicycleType type,
             @RequestParam(required = false) BicycleStatus status,

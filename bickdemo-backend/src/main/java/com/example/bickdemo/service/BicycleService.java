@@ -48,6 +48,7 @@ public class BicycleService {
                 .eq(Bicycle::getDeleted, 0)
                 .eq(type != null, Bicycle::getType, type)
                 .in(status == BicycleStatus.AVAILABLE, Bicycle::getStatus, BicycleStatus.AVAILABLE, BicycleStatus.RENTED)
+                .gt(status == BicycleStatus.AVAILABLE, Bicycle::getQuantity, 0)
                 .eq(status != null && status != BicycleStatus.AVAILABLE, Bicycle::getStatus, status);
         return bicycleMapper.selectList(wrapper).stream()
                 .map(this::convertToResponse)
@@ -62,6 +63,7 @@ public class BicycleService {
                 .eq(Bicycle::getDeleted, 0)
                 .eq(type != null, Bicycle::getType, type)
                 .in(status == BicycleStatus.AVAILABLE, Bicycle::getStatus, BicycleStatus.AVAILABLE, BicycleStatus.RENTED)
+                .gt(status == BicycleStatus.AVAILABLE, Bicycle::getQuantity, 0)
                 .eq(status != null && status != BicycleStatus.AVAILABLE, Bicycle::getStatus, status)
                 .orderByDesc(Bicycle::getId);
 

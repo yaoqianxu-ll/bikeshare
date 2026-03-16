@@ -124,7 +124,10 @@ const navGroups = [
     label: '系统管理',
     icon: Setting,
     children: [
+      { path: '/system/users', label: '用户管理' },
+      { path: '/system/blacklist', label: '黑名单管理' },
       { path: '/system/login-logs', label: '登录日志' },
+      { path: '/system/visitor-logs', label: '访客日志' },
       { path: '/system/operation-logs', label: '操作日志' }
     ]
   }
@@ -138,7 +141,10 @@ const titleMap = {
   RentalsManage: '租赁订单',
   ForumManage: '论坛审核',
   BackgroundsManage: '背景管理',
+  SystemUsers: '用户管理',
+  SystemBlacklist: '黑名单管理',
   SystemLoginLogs: '登录日志',
+  SystemVisitorLogs: '访客日志',
   SystemOperationLogs: '操作日志'
 }
 
@@ -149,7 +155,10 @@ const descriptionMap = {
   RentalsManage: '查看订单流转、租赁状态和金额变化，快速定位异常与高频订单。',
   ForumManage: '审核论坛内容、追踪最近帖子，让社区节奏保持健康稳定。',
   BackgroundsManage: '维护前台背景资源和启用状态，统一管理站点氛围素材。',
+  SystemUsers: '统一查看用户资料、角色状态和最近登录信息。',
+  SystemBlacklist: '管理 Redis 访问黑名单，处理高频请求封禁记录。',
   SystemLoginLogs: '查看管理员和用户的登录轨迹、登录方式、登录 IP 与结果状态。',
+  SystemVisitorLogs: '按请求维度查看访问轨迹、来源 IP、状态和耗时。',
   SystemOperationLogs: '查看后台关键操作记录，方便排查问题、审计行为和追踪变更。'
 }
 

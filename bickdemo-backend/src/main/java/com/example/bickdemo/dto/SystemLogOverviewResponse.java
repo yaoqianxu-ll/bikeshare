@@ -9,6 +9,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SystemLogOverviewResponse {
 
+    private Long totalUserCount;
+
+    private Long totalPostCount;
+
+    private Long totalVisitCount;
+
+    private Long todayVisitCount;
+
+    private Long blacklistCount;
+
     private Long todayLoginCount;
 
     private Long todayLoginFailCount;

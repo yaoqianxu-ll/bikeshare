@@ -9,7 +9,7 @@
     <el-drawer
       v-model="showBgSelector"
       title="选择背景图片"
-      size="400px"
+      :size="bgDrawerSize"
       :with-header="true"
     >
       <div class="bg-selector">
@@ -81,6 +81,29 @@
         </div>
 
         <nav class="nav-links" :class="{ active: navOpen }">
+          <div v-if="userStore.isLoggedIn" class="mobile-account-card">
+            <div class="mobile-account-head">
+              <div class="mobile-account-avatar" v-if="!userStore.avatar">
+                {{ userStore.username.charAt(0).toUpperCase() }}
+              </div>
+              <el-avatar v-else :src="userStore.avatar" :size="44" class="mobile-account-avatar-img" />
+              <div class="mobile-account-meta">
+                <strong>{{ userStore.username }}</strong>
+                <span>{{ userStore.isAdmin ? '管理员账户' : '骑行用户' }}</span>
+              </div>
+            </div>
+            <div class="mobile-account-actions">
+              <router-link to="/profile" class="mobile-account-link" @click="closeNav">
+                <el-icon><User /></el-icon>
+                <span>个人信息</span>
+              </router-link>
+              <button type="button" class="mobile-account-link mobile-account-link-logout" @click="handleLogout">
+                <el-icon><SwitchButton /></el-icon>
+                <span>退出登录</span>
+              </button>
+            </div>
+          </div>
+
           <router-link to="/" class="nav-link" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><House /></el-icon></span>
             <span>首页</span>
@@ -115,7 +138,7 @@
         <div class="header-actions">
           <ThemeToggle variant="inline" :tone="isHomePage ? 'ghost' : 'solid'" />
           <div class="user-section" v-if="userStore.isLoggedIn">
-            <el-dropdown trigger="click">
+            <el-dropdown :trigger="dropdownTrigger" placement="bottom-end" :show-timeout="120" :hide-timeout="180">
               <span class="user-name">
                 <div class="user-avatar" v-if="!userStore.avatar">{{ userStore.username.charAt(0).toUpperCase() }}</div>
                 <el-avatar v-else :src="userStore.avatar" :size="32" class="user-avatar-img" />
@@ -147,6 +170,12 @@
       </div>
     </header>
 
+    <div
+      v-if="isMobile && navOpen"
+      class="mobile-nav-backdrop"
+      @click="closeNav"
+    ></div>
+
     <!-- 主内容区 -->
     <main class="main-content" :class="{ 'is-home-main': isHomePage }">
       <router-view />
@@ -160,7 +189,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -177,9 +206,12 @@ const showBgSelector = ref(false)
 const selectedBgId = ref(null)
 const backgrounds = ref([])
 const uploading = ref(false)
+const isMobile = ref(false)
 
 const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
 const isHomePage = computed(() => route.name === 'Home')
+const dropdownTrigger = computed(() => (isMobile.value ? 'click' : 'hover'))
+const bgDrawerSize = computed(() => (isMobile.value ? '100%' : '400px'))
 
 // 上传配置
 const uploadUrl = '/api/backgrounds/upload'
@@ -323,8 +355,18 @@ const closeNav = () => {
   navOpen.value = false
 }
 
+const syncViewport = () => {
+  if (typeof window === 'undefined') return
+  isMobile.value = window.innerWidth <= 768
+  if (!isMobile.value) {
+    navOpen.value = false
+  }
+}
+
 // 启动时加载背景图片
 onMounted(() => {
+  syncViewport()
+  window.addEventListener('resize', syncViewport)
   loadBackgrounds()
   // Pull latest avatar from backend after refresh/login
   if (userStore.isLoggedIn) {
@@ -333,6 +375,17 @@ onMounted(() => {
       .catch(() => {})
   }
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', syncViewport)
+})
+
+watch(
+  () => route.fullPath,
+  () => {
+    closeNav()
+  }
+)
 </script>
 
 <style scoped>
@@ -571,12 +624,14 @@ onMounted(() => {
 .logo-section {
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 
 .logo-wrapper {
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
 }
 
 .logo-link {
@@ -610,6 +665,7 @@ onMounted(() => {
 .logo-text-section {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .logo {
@@ -618,6 +674,7 @@ onMounted(() => {
   color: var(--bs-ink);
   margin: 0;
   letter-spacing: -0.5px;
+  white-space: nowrap;
 }
 
 .slogan {
@@ -744,6 +801,10 @@ onMounted(() => {
   font-size: 18px;
 }
 
+.mobile-account-card {
+  display: none;
+}
+
 /* 头部操作区 */
 .header-actions {
   display: flex;
@@ -797,6 +858,77 @@ onMounted(() => {
   color: var(--bs-ink);
   font-size: 14px;
   font-weight: 600;
+}
+
+.mobile-account-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-account-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(var(--brand-primary-rgb), 0.16);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.20);
+  color: var(--brand-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.mobile-account-avatar-img {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.18);
+}
+
+.mobile-account-meta {
+  display: grid;
+  gap: 4px;
+}
+
+.mobile-account-meta strong {
+  color: var(--bs-ink);
+  font-size: 15px;
+}
+
+.mobile-account-meta span {
+  color: var(--bs-muted);
+  font-size: 12px;
+}
+
+.mobile-account-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mobile-account-link {
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--bs-stroke);
+  background: rgba(var(--brand-primary-rgb), 0.08);
+  color: var(--bs-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 0 14px;
+  width: 100%;
+}
+
+.mobile-account-link-logout {
+  background: rgba(239, 68, 68, 0.08);
+  color: #b91c1c;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .admin-tag {
@@ -918,30 +1050,75 @@ onMounted(() => {
   font-size: 14px;
 }
 
+.mobile-nav-backdrop {
+  display: none;
+}
+
 /* 响应式 */
 @media (max-width: 768px) {
   .header-content {
     padding: 0 16px;
+    gap: 12px;
   }
 
   .nav-links {
     position: fixed;
     top: 72px;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: color-mix(in srgb, var(--bs-surface-solid) 92%, transparent);
+    left: 12px;
+    right: 12px;
+    bottom: auto;
+    max-height: calc(100vh - 92px - env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--bs-surface-solid) 96%, transparent);
     backdrop-filter: blur(20px);
     flex-direction: column;
-    padding: 20px;
+    padding: 14px;
     gap: 8px;
-    border-radius: 0;
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
+    border-radius: 22px;
+    transform: translateY(-12px) scale(0.98);
+    transition: transform 0.24s ease, opacity 0.24s ease, visibility 0.24s ease;
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1002;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.22);
   }
 
   .nav-links.active {
-    transform: translateX(0);
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .app-header.is-home-header .nav-links {
+    background: color-mix(in srgb, var(--bs-surface-solid) 96%, transparent);
+    border-color: var(--bs-stroke);
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.22);
+    backdrop-filter: blur(20px);
+  }
+
+  .mobile-nav-backdrop {
+    display: block;
+    position: fixed;
+    top: 72px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.16);
+    backdrop-filter: blur(6px);
+    z-index: 999;
+  }
+
+  .mobile-account-card {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+    margin-bottom: 8px;
+    border-radius: 18px;
+    background: var(--bs-surface);
+    border: 1px solid var(--bs-stroke);
+    backdrop-filter: blur(14px) saturate(140%);
   }
 
   .nav-link {
@@ -967,6 +1144,10 @@ onMounted(() => {
     display: none;
   }
 
+  .user-section {
+    display: none;
+  }
+
   .user-text {
     display: none;
   }
@@ -975,8 +1156,46 @@ onMounted(() => {
     display: none;
   }
 
+  .header-actions {
+    gap: 10px;
+  }
+
+  .bg-toggle {
+    right: 16px;
+    bottom: 72px;
+    width: 46px;
+    height: 46px;
+  }
+
   .nav-link-auth {
     margin-top: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-content {
+    padding: 0 12px;
+  }
+
+  .logo-wrapper {
+    gap: 10px;
+  }
+
+  .logo-icon-box {
+    width: 40px;
+    height: 40px;
+  }
+
+  .logo-icon {
+    font-size: 22px;
+  }
+
+  .logo {
+    font-size: 16px;
+  }
+
+  .header-actions {
+    gap: 8px;
   }
 }
 

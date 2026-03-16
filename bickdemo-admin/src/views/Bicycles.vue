@@ -51,7 +51,7 @@
         </el-table-column>
         <el-table-column label="状态" width="110" align="center">
           <template #default="{ row }">
-            <el-tag :type="bicycleStatusType(row.status)" effect="light">{{ bicycleStatusText(row.status) }}</el-tag>
+            <el-tag :type="getBicycleStatusType(row)" effect="light">{{ getBicycleStatusText(row) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="quantity" label="库存" width="90" align="center" />
@@ -182,6 +182,25 @@ const rules = {
   name: [{ required: true, message: '请输入车辆名称', trigger: 'blur' }],
   type: [{ required: true, message: '请选择车辆类型', trigger: 'change' }],
   status: [{ required: true, message: '请选择车辆状态', trigger: 'change' }]
+}
+
+const getBicycleDisplayStatus = (row) => {
+  if ((row?.status === 'AVAILABLE' || row?.status === 'RENTED') && Number(row?.quantity || 0) <= 0) {
+    return 'SOLD_OUT'
+  }
+  return row?.status
+}
+
+const getBicycleStatusText = (row) => {
+  const displayStatus = getBicycleDisplayStatus(row)
+  if (displayStatus === 'SOLD_OUT') return '已租罄'
+  return bicycleStatusText(displayStatus)
+}
+
+const getBicycleStatusType = (row) => {
+  const displayStatus = getBicycleDisplayStatus(row)
+  if (displayStatus === 'SOLD_OUT') return 'warning'
+  return bicycleStatusType(displayStatus)
 }
 
 const resetForm = () => {

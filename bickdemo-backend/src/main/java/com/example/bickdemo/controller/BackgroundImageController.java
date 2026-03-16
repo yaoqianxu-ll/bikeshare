@@ -47,6 +47,7 @@ public class BackgroundImageController {
      */
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "背景管理", action = "获取背景列表", type = "查询")
     public ResponseEntity<ApiResponse<List<BackgroundImage>>> getAllBackgroundsAdmin() {
         List<BackgroundImage> backgrounds = backgroundImageService.getAll();
         return ResponseEntity.ok(ApiResponse.success(backgrounds));

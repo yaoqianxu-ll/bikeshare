@@ -40,6 +40,7 @@ public class SecurityConfig {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationConfiguration authenticationConfiguration;
+    private final IpAccessControlFilter ipAccessControlFilter;
 
     @Autowired
     @Lazy
@@ -47,10 +48,12 @@ public class SecurityConfig {
 
     public SecurityConfig(JwtService jwtService,
                           PasswordEncoder passwordEncoder,
-                          AuthenticationConfiguration authenticationConfiguration) {
+                          AuthenticationConfiguration authenticationConfiguration,
+                          IpAccessControlFilter ipAccessControlFilter) {
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.authenticationConfiguration = authenticationConfiguration;
+        this.ipAccessControlFilter = ipAccessControlFilter;
     }
 
     /**
@@ -123,7 +126,8 @@ public class SecurityConfig {
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(ipAccessControlFilter, JwtAuthenticationFilter.class);
 
         http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
 

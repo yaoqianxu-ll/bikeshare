@@ -1073,7 +1073,7 @@ onMounted(() => {
 @media (max-width: 768px) {
   .filter-subtitle {
     position: static;
-    text-align: right;
+    text-align: left;
     margin-top: 8px;
   }
 
@@ -1090,6 +1090,41 @@ onMounted(() => {
   .bike-grid {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .bike-header,
+  .bike-actions,
+  .dialog-footer,
+  .bike-info-header,
+  .detail-header,
+  .detail-tags {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .bike-price {
+    margin-left: 0;
+    text-align: left;
+  }
+
+  .rent-btn,
+  .return-btn,
+  .detail-btn {
+    width: 100%;
+  }
+
+  .modern-dialog :deep(.el-dialog),
+  .detail-dialog :deep(.el-dialog) {
+    width: calc(100vw - 24px) !important;
+    margin: max(6vh, 24px) auto 0 !important;
+  }
+
+  .modern-dialog :deep(.el-dialog__body),
+  .modern-dialog :deep(.el-dialog__header),
+  .modern-dialog :deep(.el-dialog__footer),
+  .detail-dialog :deep(.el-dialog__body) {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }
 

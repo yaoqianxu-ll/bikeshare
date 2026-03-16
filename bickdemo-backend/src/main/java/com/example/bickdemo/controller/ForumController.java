@@ -51,6 +51,7 @@ public class ForumController {
 
     @GetMapping("/posts/pending")
     @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "论坛审核", action = "获取待审核帖子列表", type = "查询")
     public ResponseEntity<ApiResponse<java.util.List<ForumPostResponse>>> getPendingPosts(
             @RequestParam(defaultValue = "12") Integer limit,
             @AuthenticationPrincipal UserDetails userDetails

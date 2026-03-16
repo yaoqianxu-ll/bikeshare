@@ -38,6 +38,7 @@ public class AdminOperationLogAspect {
         if (!isAdmin()) {
             return joinPoint.proceed();
         }
+        long start = System.currentTimeMillis();
         HttpServletRequest request = currentRequest();
         String username = currentUsername();
         String requestMethod = request != null ? request.getMethod() : null;
@@ -51,12 +52,14 @@ public class AdminOperationLogAspect {
                     username,
                     adminOperationLog.module(),
                     adminOperationLog.action(),
+                    adminOperationLog.type(),
                     requestMethod,
                     requestUri,
                     requestParams,
                     request,
                     logResult.success(),
-                    logResult.message()
+                    logResult.message(),
+                    Math.max(System.currentTimeMillis() - start, 0L)
             );
             return result;
         } catch (Throwable ex) {
@@ -64,12 +67,14 @@ public class AdminOperationLogAspect {
                     username,
                     adminOperationLog.module(),
                     adminOperationLog.action(),
+                    adminOperationLog.type(),
                     requestMethod,
                     requestUri,
                     requestParams,
                     request,
                     false,
-                    ex.getMessage()
+                    ex.getMessage(),
+                    Math.max(System.currentTimeMillis() - start, 0L)
             );
             throw ex;
         }

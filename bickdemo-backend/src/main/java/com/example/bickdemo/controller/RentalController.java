@@ -1,5 +1,6 @@
 package com.example.bickdemo.controller;
 
+import com.example.bickdemo.annotation.AdminOperationLog;
 import com.example.bickdemo.dto.ApiResponse;
 import com.example.bickdemo.dto.RentalRequest;
 import com.example.bickdemo.dto.RentalResponse;
@@ -103,6 +104,7 @@ public class RentalController {
      */
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "租赁订单", action = "获取租赁订单列表", type = "查询")
     public ResponseEntity<ApiResponse<?>> getAllRentals(@RequestParam(defaultValue = "1") int page,
                                                          @RequestParam(defaultValue = "10") int size) {
         Page<RentalResponse> rentalPage = rentalService.getAllRentalsPage(page, size);
