@@ -66,8 +66,23 @@ pipeline {
                 }
                 checkout scm
                 script {
-                    if (fileExists('.env')) {
-                        readFile('.env')
+                    String envFilePath = null
+                    List<String> envFileCandidates = [
+                        "${env.WORKSPACE}/.env",
+                        env.BICKDEMO_ENV_FILE,
+                        '/opt/bickdemo/.env',
+                        "${env.HOME ?: ''}/.bickdemo.env"
+                    ].findAll { it?.trim() }
+
+                    for (String candidate : envFileCandidates) {
+                        if (fileExists(candidate)) {
+                            envFilePath = candidate
+                            break
+                        }
+                    }
+
+                    if (envFilePath) {
+                        readFile(envFilePath)
                             .split('\n')
                             .collect { it.trim() }
                             .findAll { it && !it.startsWith('#') && it.contains('=') }
@@ -77,9 +92,9 @@ pipeline {
                                 String value = line.substring(separatorIndex + 1).trim()
                                 env[key] = value
                             }
-                        echo '已从工作区 .env 加载部署变量'
+                        echo "已从环境文件加载部署变量: ${envFilePath}"
                     } else {
-                        echo '未找到 .env，继续使用 Jenkins 环境变量/凭据'
+                        echo '未找到可用环境文件，继续使用 Jenkins 环境变量/凭据'
                     }
 
                     // 获取 Git 提交信息

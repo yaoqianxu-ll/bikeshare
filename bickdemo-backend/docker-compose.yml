@@ -46,7 +46,14 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-change-me-minio-access-key}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-change-me-minio-secret-key}
       - MINIO_BUCKET=${MINIO_BUCKET:-bicycles}
+      - REDIS_USERNAME=${REDIS_USERNAME:-}
       - JWT_SECRET=${JWT_SECRET:-change-me-jwt-secret-with-at-least-32-bytes}
+      - JWT_PREVIOUS_SECRETS=${JWT_PREVIOUS_SECRETS:-}
+      - MAIL_HOST=${MAIL_HOST:-smtp.qq.com}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USERNAME=${MAIL_USERNAME:-}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME:-BikeShare}
       - TZ=Asia/Shanghai
     depends_on:
       mysql:

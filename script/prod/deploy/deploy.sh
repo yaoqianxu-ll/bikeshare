@@ -6,10 +6,15 @@
 set -e
 
 ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+ENV_FILE="${BICKDEMO_ENV_FILE:-$ROOT_DIR/.env}"
 
-if [ -f "$ROOT_DIR/.env" ]; then
+if [ ! -f "$ENV_FILE" ] && [ -f "$HOME/.bickdemo.env" ]; then
+    ENV_FILE="$HOME/.bickdemo.env"
+fi
+
+if [ -f "$ENV_FILE" ]; then
     set -a
-    . "$ROOT_DIR/.env"
+    . "$ENV_FILE"
     set +a
 fi
 

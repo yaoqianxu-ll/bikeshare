@@ -26,6 +26,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      username: ${REDIS_USERNAME:}
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
       timeout: 5s
@@ -47,6 +48,7 @@ server:
 
 jwt:
   secret: ${JWT_SECRET:change-me-jwt-secret-with-at-least-32-bytes}
+  previous-secrets: ${JWT_PREVIOUS_SECRETS:}
   expiration: 86400000
 
 # 缓存配置

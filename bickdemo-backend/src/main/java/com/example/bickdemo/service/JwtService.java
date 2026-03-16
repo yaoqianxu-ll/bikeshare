@@ -11,12 +11,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.security.Key;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * JWT 工具服务。
@@ -31,6 +37,9 @@ public class JwtService {
 
     @Value("${jwt.secret}")
     private String jwtSecret;
+
+    @Value("${jwt.previous-secrets:}")
+    private String jwtPreviousSecrets;
 
     @Value("${jwt.expiration}")
     private long jwtExpiration;
@@ -74,7 +83,7 @@ public class JwtService {
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .signWith(getPrimarySignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -124,16 +133,54 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSignInKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        RuntimeException lastException = null;
+
+        for (Key signInKey : getValidationKeys()) {
+            try {
+                return Jwts.parserBuilder()
+                        .setSigningKey(signInKey)
+                        .build()
+                        .parseClaimsJws(token)
+                        .getBody();
+            } catch (ExpiredJwtException e) {
+                // 只要某把密钥能正确验签，过期也应按“真实过期”处理，而不是继续尝试其他密钥。
+                throw e;
+            } catch (RuntimeException e) {
+                lastException = e;
+            }
+        }
+
+        if (lastException != null) {
+            throw lastException;
+        }
+        throw new IllegalStateException("JWT signing keys are not configured");
     }
 
-    private Key getSignInKey() {
+    private Key getPrimarySignInKey() {
+        return decodeSignInKey(jwtSecret);
+    }
+
+    private List<Key> getValidationKeys() {
+        Set<String> secrets = new LinkedHashSet<>();
+        if (StringUtils.hasText(jwtSecret)) {
+            secrets.add(jwtSecret.trim());
+        }
+
+        if (StringUtils.hasText(jwtPreviousSecrets)) {
+            Arrays.stream(jwtPreviousSecrets.split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::hasText)
+                    .forEach(secrets::add);
+        }
+
+        return secrets.stream()
+                .map(this::decodeSignInKey)
+                .collect(Collectors.toList());
+    }
+
+    private Key decodeSignInKey(String secret) {
         // 配置中的 secret 以 Base64 形式存储，这里先解码再生成 HMAC 密钥。
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
