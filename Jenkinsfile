@@ -69,24 +69,40 @@ pipeline {
                 checkout scm
                 script {
                     String envFilePath = null
-                    List<String> envFileCandidates = [
-                        "${env.WORKSPACE}/.env",
+                    List<String> workspaceEnvCandidates = [
+                        '.env',
+                        'script/prod/deploy/.env.jenkins.current',
+                        'script/prod/deploy/jenkins.env'
+                    ]
+                    List<String> externalEnvCandidates = [
                         env.BICKDEMO_ENV_FILE,
                         '/opt/bickdemo/.env',
-                        "${env.HOME ?: ''}/.bickdemo.env",
-                        "${env.WORKSPACE}/script/prod/deploy/.env.jenkins.current",
-                        "${env.WORKSPACE}/script/prod/deploy/jenkins.env"
+                        "${env.HOME ?: ''}/.bickdemo.env"
                     ].findAll { it?.trim() }
 
-                    for (String candidate : envFileCandidates) {
+                    for (String candidate : workspaceEnvCandidates) {
                         if (fileExists(candidate)) {
                             envFilePath = candidate
                             break
                         }
                     }
 
+                    if (!envFilePath) {
+                        for (String candidate : externalEnvCandidates) {
+                            int existsStatus = sh(script: "[ -f '${candidate}' ]", returnStatus: true)
+                            if (existsStatus == 0) {
+                                envFilePath = candidate
+                                break
+                            }
+                        }
+                    }
+
                     if (envFilePath) {
-                        readFile(envFilePath)
+                        String envFileContent = fileExists(envFilePath)
+                            ? readFile(envFilePath)
+                            : sh(script: "cat '${envFilePath}'", returnStdout: true)
+
+                        envFileContent
                             .split('\n')
                             .collect { it.trim() }
                             .findAll { it && !it.startsWith('#') && it.contains('=') }
@@ -101,7 +117,9 @@ pipeline {
                         }
                         echo "已从环境文件加载部署变量: ${envFilePath}"
                     } else {
-                        echo '未找到可用环境文件，继续使用 Jenkins 环境变量/凭据'
+                        echo "未找到可用环境文件，已检查工作区路径: ${workspaceEnvCandidates}"
+                        echo "未找到可用环境文件，已检查节点路径: ${externalEnvCandidates}"
+                        echo '继续使用 Jenkins 环境变量/凭据'
                     }
 
                     if (!env.MYSQL_PASSWORD?.trim()) {
