@@ -5,7 +5,7 @@
         <div class="hero-copy">
           <span class="hero-tag">Login Logs</span>
           <h2>登录日志</h2>
-          <p>查看登录方式、登录 IP、登录地址、结果状态和时间轨迹。</p>
+          <p>查看登录方式、登录 IP、登录地区、结果状态和时间轨迹。</p>
         </div>
       </div>
       <div class="hero-chips">
@@ -54,7 +54,9 @@
           <template #default="{ row }">{{ loginMethodText(row.loginMethod) }}</template>
         </el-table-column>
         <el-table-column prop="loginIp" label="登录 IP" min-width="130" />
-        <el-table-column prop="loginAddress" label="登录地址" min-width="120" />
+        <el-table-column label="登录地区" min-width="160" show-overflow-tooltip>
+          <template #default="{ row }">{{ regionText(row.loginAddress) }}</template>
+        </el-table-column>
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="logStatusType(row.status)" effect="light">{{ logStatusText(row.status) }}</el-tag>
@@ -87,7 +89,7 @@
         <div class="detail-item"><span>账号</span><strong>{{ detailRecord.username || '--' }}</strong></div>
         <div class="detail-item"><span>登录方式</span><strong>{{ loginMethodText(detailRecord.loginMethod) }}</strong></div>
         <div class="detail-item"><span>登录 IP</span><strong>{{ detailRecord.loginIp || '--' }}</strong></div>
-        <div class="detail-item"><span>登录地址</span><strong>{{ detailRecord.loginAddress || '--' }}</strong></div>
+        <div class="detail-item"><span>登录地区</span><strong>{{ regionText(detailRecord.loginAddress) }}</strong></div>
         <div class="detail-item"><span>状态</span><strong>{{ logStatusText(detailRecord.status) }}</strong></div>
         <div class="detail-item"><span>登录时间</span><strong>{{ formatDate(detailRecord.loginTime) }}</strong></div>
         <div class="detail-block">
@@ -106,7 +108,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { getLoginLogs } from '@/api/system'
-import { formatDate, loginMethodText, logStatusText, logStatusType } from '@/utils/format'
+import { formatDate, loginMethodText, logStatusText, logStatusType, regionText } from '@/utils/format'
 
 const loading = ref(false)
 const records = ref([])

@@ -529,3 +529,13 @@ a {
     justify-content: center;
   }
 }
+
+/* Calm Hover Pass: remove lift/scale motion so cards stay steady on hover. */
+.el-card:hover,
+[class*="card"]:hover,
+[class*="item"]:hover,
+.el-button:hover,
+[class*="btn"]:hover,
+[class*="button"]:hover {
+  transform: none !important;
+}

@@ -823,3 +823,26 @@ html.dark .el-pagination .el-pager li.active {
   background: var(--el-color-primary);
   color: #fff;
 }
+
+/* =====================================================
+   Calm Hover Pass
+   - Remove lift/scale hover motion across the frontend
+   - Keep color/shadow feedback, but stop card jitter
+   ===================================================== */
+
+.el-card:hover,
+[class*="card"]:hover,
+[class*="item"]:hover,
+.el-button:hover,
+[class*="btn"]:hover,
+[class*="button"]:hover,
+.theme-toggle__button:hover {
+  transform: none !important;
+}
+
+.bike-card:hover .bike-img,
+[class*="card"]:hover img,
+[class*="card"]:hover [class*="img"],
+[class*="card"]:hover [class*="image"] {
+  transform: none !important;
+}

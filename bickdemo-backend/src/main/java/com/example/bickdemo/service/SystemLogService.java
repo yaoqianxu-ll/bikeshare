@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.bickdemo.dto.AdminUserResponse;
 import com.example.bickdemo.dto.AdminUserUpdateRequest;
 import com.example.bickdemo.dto.BlacklistEntryResponse;
+import com.example.bickdemo.dto.ClientLocationResponse;
 import com.example.bickdemo.dto.BlacklistRequest;
 import com.example.bickdemo.dto.SiteVisitRequest;
 import com.example.bickdemo.dto.SystemLogOverviewResponse;
@@ -52,6 +53,7 @@ public class SystemLogService {
     private final UserMapper userMapper;
     private final ForumPostMapper forumPostMapper;
     private final IpBlacklistService ipBlacklistService;
+    private final ClientLocationService clientLocationService;
 
     /**
      * 记录登录成功日志。
@@ -95,7 +97,7 @@ public class SystemLogService {
         log.setRequestUri(trimValue(requestUri, 255));
         String ip = IpAddressUtils.resolveClientIp(request);
         log.setOperationIp(trimValue(ip, 64));
-        log.setOperationAddress(trimValue(IpAddressUtils.resolveAddress(ip), 128));
+        log.setOperationAddress(trimValue(resolveLocationText(request, ip), 128));
         log.setStatus(success ? "SUCCESS" : "FAIL");
         log.setMessage(trimValue(message, 255));
         log.setRequestParams(trimValue(requestParams, 4000));
@@ -123,7 +125,7 @@ public class SystemLogService {
         log.setRequestMethod(trimValue(request.getMethod(), 10));
         log.setRequestUri(trimValue(request.getRequestURI(), 255));
         log.setVisitIp(trimValue(ip, 64));
-        log.setVisitAddress(trimValue(IpAddressUtils.resolveAddress(ip), 128));
+        log.setVisitAddress(trimValue(resolveLocationText(request, ip), 128));
         log.setStatus(resolveVisitStatus(statusCode));
         log.setStatusCode(statusCode);
         log.setDurationMs(durationMs);
@@ -160,7 +162,7 @@ public class SystemLogService {
         log.setRequestMethod(SITE_VISIT_METHOD);
         log.setRequestUri(trimValue(entryPath, 255));
         log.setVisitIp(trimValue(ip, 64));
-        log.setVisitAddress(trimValue(IpAddressUtils.resolveAddress(ip), 128));
+        log.setVisitAddress(trimValue(resolveLocationText(request, ip), 128));
         log.setStatus("SUCCESS");
         log.setStatusCode(200);
         log.setDurationMs(0L);
@@ -434,10 +436,20 @@ public class SystemLogService {
         log.setUsername(trimValue(username, 50));
         log.setLoginMethod(trimValue(loginMethod, 20));
         log.setLoginIp(trimValue(ip, 64));
-        log.setLoginAddress(trimValue(IpAddressUtils.resolveAddress(ip), 128));
+        log.setLoginAddress(trimValue(resolveLocationText(request, ip), 128));
         log.setUserAgent(trimValue(request != null ? request.getHeader("User-Agent") : null, 500));
         log.setLoginTime(LocalDateTime.now());
         return log;
+    }
+
+    private String resolveLocationText(HttpServletRequest request, String ip) {
+        if (request != null) {
+            ClientLocationResponse location = clientLocationService.resolveClientLocation(request);
+            if (location != null && StringUtils.hasText(location.getLocationText())) {
+                return location.getLocationText();
+            }
+        }
+        return IpAddressUtils.resolveAddress(ip);
     }
 
     private User resolveCurrentUser() {

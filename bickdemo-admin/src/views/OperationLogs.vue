@@ -5,7 +5,7 @@
         <div class="hero-copy">
           <span class="hero-tag">Operation Logs</span>
           <h2>操作日志管理</h2>
-          <p>按操作人员、角色、模块、请求地址、状态和耗时追踪后台行为。</p>
+          <p>按操作人员、角色、模块、请求地址、操作地区、状态和耗时追踪后台行为。</p>
         </div>
       </div>
       <div class="hero-chips">
@@ -77,7 +77,9 @@
         <el-table-column prop="requestMethod" label="请求方式" width="100" align="center" />
         <el-table-column prop="requestUri" label="请求 URL" min-width="220" show-overflow-tooltip />
         <el-table-column prop="operationIp" label="操作 IP" min-width="130" />
-        <el-table-column prop="operationAddress" label="操作地址" min-width="120" />
+        <el-table-column label="操作地区" min-width="160" show-overflow-tooltip>
+          <template #default="{ row }">{{ regionText(row.operationAddress) }}</template>
+        </el-table-column>
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="logStatusType(row.status)" effect="light">{{ logStatusText(row.status) }}</el-tag>
@@ -121,7 +123,7 @@
         <div class="detail-item"><span>请求方式</span><strong>{{ detailRecord.requestMethod || '--' }}</strong></div>
         <div class="detail-item"><span>请求地址</span><strong>{{ detailRecord.requestUri || '--' }}</strong></div>
         <div class="detail-item"><span>操作 IP</span><strong>{{ detailRecord.operationIp || '--' }}</strong></div>
-        <div class="detail-item"><span>操作地址</span><strong>{{ detailRecord.operationAddress || '--' }}</strong></div>
+        <div class="detail-item"><span>操作地区</span><strong>{{ regionText(detailRecord.operationAddress) }}</strong></div>
         <div class="detail-item"><span>状态</span><strong>{{ logStatusText(detailRecord.status) }}</strong></div>
         <div class="detail-item"><span>耗时</span><strong>{{ detailRecord.durationMs || 0 }} ms</strong></div>
         <div class="detail-item"><span>操作时间</span><strong>{{ formatDate(detailRecord.operationTime) }}</strong></div>
@@ -142,7 +144,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { batchDeleteOperationLogs, deleteOperationLog, getOperationLogs } from '@/api/system'
-import { formatDate, logStatusText, logStatusType, userRoleText } from '@/utils/format'
+import { formatDate, logStatusText, logStatusType, regionText, userRoleText } from '@/utils/format'
 
 const loading = ref(false)
 const records = ref([])

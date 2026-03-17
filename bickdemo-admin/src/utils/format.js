@@ -135,3 +135,14 @@ export function visitStatusType(value) {
   }
   return map[value] || 'info'
 }
+
+export function regionText(value) {
+  const normalized = (value || '').trim()
+  if (!normalized) return '--'
+  const map = {
+    '本机地址': '本机地区',
+    '内网地址': '内网地区',
+    '外网地址': '外网地区'
+  }
+  return map[normalized] || normalized
+}

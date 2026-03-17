@@ -77,7 +77,9 @@
             <span>{{ formatDate(row.latestLoginTime) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="latestLoginAddress" label="登录地址" min-width="120" />
+        <el-table-column label="登录地区" min-width="160" show-overflow-tooltip>
+          <template #default="{ row }">{{ regionText(row.latestLoginAddress) }}</template>
+        </el-table-column>
         <el-table-column label="创建时间" min-width="170">
           <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
         </el-table-column>
@@ -150,7 +152,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { deleteUser, getUsers, updateUser } from '@/api/system'
-import { formatDate, userRoleText } from '@/utils/format'
+import { formatDate, regionText, userRoleText } from '@/utils/format'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()

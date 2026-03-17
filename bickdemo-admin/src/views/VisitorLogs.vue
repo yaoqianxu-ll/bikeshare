@@ -5,7 +5,7 @@
         <div class="hero-copy">
           <span class="hero-tag">Visit Logs</span>
           <h2>访客日志</h2>
-          <p>按请求维度查看访问人员、请求地址、访问 IP、状态码和耗时。</p>
+          <p>按请求维度查看访问人员、请求地址、访问 IP、访问地区、状态码和耗时。</p>
         </div>
       </div>
       <div class="hero-chips">
@@ -58,7 +58,9 @@
         <el-table-column prop="requestMethod" label="请求方式" width="100" align="center" />
         <el-table-column prop="requestUri" label="请求 URL" min-width="240" show-overflow-tooltip />
         <el-table-column prop="visitIp" label="访问 IP" min-width="130" />
-        <el-table-column prop="visitAddress" label="访问地址" min-width="120" />
+        <el-table-column label="访问地区" min-width="160" show-overflow-tooltip>
+          <template #default="{ row }">{{ regionText(row.visitAddress) }}</template>
+        </el-table-column>
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="visitStatusType(row.status)" effect="light">{{ visitStatusText(row.status) }}</el-tag>
@@ -90,7 +92,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { getVisitorLogs } from '@/api/system'
-import { formatDate, visitStatusText, visitStatusType } from '@/utils/format'
+import { formatDate, regionText, visitStatusText, visitStatusType } from '@/utils/format'
 
 const loading = ref(false)
 const records = ref([])
