@@ -1102,6 +1102,40 @@ watch(
     backdrop-filter: blur(20px);
   }
 
+  /* Mobile menu uses a solid panel, so home-page ghost text needs a readable override. */
+  .app-header.is-home-header .nav-link {
+    color: var(--bs-ink);
+  }
+
+  .app-header.is-home-header .nav-link::before {
+    background: rgba(15, 23, 42, 0.05);
+  }
+
+  .app-header.is-home-header .nav-link:hover {
+    color: var(--bs-ink);
+    background: rgba(var(--brand-primary-rgb), 0.08);
+  }
+
+  .app-header.is-home-header .nav-link.router-link-exact-active {
+    color: var(--bs-ink);
+    background: rgba(var(--brand-primary-rgb), 0.12);
+    border-color: rgba(var(--brand-primary-rgb), 0.18);
+  }
+
+  .app-header.is-home-header .mobile-account-card {
+    background: var(--bs-surface);
+    border-color: var(--bs-stroke);
+  }
+
+  .app-header.is-home-header .mobile-account-meta strong,
+  .app-header.is-home-header .mobile-account-link {
+    color: var(--bs-ink);
+  }
+
+  .app-header.is-home-header .mobile-account-meta span {
+    color: var(--bs-muted);
+  }
+
   .mobile-nav-backdrop {
     display: block;
     position: fixed;

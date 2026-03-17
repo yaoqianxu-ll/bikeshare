@@ -65,6 +65,7 @@ public class IpBlacklistService {
             return new AccessDecision(true, false, meta.getReason(), meta.getExpireAt());
         }
 
+        // 访客和已登录用户分开限流，避免前后端分离页面的并发请求把正常用户误伤。
         int requestLimit = Math.max(authenticated ? authenticatedMaxRequestsPerMinute : guestMaxRequestsPerMinute, 1);
         Duration banDuration = Duration.ofMinutes(Math.max(banDurationMinutes, 1L));
         String windowKey = buildRateKey(ip, authenticated);
@@ -226,6 +227,7 @@ public class IpBlacklistService {
     }
 
     private String buildRateKey(String ip, boolean authenticated) {
+        // 限流 key 带上分钟桶和身份类型，跨分钟自动归零，也不会把游客和登录用户混算。
         long minuteBucket = Instant.now().getEpochSecond() / 60;
         return redisKeyPrefix + RATE_KEY_PREFIX + minuteBucket + ":" + (authenticated ? "auth" : "guest") + ":" + ip;
     }

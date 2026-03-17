@@ -65,6 +65,7 @@ public class MarketplaceService {
         double effectiveRadius = radiusKm == null || radiusKm <= 0 ? DEFAULT_RADIUS_KM : radiusKm;
         User currentUser = trimToNull(currentUsername) == null ? null : requireUser(currentUsername);
 
+        // “附近可租”会把平台库存和个人挂牌混在一起返回，前台再按 sourceType 分开展示。
         List<MarketplaceDiscoverResponse> results = new ArrayList<>();
 
         LambdaQueryWrapper<Bicycle> bicycleQuery = new LambdaQueryWrapper<Bicycle>()
@@ -104,6 +105,7 @@ public class MarketplaceService {
                 .eq(type != null, MarketplaceListing::getType, type)
                 .orderByDesc(MarketplaceListing::getUpdatedAt);
         for (MarketplaceListing listing : marketplaceListingMapper.selectList(listingQuery)) {
+            // 车主自己的挂牌不需要再出现在“可租给别人”的列表里，避免出现能租自己车的误导。
             if (currentUser != null && Objects.equals(listing.getOwnerId(), currentUser.getId())) {
                 continue;
             }
@@ -166,6 +168,7 @@ public class MarketplaceService {
                                                              int page,
                                                              int size) {
         String trimmedKeyword = trimToNull(keyword);
+        // 管理端关键字既能搜挂牌名/地点，也能搜车主用户名，所以要先把用户名匹配成 ownerId。
         List<Long> ownerIds = resolveOwnerIds(trimmedKeyword);
 
         LambdaQueryWrapper<MarketplaceListing> query = new LambdaQueryWrapper<MarketplaceListing>()
@@ -201,6 +204,7 @@ public class MarketplaceService {
         listing.setOwnerId(owner.getId());
         applyListingRequest(listing, request);
         listing.setStatus(request.getStatus() == null ? MarketplaceListingStatus.AVAILABLE : request.getStatus());
+        // 用户发布后先进入审核队列，审核通过前不会出现在前台市场里。
         listing.setReviewStatus(MarketplaceReviewStatus.PENDING);
         listing.setReviewRemark(null);
         listing.setReviewerId(null);
@@ -219,6 +223,7 @@ public class MarketplaceService {
         }
 
         validateAvailabilityWindow(request.getAvailableFrom(), request.getAvailableTo());
+        // 只要用户改了挂牌核心信息，就重新进入审核，避免“审核通过后偷偷改价/改地点”。
         boolean resetReview = shouldResetReview(listing, request);
         applyListingRequest(listing, request);
         if (request.getStatus() != null) {
@@ -366,6 +371,7 @@ public class MarketplaceService {
         }
 
         MarketplaceApplicationStatus targetStatus = request.getStatus();
+        // 这里把“谁能改”和“当前阶段能不能改”分开校验：前者看身份，后者看状态机。
         if (!isStatusChangeAllowed(isOwner, isRenter, targetStatus)) {
             throw new RuntimeException("当前身份不允许执行该状态变更");
         }
@@ -387,6 +393,7 @@ public class MarketplaceService {
 
         application.setStatus(targetStatus);
         LocalDateTime now = LocalDateTime.now();
+        // 申请状态推进时，挂牌状态和关键时间点也要一起落库，前台时间线就是靠这些字段拼出来的。
         switch (targetStatus) {
             case NEGOTIATING -> {
             }
@@ -470,6 +477,7 @@ public class MarketplaceService {
     }
 
     private void ensureListingOpenForRenter(MarketplaceListing listing) {
+        // 对租客来说，只有“已审核通过 + 当前可出租”的挂牌才算真正可申请。
         if (listing.getReviewStatus() != MarketplaceReviewStatus.APPROVED
                 || listing.getStatus() != MarketplaceListingStatus.AVAILABLE) {
             throw new RuntimeException("该挂牌当前暂不可租用");
@@ -501,6 +509,7 @@ public class MarketplaceService {
     }
 
     private Long ensureChatBridge(User renter, User owner, MarketplaceListing listing) {
+        // 个人出租复用了现有好友聊天；如果双方还没关系，就补一条待处理申请作为会话入口。
         if (friendshipMapper.existsFriendship(renter.getId(), owner.getId())) {
             return null;
         }
@@ -586,6 +595,7 @@ public class MarketplaceService {
     }
 
     private List<MarketplaceTimelineItemResponse> buildTimeline(MarketplaceApplication application) {
+        // 时间线不是单独存表，而是根据当前状态和几个关键时间点实时生成。
         List<MarketplaceTimelineItemResponse> timeline = new ArrayList<>();
         timeline.add(new MarketplaceTimelineItemResponse(
                 "提交申请",
@@ -698,6 +708,7 @@ public class MarketplaceService {
             return false;
         }
 
+        // 交付完成后只能走“归还 -> 完成”链路，不能再回退到拒绝/取消。
         return switch (currentStatus) {
             case PENDING_OWNER_CONFIRMATION -> targetStatus == MarketplaceApplicationStatus.NEGOTIATING
                     || targetStatus == MarketplaceApplicationStatus.CONFIRMED
