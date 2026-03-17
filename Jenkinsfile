@@ -7,28 +7,6 @@ pipeline {
         BACKEND_DIR = 'bickdemo-backend'
         FRONTEND_DIR = 'bickdemo-frontend'
         ADMIN_DIR = 'bickdemo-admin'
-
-        // 服务器配置（请在 Jenkins 全局环境变量或凭据中注入真实值）
-        DEPLOY_HOST = "${env.DEPLOY_HOST ?: 'your-server-host'}"
-        DEPLOY_USER = "${env.DEPLOY_USER ?: 'root'}"
-
-        // 数据库配置
-        MYSQL_USERNAME = "${env.MYSQL_USERNAME ?: 'root'}"
-        MYSQL_PASSWORD = "${env.MYSQL_PASSWORD ?: env.MYSQL_ROOT_PASSWORD ?: 'change-me-root-password'}"
-        MYSQL_ROOT_PASSWORD = "${env.MYSQL_ROOT_PASSWORD ?: 'change-me-root-password'}"
-        MYSQL_DATABASE = "${env.MYSQL_DATABASE ?: 'bickdemo'}"
-
-        // MinIO 配置
-        MINIO_ENDPOINT = "${env.MINIO_ENDPOINT ?: 'http://localhost:9000'}"
-        MINIO_ACCESS_KEY = "${env.MINIO_ACCESS_KEY ?: 'change-me-minio-access-key'}"
-        MINIO_SECRET_KEY = "${env.MINIO_SECRET_KEY ?: 'change-me-minio-secret-key'}"
-        MINIO_BUCKET = "${env.MINIO_BUCKET ?: 'bicycles'}"
-
-        APP_PUBLIC_HOST = "${env.APP_PUBLIC_HOST ?: 'http://localhost'}"
-        ADMIN_PUBLIC_HOST = "${env.ADMIN_PUBLIC_HOST ?: 'http://localhost:3001'}"
-        BACKEND_PUBLIC_HOST = "${env.BACKEND_PUBLIC_HOST ?: 'http://localhost:8080'}"
-        JENKINS_PUBLIC_HOST = "${env.JENKINS_PUBLIC_HOST ?: 'http://localhost:8081'}"
-        GITEA_PUBLIC_HOST = "${env.GITEA_PUBLIC_HOST ?: 'http://localhost:3000'}"
     }
 
     options {
@@ -128,6 +106,20 @@ pipeline {
                     if (!env.MYSQL_PASSWORD?.trim()) {
                         env.MYSQL_PASSWORD = env.MYSQL_ROOT_PASSWORD
                     }
+
+                    env.DEPLOY_HOST = env.DEPLOY_HOST?.trim() ? env.DEPLOY_HOST.trim() : 'your-server-host'
+                    env.DEPLOY_USER = env.DEPLOY_USER?.trim() ? env.DEPLOY_USER.trim() : 'root'
+                    env.MYSQL_USERNAME = env.MYSQL_USERNAME?.trim() ? env.MYSQL_USERNAME.trim() : 'root'
+                    env.MYSQL_DATABASE = env.MYSQL_DATABASE?.trim() ? env.MYSQL_DATABASE.trim() : 'bickdemo'
+                    env.MINIO_ENDPOINT = env.MINIO_ENDPOINT?.trim() ? env.MINIO_ENDPOINT.trim() : 'http://localhost:9000'
+                    env.MINIO_ACCESS_KEY = env.MINIO_ACCESS_KEY?.trim() ? env.MINIO_ACCESS_KEY.trim() : 'change-me-minio-access-key'
+                    env.MINIO_SECRET_KEY = env.MINIO_SECRET_KEY?.trim() ? env.MINIO_SECRET_KEY.trim() : 'change-me-minio-secret-key'
+                    env.MINIO_BUCKET = env.MINIO_BUCKET?.trim() ? env.MINIO_BUCKET.trim() : 'bicycles'
+                    env.APP_PUBLIC_HOST = env.APP_PUBLIC_HOST?.trim() ? env.APP_PUBLIC_HOST.trim() : 'http://localhost'
+                    env.ADMIN_PUBLIC_HOST = env.ADMIN_PUBLIC_HOST?.trim() ? env.ADMIN_PUBLIC_HOST.trim() : 'http://localhost:3001'
+                    env.BACKEND_PUBLIC_HOST = env.BACKEND_PUBLIC_HOST?.trim() ? env.BACKEND_PUBLIC_HOST.trim() : 'http://localhost:8080'
+                    env.JENKINS_PUBLIC_HOST = env.JENKINS_PUBLIC_HOST?.trim() ? env.JENKINS_PUBLIC_HOST.trim() : 'http://localhost:8081'
+                    env.GITEA_PUBLIC_HOST = env.GITEA_PUBLIC_HOST?.trim() ? env.GITEA_PUBLIC_HOST.trim() : 'http://localhost:3000'
 
                     def invalidSecrets = []
                     ['MYSQL_ROOT_PASSWORD', 'MYSQL_PASSWORD', 'JWT_SECRET'].each { key ->
