@@ -42,12 +42,11 @@
         >
           <div class="bike-card-image">
             <div class="image-wrapper">
-              <el-image
+              <img
                 v-if="bike.imageUrl"
                 :src="bike.imageUrl"
-                fit="cover"
+                :alt="bike.name"
                 class="bike-img"
-                :preview-src-list="[bike.imageUrl]"
               />
               <div v-else class="no-image">
                 <el-icon><Bicycle /></el-icon>
@@ -176,7 +175,14 @@
     </el-dialog>
 
     <!-- 详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" title="" width="600px" class="detail-dialog" :show-close="false">
+    <el-dialog
+      v-model="detailDialogVisible"
+      title=""
+      width="980px"
+      class="detail-dialog"
+      :show-close="false"
+      destroy-on-close
+    >
       <template #header="{ close, titleId, titleClass }">
         <div class="dialog-header">
           <h2 :id="titleId" :class="titleClass"></h2>
@@ -185,10 +191,10 @@
       </template>
       <div v-if="selectedBicycle" class="detail-content">
         <div class="detail-image-section">
-          <el-image
+          <img
             v-if="selectedBicycle.imageUrl"
             :src="selectedBicycle.imageUrl"
-            fit="cover"
+            :alt="selectedBicycle.name"
             class="detail-image"
           />
           <div v-else class="detail-image-placeholder">
@@ -222,10 +228,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
-  Refresh,
   Bicycle,
   Location,
   Filter,
@@ -644,6 +649,7 @@ onMounted(() => {
   height: 100%;
   object-fit: cover;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  display: block;
 }
 
 .bike-card:hover .bike-img {
@@ -913,6 +919,7 @@ onMounted(() => {
 
 .detail-dialog :deep(.el-dialog__body) {
   padding: 0;
+  background: #fff;
 }
 
 .detail-dialog :deep(.el-dialog__footer) {
@@ -924,7 +931,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: 12px 16px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   background: rgba(255, 255, 255, 0.85);
 }
@@ -935,18 +942,20 @@ onMounted(() => {
 
 .detail-content {
   display: grid;
-  grid-template-columns: 1fr 1.3fr;
+  grid-template-columns: minmax(430px, 1.3fr) minmax(340px, 1fr);
   gap: 0;
+  background: #fff;
 }
 
 .detail-image-section {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, #f8f9fa 0%, #eef2f7 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 350px;
+  min-height: 520px;
   position: relative;
   overflow: hidden;
+  padding: 18px;
 }
 
 .detail-image-section::after {
@@ -958,15 +967,19 @@ onMounted(() => {
 
 .detail-image {
   width: 100%;
-  height: 350px;
-  object-fit: cover;
+  max-width: 100%;
+  height: auto;
+  max-height: 484px;
+  object-fit: contain;
+  object-position: center center;
   position: relative;
   z-index: 1;
+  display: block;
 }
 
 .detail-image-placeholder {
   width: 100%;
-  height: 350px;
+  height: 484px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -983,6 +996,9 @@ onMounted(() => {
 .detail-info-section {
   padding: 28px;
   background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .detail-header {
@@ -1038,12 +1054,190 @@ onMounted(() => {
   color: #6c757d;
 }
 
-.detail-descriptions :deep(.el-descriptions__content) {
+.detail-descriptions :deep(.el-descriptions__table),
+.detail-descriptions :deep(.el-descriptions__body),
+.detail-descriptions :deep(.el-descriptions__cell) {
+  background: transparent;
+}
+
+.detail-descriptions :deep(.el-descriptions__label.el-descriptions__cell.is-bordered-label) {
+  background: rgba(248, 250, 252, 0.96);
+  color: #475569;
+}
+
+.detail-descriptions :deep(.el-descriptions__content.el-descriptions__cell.is-bordered-content) {
+  background: rgba(255, 255, 255, 0.98);
   color: #1a1a2e;
   font-weight: 500;
   white-space: normal;
   word-break: break-word;
   line-height: 1.5;
+}
+
+html.dark .filter-section {
+  background: rgba(15, 23, 42, 0.84);
+  border-color: rgba(148, 163, 184, 0.20);
+  box-shadow: 0 22px 60px rgba(2, 6, 23, 0.34);
+}
+
+html.dark .filter-title {
+  color: #f8fafc;
+}
+
+html.dark .filter-title .el-icon {
+  background: rgba(255, 107, 53, 0.22);
+  border-color: rgba(255, 107, 53, 0.34);
+  color: #ffd7c7;
+}
+
+html.dark .filter-subtitle {
+  color: #cbd5e1;
+}
+
+html.dark .detail-btn {
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.32);
+  color: #f8fafc;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.22);
+}
+
+html.dark .detail-btn:hover {
+  background: rgba(148, 163, 184, 0.24);
+  border-color: rgba(226, 232, 240, 0.42);
+  color: #ffffff;
+}
+
+html.dark .modern-dialog :deep(.el-dialog) {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%),
+    #101826;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 28px 60px rgba(2, 6, 23, 0.46);
+}
+
+html.dark .modern-dialog :deep(.el-dialog__header) {
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .modern-dialog :deep(.el-dialog__title) {
+  color: #f8fafc;
+}
+
+html.dark .modern-dialog :deep(.el-dialog__body) {
+  color: #e2e8f0;
+}
+
+html.dark .modern-dialog :deep(.el-dialog__footer) {
+  background: rgba(255, 255, 255, 0.02);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .modern-dialog .rent-dialog-content .selected-bike-info {
+  background: rgba(255, 107, 53, 0.12);
+  border-color: rgba(255, 107, 53, 0.24);
+}
+
+html.dark .modern-dialog .bike-info-header h3,
+html.dark .modern-dialog .confirm-title,
+html.dark .modern-dialog .confirm-text strong {
+  color: #f8fafc;
+}
+
+html.dark .modern-dialog .bike-subinfo,
+html.dark .modern-dialog .qty-hint,
+html.dark .modern-dialog .confirm-text {
+  color: #cbd5e1;
+}
+
+html.dark .modern-dialog .return-dialog-content {
+  background: rgba(148, 163, 184, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 18px;
+}
+
+html.dark .modern-dialog .confirm-icon {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 18px 50px rgba(16, 185, 129, 0.22);
+}
+
+html.dark .detail-dialog :deep(.el-dialog) {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html.dark .detail-dialog :deep(.el-dialog__body) {
+  background: #0f172a;
+}
+
+html.dark .detail-dialog .dialog-header {
+  background: rgba(15, 23, 42, 0.96);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .detail-dialog .detail-content {
+  background: #0f172a;
+}
+
+html.dark .detail-dialog .detail-image-section {
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+html.dark .detail-dialog .detail-info-section {
+  background: #0f172a;
+}
+
+html.dark .detail-dialog .detail-bike-name,
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__content),
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__content.el-descriptions__cell.is-bordered-content) {
+  color: #f8fafc;
+}
+
+html.dark .detail-dialog .detail-price {
+  color: #60a5fa;
+}
+
+html.dark .detail-dialog .detail-price span,
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__label),
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__content .el-icon) {
+  color: #cbd5e1;
+  -webkit-text-fill-color: #cbd5e1;
+}
+
+html.dark .detail-dialog .dialog-header :deep(.el-button) {
+  background: rgba(15, 23, 42, 0.82);
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #e2e8f0;
+}
+
+html.dark .detail-dialog .dialog-header :deep(.el-button:hover) {
+  background: rgba(30, 41, 59, 0.96);
+  color: #ffffff;
+}
+
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__table),
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__body) {
+  background: transparent;
+}
+
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__label.el-descriptions__cell.is-bordered-label) {
+  background: rgba(148, 163, 184, 0.16);
+  color: #cbd5e1;
+}
+
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__content.el-descriptions__cell.is-bordered-content) {
+  background: rgba(15, 23, 42, 0.82);
+  color: #f8fafc;
+}
+
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__label.el-descriptions__cell.is-bordered-label),
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__content.el-descriptions__cell.is-bordered-content),
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__cell) {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .detail-dialog .detail-tags .el-tag {
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Responsive */
@@ -1058,15 +1252,16 @@ onMounted(() => {
   }
 
   .detail-image-section {
-    min-height: 250px;
+    min-height: 340px;
+    padding: 16px;
   }
 
   .detail-image {
-    height: 250px;
+    max-height: 300px;
   }
 
   .detail-image-placeholder {
-    height: 250px;
+    height: 300px;
   }
 }
 

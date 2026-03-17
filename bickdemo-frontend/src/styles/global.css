@@ -789,6 +789,29 @@ html.dark .el-message {
   color: var(--bs-ink);
 }
 
+html.dark .el-message-box {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%),
+    var(--bs-surface-solid);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 28px 60px rgba(2, 6, 23, 0.44);
+}
+
+html.dark .el-message-box__title,
+html.dark .el-message-box__headerbtn .el-message-box__close {
+  color: var(--bs-ink);
+}
+
+html.dark .el-message-box__content,
+html.dark .el-message-box__message p {
+  color: #dbe6f3;
+}
+
+html.dark .el-message-box__header,
+html.dark .el-message-box__btns {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 html.dark .el-pagination .btn-prev,
 html.dark .el-pagination .btn-next,
 html.dark .el-pagination .el-pager li {

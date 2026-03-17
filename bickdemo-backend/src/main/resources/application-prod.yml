@@ -83,3 +83,8 @@ management:
 app:
   redis:
     key-prefix: ${APP_REDIS_KEY_PREFIX:bickdemo:prod:}
+  security:
+    ip-control:
+      guest-max-requests-per-minute: ${APP_SECURITY_IP_GUEST_MAX_REQUESTS_PER_MINUTE:120}
+      authenticated-max-requests-per-minute: ${APP_SECURITY_IP_AUTH_MAX_REQUESTS_PER_MINUTE:240}
+      ban-duration-minutes: ${APP_SECURITY_IP_BAN_DURATION_MINUTES:15}

@@ -49,7 +49,8 @@ public class IpAccessControlFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         IpBlacklistService.AccessDecision decision = ipBlacklistService.evaluateAccess(
-                com.example.bickdemo.util.IpAddressUtils.resolveClientIp(request)
+                com.example.bickdemo.util.IpAddressUtils.resolveClientIp(request),
+                request.getUserPrincipal() != null
         );
         if (decision.blocked()) {
             // 被拦截的请求不会进入后续业务链路，但仍然要记一条访问日志方便审计。

@@ -28,6 +28,11 @@ const routes = [
         component: () => import('@/views/Bicycles.vue')
       },
       {
+        path: '/marketplace',
+        name: 'MarketplaceManage',
+        component: () => import('@/views/MarketplaceModeration.vue')
+      },
+      {
         path: '/rentals',
         name: 'RentalsManage',
         component: () => import('@/views/Rentals.vue')

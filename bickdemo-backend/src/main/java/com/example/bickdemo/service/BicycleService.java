@@ -149,6 +149,8 @@ public class BicycleService {
         bicycle.setStatus(normalizeStatus(request.getStatus()));
         bicycle.setQuantity(request.getQuantity() == null ? 1 : request.getQuantity());
         bicycle.setLocation(request.getLocation());
+        bicycle.setLatitude(request.getLatitude());
+        bicycle.setLongitude(request.getLongitude());
         bicycle.setDescription(request.getDescription());
         bicycle.setPricePerHour(request.getPricePerHour() != null ? request.getPricePerHour().doubleValue() : null);
         bicycle.setImageUrl(request.getImageUrl());
@@ -183,6 +185,12 @@ public class BicycleService {
         }
         if (request.getLocation() != null) {
             bicycle.setLocation(request.getLocation());
+        }
+        if (request.getLatitude() != null) {
+            bicycle.setLatitude(request.getLatitude());
+        }
+        if (request.getLongitude() != null) {
+            bicycle.setLongitude(request.getLongitude());
         }
         if (request.getDescription() != null) {
             bicycle.setDescription(request.getDescription());
@@ -235,6 +243,8 @@ public class BicycleService {
         response.setStatus(normalizeStatus(bicycle.getStatus()));
         response.setQuantity(bicycle.getQuantity());
         response.setLocation(bicycle.getLocation());
+        response.setLatitude(bicycle.getLatitude());
+        response.setLongitude(bicycle.getLongitude());
         response.setDescription(bicycle.getDescription());
         response.setPricePerHour(bicycle.getPricePerHour() != null ?
                 java.math.BigDecimal.valueOf(bicycle.getPricePerHour()) : null);

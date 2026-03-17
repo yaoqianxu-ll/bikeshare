@@ -601,7 +601,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowLeft,
@@ -628,10 +628,13 @@ import {
 } from '@/api/social'
 import { uploadImage } from '@/api/file'
 import { createChatSocket } from '@/utils/chatSocket'
+import { useRoute, useRouter } from 'vue-router'
 
 const MESSAGE_PAGE_SIZE = 24
 
 const userStore = useUserStore()
+const router = useRouter()
+const route = useRoute()
 
 const searchKeyword = ref('')
 const searchLoading = ref(false)
@@ -663,6 +666,7 @@ const imageInputRef = ref(null)
 const chatPanelHeight = ref(0)
 const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440)
 const mobilePane = ref('sidebar')
+const routeConversationLock = ref(false)
 
 const emojiPresets = [
   { label: '开心', value: '😄' },
@@ -1340,6 +1344,38 @@ const acknowledgeConversation = async (targetUserId) => {
   }
 }
 
+const openConversationFromRoute = async () => {
+  const targetUserId = Number(route.query.targetUserId || 0)
+  const prefill = String(route.query.prefill || '').trim()
+  if (!targetUserId || routeConversationLock.value) return
+
+  routeConversationLock.value = true
+
+  try {
+    if (!contacts.value.length) {
+      await loadContacts({ silent: true })
+    }
+
+    const matched = contacts.value.find((item) => Number(item.userId) === targetUserId)
+    if (!matched) return
+
+    // Clear deep-link query first so contact/message refreshes won't retrigger this flow.
+    if (route.query.targetUserId || route.query.prefill) {
+      await router.replace({ path: route.path, query: {} })
+    }
+
+    if (activeContact.value?.userId !== matched.userId) {
+      await selectContact(matched)
+    }
+
+    if (prefill && !draft.value.trim()) {
+      draft.value = prefill
+    }
+  } finally {
+    routeConversationLock.value = false
+  }
+}
+
 const handleSocketEvent = async (event) => {
   if (!event?.eventType) return
 
@@ -1418,6 +1454,7 @@ const connectSocket = () => {
 
 onMounted(async () => {
   await Promise.allSettled([loadRequests(), loadContacts()])
+  await openConversationFromRoute()
   await nextTick()
   syncChatPanelHeight()
   if (typeof ResizeObserver !== 'undefined' && sidebarColumnRef.value) {
@@ -1431,6 +1468,15 @@ onMounted(async () => {
   }
   connectSocket()
 })
+
+watch(
+  () => [route.query.targetUserId, route.query.prefill],
+  () => {
+    openConversationFromRoute().catch((error) => {
+      console.error(error)
+    })
+  }
+)
 
 onBeforeUnmount(async () => {
   clearTimeout(searchTimer)

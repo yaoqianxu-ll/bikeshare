@@ -34,9 +34,7 @@ import java.util.Set;
  */
 public class IpBlacklistService {
 
-    private static final int MAX_REQUESTS_PER_MINUTE = 30;
     private static final Duration RATE_WINDOW = Duration.ofMinutes(1);
-    private static final Duration DEFAULT_BAN_DURATION = Duration.ofHours(1);
     private static final String RATE_KEY_PREFIX = "security:blacklist:rate:";
     private static final String BAN_KEY_PREFIX = "security:blacklist:ban:";
     private static final String BAN_INDEX_KEY = "security:blacklist:index";
@@ -47,26 +45,41 @@ public class IpBlacklistService {
     @Value("${app.redis.key-prefix:bickdemo:}")
     private String redisKeyPrefix;
 
+    @Value("${app.security.ip-control.guest-max-requests-per-minute:120}")
+    private int guestMaxRequestsPerMinute;
+
+    @Value("${app.security.ip-control.authenticated-max-requests-per-minute:240}")
+    private int authenticatedMaxRequestsPerMinute;
+
+    @Value("${app.security.ip-control.ban-duration-minutes:15}")
+    private long banDurationMinutes;
+
     /**
      * 判断某个 IP 是否允许继续访问。
      * 若一分钟内请求数超限，会自动加入黑名单并返回阻断结果。
      */
-    public AccessDecision evaluateAccess(String ip) {
+    public AccessDecision evaluateAccess(String ip, boolean authenticated) {
         cleanupExpiredIndex();
         BanMeta meta = getBanMeta(ip);
         if (meta != null) {
             return new AccessDecision(true, false, meta.getReason(), meta.getExpireAt());
         }
 
-        String windowKey = buildRateKey(ip);
+        int requestLimit = Math.max(authenticated ? authenticatedMaxRequestsPerMinute : guestMaxRequestsPerMinute, 1);
+        Duration banDuration = Duration.ofMinutes(Math.max(banDurationMinutes, 1L));
+        String windowKey = buildRateKey(ip, authenticated);
         Long currentCount = stringRedisTemplate.opsForValue().increment(windowKey);
         if (currentCount != null && currentCount == 1L) {
             stringRedisTemplate.expire(windowKey, RATE_WINDOW);
         }
 
-        if (currentCount != null && currentCount > MAX_REQUESTS_PER_MINUTE) {
+        if (currentCount != null && currentCount > requestLimit) {
             // 访问频率超过阈值后立即封禁，防止恶意刷接口继续打到业务层。
-            BanMeta banMeta = banInternal(ip, "1 分钟内访问超过 30 次，已自动封禁 1 小时", DEFAULT_BAN_DURATION);
+            BanMeta banMeta = banInternal(
+                    ip,
+                    buildAutoBanReason(requestLimit, banDuration, authenticated),
+                    banDuration
+            );
             return new AccessDecision(true, true, banMeta.getReason(), banMeta.getExpireAt());
         }
 
@@ -120,7 +133,7 @@ public class IpBlacklistService {
         if (!StringUtils.hasText(ip)) {
             throw new RuntimeException("IP 不能为空");
         }
-        banInternal(ip.trim(), reason, duration == null ? DEFAULT_BAN_DURATION : duration);
+        banInternal(ip.trim(), reason, duration == null ? Duration.ofMinutes(Math.max(banDurationMinutes, 1L)) : duration);
     }
 
     /**
@@ -212,9 +225,15 @@ public class IpBlacklistService {
         stringRedisTemplate.opsForZSet().removeRangeByScore(indexKey(), 0, Instant.now().getEpochSecond());
     }
 
-    private String buildRateKey(String ip) {
+    private String buildRateKey(String ip, boolean authenticated) {
         long minuteBucket = Instant.now().getEpochSecond() / 60;
-        return redisKeyPrefix + RATE_KEY_PREFIX + minuteBucket + ":" + ip;
+        return redisKeyPrefix + RATE_KEY_PREFIX + minuteBucket + ":" + (authenticated ? "auth" : "guest") + ":" + ip;
+    }
+
+    private String buildAutoBanReason(int requestLimit, Duration banDuration, boolean authenticated) {
+        long minutes = Math.max(banDuration.toMinutes(), 1L);
+        String subject = authenticated ? "当前登录用户所在 IP" : "当前 IP";
+        return subject + " 1 分钟内访问超过 " + requestLimit + " 次，已自动封禁 " + minutes + " 分钟";
     }
 
     private String buildBanKey(String ip) {

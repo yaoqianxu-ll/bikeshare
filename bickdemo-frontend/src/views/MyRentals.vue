@@ -43,14 +43,14 @@
               <span class="price-text">{{ formatMoney(row.totalPrice) }}</span>
             </template>
           </el-table-column>
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column label="状态" width="116" align="center" class-name="status-column">
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
-              {{ getStatusText(row.status) }}
+            <el-tag :type="getStatusType(row.status)" class="status-tag">
+              <span class="status-tag-text">{{ getStatusText(row.status) }}</span>
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right" align="center">
+        <el-table-column label="操作" width="230" fixed="right" align="center" class-name="action-column">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-button
@@ -112,8 +112,8 @@
           </el-descriptions-item>
           <el-descriptions-item label="总价格">{{ formatMoney(selectedRental.totalPrice) }}</el-descriptions-item>
           <el-descriptions-item label="状态">
-            <el-tag :type="getStatusType(selectedRental.status)">
-              {{ getStatusText(selectedRental.status) }}
+            <el-tag :type="getStatusType(selectedRental.status)" class="status-tag">
+              <span class="status-tag-text">{{ getStatusText(selectedRental.status) }}</span>
             </el-tag>
           </el-descriptions-item>
         </el-descriptions>
@@ -530,6 +530,45 @@ onMounted(() => {
   border: none;
 }
 
+:deep(.status-column .cell) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+:deep(.status-tag) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  line-height: 1;
+  white-space: nowrap;
+  max-width: none;
+  overflow: hidden;
+}
+
+:deep(.status-tag .el-tag__content),
+:deep(.status-tag-text) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+:deep(.status-tag .el-tag__close),
+:deep(.status-tag .el-icon),
+:deep(.status-tag::before),
+:deep(.status-tag::after),
+:deep(.status-tag .el-tag__content::before),
+:deep(.status-tag .el-tag__content::after) {
+  display: none !important;
+  content: none !important;
+}
+
 :deep(.el-tag--warning) {
   background: rgba(245, 158, 11, 0.14);
   color: #92400e;
@@ -575,7 +614,29 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 6px;
+  width: 100%;
+}
+
+.action-buttons :deep(.el-button) {
+  margin-left: 0 !important;
+  min-width: 88px;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+:deep(.action-column .cell) {
+  overflow: visible;
+}
+
+:deep(.el-table__fixed-right),
+:deep(.el-table__fixed-right-patch) {
+  background: transparent;
+}
+
+:deep(.el-table__fixed-right::before) {
+  width: 0;
 }
 
 :deep(.el-button--primary:not(.is-plain)) {

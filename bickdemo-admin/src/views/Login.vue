@@ -4,7 +4,6 @@
       <div class="login-copy">
         <span class="login-badge">BikeShare Admin</span>
         <h1>管理端登录</h1>
-        <p>这是一个独立的后台项目，开发端口固定为 3000，只允许管理员账号进入。</p>
       </div>
 
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent>

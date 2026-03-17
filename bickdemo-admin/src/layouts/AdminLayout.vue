@@ -107,6 +107,7 @@ const navGroups = [
     icon: Bicycle,
     children: [
       { path: '/bicycles', label: '车辆管理' },
+      { path: '/marketplace', label: '车主发布车辆' },
       { path: '/rentals', label: '租赁订单' },
       { path: '/backgrounds', label: '背景管理' }
     ]
@@ -138,6 +139,7 @@ const openGroups = ['overview-group', 'business-group', 'content-group', 'system
 const titleMap = {
   Dashboard: '后台总览',
   BicyclesManage: '车辆管理',
+  MarketplaceManage: '车主发布车辆',
   RentalsManage: '租赁订单',
   ForumManage: '论坛审核',
   BackgroundsManage: '背景管理',
@@ -152,6 +154,7 @@ const currentTitle = computed(() => titleMap[route.name] || '后台管理')
 const descriptionMap = {
   Dashboard: '把今天最关键的库存、订单、审核与内容状态压缩到一个工作台里。',
   BicyclesManage: '统一维护车辆资料、库存、价格和图片，让运营动作更集中。',
+  MarketplaceManage: '集中查看车主发布的车辆信息、审核状态和最新提交，审核通过后才会在前台展示。',
   RentalsManage: '查看订单流转、租赁状态和金额变化，快速定位异常与高频订单。',
   ForumManage: '审核论坛内容、追踪最近帖子，让社区节奏保持健康稳定。',
   BackgroundsManage: '维护前台背景资源和启用状态，统一管理站点氛围素材。',

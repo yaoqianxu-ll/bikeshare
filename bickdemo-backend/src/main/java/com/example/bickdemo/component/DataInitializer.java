@@ -13,8 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * 数据初始化器
@@ -30,7 +29,9 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final MinioClient minioClient;
     private final BackgroundImageMapper backgroundImageMapper;
-    private final String bucketName = "bicycles";
+
+    @Value("${minio.bucket-name}")
+    private String bucketName;
 
     @Override
     public void run(String... args) {
@@ -46,7 +47,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setRole(UserRole.ADMIN);
             admin.setEnabled(true);
             userMapper.insert(admin);
-            System.out.println("默认管理员账号创建成功：admin / admin123");
+            log.info("默认管理员账号创建成功：admin / admin123");
         }
 
         // 创建测试用户
@@ -58,7 +59,7 @@ public class DataInitializer implements CommandLineRunner {
             user.setRole(UserRole.USER);
             user.setEnabled(true);
             userMapper.insert(user);
-            System.out.println("测试用户账号创建成功：user / user123");
+            log.info("测试用户账号创建成功：user / user123");
         }
 
         // 初始化默认背景图片
@@ -88,8 +89,8 @@ public class DataInitializer implements CommandLineRunner {
      * 初始化默认背景图片
      */
     private void initBackgroundImages() {
-        List<BackgroundImage> existing = backgroundImageMapper.selectList(null);
-        if (existing != null && !existing.isEmpty()) {
+        Long existingCount = backgroundImageMapper.selectCount(null);
+        if (existingCount != null && existingCount > 0) {
             log.info("背景图片已存在，跳过初始化");
             return;
         }

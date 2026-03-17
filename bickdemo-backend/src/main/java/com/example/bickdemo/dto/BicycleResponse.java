@@ -26,6 +26,10 @@ public class BicycleResponse {
     private Integer quantity;
     /** 停放位置 */
     private String location;
+    /** 纬度 */
+    private Double latitude;
+    /** 经度 */
+    private Double longitude;
     /** 描述信息 */
     private String description;
     /** 每小时租金 */

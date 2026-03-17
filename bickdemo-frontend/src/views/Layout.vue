@@ -112,6 +112,10 @@
             <span class="nav-icon-bg"><el-icon><Bicycle /></el-icon></span>
             <span>单车</span>
           </router-link>
+          <router-link to="/marketplace" class="nav-link" @click="closeNav">
+            <span class="nav-icon-bg"><el-icon><LocationInformation /></el-icon></span>
+            <span>出租</span>
+          </router-link>
           <router-link to="/statistics" class="nav-link" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><DataAnalysis /></el-icon></span>
             <span>统计</span>
@@ -193,7 +197,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House } from '@element-plus/icons-vue'
+import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation } from '@element-plus/icons-vue'
 import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
 import { getCurrentUser } from '@/api/auth'
 import ThemeToggle from '@/components/ThemeToggle.vue'

@@ -1,6 +1,9 @@
 import axios from 'axios'
 import { useUserStore } from '@/stores/user'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import router from '@/router'
+
+let authExpiredHandling = false
 
 const request = axios.create({
   baseURL: '/api',
@@ -47,8 +50,24 @@ request.interceptors.response.use(
           const hasToken = !!userStore.token
           if (hasToken) {
             userStore.logout()
-            ElMessage.error((data && data.message) || '登录已过期，请重新登录')
-            window.location.href = '/login'
+            if (!authExpiredHandling) {
+              authExpiredHandling = true
+              const currentPath = window.location.pathname + window.location.search
+              ElMessageBox.alert((data && data.message) || '登录已过期，请重新登录', '登录状态已失效', {
+                confirmButtonText: '前往登录',
+                type: 'warning',
+                closeOnClickModal: false,
+                closeOnPressEscape: false,
+                showClose: false,
+                callback: () => {
+                  authExpiredHandling = false
+                  router.replace({
+                    path: '/login',
+                    query: currentPath && currentPath !== '/login' ? { redirect: currentPath } : undefined
+                  })
+                }
+              })
+            }
           } else {
             ElMessage.error((data && data.message) || '需要登录后操作')
           }

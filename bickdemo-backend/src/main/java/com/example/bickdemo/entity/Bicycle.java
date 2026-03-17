@@ -41,6 +41,14 @@ public class Bicycle {
     @TableField("location")
     private String location;
 
+    /** 纬度 */
+    @TableField("latitude")
+    private Double latitude;
+
+    /** 经度 */
+    @TableField("longitude")
+    private Double longitude;
+
     /** 描述信息 */
     @TableField("description")
     private String description;
