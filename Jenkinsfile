@@ -115,6 +115,7 @@ pipeline {
                     env.MINIO_ACCESS_KEY = env.MINIO_ACCESS_KEY?.trim() ? env.MINIO_ACCESS_KEY.trim() : 'change-me-minio-access-key'
                     env.MINIO_SECRET_KEY = env.MINIO_SECRET_KEY?.trim() ? env.MINIO_SECRET_KEY.trim() : 'change-me-minio-secret-key'
                     env.MINIO_BUCKET = env.MINIO_BUCKET?.trim() ? env.MINIO_BUCKET.trim() : 'bicycles'
+                    env.COMPOSE_PROJECT_NAME = env.COMPOSE_PROJECT_NAME?.trim() ? env.COMPOSE_PROJECT_NAME.trim() : 'bike-deploy'
                     env.APP_PUBLIC_HOST = env.APP_PUBLIC_HOST?.trim() ? env.APP_PUBLIC_HOST.trim() : 'http://localhost'
                     env.ADMIN_PUBLIC_HOST = env.ADMIN_PUBLIC_HOST?.trim() ? env.ADMIN_PUBLIC_HOST.trim() : 'http://localhost:3001'
                     env.BACKEND_PUBLIC_HOST = env.BACKEND_PUBLIC_HOST?.trim() ? env.BACKEND_PUBLIC_HOST.trim() : 'http://localhost:8080'
@@ -132,7 +133,7 @@ pipeline {
                         error("部署环境变量未正确配置：${invalidSecrets.join(', ')}")
                     }
 
-                    echo "部署变量检查完成：MYSQL_USERNAME=${env.MYSQL_USERNAME ?: 'root'}，MYSQL_PASSWORD=${env.MYSQL_PASSWORD == env.MYSQL_ROOT_PASSWORD ? '已复用 root 密码' : '使用独立数据库密码'}"
+                    echo "部署变量检查完成：MYSQL_USERNAME=${env.MYSQL_USERNAME ?: 'root'}，MYSQL_PASSWORD=${env.MYSQL_PASSWORD == env.MYSQL_ROOT_PASSWORD ? '已复用 root 密码' : '使用独立数据库密码'}，COMPOSE_PROJECT_NAME=${env.COMPOSE_PROJECT_NAME}"
 
                     // 获取 Git 提交信息
                     env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
@@ -209,6 +210,30 @@ pipeline {
                         echo "检查产物：" && ls -lh dist/
                     '''
                 }
+            }
+        }
+
+        stage('Stop Deployment Containers') {
+            steps {
+                echo '🛑 停止部署容器，先释放服务器资源再继续构建/部署...'
+                sh '''
+                    set +e
+
+                    CONTAINERS="${COMPOSE_PROJECT_NAME}-frontend-1 ${COMPOSE_PROJECT_NAME}-admin-1 ${COMPOSE_PROJECT_NAME}-app-1 ${COMPOSE_PROJECT_NAME}-mysql-1"
+
+                    echo "目标容器：${CONTAINERS}"
+                    for container in ${CONTAINERS}; do
+                        if docker ps -a --format '{{.Names}}' | grep -Fxq "${container}"; then
+                            echo "停止容器：${container}"
+                            docker stop "${container}" || true
+                        else
+                            echo "容器不存在，跳过：${container}"
+                        fi
+                    done
+
+                    echo "当前相关容器状态："
+                    docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep "${COMPOSE_PROJECT_NAME}" || true
+                '''
             }
         }
 
