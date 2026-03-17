@@ -34,6 +34,7 @@ import java.util.Set;
 public class ClientLocationService {
 
     private static final String LOCATION_SOURCE = "IP_LOOKUP";
+    private static final String ENGLISH_LOCATION_SEGMENT_REGEX = "\\b[A-Za-z]+(?:[\\s-]+[A-Za-z]+)*\\b";
     private static final String LOOKUP_URL_TEMPLATE =
             "http://ip-api.com/json/%s?fields=status,message,country,countryCode,regionName,city,district,lat,lon,query&lang=zh-CN";
 
@@ -85,14 +86,14 @@ public class ClientLocationService {
             }
             ClientLocationResponse result = new ClientLocationResponse();
             result.setIp(StringUtils.hasText(payload.getQuery()) ? payload.getQuery() : clientIp);
-            result.setCountry(trimToNull(payload.getCountry()));
+            result.setCountry(cleanLocationPart(payload.getCountry()));
             result.setCountryCode(payload.getCountryCode());
-            result.setProvince(trimToNull(payload.getRegionName()));
-            result.setCity(trimToNull(payload.getCity()));
-            result.setDistrict(trimToNull(payload.getDistrict()));
+            result.setProvince(cleanLocationPart(payload.getRegionName()));
+            result.setCity(cleanLocationPart(payload.getCity()));
+            result.setDistrict(cleanLocationPart(payload.getDistrict()));
             result.setLatitude(payload.getLat());
             result.setLongitude(payload.getLon());
-            result.setLocationText(joinLocationText(payload.getCountry(), payload.getRegionName(), payload.getCity(), payload.getDistrict()));
+            result.setLocationText(joinLocationText(result.getCountry(), result.getProvince(), result.getCity(), result.getDistrict()));
             result.setSource(LOCATION_SOURCE);
 
             locationCache.put(clientIp, result);
@@ -113,10 +114,34 @@ public class ClientLocationService {
     }
 
     private void addIfText(Set<String> parts, String value) {
-        String text = trimToNull(value);
+        String text = cleanLocationPart(value);
         if (text != null) {
             parts.add(text);
         }
+    }
+
+    private String cleanLocationPart(String value) {
+        String text = trimToNull(value);
+        if (text == null || !containsChinese(text)) {
+            return text;
+        }
+        String sanitized = text
+                .replaceAll(ENGLISH_LOCATION_SEGMENT_REGEX, " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+        return StringUtils.hasText(sanitized) ? sanitized : text;
+    }
+
+    private boolean containsChinese(String value) {
+        if (!StringUtils.hasText(value)) {
+            return false;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            if (Character.UnicodeScript.of(value.charAt(i)) == Character.UnicodeScript.HAN) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String trimToNull(String value) {

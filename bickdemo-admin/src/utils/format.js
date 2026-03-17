@@ -139,10 +139,14 @@ export function visitStatusType(value) {
 export function regionText(value) {
   const normalized = (value || '').trim()
   if (!normalized) return '--'
+  const cleaned = normalized
+    .match(/[\u4e00-\u9fff]/)
+    ? normalized.replace(/\b[A-Za-z]+(?:[\s-]+[A-Za-z]+)*\b/g, ' ').replace(/\s+/g, ' ').trim()
+    : normalized
   const map = {
     '本机地址': '本机地区',
     '内网地址': '内网地区',
     '外网地址': '外网地区'
   }
-  return map[normalized] || normalized
+  return map[cleaned] || cleaned
 }
