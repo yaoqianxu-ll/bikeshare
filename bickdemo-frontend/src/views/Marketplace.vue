@@ -30,7 +30,7 @@
                 <el-option :value="3" label="3 公里" />
                 <el-option :value="5" label="5 公里" />
                 <el-option :value="8" label="8 公里" />
-                <el-option :value="15" label="15 公里" />
+                <el-option :value="10" label="10 公里" />
               </el-select>
               <el-select
                 v-model="discoverRegion.provinceCode"
@@ -314,6 +314,12 @@
         <strong>{{ selectedDiscoverItem.title }}</strong>
         <div class="muted">{{ getDeliveryModeLabel(selectedDiscoverItem.deliveryMode) }} · {{ selectedDiscoverItem.location }}</div>
       </div>
+      <el-alert
+        title="系统会按你当前所在位置强校验，只有 10 公里范围内的车辆才能提交租用申请。"
+        type="info"
+        :closable="false"
+        class="range-alert"
+      />
       <el-form ref="applicationFormRef" :model="applicationForm" :rules="applicationRules" label-width="96px">
         <el-form-item label="租用时间" prop="requestedRange"><el-date-picker v-model="applicationForm.requestedRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" format="YYYY-MM-DD HH:mm" /></el-form-item>
         <el-form-item label="交付地点" prop="meetupLocation"><el-input v-model="applicationForm.meetupLocation" /></el-form-item>
@@ -330,7 +336,7 @@ import { onMounted, reactive, ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { consultMarketplaceListing, createMarketplaceApplication, createMarketplaceListing, getMarketplaceDiscover, getMarketplaceOwnerApplications, getMarketplaceRenterApplications, getMyMarketplaceListings, updateMarketplaceApplicationStatus, updateMarketplaceListing } from '@/api/marketplace'
+import { consultMarketplaceListing, createMarketplaceApplication, createMarketplaceListing, getMarketplaceDiscover, getMarketplaceLocationHint, getMarketplaceOwnerApplications, getMarketplaceRenterApplications, getMyMarketplaceListings, updateMarketplaceApplicationStatus, updateMarketplaceListing } from '@/api/marketplace'
 import { uploadImage } from '@/api/file'
 import { chinaRegionOptions } from '@/data/chinaRegionOptions'
 
@@ -346,6 +352,7 @@ const listingDialogVisible = ref(false)
 const applicationDialogVisible = ref(false)
 const editingListingId = ref(null)
 const activeDiscoverRegionText = ref('')
+const activeDiscoverSourceText = ref('')
 const listingRegionWarning = ref('')
 const selectedDiscoverItem = ref(null)
 const listingFormRef = ref(null)
@@ -369,11 +376,14 @@ const discoverDistrictOptions = computed(() => getDistrictOptions(discoverRegion
 const listingCityOptions = computed(() => getCityOptions(listingForm.provinceCode))
 const listingDistrictOptions = computed(() => getDistrictOptions(listingForm.provinceCode, listingForm.cityCode))
 const currentLocationText = computed(() => {
-  if (activeDiscoverRegionText.value) return `已按 ${activeDiscoverRegionText.value} 推荐 ${discoverFilters.radiusKm} 公里内资源`
+  if (activeDiscoverRegionText.value) {
+    const sourceSuffix = activeDiscoverSourceText.value ? `（${activeDiscoverSourceText.value}）` : ''
+    return `已按 ${activeDiscoverRegionText.value}${sourceSuffix} 推荐 ${discoverFilters.radiusKm} 公里内资源，超出 10 公里不可租用`
+  }
   const regionText = getRegionLabelText(discoverRegion.provinceCode, discoverRegion.cityCode, discoverRegion.districtCode)
   if (regionText) return `已选中 ${regionText}，点击“按所选地区推荐”后刷新附近资源`
   if (hasDiscoverRegion.value) return '请选择到区/县后再按地区推荐'
-  return '当前使用默认发现模式'
+  return '进入页面后会自动按 IP 静默定位，不会触发浏览器定位授权，且仅可租用 10 公里内车辆'
 })
 const listingLocationText = computed(() => listingForm.location || '请选择中国省/市/区，系统会自动生成标准交付地点')
 const listingCoordinateText = computed(() => listingForm.latitude === null || listingForm.longitude === null ? '系统会根据你选中的区/县中心点自动写入经纬度' : `经度 ${Number(listingForm.longitude).toFixed(6)} · 纬度 ${Number(listingForm.latitude).toFixed(6)}`)
@@ -428,6 +438,11 @@ const getRegionLabelText = (provinceCode, cityCode, districtCode) => {
   return joinRegionLabels([province?.label, city?.label, district?.label])
 }
 const normalizeRegionText = (value) => String(value || '').replace(/[\s,，/、.\-]/g, '')
+const normalizeAreaName = (value) => String(value || '')
+  .replace(/\s+/g, '')
+  .replace(/特别行政区|自治区|自治州|自治县|地区|盟/g, '')
+  .replace(/省|市|区|县/g, '')
+  .replace(/壮族|回族|维吾尔|蒙古族|土家族|苗族|藏族|朝鲜族自治/g, '')
 const findRegionSelectionByLocation = (location) => {
   const normalized = normalizeRegionText(location)
   if (!normalized) return null
@@ -446,6 +461,91 @@ const findRegionSelectionByLocation = (location) => {
   }
   return null
 }
+const matchesAreaName = (label, target) => {
+  const normalizedLabel = normalizeAreaName(label)
+  const normalizedTarget = normalizeAreaName(target)
+  if (!normalizedLabel || !normalizedTarget) return false
+  return normalizedLabel === normalizedTarget
+    || normalizedLabel.includes(normalizedTarget)
+    || normalizedTarget.includes(normalizedLabel)
+}
+const measureCoordinateDistance = (latitudeA, longitudeA, latitudeB, longitudeB) => {
+  if ([latitudeA, longitudeA, latitudeB, longitudeB].some((value) => value === null || value === undefined)) {
+    return Number.MAX_SAFE_INTEGER
+  }
+  const latDelta = Number(latitudeA) - Number(latitudeB)
+  const lonDelta = Number(longitudeA) - Number(longitudeB)
+  return Math.sqrt(latDelta * latDelta + lonDelta * lonDelta)
+}
+const pickBestDistrictCandidate = (candidates, latitude, longitude) => candidates
+  .slice()
+  .sort((left, right) => {
+    if (right.score !== left.score) {
+      return right.score - left.score
+    }
+    const leftDistance = measureCoordinateDistance(left.district.latitude, left.district.longitude, latitude, longitude)
+    const rightDistance = measureCoordinateDistance(right.district.latitude, right.district.longitude, latitude, longitude)
+    return leftDistance - rightDistance
+  })[0] || null
+const resolveRegionFromLocationHint = (hint) => {
+  if (!hint) return null
+  if (hint.countryCode && hint.countryCode !== 'CN') {
+    return null
+  }
+  const provinceName = hint.province || ''
+  const cityName = hint.city || ''
+  const districtName = hint.district || ''
+  const latitude = hint.latitude
+  const longitude = hint.longitude
+  const candidates = []
+
+  for (const province of provinceOptions) {
+    const provinceMatched = !provinceName || matchesAreaName(province.label, provinceName)
+    for (const city of province.children || []) {
+      const cityMatched = !cityName || matchesAreaName(city.label, cityName)
+      for (const district of city.children || []) {
+        const districtMatched = !districtName || matchesAreaName(district.label, districtName)
+        if ((provinceName && !provinceMatched) || (cityName && !cityMatched) || (districtName && !districtMatched)) {
+          continue
+        }
+
+        let score = 0
+        if (provinceMatched && provinceName) score += 1
+        if (cityMatched && cityName) score += 3
+        if (districtMatched && districtName) score += 6
+
+        candidates.push({ province, city, district, score })
+      }
+    }
+  }
+
+  const bestCandidate = candidates.length
+    ? pickBestDistrictCandidate(candidates, latitude, longitude)
+    : pickBestDistrictCandidate(
+      provinceOptions.flatMap((province) => (province.children || []).flatMap((city) => (city.children || []).map((district) => ({
+        province,
+        city,
+        district,
+        score: 0
+      })))),
+      latitude,
+      longitude
+    )
+
+  if (!bestCandidate) return null
+  return {
+    provinceCode: bestCandidate.province.value,
+    cityCode: bestCandidate.city.value,
+    districtCode: bestCandidate.district.value,
+    latitude: bestCandidate.district.latitude,
+    longitude: bestCandidate.district.longitude,
+    label: joinRegionLabels([bestCandidate.province.label, bestCandidate.city.label, bestCandidate.district.label])
+  }
+}
+const buildLocationHintText = (hint) => {
+  if (!hint) return ''
+  return joinRegionLabels([hint.country, hint.province, hint.city, hint.district]) || hint.locationText || hint.ip || '当前位置'
+}
 const syncListingRegionSelection = () => {
   const district = getDistrictNode(listingForm.provinceCode, listingForm.cityCode, listingForm.districtCode)
   if (!district) {
@@ -462,24 +562,67 @@ const syncListingRegionSelection = () => {
 
 const loadDiscover = async () => { discoverLoading.value = true; try { const params = { radiusKm: discoverFilters.radiusKm, type: discoverFilters.type || undefined }; if (coords.latitude !== null && coords.longitude !== null) { params.latitude = coords.latitude; params.longitude = coords.longitude } const res = await getMarketplaceDiscover(params); discoverItems.value = res.data || [] } finally { discoverLoading.value = false } }
 const loadPrivateData = async () => { if (!userStore.isLoggedIn) return; marketLoading.value = true; try { const [listingRes, ownerRes, renterRes] = await Promise.all([getMyMarketplaceListings(), getMarketplaceOwnerApplications(), getMarketplaceRenterApplications()]); myListings.value = listingRes.data || []; ownerApplications.value = ownerRes.data || []; renterApplications.value = renterRes.data || [] } finally { marketLoading.value = false } }
+const initializeDiscoverBySilentLocation = async () => {
+  locating.value = true
+  try {
+    const res = await getMarketplaceLocationHint()
+    const hint = res?.data
+    if (!hint || hint.latitude === null || hint.latitude === undefined || hint.longitude === null || hint.longitude === undefined) {
+      activeDiscoverRegionText.value = ''
+      activeDiscoverSourceText.value = ''
+      await loadDiscover()
+      return
+    }
+    const matchedRegion = resolveRegionFromLocationHint(hint)
+    if (matchedRegion) {
+      discoverRegion.provinceCode = matchedRegion.provinceCode
+      discoverRegion.cityCode = matchedRegion.cityCode
+      discoverRegion.districtCode = matchedRegion.districtCode
+      coords.latitude = matchedRegion.latitude
+      coords.longitude = matchedRegion.longitude
+      activeDiscoverRegionText.value = matchedRegion.label
+      activeDiscoverSourceText.value = '中国 IP 静默定位'
+      await loadDiscover()
+      return
+    }
+
+    discoverRegion.provinceCode = ''
+    discoverRegion.cityCode = ''
+    discoverRegion.districtCode = ''
+    coords.latitude = Number(hint.latitude)
+    coords.longitude = Number(hint.longitude)
+    activeDiscoverRegionText.value = buildLocationHintText(hint)
+    activeDiscoverSourceText.value = '全球 IP 静默定位'
+    await loadDiscover()
+  } catch (error) {
+    console.error(error)
+    activeDiscoverRegionText.value = ''
+    activeDiscoverSourceText.value = ''
+    await loadDiscover()
+  } finally {
+    locating.value = false
+  }
+}
 const handleDiscoverProvinceChange = () => {
   discoverRegion.cityCode = ''
   discoverRegion.districtCode = ''
   coords.latitude = null
   coords.longitude = null
   activeDiscoverRegionText.value = ''
+  activeDiscoverSourceText.value = ''
 }
 const handleDiscoverCityChange = () => {
   discoverRegion.districtCode = ''
   coords.latitude = null
   coords.longitude = null
   activeDiscoverRegionText.value = ''
+  activeDiscoverSourceText.value = ''
 }
 const handleDiscoverDistrictChange = () => {
-  if (discoverRegion.districtCode) return
   coords.latitude = null
   coords.longitude = null
   activeDiscoverRegionText.value = ''
+  activeDiscoverSourceText.value = ''
 }
 const applyDiscoverRegion = async () => {
   const district = getDistrictNode(discoverRegion.provinceCode, discoverRegion.cityCode, discoverRegion.districtCode)
@@ -493,6 +636,7 @@ const applyDiscoverRegion = async () => {
     coords.latitude = district.latitude
     coords.longitude = district.longitude
     activeDiscoverRegionText.value = regionText
+    activeDiscoverSourceText.value = '手动选择'
     await loadDiscover()
     ElMessage.success(`已经按 ${regionText} 刷新附近可租资源`)
   } finally {
@@ -506,6 +650,7 @@ const resetDiscoverRegion = async () => {
   coords.latitude = null
   coords.longitude = null
   activeDiscoverRegionText.value = ''
+  activeDiscoverSourceText.value = ''
   await loadDiscover()
 }
 const handleListingProvinceChange = () => {
@@ -555,7 +700,7 @@ const updateOwnerApplication = async (application, status) => { await ElMessageB
 const updateRenterApplication = async (application, status) => { await ElMessageBox.confirm(`确认执行“${getApplicationStatusLabel(status)}”吗？`, '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }); await updateMarketplaceApplicationStatus(application.id, { status }); ElMessage.success('申请状态已更新'); await Promise.all([loadPrivateData(), loadDiscover()]) }
 const toggleListingStatus = async (listing) => { const nextStatus = listing.status === 'OFFLINE' ? 'AVAILABLE' : 'OFFLINE'; const res = await updateMarketplaceListing(listing.id, { name: listing.name, type: listing.type, location: listing.location, latitude: Number(listing.latitude), longitude: Number(listing.longitude), pricePerHour: Number(listing.pricePerHour), deposit: Number(listing.deposit || 0), deliveryMode: listing.deliveryMode, availableFrom: formatForSubmit(listing.availableFrom), availableTo: formatForSubmit(listing.availableTo), imageUrl: listing.imageUrl || null, description: listing.description || null, status: nextStatus }); ElMessage.success(res.message || (nextStatus === 'OFFLINE' ? '挂牌已下架' : '挂牌已重新上架')); await Promise.all([loadPrivateData(), loadDiscover()]) }
 
-onMounted(async () => { await loadDiscover(); await loadPrivateData() })
+onMounted(async () => { await initializeDiscoverBySilentLocation(); await loadPrivateData() })
 watch(() => userStore.isLoggedIn, (loggedIn) => { if (loggedIn) { loadPrivateData().catch((error) => console.error(error)); return } myListings.value = []; ownerApplications.value = []; renterApplications.value = [] })
 </script>
 
@@ -723,6 +868,10 @@ watch(() => userStore.isLoggedIn, (loggedIn) => { if (loggedIn) { loadPrivateDat
   border-radius: 14px;
   background: var(--market-sand);
   color: var(--market-ink);
+}
+
+.range-alert {
+  margin-bottom: 14px;
 }
 
 .region-alert {

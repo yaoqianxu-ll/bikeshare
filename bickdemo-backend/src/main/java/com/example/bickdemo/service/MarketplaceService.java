@@ -28,7 +28,10 @@ import com.example.bickdemo.mapper.FriendshipMapper;
 import com.example.bickdemo.mapper.MarketplaceApplicationMapper;
 import com.example.bickdemo.mapper.MarketplaceListingMapper;
 import com.example.bickdemo.mapper.UserMapper;
+import com.example.bickdemo.util.GeoDistanceUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -49,12 +52,16 @@ public class MarketplaceService {
 
     private static final double DEFAULT_RADIUS_KM = 8D;
 
+    @Value("${app.rental.range-check.max-distance-km:10}")
+    private double maxRentalDistanceKm;
+
     private final MarketplaceListingMapper marketplaceListingMapper;
     private final MarketplaceApplicationMapper marketplaceApplicationMapper;
     private final BicycleMapper bicycleMapper;
     private final UserMapper userMapper;
     private final FriendRequestMapper friendRequestMapper;
     private final FriendshipMapper friendshipMapper;
+    private final RentalLocationGuardService rentalLocationGuardService;
 
     public List<MarketplaceDiscoverResponse> discover(String currentUsername,
                                                       Double latitude,
@@ -62,7 +69,9 @@ public class MarketplaceService {
                                                       Double radiusKm,
                                                       BicycleType type) {
         boolean nearbyMode = latitude != null && longitude != null;
-        double effectiveRadius = radiusKm == null || radiusKm <= 0 ? DEFAULT_RADIUS_KM : radiusKm;
+        double effectiveRadius = radiusKm == null || radiusKm <= 0
+                ? DEFAULT_RADIUS_KM
+                : Math.min(radiusKm, maxRentalDistanceKm);
         User currentUser = trimToNull(currentUsername) == null ? null : requireUser(currentUsername);
 
         // “附近可租”会把平台库存和个人挂牌混在一起返回，前台再按 sourceType 分开展示。
@@ -75,7 +84,7 @@ public class MarketplaceService {
                 .eq(type != null, Bicycle::getType, type)
                 .orderByDesc(Bicycle::getUpdatedAt);
         for (Bicycle bicycle : bicycleMapper.selectList(bicycleQuery)) {
-            Double distance = resolveDistance(latitude, longitude, bicycle.getLatitude(), bicycle.getLongitude());
+            Double distance = GeoDistanceUtils.calculateDistanceKm(latitude, longitude, bicycle.getLatitude(), bicycle.getLongitude());
             if (nearbyMode && (distance == null || distance > effectiveRadius)) {
                 continue;
             }
@@ -109,7 +118,7 @@ public class MarketplaceService {
             if (currentUser != null && Objects.equals(listing.getOwnerId(), currentUser.getId())) {
                 continue;
             }
-            Double distance = resolveDistance(latitude, longitude, listing.getLatitude(), listing.getLongitude());
+            Double distance = GeoDistanceUtils.calculateDistanceKm(latitude, longitude, listing.getLatitude(), listing.getLongitude());
             if (nearbyMode && (distance == null || distance > effectiveRadius)) {
                 continue;
             }
@@ -289,13 +298,21 @@ public class MarketplaceService {
     @Transactional
     public MarketplaceApplicationResponse createApplication(String currentUsername,
                                                             Long listingId,
-                                                            MarketplaceApplicationRequest request) {
+                                                            MarketplaceApplicationRequest request,
+                                                            HttpServletRequest servletRequest) {
         User renter = requireUser(currentUsername);
         MarketplaceListing listing = requireListing(listingId);
         if (Objects.equals(renter.getId(), listing.getOwnerId())) {
             throw new RuntimeException("不能申请租用自己发布的车辆");
         }
         ensureListingOpenForRenter(listing);
+        rentalLocationGuardService.ensureWithinRentalRange(
+                servletRequest,
+                listing.getName(),
+                listing.getLocation(),
+                listing.getLatitude(),
+                listing.getLongitude()
+        );
         validateRequestedWindow(listing, request.getRequestedStartTime(), request.getRequestedEndTime());
 
         long activeRequestCount = marketplaceApplicationMapper.selectCount(
@@ -757,27 +774,6 @@ public class MarketplaceService {
         if (requestedStartTime.isBefore(listing.getAvailableFrom()) || requestedEndTime.isAfter(listing.getAvailableTo())) {
             throw new RuntimeException("申请时间超出车主设置的可租范围");
         }
-    }
-
-    private Double resolveDistance(Double currentLatitude,
-                                   Double currentLongitude,
-                                   Double targetLatitude,
-                                   Double targetLongitude) {
-        if (currentLatitude == null || currentLongitude == null || targetLatitude == null || targetLongitude == null) {
-            return null;
-        }
-
-        double earthRadius = 6371.0;
-        double latDistance = Math.toRadians(targetLatitude - currentLatitude);
-        double lonDistance = Math.toRadians(targetLongitude - currentLongitude);
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(currentLatitude))
-                * Math.cos(Math.toRadians(targetLatitude))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return BigDecimal.valueOf(earthRadius * c)
-                .setScale(2, java.math.RoundingMode.HALF_UP)
-                .doubleValue();
     }
 
     private BigDecimal toBigDecimal(Double value) {

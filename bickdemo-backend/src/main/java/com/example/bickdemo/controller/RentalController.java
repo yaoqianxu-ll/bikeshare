@@ -7,6 +7,7 @@ import com.example.bickdemo.dto.RentalResponse;
 import com.example.bickdemo.mapper.UserMapper;
 import com.example.bickdemo.service.RentalService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -46,9 +47,10 @@ public class RentalController {
      */
     @PostMapping
     public ResponseEntity<ApiResponse<RentalResponse>> createRental(@Valid @RequestBody RentalRequest request,
-                                                                     @AuthenticationPrincipal UserDetails userDetails) {
+                                                                     @AuthenticationPrincipal UserDetails userDetails,
+                                                                     HttpServletRequest servletRequest) {
         Long userId = getCurrentUserId(userDetails);
-        RentalResponse rental = rentalService.createRental(userId, request);
+        RentalResponse rental = rentalService.createRental(userId, request, servletRequest);
         return ResponseEntity.ok(ApiResponse.success("租赁成功", rental));
     }
 

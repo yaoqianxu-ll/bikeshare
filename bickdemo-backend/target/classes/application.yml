@@ -113,6 +113,11 @@ app:
     code-expire-minutes: 10
   redis:
     key-prefix: ${APP_REDIS_KEY_PREFIX:bickdemo:local:}
+  rental:
+    range-check:
+      # 本地开发通常拿到的是 127.0.0.1 / 内网 IP，这里默认不强制要求公网定位，方便联调。
+      require-public-ip: ${APP_RENTAL_RANGE_REQUIRE_PUBLIC_IP:false}
+      max-distance-km: ${APP_RENTAL_RANGE_MAX_DISTANCE_KM:10}
   security:
     ip-control:
       guest-max-requests-per-minute: ${APP_SECURITY_IP_GUEST_MAX_REQUESTS_PER_MINUTE:120}

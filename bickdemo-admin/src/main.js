@@ -11,7 +11,11 @@ const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
-app.use(ElementPlus)
+app.use(ElementPlus, {
+  message: {
+    duration: 2000
+  }
+})
 
 router.isReady().then(() => {
   app.mount('#app')

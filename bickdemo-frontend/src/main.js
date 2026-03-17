@@ -26,6 +26,9 @@ app.use(pinia)
 app.use(router)
 app.use(ElementPlus, {
   locale: zhCn,
+  message: {
+    duration: 2000
+  }
 })
 
 router.isReady().then(() => {

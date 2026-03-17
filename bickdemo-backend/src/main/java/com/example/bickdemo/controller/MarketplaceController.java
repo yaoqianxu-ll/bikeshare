@@ -11,6 +11,7 @@ import com.example.bickdemo.dto.MarketplaceListingResponse;
 import com.example.bickdemo.entity.BicycleType;
 import com.example.bickdemo.entity.MarketplaceReviewStatus;
 import com.example.bickdemo.service.MarketplaceService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -100,10 +101,11 @@ public class MarketplaceController {
     public ResponseEntity<ApiResponse<MarketplaceApplicationResponse>> createApplication(
             @PathVariable Long id,
             @Valid @RequestBody MarketplaceApplicationRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest servletRequest) {
         return ResponseEntity.ok(ApiResponse.success(
                 "租用申请已提交",
-                marketplaceService.createApplication(userDetails.getUsername(), id, request)
+                marketplaceService.createApplication(userDetails.getUsername(), id, request, servletRequest)
         ));
     }
 

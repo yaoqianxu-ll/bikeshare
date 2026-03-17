@@ -13,6 +13,7 @@ import com.example.bickdemo.mapper.RentalMapper;
 import com.example.bickdemo.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -42,6 +43,7 @@ public class RentalService {
     private final RentalMapper rentalMapper;
     private final BicycleMapper bicycleMapper;
     private final UserMapper userMapper;
+    private final RentalLocationGuardService rentalLocationGuardService;
 
     /**
      * 免费取消窗口。
@@ -55,7 +57,7 @@ public class RentalService {
      */
     @Transactional
     @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
-    public RentalResponse createRental(Long userId, RentalRequest request) {
+    public RentalResponse createRental(Long userId, RentalRequest request, HttpServletRequest servletRequest) {
         Bicycle bicycle = bicycleMapper.selectById(request.getBicycleId());
         if (bicycle == null) {
             throw new RuntimeException("自行车不存在：" + request.getBicycleId());
@@ -65,6 +67,14 @@ public class RentalService {
         if (bicycle.getStatus() != BicycleStatus.AVAILABLE) {
             throw new RuntimeException("自行车当前不可租赁");
         }
+
+        rentalLocationGuardService.ensureWithinRentalRange(
+                servletRequest,
+                bicycle.getName(),
+                bicycle.getLocation(),
+                bicycle.getLatitude(),
+                bicycle.getLongitude()
+        );
 
         int qty = request.getQuantity() == null ? 1 : request.getQuantity();
         if (qty <= 0) {

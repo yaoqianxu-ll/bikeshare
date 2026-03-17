@@ -83,6 +83,11 @@ management:
 app:
   redis:
     key-prefix: ${APP_REDIS_KEY_PREFIX:bickdemo:prod:}
+  rental:
+    range-check:
+      # 线上继续强制要求可识别公网 IP，避免本地/内网绕过 10 公里范围限制。
+      require-public-ip: ${APP_RENTAL_RANGE_REQUIRE_PUBLIC_IP:true}
+      max-distance-km: ${APP_RENTAL_RANGE_MAX_DISTANCE_KM:10}
   security:
     ip-control:
       guest-max-requests-per-minute: ${APP_SECURITY_IP_GUEST_MAX_REQUESTS_PER_MINUTE:120}

@@ -8,6 +8,13 @@ export function getMarketplaceDiscover(params) {
   })
 }
 
+export function getMarketplaceLocationHint() {
+  return request({
+    url: '/public/location-hint',
+    method: 'get'
+  })
+}
+
 export function getMyMarketplaceListings() {
   return request({
     url: '/marketplace/listings/my',

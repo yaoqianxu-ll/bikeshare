@@ -1,12 +1,15 @@
 package com.example.bickdemo.controller;
 
 import com.example.bickdemo.dto.ApiResponse;
+import com.example.bickdemo.dto.ClientLocationResponse;
 import com.example.bickdemo.dto.SiteVisitRequest;
+import com.example.bickdemo.service.ClientLocationService;
 import com.example.bickdemo.service.SystemLogService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PublicTrackingController {
 
     private final SystemLogService systemLogService;
+    private final ClientLocationService clientLocationService;
 
     /**
      * 记录页面首次访问。
@@ -32,5 +36,15 @@ public class PublicTrackingController {
                                                             HttpServletRequest servletRequest) {
         systemLogService.recordSiteVisit(servletRequest, request);
         return ResponseEntity.ok(ApiResponse.success("页面访问已记录", null));
+    }
+
+    /**
+     * 基于请求 IP 静默推断当前位置。
+     * 不会触发浏览器定位权限确认，适合给“附近可租”自动预选一个推荐点。
+     */
+    @GetMapping("/location-hint")
+    public ResponseEntity<ApiResponse<ClientLocationResponse>> getLocationHint(HttpServletRequest servletRequest) {
+        ClientLocationResponse response = clientLocationService.resolveClientLocation(servletRequest);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

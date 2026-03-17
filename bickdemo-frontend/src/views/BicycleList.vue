@@ -125,6 +125,12 @@
           </div>
           <p class="bike-subinfo">{{ getTypeText(selectedBicycle.type) }} · ¥{{ selectedBicycle.pricePerHour }}/小时</p>
         </div>
+        <el-alert
+          title="系统会按你当前所在位置校验，仅支持租用 10 公里范围内的车辆。"
+          type="info"
+          :closable="false"
+          class="rent-range-alert"
+        />
         <el-form :model="rentForm" label-width="0" style="margin-top: 20px">
           <el-form-item>
             <el-input-number
@@ -847,6 +853,10 @@ onMounted(() => {
   padding: 24px;
   border-radius: 16px;
   border: 1px solid rgba(255, 107, 53, 0.18);
+}
+
+.rent-range-alert {
+  margin-top: 14px;
 }
 
 .bike-info-header {
