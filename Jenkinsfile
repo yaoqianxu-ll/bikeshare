@@ -150,6 +150,30 @@ pipeline {
             }
         }
 
+        stage('Stop Deployment Containers') {
+            steps {
+                echo '🛑 停止部署容器，先释放服务器资源再开始构建...'
+                sh '''
+                    set +e
+
+                    CONTAINERS="${COMPOSE_PROJECT_NAME}-frontend-1 ${COMPOSE_PROJECT_NAME}-admin-1 ${COMPOSE_PROJECT_NAME}-app-1 ${COMPOSE_PROJECT_NAME}-mysql-1"
+
+                    echo "目标容器：${CONTAINERS}"
+                    for container in ${CONTAINERS}; do
+                        if docker ps -a --format '{{.Names}}' | grep -Fxq "${container}"; then
+                            echo "停止容器：${container}"
+                            docker stop "${container}" || true
+                        else
+                            echo "容器不存在，跳过：${container}"
+                        fi
+                    done
+
+                    echo "当前相关容器状态："
+                    docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep "${COMPOSE_PROJECT_NAME}" || true
+                '''
+            }
+        }
+
         stage('Build Backend') {
             when { expression { !params.SKIP_BUILD } }
             steps {
@@ -210,30 +234,6 @@ pipeline {
                         echo "检查产物：" && ls -lh dist/
                     '''
                 }
-            }
-        }
-
-        stage('Stop Deployment Containers') {
-            steps {
-                echo '🛑 停止部署容器，先释放服务器资源再继续构建/部署...'
-                sh '''
-                    set +e
-
-                    CONTAINERS="${COMPOSE_PROJECT_NAME}-frontend-1 ${COMPOSE_PROJECT_NAME}-admin-1 ${COMPOSE_PROJECT_NAME}-app-1 ${COMPOSE_PROJECT_NAME}-mysql-1"
-
-                    echo "目标容器：${CONTAINERS}"
-                    for container in ${CONTAINERS}; do
-                        if docker ps -a --format '{{.Names}}' | grep -Fxq "${container}"; then
-                            echo "停止容器：${container}"
-                            docker stop "${container}" || true
-                        else
-                            echo "容器不存在，跳过：${container}"
-                        fi
-                    done
-
-                    echo "当前相关容器状态："
-                    docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep "${COMPOSE_PROJECT_NAME}" || true
-                '''
             }
         }
 
