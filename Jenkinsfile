@@ -94,7 +94,7 @@ pipeline {
                                 int separatorIndex = line.indexOf('=')
                                 String key = line.substring(0, separatorIndex).trim()
                                 String value = line.substring(separatorIndex + 1).trim()
-                                env[key] = value
+                                env."${key}" = value
                             }
                         if (!env.MYSQL_PASSWORD?.trim()) {
                             env.MYSQL_PASSWORD = env.MYSQL_ROOT_PASSWORD
@@ -110,7 +110,7 @@ pipeline {
 
                     def invalidSecrets = []
                     ['MYSQL_ROOT_PASSWORD', 'MYSQL_PASSWORD', 'JWT_SECRET'].each { key ->
-                        String value = env[key]
+                        String value = env."${key}"
                         if (!value?.trim() || value.contains('change-me')) {
                             invalidSecrets << key
                         }
