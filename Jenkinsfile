@@ -77,6 +77,8 @@ pipeline {
                     List<String> externalEnvCandidates = [
                         env.BICKDEMO_ENV_FILE,
                         '/opt/bickdemo/.env',
+                        "${env.JENKINS_HOME ?: ''}/.bickdemo.env",
+                        '/var/jenkins_home/.bickdemo.env',
                         "${env.HOME ?: ''}/.bickdemo.env"
                     ].findAll { it?.trim() }
 
@@ -119,6 +121,7 @@ pipeline {
                     } else {
                         echo "未找到可用环境文件，已检查工作区路径: ${workspaceEnvCandidates}"
                         echo "未找到可用环境文件，已检查节点路径: ${externalEnvCandidates}"
+                        echo '提示：script/prod/deploy/.env.jenkins.current 被 .gitignore 忽略，不会随 checkout 出现在 Jenkins 工作区'
                         echo '继续使用 Jenkins 环境变量/凭据'
                     }
 
