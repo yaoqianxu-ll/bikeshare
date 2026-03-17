@@ -6,15 +6,20 @@ function resolveVisitScope(authStore) {
   return authStore.userId ? `user:${authStore.userId}` : 'guest'
 }
 
-function buildStorageKey(scope) {
-  return `${SITE_VISIT_KEY_PREFIX}:${scope}`
+function resolveVisitPath(route) {
+  return route?.path || '/'
+}
+
+function buildStorageKey(scope, path) {
+  return `${SITE_VISIT_KEY_PREFIX}:${scope}:${path}`
 }
 
 export async function trackSiteVisit(route) {
   if (typeof window === 'undefined' || !route) return
 
   const authStore = useAuthStore()
-  const storageKey = buildStorageKey(resolveVisitScope(authStore))
+  const visitPath = resolveVisitPath(route)
+  const storageKey = buildStorageKey(resolveVisitScope(authStore), visitPath)
 
   if (window.localStorage.getItem(storageKey) === '1') {
     return
@@ -33,8 +38,8 @@ export async function trackSiteVisit(route) {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        entryPath: route.path || '/',
-        entryTitle: String(route.meta?.title || route.name || document.title || route.path || '/'),
+        entryPath: visitPath,
+        entryTitle: String(route.meta?.title || route.name || document.title || visitPath),
         source: 'ADMIN'
       }),
       keepalive: true

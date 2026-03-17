@@ -57,6 +57,8 @@ CREATE TABLE `bicycles`  (
                              `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'AVAILABLE' COMMENT '状态：AVAILABLE/RENTED/MAINTENANCE/DISABLED',
                              `quantity` int NOT NULL DEFAULT 1 COMMENT '数量（库存）',
                              `location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '位置',
+                             `latitude` decimal(10, 6) NULL DEFAULT NULL COMMENT '纬度',
+                             `longitude` decimal(10, 6) NULL DEFAULT NULL COMMENT '经度',
                              `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '描述',
                              `price_per_hour` decimal(10, 2) NULL DEFAULT NULL COMMENT '每小时价格',
                              `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '图片 URL',
@@ -69,14 +71,15 @@ CREATE TABLE `bicycles`  (
 -- ----------------------------
 -- Records of bicycles
 -- ----------------------------
-INSERT INTO `bicycles` VALUES (1, '山地车 X1', 'MOUNTAIN', 'AVAILABLE', '北京市朝阳区', '专业山地自行车，适合越野骑行', 25.00, 'http://localhost:9000/bicycles/5fe1bdd5-37ef-4b9c-8705-c6ce7882cfb5.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (2, '公路车 Pro', 'ROAD', 'AVAILABLE', '北京市海淀区', '轻量化公路车，适合长途骑行', 35.00, 'http://localhost:9000/bicycles/c0460e9b-bbbb-47c7-a89a-5544b961e908.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (3, '城市单车 C1', 'CITY', 'AVAILABLE', '北京市东城区', '舒适城市自行车，适合日常通勤', 15.00, 'http://localhost:9000/bicycles/978e2c03-2a78-4085-bb9f-5d9d61aecff2.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (4, '电动车 E1', 'ELECTRIC', 'AVAILABLE', '北京市西城区', '电动助力自行车，省力便捷', 30.00, 'http://localhost:9000/bicycles/001f8da5-b139-406b-81ad-42b7c61c5f2b.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (5, '双人车 T1', 'TANDEM', 'AVAILABLE', '北京市丰台区', '双人协力自行车，适合情侣朋友', 40.00, 'http://localhost:9000/bicycles/5628005a-afdc-4172-9ee9-f0e55d370b04.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0);
-INSERT INTO `bicycles` VALUES (6, '机车', 'ROAD', 'MAINTENANCE', '江西省九江市', '公路车最快速度', 50.00, 'http://localhost:9000/bicycles/fe89ad6b-920b-45fe-9150-ec0a48d3fe9f.jpg', '2026-03-08 18:10:08', '2026-03-08 18:10:08', 0);
-INSERT INTO `bicycles` VALUES (7, '自行车', 'CITY', 'AVAILABLE', '江西省九江市', '单车更方便出行，绝不堵车，畅通无阻', 5.00, 'http://localhost:9000/bicycles/d2ff510e-fdbc-42df-815f-e53a94d27994.jpg', '2026-03-09 18:00:03', '2026-03-09 18:00:03', 0);
-INSERT INTO `bicycles` VALUES (8, '劳斯莱斯幻影', 'CITY', 'DISABLED', '上海市外滩区', '享受不一样的体验', 188.00, 'http://localhost:9000/bicycles/5ab8287c-7802-42d3-8cd3-f6d94162956e.jpg', '2026-03-09 18:04:46', '2026-03-09 18:04:46', 0);
+INSERT INTO `bicycles` (`id`, `name`, `type`, `status`, `quantity`, `location`, `latitude`, `longitude`, `description`, `price_per_hour`, `image_url`, `created_at`, `updated_at`, `deleted`) VALUES
+(1, '山地车 X1', 'MOUNTAIN', 'AVAILABLE', 1, '北京市 朝阳区', 39.921489, 116.486409, '专业山地自行车，适合越野骑行', 25.00, 'http://localhost:9000/bicycles/5fe1bdd5-37ef-4b9c-8705-c6ce7882cfb5.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0),
+(2, '公路车 Pro', 'ROAD', 'AVAILABLE', 1, '北京市 海淀区', 39.956074, 116.310316, '轻量化公路车，适合长途骑行', 35.00, 'http://localhost:9000/bicycles/c0460e9b-bbbb-47c7-a89a-5544b961e908.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0),
+(3, '城市单车 C1', 'CITY', 'AVAILABLE', 1, '北京市 东城区', 39.917544, 116.418757, '舒适城市自行车，适合日常通勤', 15.00, 'http://localhost:9000/bicycles/978e2c03-2a78-4085-bb9f-5d9d61aecff2.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0),
+(4, '电动车 E1', 'ELECTRIC', 'AVAILABLE', 1, '北京市 西城区', 39.915309, 116.366794, '电动助力自行车，省力便捷', 30.00, 'http://localhost:9000/bicycles/001f8da5-b139-406b-81ad-42b7c61c5f2b.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0),
+(5, '双人车 T1', 'TANDEM', 'AVAILABLE', 1, '北京市 丰台区', 39.863642, 116.286968, '双人协力自行车，适合情侣朋友', 40.00, 'http://localhost:9000/bicycles/5628005a-afdc-4172-9ee9-f0e55d370b04.jpg', '2026-03-03 18:50:58', '2026-03-03 18:50:58', 0),
+(6, '机车', 'ROAD', 'MAINTENANCE', 1, '江西省 九江市 濂溪区', 29.676175, 115.990120, '公路车最快速度', 50.00, 'http://localhost:9000/bicycles/fe89ad6b-920b-45fe-9150-ec0a48d3fe9f.jpg', '2026-03-08 18:10:08', '2026-03-08 18:10:08', 0),
+(7, '自行车', 'CITY', 'AVAILABLE', 1, '江西省 九江市 浔阳区', 29.724650, 115.995947, '单车更方便出行，绝不堵车，畅通无阻', 5.00, 'http://localhost:9000/bicycles/d2ff510e-fdbc-42df-815f-e53a94d27994.jpg', '2026-03-09 18:00:03', '2026-03-09 18:00:03', 0),
+(8, '劳斯莱斯幻影', 'CITY', 'DISABLED', 1, '上海市 黄浦区', 31.222771, 121.490317, '享受不一样的体验', 188.00, 'http://localhost:9000/bicycles/5ab8287c-7802-42d3-8cd3-f6d94162956e.jpg', '2026-03-09 18:04:46', '2026-03-09 18:04:46', 0);
 
 -- ----------------------------
 -- Table structure for rentals

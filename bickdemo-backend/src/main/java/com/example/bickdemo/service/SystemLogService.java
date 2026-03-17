@@ -134,8 +134,8 @@ public class SystemLogService {
     }
 
     /**
-     * 记录网站首次进入日志。
-     * 与 API 请求访问日志不同，这里统计的是“某个用户/访客第一次进入网站”，
+     * 记录页面首次访问日志。
+     * 与 API 请求访问日志不同，这里统计的是“某个用户/访客第一次进入某个页面”，
      * 后台总览里的总访问量、今日访问量都按这个口径来算。
      */
     @Transactional
@@ -147,8 +147,9 @@ public class SystemLogService {
         User currentUser = resolveCurrentUser();
         String ip = IpAddressUtils.resolveClientIp(request);
         String userAgent = trimValue(request.getHeader("User-Agent"), 500);
+        String entryPath = normalizeEntryPath(siteVisitRequest.getEntryPath());
 
-        if (hasRecordedSiteVisit(currentUser, ip, userAgent)) {
+        if (hasRecordedSiteVisit(currentUser, ip, userAgent, entryPath)) {
             return;
         }
 
@@ -157,7 +158,7 @@ public class SystemLogService {
         log.setUsername(currentUser != null ? trimValue(currentUser.getUsername(), 50) : null);
         log.setRoleName(currentUser != null && currentUser.getRole() != null ? currentUser.getRole().name() : null);
         log.setRequestMethod(SITE_VISIT_METHOD);
-        log.setRequestUri(trimValue(normalizeEntryPath(siteVisitRequest.getEntryPath()), 255));
+        log.setRequestUri(trimValue(entryPath, 255));
         log.setVisitIp(trimValue(ip, 64));
         log.setVisitAddress(trimValue(IpAddressUtils.resolveAddress(ip), 128));
         log.setStatus("SUCCESS");
@@ -170,7 +171,7 @@ public class SystemLogService {
     }
 
     /**
-     * 网站首次进入上报接口本身不应该再按 API 请求写一条 visit log，
+     * 页面首次访问上报接口本身不应该再按 API 请求写一条 visit log，
      * 否则总访问量会又被接口访问次数污染。
      */
     public boolean shouldSkipRequestVisitLog(HttpServletRequest request) {
@@ -527,26 +528,26 @@ public class SystemLogService {
     private String buildSiteVisitMessage(SiteVisitRequest request) {
         String source = StringUtils.hasText(request.getSource()) ? request.getSource().trim() : "UNKNOWN";
         String title = StringUtils.hasText(request.getEntryTitle()) ? request.getEntryTitle().trim() : null;
-        return title == null ? "网站首次进入来源：" + source : "网站首次进入来源：" + source + "，落地页：" + title;
+        return title == null ? "页面首次访问来源：" + source : "页面首次访问来源：" + source + "，页面标题：" + title;
     }
 
-    private boolean hasRecordedSiteVisit(User currentUser, String ip, String userAgent) {
+    private boolean hasRecordedSiteVisit(User currentUser, String ip, String userAgent, String entryPath) {
         if (currentUser != null && currentUser.getId() != null) {
             Long userCount = visitLogMapper.selectCount(new LambdaQueryWrapper<VisitLog>()
                     .eq(VisitLog::getRequestMethod, SITE_VISIT_METHOD)
+                    .eq(VisitLog::getRequestUri, entryPath)
                     .eq(VisitLog::getUserId, currentUser.getId())
                     .eq(VisitLog::getDeleted, 0));
-            if (userCount != null && userCount > 0) {
-                return true;
-            }
+            return userCount != null && userCount > 0;
         }
 
         Long guestCount = visitLogMapper.selectCount(new LambdaQueryWrapper<VisitLog>()
                 .eq(VisitLog::getRequestMethod, SITE_VISIT_METHOD)
+                .eq(VisitLog::getRequestUri, entryPath)
                 .eq(VisitLog::getDeleted, 0)
                 .eq(StringUtils.hasText(ip), VisitLog::getVisitIp, ip)
                 .eq(StringUtils.hasText(userAgent), VisitLog::getUserAgent, userAgent)
-                .isNull(currentUser != null, VisitLog::getUserId));
+                .isNull(VisitLog::getUserId));
         return guestCount != null && guestCount > 0;
     }
 }

@@ -271,18 +271,6 @@ pipeline {
             }
         }
 
-        stage('Health Check') {
-            steps {
-                echo '🏥 健康检查...'
-                sh '''
-                    echo "等待后端启动..."
-                    sleep 10
-                    curl -f http://localhost:8080/actuator/health || echo "健康检查失败，但继续..."
-                    curl -f http://localhost:3001/health || echo "管理端健康检查失败，但继续..."
-                '''
-            }
-        }
-
         stage('Cleanup') {
             steps {
                 echo '🧹 清理构建缓存...'

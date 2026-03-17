@@ -8,7 +8,7 @@
           <p>平台车继续直接租，个人车走咨询、申请和线下交付时间线。</p>
         </div>
         <div class="hero-actions">
-          <el-button type="primary" @click="handleLocateNearby" :loading="locating">获取附近可租</el-button>
+          <el-button type="primary" @click="loadDiscover" :loading="discoverLoading">获取附近可租</el-button>
           <el-button plain v-if="userStore.isLoggedIn" @click="openListingDialog()">我要出租</el-button>
         </div>
       </div>
@@ -18,7 +18,7 @@
       <el-tab-pane label="附近可租" name="discover">
         <el-card shadow="never">
           <div class="toolbar">
-            <el-space wrap>
+            <el-space wrap class="region-toolbar">
               <el-select v-model="discoverFilters.type" clearable placeholder="车型筛选" style="width: 160px">
                 <el-option label="山地车" value="MOUNTAIN" />
                 <el-option label="公路车" value="ROAD" />
@@ -32,8 +32,41 @@
                 <el-option :value="8" label="8 公里" />
                 <el-option :value="15" label="15 公里" />
               </el-select>
+              <el-select
+                v-model="discoverRegion.provinceCode"
+                clearable
+                filterable
+                placeholder="选择省份"
+                style="width: 160px"
+                @change="handleDiscoverProvinceChange"
+              >
+                <el-option v-for="province in provinceOptions" :key="province.value" :label="province.label" :value="province.value" />
+              </el-select>
+              <el-select
+                v-model="discoverRegion.cityCode"
+                clearable
+                filterable
+                placeholder="选择城市"
+                style="width: 170px"
+                :disabled="!discoverRegion.provinceCode"
+                @change="handleDiscoverCityChange"
+              >
+                <el-option v-for="city in discoverCityOptions" :key="city.value" :label="city.label" :value="city.value" />
+              </el-select>
+              <el-select
+                v-model="discoverRegion.districtCode"
+                clearable
+                filterable
+                placeholder="选择区/县"
+                style="width: 180px"
+                :disabled="!discoverRegion.cityCode"
+                @change="handleDiscoverDistrictChange"
+              >
+                <el-option v-for="district in discoverDistrictOptions" :key="district.value" :label="district.label" :value="district.value" />
+              </el-select>
+              <el-button type="primary" plain @click="applyDiscoverRegion" :loading="locating" :disabled="!discoverRegion.districtCode">按所选地区推荐</el-button>
               <el-button plain @click="loadDiscover" :loading="discoverLoading">刷新推荐</el-button>
-              <el-button plain @click="handleLocateNearby" :loading="locating">使用我的位置</el-button>
+              <el-button plain @click="resetDiscoverRegion" :disabled="!hasDiscoverRegion">清空地区</el-button>
             </el-space>
             <span class="toolbar-text">{{ currentLocationText }}</span>
           </div>
@@ -221,8 +254,51 @@
       <el-form ref="listingFormRef" :model="listingForm" :rules="listingRules" label-width="96px">
         <el-form-item label="车辆名称" prop="name"><el-input v-model="listingForm.name" /></el-form-item>
         <el-form-item label="车辆类型" prop="type"><el-select v-model="listingForm.type"><el-option label="山地车" value="MOUNTAIN" /><el-option label="公路车" value="ROAD" /><el-option label="城市车" value="CITY" /><el-option label="电动车" value="ELECTRIC" /><el-option label="双人车" value="TANDEM" /></el-select></el-form-item>
-        <el-form-item label="交付地点" prop="location"><el-input v-model="listingForm.location" /></el-form-item>
-        <el-form-item label="定位坐标" prop="latitude"><el-space wrap><el-input v-model="listingForm.latitude" placeholder="纬度" /><el-input v-model="listingForm.longitude" placeholder="经度" /><el-button plain @click="fillListingLocation">使用当前位置</el-button></el-space></el-form-item>
+        <el-form-item label="交付地区" prop="districtCode">
+          <el-space wrap class="region-toolbar region-toolbar--form">
+            <el-select
+              v-model="listingForm.provinceCode"
+              clearable
+              filterable
+              placeholder="选择省份"
+              style="width: 150px"
+              @change="handleListingProvinceChange"
+            >
+              <el-option v-for="province in provinceOptions" :key="province.value" :label="province.label" :value="province.value" />
+            </el-select>
+            <el-select
+              v-model="listingForm.cityCode"
+              clearable
+              filterable
+              placeholder="选择城市"
+              style="width: 160px"
+              :disabled="!listingForm.provinceCode"
+              @change="handleListingCityChange"
+            >
+              <el-option v-for="city in listingCityOptions" :key="city.value" :label="city.label" :value="city.value" />
+            </el-select>
+            <el-select
+              v-model="listingForm.districtCode"
+              clearable
+              filterable
+              placeholder="选择区/县"
+              style="width: 170px"
+              :disabled="!listingForm.cityCode"
+              @change="handleListingDistrictChange"
+            >
+              <el-option v-for="district in listingDistrictOptions" :key="district.value" :label="district.label" :value="district.value" />
+            </el-select>
+          </el-space>
+        </el-form-item>
+        <el-form-item v-if="listingRegionWarning" label="地点提示">
+          <el-alert :title="listingRegionWarning" type="warning" :closable="false" class="region-alert" />
+        </el-form-item>
+        <el-form-item label="定位结果">
+          <div class="location-panel">
+            <div class="location-primary">{{ listingLocationText }}</div>
+            <div class="muted">{{ listingCoordinateText }}</div>
+          </div>
+        </el-form-item>
         <el-form-item label="租金/小时"><el-input-number v-model="listingForm.pricePerHour" :min="0.01" :precision="2" /></el-form-item>
         <el-form-item label="押金"><el-input-number v-model="listingForm.deposit" :min="0" :precision="2" /></el-form-item>
         <el-form-item label="交付方式" prop="deliveryMode"><el-radio-group v-model="listingForm.deliveryMode"><el-radio-button label="OWNER_MEETUP">车主当面交付</el-radio-button><el-radio-button label="RENTER_PICKUP">租客自提</el-radio-button><el-radio-button label="PLATFORM_DEPOT">平台托管</el-radio-button></el-radio-group></el-form-item>
@@ -256,6 +332,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { consultMarketplaceListing, createMarketplaceApplication, createMarketplaceListing, getMarketplaceDiscover, getMarketplaceOwnerApplications, getMarketplaceRenterApplications, getMyMarketplaceListings, updateMarketplaceApplicationStatus, updateMarketplaceListing } from '@/api/marketplace'
 import { uploadImage } from '@/api/file'
+import { chinaRegionOptions } from '@/data/chinaRegionOptions'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -268,6 +345,8 @@ const applicationSubmitting = ref(false)
 const listingDialogVisible = ref(false)
 const applicationDialogVisible = ref(false)
 const editingListingId = ref(null)
+const activeDiscoverRegionText = ref('')
+const listingRegionWarning = ref('')
 const selectedDiscoverItem = ref(null)
 const listingFormRef = ref(null)
 const applicationFormRef = ref(null)
@@ -278,11 +357,26 @@ const ownerApplications = ref([])
 const renterApplications = ref([])
 const coords = reactive({ latitude: null, longitude: null })
 const discoverFilters = reactive({ type: '', radiusKm: 8 })
-const listingForm = reactive({ name: '', type: 'CITY', location: '', latitude: null, longitude: null, pricePerHour: 12, deposit: 0, deliveryMode: 'OWNER_MEETUP', availabilityRange: [], imageUrl: '', description: '', status: 'AVAILABLE' })
+const discoverRegion = reactive({ provinceCode: '', cityCode: '', districtCode: '' })
+const listingForm = reactive({ name: '', type: 'CITY', provinceCode: '', cityCode: '', districtCode: '', location: '', latitude: null, longitude: null, pricePerHour: 12, deposit: 0, deliveryMode: 'OWNER_MEETUP', availabilityRange: [], imageUrl: '', description: '', status: 'AVAILABLE' })
 const applicationForm = reactive({ requestedRange: [], meetupLocation: '', meetupTime: null, renterMessage: '' })
-const listingRules = { name: [{ required: true, message: '请输入车辆名称', trigger: 'blur' }], type: [{ required: true, message: '请选择车辆类型', trigger: 'change' }], location: [{ required: true, message: '请输入交付地点', trigger: 'blur' }], latitude: [{ required: true, message: '请填写或获取当前位置', trigger: 'blur' }], availabilityRange: [{ type: 'array', required: true, message: '请选择可租时间段', trigger: 'change' }] }
+const listingRules = { name: [{ required: true, message: '请输入车辆名称', trigger: 'blur' }], type: [{ required: true, message: '请选择车辆类型', trigger: 'change' }], districtCode: [{ required: true, message: '请选择完整的省/市/区', trigger: 'change' }], availabilityRange: [{ type: 'array', required: true, message: '请选择可租时间段', trigger: 'change' }] }
 const applicationRules = { requestedRange: [{ type: 'array', required: true, message: '请选择租用时间', trigger: 'change' }], meetupLocation: [{ required: true, message: '请输入建议交付地点', trigger: 'blur' }] }
-const currentLocationText = computed(() => coords.latitude === null ? '当前使用默认发现模式' : `已按当前位置推荐 ${discoverFilters.radiusKm} 公里内资源`)
+const provinceOptions = chinaRegionOptions
+const hasDiscoverRegion = computed(() => Boolean(discoverRegion.provinceCode || discoverRegion.cityCode || discoverRegion.districtCode))
+const discoverCityOptions = computed(() => getCityOptions(discoverRegion.provinceCode))
+const discoverDistrictOptions = computed(() => getDistrictOptions(discoverRegion.provinceCode, discoverRegion.cityCode))
+const listingCityOptions = computed(() => getCityOptions(listingForm.provinceCode))
+const listingDistrictOptions = computed(() => getDistrictOptions(listingForm.provinceCode, listingForm.cityCode))
+const currentLocationText = computed(() => {
+  if (activeDiscoverRegionText.value) return `已按 ${activeDiscoverRegionText.value} 推荐 ${discoverFilters.radiusKm} 公里内资源`
+  const regionText = getRegionLabelText(discoverRegion.provinceCode, discoverRegion.cityCode, discoverRegion.districtCode)
+  if (regionText) return `已选中 ${regionText}，点击“按所选地区推荐”后刷新附近资源`
+  if (hasDiscoverRegion.value) return '请选择到区/县后再按地区推荐'
+  return '当前使用默认发现模式'
+})
+const listingLocationText = computed(() => listingForm.location || '请选择中国省/市/区，系统会自动生成标准交付地点')
+const listingCoordinateText = computed(() => listingForm.latitude === null || listingForm.longitude === null ? '系统会根据你选中的区/县中心点自动写入经纬度' : `经度 ${Number(listingForm.longitude).toFixed(6)} · 纬度 ${Number(listingForm.latitude).toFixed(6)}`)
 
 const formatDateTime = (value) => { if (!value) return '待更新'; const date = new Date(String(value).replace(' ', 'T')); if (Number.isNaN(date.getTime())) return String(value); const pad = (n) => String(n).padStart(2, '0'); return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}` }
 const formatForSubmit = (value) => { if (!value) return null; const date = value instanceof Date ? value : new Date(value); const pad = (n) => String(n).padStart(2, '0'); return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:00` }
@@ -321,15 +415,134 @@ const getTimelineType = (state) => state === 'DONE' ? 'success' : state === 'PEN
 const goLogin = () => router.push('/login')
 const goToPlatformRentals = () => router.push('/bicycles')
 const ensureLoggedIn = () => { if (userStore.isLoggedIn) return true; ElMessage.warning('请先登录后再继续'); goLogin(); return false }
+const getProvinceNode = (provinceCode) => provinceOptions.find((item) => item.value === String(provinceCode || '')) || null
+const getCityOptions = (provinceCode) => getProvinceNode(provinceCode)?.children || []
+const getCityNode = (provinceCode, cityCode) => getCityOptions(provinceCode).find((item) => item.value === String(cityCode || '')) || null
+const getDistrictOptions = (provinceCode, cityCode) => getCityNode(provinceCode, cityCode)?.children || []
+const getDistrictNode = (provinceCode, cityCode, districtCode) => getDistrictOptions(provinceCode, cityCode).find((item) => item.value === String(districtCode || '')) || null
+const joinRegionLabels = (labels) => labels.filter((label, index) => label && label !== labels[index - 1]).join(' ')
+const getRegionLabelText = (provinceCode, cityCode, districtCode) => {
+  const province = getProvinceNode(provinceCode)
+  const city = getCityNode(provinceCode, cityCode)
+  const district = getDistrictNode(provinceCode, cityCode, districtCode)
+  return joinRegionLabels([province?.label, city?.label, district?.label])
+}
+const normalizeRegionText = (value) => String(value || '').replace(/[\s,，/、.\-]/g, '')
+const findRegionSelectionByLocation = (location) => {
+  const normalized = normalizeRegionText(location)
+  if (!normalized) return null
+  for (const province of provinceOptions) {
+    for (const city of province.children || []) {
+      for (const district of city.children || []) {
+        const labels = [province.label, city.label, district.label]
+        const normalizedLabels = labels.map((label) => normalizeRegionText(label))
+        const fullName = normalizedLabels.join('')
+        const matchesByContain = normalizedLabels.every((label) => normalized.includes(label))
+        if (normalized === fullName || normalized.includes(fullName) || matchesByContain) {
+          return { provinceCode: province.value, cityCode: city.value, districtCode: district.value }
+        }
+      }
+    }
+  }
+  return null
+}
+const syncListingRegionSelection = () => {
+  const district = getDistrictNode(listingForm.provinceCode, listingForm.cityCode, listingForm.districtCode)
+  if (!district) {
+    listingForm.location = ''
+    listingForm.latitude = null
+    listingForm.longitude = null
+    return
+  }
+  listingForm.location = getRegionLabelText(listingForm.provinceCode, listingForm.cityCode, listingForm.districtCode)
+  listingForm.latitude = district.latitude
+  listingForm.longitude = district.longitude
+  listingRegionWarning.value = ''
+}
 
 const loadDiscover = async () => { discoverLoading.value = true; try { const params = { radiusKm: discoverFilters.radiusKm, type: discoverFilters.type || undefined }; if (coords.latitude !== null && coords.longitude !== null) { params.latitude = coords.latitude; params.longitude = coords.longitude } const res = await getMarketplaceDiscover(params); discoverItems.value = res.data || [] } finally { discoverLoading.value = false } }
 const loadPrivateData = async () => { if (!userStore.isLoggedIn) return; marketLoading.value = true; try { const [listingRes, ownerRes, renterRes] = await Promise.all([getMyMarketplaceListings(), getMarketplaceOwnerApplications(), getMarketplaceRenterApplications()]); myListings.value = listingRes.data || []; ownerApplications.value = ownerRes.data || []; renterApplications.value = renterRes.data || [] } finally { marketLoading.value = false } }
-const requestCurrentLocation = () => new Promise((resolve, reject) => { if (!navigator.geolocation) { reject(new Error('当前浏览器不支持定位')); return } navigator.geolocation.getCurrentPosition((position) => resolve({ latitude: Number(position.coords.latitude.toFixed(6)), longitude: Number(position.coords.longitude.toFixed(6)) }), reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }) })
-const handleLocateNearby = async () => { locating.value = true; try { const position = await requestCurrentLocation(); coords.latitude = position.latitude; coords.longitude = position.longitude; await loadDiscover(); ElMessage.success('已经按你的当前位置刷新附近可租资源') } catch (error) { console.error(error); ElMessage.error('获取定位失败，请检查浏览器定位权限') } finally { locating.value = false } }
-const fillListingLocation = async () => { locating.value = true; try { const position = await requestCurrentLocation(); listingForm.latitude = position.latitude; listingForm.longitude = position.longitude; if (!listingForm.location) listingForm.location = '当前位置'; ElMessage.success('已填入当前位置坐标') } catch (error) { console.error(error); ElMessage.error('定位失败，请手动填写坐标') } finally { locating.value = false } }
-
-const resetListingForm = () => { editingListingId.value = null; Object.assign(listingForm, { name: '', type: 'CITY', location: '', latitude: null, longitude: null, pricePerHour: 12, deposit: 0, deliveryMode: 'OWNER_MEETUP', availabilityRange: [], imageUrl: '', description: '', status: 'AVAILABLE' }) }
-const openListingDialog = (listing = null) => { if (!ensureLoggedIn()) return; resetListingForm(); if (listing) { editingListingId.value = listing.id; Object.assign(listingForm, { name: listing.name, type: listing.type, location: listing.location, latitude: listing.latitude, longitude: listing.longitude, pricePerHour: Number(listing.pricePerHour || 0), deposit: Number(listing.deposit || 0), deliveryMode: listing.deliveryMode, availabilityRange: [parseDate(listing.availableFrom), parseDate(listing.availableTo)].filter(Boolean), imageUrl: listing.imageUrl || '', description: listing.description || '', status: listing.status }) } listingDialogVisible.value = true }
+const handleDiscoverProvinceChange = () => {
+  discoverRegion.cityCode = ''
+  discoverRegion.districtCode = ''
+  coords.latitude = null
+  coords.longitude = null
+  activeDiscoverRegionText.value = ''
+}
+const handleDiscoverCityChange = () => {
+  discoverRegion.districtCode = ''
+  coords.latitude = null
+  coords.longitude = null
+  activeDiscoverRegionText.value = ''
+}
+const handleDiscoverDistrictChange = () => {
+  if (discoverRegion.districtCode) return
+  coords.latitude = null
+  coords.longitude = null
+  activeDiscoverRegionText.value = ''
+}
+const applyDiscoverRegion = async () => {
+  const district = getDistrictNode(discoverRegion.provinceCode, discoverRegion.cityCode, discoverRegion.districtCode)
+  if (!district) {
+    ElMessage.warning('请先选择完整的省/市/区')
+    return
+  }
+  const regionText = getRegionLabelText(discoverRegion.provinceCode, discoverRegion.cityCode, discoverRegion.districtCode)
+  locating.value = true
+  try {
+    coords.latitude = district.latitude
+    coords.longitude = district.longitude
+    activeDiscoverRegionText.value = regionText
+    await loadDiscover()
+    ElMessage.success(`已经按 ${regionText} 刷新附近可租资源`)
+  } finally {
+    locating.value = false
+  }
+}
+const resetDiscoverRegion = async () => {
+  discoverRegion.provinceCode = ''
+  discoverRegion.cityCode = ''
+  discoverRegion.districtCode = ''
+  coords.latitude = null
+  coords.longitude = null
+  activeDiscoverRegionText.value = ''
+  await loadDiscover()
+}
+const handleListingProvinceChange = () => {
+  listingForm.cityCode = ''
+  listingForm.districtCode = ''
+  listingForm.location = ''
+  listingForm.latitude = null
+  listingForm.longitude = null
+}
+const handleListingCityChange = () => {
+  listingForm.districtCode = ''
+  listingForm.location = ''
+  listingForm.latitude = null
+  listingForm.longitude = null
+}
+const handleListingDistrictChange = () => syncListingRegionSelection()
+const resetListingForm = () => {
+  editingListingId.value = null
+  listingRegionWarning.value = ''
+  Object.assign(listingForm, { name: '', type: 'CITY', provinceCode: '', cityCode: '', districtCode: '', location: '', latitude: null, longitude: null, pricePerHour: 12, deposit: 0, deliveryMode: 'OWNER_MEETUP', availabilityRange: [], imageUrl: '', description: '', status: 'AVAILABLE' })
+}
+const openListingDialog = (listing = null) => {
+  if (!ensureLoggedIn()) return
+  resetListingForm()
+  if (listing) {
+    editingListingId.value = listing.id
+    Object.assign(listingForm, { name: listing.name, type: listing.type, location: listing.location, latitude: listing.latitude, longitude: listing.longitude, pricePerHour: Number(listing.pricePerHour || 0), deposit: Number(listing.deposit || 0), deliveryMode: listing.deliveryMode, availabilityRange: [parseDate(listing.availableFrom), parseDate(listing.availableTo)].filter(Boolean), imageUrl: listing.imageUrl || '', description: listing.description || '', status: listing.status })
+    const matchedRegion = findRegionSelectionByLocation(listing.location)
+    if (matchedRegion) {
+      Object.assign(listingForm, matchedRegion)
+      syncListingRegionSelection()
+    } else if (listing.location) {
+      listingRegionWarning.value = '这条旧挂牌的地点不是标准省/市/区格式，请重新选择完整地区后再保存。'
+    }
+  }
+  listingDialogVisible.value = true
+}
 const triggerListingImageUpload = () => listingImageInputRef.value?.click()
 const handleListingImageSelected = async (event) => { const file = event?.target?.files?.[0]; if (!file) return; try { const res = await uploadImage(file); listingForm.imageUrl = res?.data?.url || ''; ElMessage.success('图片上传成功') } catch (error) { console.error(error); ElMessage.error('图片上传失败') } finally { if (event?.target) event.target.value = '' } }
 const submitListing = async () => { if (!listingFormRef.value) return; await listingFormRef.value.validate(); listingSubmitting.value = true; try { const payload = { name: listingForm.name, type: listingForm.type, location: listingForm.location, latitude: Number(listingForm.latitude), longitude: Number(listingForm.longitude), pricePerHour: Number(listingForm.pricePerHour), deposit: Number(listingForm.deposit || 0), deliveryMode: listingForm.deliveryMode, availableFrom: formatForSubmit(listingForm.availabilityRange?.[0]), availableTo: formatForSubmit(listingForm.availabilityRange?.[1]), imageUrl: listingForm.imageUrl || null, description: listingForm.description || null, status: listingForm.status }; const res = editingListingId.value ? await updateMarketplaceListing(editingListingId.value, payload) : await createMarketplaceListing(payload); ElMessage.success(res.message || (editingListingId.value ? '挂牌更新成功' : '挂牌发布成功')); listingDialogVisible.value = false; await Promise.all([loadPrivateData(), loadDiscover()]) } finally { listingSubmitting.value = false } }
@@ -407,6 +620,14 @@ watch(() => userStore.isLoggedIn, (loggedIn) => { if (loggedIn) { loadPrivateDat
 .toolbar {
   margin-bottom: 16px;
   flex-wrap: wrap;
+}
+
+.region-toolbar {
+  row-gap: 10px;
+}
+
+.region-toolbar--form {
+  width: 100%;
 }
 
 .card-col {
@@ -502,6 +723,24 @@ watch(() => userStore.isLoggedIn, (loggedIn) => { if (loggedIn) { loadPrivateDat
   border-radius: 14px;
   background: var(--market-sand);
   color: var(--market-ink);
+}
+
+.region-alert {
+  width: 100%;
+}
+
+.location-panel {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--market-sand);
+  border: 1px solid rgba(36, 52, 63, 0.08);
+}
+
+.location-primary {
+  font-weight: 700;
+  color: var(--market-ink);
+  margin-bottom: 6px;
 }
 
 @media (max-width: 768px) {

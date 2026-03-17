@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { trackSiteVisit } from '@/api/analytics'
 
 const routes = [
   {
@@ -78,6 +79,10 @@ router.beforeEach((to, from, next) => {
   } else {
     next()
   }
+})
+
+router.afterEach((to) => {
+  void trackSiteVisit(to)
 })
 
 export default router

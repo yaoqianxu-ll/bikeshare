@@ -33,12 +33,15 @@ public class BicycleRequest {
     private Integer quantity;
 
     /** 停放位置 */
+    @NotBlank(message = "停放位置不能为空")
     private String location;
 
     /** 纬度 */
+    @NotNull(message = "纬度不能为空")
     private Double latitude;
 
     /** 经度 */
+    @NotNull(message = "经度不能为空")
     private Double longitude;
 
     /** 描述信息 */

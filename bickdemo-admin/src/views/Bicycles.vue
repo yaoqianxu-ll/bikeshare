@@ -114,8 +114,50 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="位置">
-          <el-input v-model="form.location" />
+        <el-form-item label="停放地区" prop="districtCode">
+          <div class="region-toolbar">
+            <el-select
+              v-model="form.provinceCode"
+              clearable
+              filterable
+              placeholder="选择省份"
+              class="region-select"
+              @change="handleProvinceChange"
+            >
+              <el-option v-for="item in provinceOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+            <el-select
+              v-model="form.cityCode"
+              clearable
+              filterable
+              placeholder="选择城市"
+              class="region-select"
+              :disabled="!form.provinceCode"
+              @change="handleCityChange"
+            >
+              <el-option v-for="item in cityOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+            <el-select
+              v-model="form.districtCode"
+              clearable
+              filterable
+              placeholder="选择区/县"
+              class="region-select"
+              :disabled="!form.cityCode"
+              @change="handleDistrictChange"
+            >
+              <el-option v-for="item in districtOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </div>
+        </el-form-item>
+        <el-form-item v-if="regionWarning" label="地点提示">
+          <el-alert :title="regionWarning" type="warning" :closable="false" class="region-alert" />
+        </el-form-item>
+        <el-form-item label="定位结果">
+          <div class="location-panel">
+            <div class="location-primary">{{ locationText }}</div>
+            <div class="location-sub">{{ coordinateText }}</div>
+          </div>
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="form.description" type="textarea" :rows="4" resize="none" />
@@ -138,10 +180,11 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { createBicycle, deleteBicycle, getBicyclesPage, updateBicycle } from '@/api/bicycle'
 import { uploadImage } from '@/api/file'
+import { chinaRegionOptions } from '@/data/chinaRegionOptions'
 import { bicycleStatusText, bicycleStatusType, money, typeText } from '@/utils/format'
 
 const loading = ref(false)
@@ -150,6 +193,7 @@ const dialogVisible = ref(false)
 const records = ref([])
 const total = ref(0)
 const formRef = ref()
+const regionWarning = ref('')
 
 const query = reactive({ page: 1, size: 10, type: '', status: '' })
 const form = reactive({
@@ -158,7 +202,12 @@ const form = reactive({
   type: 'MOUNTAIN',
   status: 'AVAILABLE',
   quantity: 1,
+  provinceCode: '',
+  cityCode: '',
+  districtCode: '',
   location: '',
+  latitude: null,
+  longitude: null,
   description: '',
   pricePerHour: 20,
   imageUrl: ''
@@ -181,14 +230,65 @@ const statusOptions = [
 const rules = {
   name: [{ required: true, message: '请输入车辆名称', trigger: 'blur' }],
   type: [{ required: true, message: '请选择车辆类型', trigger: 'change' }],
-  status: [{ required: true, message: '请选择车辆状态', trigger: 'change' }]
+  status: [{ required: true, message: '请选择车辆状态', trigger: 'change' }],
+  districtCode: [{ required: true, message: '请选择完整的省/市/区', trigger: 'change' }]
 }
+const provinceOptions = chinaRegionOptions
+const cityOptions = computed(() => getCityOptions(form.provinceCode))
+const districtOptions = computed(() => getDistrictOptions(form.provinceCode, form.cityCode))
+const locationText = computed(() => form.location || '请选择标准中国地区，系统会自动生成停放位置')
+const coordinateText = computed(() => form.latitude === null || form.longitude === null ? '系统会根据所选区县中心点自动生成经纬度' : `经度 ${Number(form.longitude).toFixed(6)} · 纬度 ${Number(form.latitude).toFixed(6)}`)
 
 const getBicycleDisplayStatus = (row) => {
   if ((row?.status === 'AVAILABLE' || row?.status === 'RENTED') && Number(row?.quantity || 0) <= 0) {
     return 'SOLD_OUT'
   }
   return row?.status
+}
+
+const getProvinceNode = (provinceCode) => provinceOptions.find((item) => item.value === String(provinceCode || '')) || null
+const getCityOptions = (provinceCode) => getProvinceNode(provinceCode)?.children || []
+const getCityNode = (provinceCode, cityCode) => getCityOptions(provinceCode).find((item) => item.value === String(cityCode || '')) || null
+const getDistrictOptions = (provinceCode, cityCode) => getCityNode(provinceCode, cityCode)?.children || []
+const getDistrictNode = (provinceCode, cityCode, districtCode) => getDistrictOptions(provinceCode, cityCode).find((item) => item.value === String(districtCode || '')) || null
+const joinRegionLabels = (labels) => labels.filter((label, index) => label && label !== labels[index - 1]).join(' ')
+const getRegionLabelText = (provinceCode, cityCode, districtCode) => {
+  const province = getProvinceNode(provinceCode)
+  const city = getCityNode(provinceCode, cityCode)
+  const district = getDistrictNode(provinceCode, cityCode, districtCode)
+  return joinRegionLabels([province?.label, city?.label, district?.label])
+}
+const normalizeRegionText = (value) => String(value || '').replace(/[\s,，/、.\-]/g, '')
+const findRegionSelectionByLocation = (location) => {
+  const normalized = normalizeRegionText(location)
+  if (!normalized) return null
+  for (const province of provinceOptions) {
+    for (const city of province.children || []) {
+      for (const district of city.children || []) {
+        const labels = [province.label, city.label, district.label]
+        const normalizedLabels = labels.map((label) => normalizeRegionText(label))
+        const fullName = normalizedLabels.join('')
+        const matchesByContain = normalizedLabels.every((label) => normalized.includes(label))
+        if (normalized === fullName || normalized.includes(fullName) || matchesByContain) {
+          return { provinceCode: province.value, cityCode: city.value, districtCode: district.value }
+        }
+      }
+    }
+  }
+  return null
+}
+const syncRegionSelection = () => {
+  const district = getDistrictNode(form.provinceCode, form.cityCode, form.districtCode)
+  if (!district) {
+    form.location = ''
+    form.latitude = null
+    form.longitude = null
+    return
+  }
+  form.location = getRegionLabelText(form.provinceCode, form.cityCode, form.districtCode)
+  form.latitude = district.latitude
+  form.longitude = district.longitude
+  regionWarning.value = ''
 }
 
 const getBicycleStatusText = (row) => {
@@ -209,10 +309,16 @@ const resetForm = () => {
   form.type = 'MOUNTAIN'
   form.status = 'AVAILABLE'
   form.quantity = 1
+  form.provinceCode = ''
+  form.cityCode = ''
+  form.districtCode = ''
   form.location = ''
+  form.latitude = null
+  form.longitude = null
   form.description = ''
   form.pricePerHour = 20
   form.imageUrl = ''
+  regionWarning.value = ''
 }
 
 const load = async () => {
@@ -236,9 +342,46 @@ const handleFilter = () => {
   load()
 }
 
+const handleProvinceChange = () => {
+  form.cityCode = ''
+  form.districtCode = ''
+  form.location = ''
+  form.latitude = null
+  form.longitude = null
+  regionWarning.value = ''
+}
+
+const handleCityChange = () => {
+  form.districtCode = ''
+  form.location = ''
+  form.latitude = null
+  form.longitude = null
+  regionWarning.value = ''
+}
+
+const handleDistrictChange = () => {
+  syncRegionSelection()
+}
+
 const openDialog = (row) => {
   resetForm()
-  if (row) Object.assign(form, { ...row, pricePerHour: Number(row.pricePerHour || 0) })
+  if (row) {
+    Object.assign(form, {
+      ...row,
+      quantity: Number(row.quantity || 0),
+      pricePerHour: Number(row.pricePerHour || 0),
+      location: row.location || '',
+      latitude: row.latitude ?? null,
+      longitude: row.longitude ?? null
+    })
+    const matchedRegion = findRegionSelectionByLocation(row.location)
+    if (matchedRegion) {
+      Object.assign(form, matchedRegion)
+      syncRegionSelection()
+    } else if (row.location) {
+      regionWarning.value = '这辆旧车辆的地点不是标准省/市/区格式，请重新选择完整地区后再保存。'
+    }
+  }
   dialogVisible.value = true
 }
 
@@ -252,7 +395,18 @@ const submit = async () => {
   await formRef.value?.validate()
   saving.value = true
   try {
-    const payload = { ...form }
+    const payload = {
+      name: form.name,
+      type: form.type,
+      status: form.status,
+      quantity: Number(form.quantity || 0),
+      location: form.location,
+      latitude: form.latitude,
+      longitude: form.longitude,
+      description: form.description,
+      pricePerHour: Number(form.pricePerHour || 0),
+      imageUrl: form.imageUrl
+    }
     if (form.id) {
       await updateBicycle(form.id, payload)
       ElMessage.success('车辆已更新')
@@ -280,3 +434,39 @@ const remove = async (row) => {
 
 onMounted(load)
 </script>
+
+<style scoped>
+.region-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+}
+
+.region-select {
+  width: 168px;
+}
+
+.region-alert,
+.location-panel {
+  width: 100%;
+}
+
+.location-panel {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(245, 247, 250, 0.96);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.location-primary {
+  margin-bottom: 6px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.location-sub {
+  color: #6b7280;
+  font-size: 13px;
+}
+</style>

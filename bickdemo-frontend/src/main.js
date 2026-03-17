@@ -10,7 +10,6 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import App from './App.vue'
 import router from './router'
 import { useThemeStore } from './stores/theme'
-import { trackSiteVisit } from './api/analytics'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -30,6 +29,5 @@ app.use(ElementPlus, {
 })
 
 router.isReady().then(() => {
-  void trackSiteVisit(router.currentRoute.value)
   app.mount('#app')
 })
