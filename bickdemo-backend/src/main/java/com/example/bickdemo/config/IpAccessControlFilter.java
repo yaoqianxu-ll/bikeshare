@@ -24,6 +24,10 @@ import java.nio.charset.StandardCharsets;
 /**
  * IP 访问控制过滤器。
  * 在请求进入业务控制器之前完成访问频控和黑名单拦截，并在请求结束后统一记录访问日志。
+ *
+ * 访问日志记录策略：
+ * ✅ 记录：登录/注册、租赁、权限操作、关键业务接口
+ * ❌ 不记录：静态资源、健康检查、高频轮询接口、普通 GET 请求
  */
 public class IpAccessControlFilter extends OncePerRequestFilter {
 
@@ -31,15 +35,75 @@ public class IpAccessControlFilter extends OncePerRequestFilter {
     private final SystemLogService systemLogService;
     private final ObjectMapper objectMapper;
 
+    /**
+     * 判断是否应该跳过访问日志记录。
+     * 只记录关键业务操作，减少日志存储压力和查询干扰。
+     */
+    private boolean shouldSkipVisitLog(String uri, String method) {
+        // POST/PUT/DELETE 请求通常需要记录（关键业务操作）
+        if (!"GET".equalsIgnoreCase(method)) {
+            return false;
+        }
+
+        // 以下 GET 请求需要记录：租赁相关、用户信息、权限相关
+        if (uri.startsWith("/api/rentals/") || uri.equals("/api/rentals")
+                || uri.startsWith("/api/auth/")  // 登录注册相关（但一般是 POST）
+                || uri.startsWith("/api/users/")  // 用户信息管理
+                || uri.startsWith("/api/bicycles/") // 自行车租赁相关
+                || uri.contains("/admin/")) {     // 管理端关键接口
+            return false;
+        }
+
+        // 以下 GET 请求跳过不记录：
+        // 1. 静态资源
+        if (uri.endsWith(".js") || uri.endsWith(".css") || uri.endsWith(".png")
+                || uri.endsWith(".jpg") || uri.endsWith(".jpeg") || uri.endsWith(".gif")
+                || uri.endsWith(".ico") || uri.endsWith(".svg") || uri.endsWith(".woff")
+                || uri.endsWith(".woff2") || uri.endsWith(".ttf") || uri.endsWith(".eot")) {
+            return true;
+        }
+
+        // 2. 健康检查
+        if (uri.contains("/health") || uri.contains("/info") || uri.contains("/status")
+                || uri.equals("/api/actuator")) {
+            return true;
+        }
+
+        // 3. 高频轮询接口（根据你的实际接口调整）
+        if (uri.contains("/ws/") || uri.contains("/notification")
+                || uri.contains("/heart") || uri.contains("/ping")) {
+            return true;
+        }
+
+        // 4. 普通 GET 查询请求（非关键业务）
+        // 例如：列表查询、详情查询、配置获取等
+        if (uri.startsWith("/api/public/")
+                || (uri.startsWith("/api/bicycles") && !uri.contains("/rent"))
+                || uri.startsWith("/api/forum/")
+                || uri.startsWith("/api/comments/")
+                || uri.startsWith("/api/notifications/")
+                || uri.startsWith("/api/statistics/")) {
+            return true;
+        }
+
+        // 默认不记录普通 GET 请求
+        return true;
+    }
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
+        String method = request.getMethod();
         // WebSocket 握手、H2 控制台、预检请求等不走 API 频控逻辑。
-        return "OPTIONS".equalsIgnoreCase(request.getMethod())
+        if ("OPTIONS".equalsIgnoreCase(method)
                 || !uri.startsWith("/api/")
                 || uri.startsWith("/ws")
                 || uri.startsWith("/h2-console")
-                || uri.startsWith("/actuator");
+                || uri.startsWith("/actuator")) {
+            return true;
+        }
+        // 访问日志跳过：静态资源、健康检查、高频轮询接口、普通 GET 请求
+        return shouldSkipVisitLog(uri, method);
     }
 
     @Override
