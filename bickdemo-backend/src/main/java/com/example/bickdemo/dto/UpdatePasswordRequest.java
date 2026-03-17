@@ -11,6 +11,10 @@ public class UpdatePasswordRequest {
     @NotBlank(message = "当前密码不能为空")
     private String currentPassword;
 
+    @NotBlank(message = "邮箱验证码不能为空")
+    @Size(min = 6, max = 6, message = "邮箱验证码必须为 6 位")
+    private String code;
+
     @NotBlank(message = "新密码不能为空")
     @Size(min = 6, max = 100, message = "新密码长度必须在 6-100 个字符之间")
     @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{6,100}$", message = "新密码必须为 6 位以上英文和数字组合，且不能包含其他符号")

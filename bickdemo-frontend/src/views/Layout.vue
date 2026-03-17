@@ -140,6 +140,16 @@
         </nav>
 
         <div class="header-actions">
+          <a
+            v-if="isHomePage"
+            :href="openSourceProjectUrl"
+            class="header-support-link"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <el-icon><StarFilled /></el-icon>
+            <span>开源Gitee</span>
+          </a>
           <ThemeToggle variant="inline" :tone="isHomePage ? 'ghost' : 'solid'" />
           <div class="user-section" v-if="userStore.isLoggedIn">
             <el-dropdown :trigger="dropdownTrigger" placement="bottom-end" :show-timeout="120" :hide-timeout="180">
@@ -197,7 +207,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation } from '@element-plus/icons-vue'
+import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation, StarFilled } from '@element-plus/icons-vue'
 import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
 import { getCurrentUser } from '@/api/auth'
 import ThemeToggle from '@/components/ThemeToggle.vue'
@@ -213,6 +223,7 @@ const uploading = ref(false)
 const isMobile = ref(false)
 
 const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
+const openSourceProjectUrl = 'https://gitee.com/loopeasen/bikelease'
 const isHomePage = computed(() => route.name === 'Home')
 const dropdownTrigger = computed(() => (isMobile.value ? 'click' : 'hover'))
 const bgDrawerSize = computed(() => (isMobile.value ? '100%' : '400px'))
@@ -713,6 +724,17 @@ watch(
   background: rgba(248, 251, 255, 0.86);
 }
 
+.app-header.is-home-header .header-support-link {
+  color: rgba(248, 251, 255, 0.96);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: none;
+}
+
+.app-header.is-home-header .header-support-link:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
 /* 导航链接 */
 .nav-links {
   display: flex;
@@ -814,6 +836,35 @@ watch(
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.header-support-link {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--bs-ink);
+  background: color-mix(in srgb, var(--bs-surface-solid) 78%, transparent);
+  border: 1px solid var(--bs-stroke);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(12px) saturate(135%);
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.header-support-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+  background: color-mix(in srgb, var(--bs-surface-solid) 86%, transparent);
+}
+
+.header-support-link .el-icon {
+  font-size: 15px;
+  color: #f4b400;
 }
 
 /* 用户区域 */
@@ -1198,6 +1249,12 @@ watch(
     gap: 10px;
   }
 
+  .header-support-link {
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
   .bg-toggle {
     right: 16px;
     bottom: 72px;
@@ -1234,6 +1291,15 @@ watch(
 
   .header-actions {
     gap: 8px;
+  }
+
+  .header-support-link {
+    min-height: 36px;
+    padding: 0 10px;
+  }
+
+  .header-support-link span {
+    display: none;
   }
 }
 

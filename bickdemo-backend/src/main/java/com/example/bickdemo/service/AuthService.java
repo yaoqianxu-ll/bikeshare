@@ -56,7 +56,7 @@ public class AuthService {
      * 清理验证码时会遍历这个列表，把同一个邮箱在不同场景下的验证码一起清掉，
      * 避免旧验证码残留导致业务混乱。
      */
-    private static final String[] EMAIL_CODE_TYPES = {"REGISTER", "RESET_PASSWORD", "UPDATE_EMAIL"};
+    private static final String[] EMAIL_CODE_TYPES = {"REGISTER", "RESET_PASSWORD", "UPDATE_EMAIL", "UPDATE_PASSWORD"};
 
     private final UserMapper userMapper;
     private final EmailAuthMapper emailAuthMapper;
@@ -124,6 +124,9 @@ public class AuthService {
         }
         if ("UPDATE_EMAIL".equals(type) && userMapper.existsByEmail(email)) {
             throw new RuntimeException("邮箱已被使用");
+        }
+        if ("UPDATE_PASSWORD".equals(type) && userMapper.findByEmail(email) == null) {
+            throw new RuntimeException("该邮箱尚未注册");
         }
 
         String code = generateVerifyCode();
@@ -270,7 +273,7 @@ public class AuthService {
 
     /**
      * 修改当前登录用户密码。
-     * 需要验证旧密码，并防止把新密码改成与当前密码一致。
+     * 除了验证旧密码外，还要求用户完成当前绑定邮箱的验证码校验，降低账号被盗后的风险。
      */
     @Transactional
     public void updatePassword(String username, UpdatePasswordRequest request) {
@@ -278,6 +281,12 @@ public class AuthService {
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
+        if (!StringUtils.hasText(user.getEmail())) {
+            throw new RuntimeException("当前账号尚未绑定邮箱，无法通过邮箱验证码修改密码");
+        }
+
+        String email = normalizeEmail(user.getEmail());
+        validateEmailCode(email, request.getCode(), "UPDATE_PASSWORD");
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw new RuntimeException("当前密码错误");
@@ -289,6 +298,7 @@ public class AuthService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userMapper.updateById(user);
+        clearEmailCode(email);
     }
 
     /**
@@ -413,7 +423,10 @@ public class AuthService {
             throw new RuntimeException("验证码用途不能为空");
         }
         String normalized = type.trim().toUpperCase();
-        if (!"REGISTER".equals(normalized) && !"RESET_PASSWORD".equals(normalized) && !"UPDATE_EMAIL".equals(normalized)) {
+        if (!"REGISTER".equals(normalized)
+                && !"RESET_PASSWORD".equals(normalized)
+                && !"UPDATE_EMAIL".equals(normalized)
+                && !"UPDATE_PASSWORD".equals(normalized)) {
             throw new RuntimeException("不支持的验证码用途");
         }
         return normalized;

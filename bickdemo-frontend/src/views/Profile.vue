@@ -143,6 +143,24 @@
                 autocomplete="current-password"
               />
             </el-form-item>
+            <el-form-item label="邮箱验证码" prop="code">
+              <div class="code-row">
+                <el-input
+                  v-model="passwordForm.code"
+                  class="code-input"
+                  placeholder="请输入邮箱验证码"
+                  clearable
+                />
+                <el-button
+                  class="code-btn"
+                  :loading="sendPasswordCodeLoading"
+                  :disabled="passwordCountdown > 0 || !userInfo?.email"
+                  @click="handleSendPasswordCode"
+                >
+                  {{ passwordCountdown > 0 ? `${passwordCountdown}s后重试` : '发送验证码' }}
+                </el-button>
+              </div>
+            </el-form-item>
             <el-form-item label="新密码" prop="newPassword">
               <el-input
                 v-model="passwordForm.newPassword"
@@ -161,6 +179,9 @@
                 autocomplete="new-password"
               />
             </el-form-item>
+            <p class="panel-tip">
+              修改密码前需要验证当前绑定邮箱：{{ formatText(userInfo?.email) }}
+            </p>
             <el-form-item class="form-actions">
               <el-button type="primary" @click="handlePasswordUpdate" :loading="passwordLoading">更新密码</el-button>
             </el-form-item>
@@ -185,13 +206,16 @@ const profileLoading = ref(false)
 const emailLoading = ref(false)
 const passwordLoading = ref(false)
 const sendCodeLoading = ref(false)
+const sendPasswordCodeLoading = ref(false)
 const countdown = ref(0)
+const passwordCountdown = ref(0)
 const userInfo = ref(null)
 const avatarUploading = ref(false)
 const avatarDeleting = ref(false)
 const emailEditorVisible = ref(false)
 const REMEMBER_KEY = 'bickdemo:rememberLogin'
 let countdownTimer = null
+let passwordCountdownTimer = null
 
 const avatarText = computed(() => {
   const name = (userInfo.value?.username || userStore.username || '').toString().trim()
@@ -220,6 +244,7 @@ const emailForm = reactive({
 
 const passwordForm = reactive({
   currentPassword: '',
+  code: '',
   newPassword: '',
   confirmPassword: ''
 })
@@ -289,6 +314,10 @@ const passwordRules = {
   currentPassword: [
     { required: true, message: '请输入当前密码', trigger: 'blur' }
   ],
+  code: [
+    { required: true, message: '请输入邮箱验证码', trigger: 'blur' },
+    { min: 6, max: 6, message: '邮箱验证码必须为 6 位', trigger: 'blur' }
+  ],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
     { min: 6, max: 100, message: '新密码长度必须在 6-100 个字符之间', trigger: 'blur' },
@@ -314,6 +343,25 @@ const startCountdown = () => {
     countdown.value -= 1
     if (countdown.value <= 0) {
       clearCountdown()
+    }
+  }, 1000)
+}
+
+const clearPasswordCountdown = () => {
+  if (passwordCountdownTimer) {
+    clearInterval(passwordCountdownTimer)
+    passwordCountdownTimer = null
+  }
+  passwordCountdown.value = 0
+}
+
+const startPasswordCountdown = () => {
+  clearPasswordCountdown()
+  passwordCountdown.value = 60
+  passwordCountdownTimer = setInterval(() => {
+    passwordCountdown.value -= 1
+    if (passwordCountdown.value <= 0) {
+      clearPasswordCountdown()
     }
   }, 1000)
 }
@@ -525,9 +573,33 @@ const handleEmailUpdate = async () => {
 
 const resetPasswordForm = () => {
   passwordForm.currentPassword = ''
+  passwordForm.code = ''
   passwordForm.newPassword = ''
   passwordForm.confirmPassword = ''
   passwordFormRef.value?.clearValidate()
+}
+
+const handleSendPasswordCode = async () => {
+  const currentEmail = (userInfo.value?.email || '').trim().toLowerCase()
+  if (!currentEmail) {
+    ElMessage.warning('当前账号尚未绑定邮箱，无法发送验证码')
+    return
+  }
+
+  sendPasswordCodeLoading.value = true
+  try {
+    await sendEmailCode({
+      email: currentEmail,
+      type: 'UPDATE_PASSWORD'
+    })
+    passwordForm.code = ''
+    startPasswordCountdown()
+    ElMessage.success('验证码已发送，请查收当前绑定邮箱')
+  } catch (error) {
+    console.error(error)
+  } finally {
+    sendPasswordCodeLoading.value = false
+  }
 }
 
 const handlePasswordUpdate = async () => {
@@ -539,13 +611,20 @@ const handlePasswordUpdate = async () => {
     return
   }
 
+  if (!(userInfo.value?.email || '').trim()) {
+    ElMessage.warning('当前账号尚未绑定邮箱，暂时无法通过邮箱验证码修改密码')
+    return
+  }
+
   passwordLoading.value = true
   try {
     await changePassword({
       currentPassword: passwordForm.currentPassword,
+      code: passwordForm.code.trim(),
       newPassword: passwordForm.newPassword
     })
     localStorage.removeItem(REMEMBER_KEY)
+    clearPasswordCountdown()
     resetPasswordForm()
     ElMessage.success('密码已更新')
   } catch (error) {
@@ -561,6 +640,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   clearCountdown()
+  clearPasswordCountdown()
 })
 </script>
 

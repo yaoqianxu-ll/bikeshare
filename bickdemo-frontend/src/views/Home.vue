@@ -61,6 +61,7 @@
           <el-icon class="portal-arrow"><ArrowRight /></el-icon>
         </router-link>
       </div>
+
     </section>
   </div>
 </template>
@@ -551,5 +552,6 @@ onBeforeUnmount(() => {
   .portal-arrow {
     display: none;
   }
+
 }
 </style>

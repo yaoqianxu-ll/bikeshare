@@ -54,6 +54,9 @@ public class EmailMailService {
         if ("RESET_PASSWORD".equalsIgnoreCase(type)) {
             return "BikeShare 找回密码验证码";
         }
+        if ("UPDATE_PASSWORD".equalsIgnoreCase(type)) {
+            return "BikeShare 修改密码验证码";
+        }
         if ("UPDATE_EMAIL".equalsIgnoreCase(type)) {
             return "BikeShare 修改邮箱验证码";
         }
@@ -64,6 +67,8 @@ public class EmailMailService {
         String scene = "注册账号";
         if ("RESET_PASSWORD".equalsIgnoreCase(type)) {
             scene = "重置密码";
+        } else if ("UPDATE_PASSWORD".equalsIgnoreCase(type)) {
+            scene = "修改密码";
         } else if ("UPDATE_EMAIL".equalsIgnoreCase(type)) {
             scene = "修改邮箱";
         }
