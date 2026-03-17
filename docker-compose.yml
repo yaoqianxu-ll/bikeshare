@@ -35,7 +35,7 @@ services:
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-bickdemo}
       - MYSQL_USERNAME=${MYSQL_USERNAME:-root}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-change-me-db-password}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-change-me-root-password}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT:-http://localhost:9000}
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-change-me-minio-access-key}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-change-me-minio-secret-key}

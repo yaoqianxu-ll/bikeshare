@@ -13,6 +13,8 @@ pipeline {
         DEPLOY_USER = "${env.DEPLOY_USER ?: 'root'}"
 
         // 数据库配置
+        MYSQL_USERNAME = "${env.MYSQL_USERNAME ?: 'root'}"
+        MYSQL_PASSWORD = "${env.MYSQL_PASSWORD ?: env.MYSQL_ROOT_PASSWORD ?: 'change-me-root-password'}"
         MYSQL_ROOT_PASSWORD = "${env.MYSQL_ROOT_PASSWORD ?: 'change-me-root-password'}"
         MYSQL_DATABASE = "${env.MYSQL_DATABASE ?: 'bickdemo'}"
 
@@ -71,7 +73,9 @@ pipeline {
                         "${env.WORKSPACE}/.env",
                         env.BICKDEMO_ENV_FILE,
                         '/opt/bickdemo/.env',
-                        "${env.HOME ?: ''}/.bickdemo.env"
+                        "${env.HOME ?: ''}/.bickdemo.env",
+                        "${env.WORKSPACE}/script/prod/deploy/.env.jenkins.current",
+                        "${env.WORKSPACE}/script/prod/deploy/jenkins.env"
                     ].findAll { it?.trim() }
 
                     for (String candidate : envFileCandidates) {
@@ -92,10 +96,30 @@ pipeline {
                                 String value = line.substring(separatorIndex + 1).trim()
                                 env[key] = value
                             }
+                        if (!env.MYSQL_PASSWORD?.trim()) {
+                            env.MYSQL_PASSWORD = env.MYSQL_ROOT_PASSWORD
+                        }
                         echo "已从环境文件加载部署变量: ${envFilePath}"
                     } else {
                         echo '未找到可用环境文件，继续使用 Jenkins 环境变量/凭据'
                     }
+
+                    if (!env.MYSQL_PASSWORD?.trim()) {
+                        env.MYSQL_PASSWORD = env.MYSQL_ROOT_PASSWORD
+                    }
+
+                    def invalidSecrets = []
+                    ['MYSQL_ROOT_PASSWORD', 'MYSQL_PASSWORD', 'JWT_SECRET'].each { key ->
+                        String value = env[key]
+                        if (!value?.trim() || value.contains('change-me')) {
+                            invalidSecrets << key
+                        }
+                    }
+                    if (invalidSecrets) {
+                        error("部署环境变量未正确配置：${invalidSecrets.join(', ')}")
+                    }
+
+                    echo "部署变量检查完成：MYSQL_USERNAME=${env.MYSQL_USERNAME ?: 'root'}，MYSQL_PASSWORD=${env.MYSQL_PASSWORD == env.MYSQL_ROOT_PASSWORD ? '已复用 root 密码' : '使用独立数据库密码'}"
 
                     // 获取 Git 提交信息
                     env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
