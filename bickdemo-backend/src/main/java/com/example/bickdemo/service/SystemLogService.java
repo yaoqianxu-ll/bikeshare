@@ -6,6 +6,7 @@ import com.example.bickdemo.dto.AdminUserResponse;
 import com.example.bickdemo.dto.AdminUserUpdateRequest;
 import com.example.bickdemo.dto.BlacklistEntryResponse;
 import com.example.bickdemo.dto.BlacklistRequest;
+import com.example.bickdemo.dto.SiteVisitRequest;
 import com.example.bickdemo.dto.SystemLogOverviewResponse;
 import com.example.bickdemo.entity.ForumPost;
 import com.example.bickdemo.entity.LoginLog;
@@ -42,6 +43,8 @@ import java.util.regex.Pattern;
 public class SystemLogService {
 
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[A-Za-z0-9\\u4e00-\\u9fa5]+$");
+    public static final String SITE_VISIT_TRACKING_URI = "/api/public/site-visits";
+    private static final String SITE_VISIT_METHOD = "SITE";
 
     private final LoginLogMapper loginLogMapper;
     private final OperationLogMapper operationLogMapper;
@@ -128,6 +131,50 @@ public class SystemLogService {
         log.setMessage(trimValue(message, 255));
         log.setVisitedAt(LocalDateTime.now());
         visitLogMapper.insert(log);
+    }
+
+    /**
+     * 记录网站首次进入日志。
+     * 与 API 请求访问日志不同，这里统计的是“某个用户/访客第一次进入网站”，
+     * 后台总览里的总访问量、今日访问量都按这个口径来算。
+     */
+    @Transactional
+    public void recordSiteVisit(HttpServletRequest request, SiteVisitRequest siteVisitRequest) {
+        if (request == null || siteVisitRequest == null) {
+            return;
+        }
+
+        User currentUser = resolveCurrentUser();
+        String ip = IpAddressUtils.resolveClientIp(request);
+        String userAgent = trimValue(request.getHeader("User-Agent"), 500);
+
+        if (hasRecordedSiteVisit(currentUser, ip, userAgent)) {
+            return;
+        }
+
+        VisitLog log = new VisitLog();
+        log.setUserId(currentUser != null ? currentUser.getId() : null);
+        log.setUsername(currentUser != null ? trimValue(currentUser.getUsername(), 50) : null);
+        log.setRoleName(currentUser != null && currentUser.getRole() != null ? currentUser.getRole().name() : null);
+        log.setRequestMethod(SITE_VISIT_METHOD);
+        log.setRequestUri(trimValue(normalizeEntryPath(siteVisitRequest.getEntryPath()), 255));
+        log.setVisitIp(trimValue(ip, 64));
+        log.setVisitAddress(trimValue(IpAddressUtils.resolveAddress(ip), 128));
+        log.setStatus("SUCCESS");
+        log.setStatusCode(200);
+        log.setDurationMs(0L);
+        log.setUserAgent(userAgent);
+        log.setMessage(trimValue(buildSiteVisitMessage(siteVisitRequest), 255));
+        log.setVisitedAt(LocalDateTime.now());
+        visitLogMapper.insert(log);
+    }
+
+    /**
+     * 网站首次进入上报接口本身不应该再按 API 请求写一条 visit log，
+     * 否则总访问量会又被接口访问次数污染。
+     */
+    public boolean shouldSkipRequestVisitLog(HttpServletRequest request) {
+        return request != null && SITE_VISIT_TRACKING_URI.equals(request.getRequestURI());
     }
 
     /**
@@ -325,8 +372,10 @@ public class SystemLogService {
         SystemLogOverviewResponse response = new SystemLogOverviewResponse();
         response.setTotalUserCount(userMapper.selectCount(new LambdaQueryWrapper<User>()));
         response.setTotalPostCount(forumPostMapper.selectCount(new LambdaQueryWrapper<ForumPost>()));
-        response.setTotalVisitCount(visitLogMapper.selectCount(new LambdaQueryWrapper<VisitLog>()));
+        response.setTotalVisitCount(visitLogMapper.selectCount(new LambdaQueryWrapper<VisitLog>()
+                .eq(VisitLog::getRequestMethod, SITE_VISIT_METHOD)));
         response.setTodayVisitCount(visitLogMapper.selectCount(new LambdaQueryWrapper<VisitLog>()
+                .eq(VisitLog::getRequestMethod, SITE_VISIT_METHOD)
                 .ge(VisitLog::getVisitedAt, start)
                 .lt(VisitLog::getVisitedAt, end)));
         response.setBlacklistCount(ipBlacklistService.countActiveBans());
@@ -465,5 +514,39 @@ public class SystemLogService {
         }
         String normalized = value.trim();
         return normalized.length() > max ? normalized.substring(0, max) : normalized;
+    }
+
+    private String normalizeEntryPath(String entryPath) {
+        if (!StringUtils.hasText(entryPath)) {
+            return "/";
+        }
+        String normalized = entryPath.trim();
+        return normalized.startsWith("/") ? normalized : "/" + normalized;
+    }
+
+    private String buildSiteVisitMessage(SiteVisitRequest request) {
+        String source = StringUtils.hasText(request.getSource()) ? request.getSource().trim() : "UNKNOWN";
+        String title = StringUtils.hasText(request.getEntryTitle()) ? request.getEntryTitle().trim() : null;
+        return title == null ? "网站首次进入来源：" + source : "网站首次进入来源：" + source + "，落地页：" + title;
+    }
+
+    private boolean hasRecordedSiteVisit(User currentUser, String ip, String userAgent) {
+        if (currentUser != null && currentUser.getId() != null) {
+            Long userCount = visitLogMapper.selectCount(new LambdaQueryWrapper<VisitLog>()
+                    .eq(VisitLog::getRequestMethod, SITE_VISIT_METHOD)
+                    .eq(VisitLog::getUserId, currentUser.getId())
+                    .eq(VisitLog::getDeleted, 0));
+            if (userCount != null && userCount > 0) {
+                return true;
+            }
+        }
+
+        Long guestCount = visitLogMapper.selectCount(new LambdaQueryWrapper<VisitLog>()
+                .eq(VisitLog::getRequestMethod, SITE_VISIT_METHOD)
+                .eq(VisitLog::getDeleted, 0)
+                .eq(StringUtils.hasText(ip), VisitLog::getVisitIp, ip)
+                .eq(StringUtils.hasText(userAgent), VisitLog::getUserAgent, userAgent)
+                .isNull(currentUser != null, VisitLog::getUserId));
+        return guestCount != null && guestCount > 0;
     }
 }

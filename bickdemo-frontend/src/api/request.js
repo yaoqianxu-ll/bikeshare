@@ -4,6 +4,25 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import router from '@/router'
 
 let authExpiredHandling = false
+const VISITOR_ID_STORAGE_KEY = 'bickdemo.visitorId'
+
+function resolveVisitorId() {
+  if (typeof window === 'undefined') {
+    return ''
+  }
+
+  const existing = window.localStorage.getItem(VISITOR_ID_STORAGE_KEY)
+  if (existing) {
+    return existing
+  }
+
+  const generated = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `visitor-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+
+  window.localStorage.setItem(VISITOR_ID_STORAGE_KEY, generated)
+  return generated
+}
 
 const request = axios.create({
   baseURL: '/api',
@@ -12,9 +31,14 @@ const request = axios.create({
 
 request.interceptors.request.use(
   config => {
+    config.headers = config.headers || {}
     const userStore = useUserStore()
     if (userStore.token) {
       config.headers.Authorization = `Bearer ${userStore.token}`
+    }
+    const visitorId = resolveVisitorId()
+    if (visitorId) {
+      config.headers['X-Visitor-Id'] = visitorId
     }
     return config
   },

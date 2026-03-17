@@ -247,6 +247,24 @@ CREATE TABLE `forum_posts` (
 -- ----------------------------
 -- Table structure for forum_post_comments
 -- ----------------------------
+DROP TABLE IF EXISTS `forum_post_view_records`;
+CREATE TABLE `forum_post_view_records` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '帖子浏览记录 ID',
+  `post_id` bigint NOT NULL COMMENT '帖子 ID',
+  `user_id` bigint DEFAULT NULL COMMENT '用户 ID，游客为空',
+  `viewer_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '每日唯一访客标识',
+  `viewed_on` date NOT NULL COMMENT '浏览日期',
+  `created_at` datetime DEFAULT NULL COMMENT '创建时间',
+  `updated_at` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_forum_post_view_daily` (`post_id`, `viewer_key`, `viewed_on`) USING BTREE,
+  KEY `idx_forum_post_view_user_day` (`user_id`, `viewed_on`) USING BTREE,
+  KEY `idx_forum_post_view_day` (`viewed_on`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='论坛帖子每日浏览记录表';
+
+-- ----------------------------
+-- Table structure for forum_post_comments
+-- ----------------------------
 DROP TABLE IF EXISTS `forum_post_comments`;
 CREATE TABLE `forum_post_comments` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '评论 ID',

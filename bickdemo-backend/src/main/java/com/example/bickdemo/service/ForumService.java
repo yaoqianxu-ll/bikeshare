@@ -14,8 +14,9 @@ import com.example.bickdemo.dto.ForumPostResponse;
 import com.example.bickdemo.entity.ForumPost;
 import com.example.bickdemo.entity.ForumPostComment;
 import com.example.bickdemo.entity.ForumPostImage;
-import com.example.bickdemo.entity.ForumPostStatus;
 import com.example.bickdemo.entity.ForumPostReaction;
+import com.example.bickdemo.entity.ForumPostStatus;
+import com.example.bickdemo.entity.ForumPostViewRecord;
 import com.example.bickdemo.entity.ForumReactionType;
 import com.example.bickdemo.entity.User;
 import com.example.bickdemo.entity.UserRole;
@@ -25,12 +26,19 @@ import com.example.bickdemo.mapper.ForumPostCommentMapper;
 import com.example.bickdemo.mapper.ForumPostImageMapper;
 import com.example.bickdemo.mapper.ForumPostMapper;
 import com.example.bickdemo.mapper.ForumPostReactionMapper;
+import com.example.bickdemo.mapper.ForumPostViewRecordMapper;
 import com.example.bickdemo.mapper.UserMapper;
+import com.example.bickdemo.util.IpAddressUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.DigestUtils;
 import org.springframework.util.StringUtils;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -64,11 +72,13 @@ public class ForumService {
     private static final String RELATION_REQUEST_SENT = "REQUEST_SENT";
     private static final String RELATION_REQUEST_RECEIVED = "REQUEST_RECEIVED";
     private static final String RELATION_SELF = "SELF";
+    private static final String VISITOR_ID_HEADER = "X-Visitor-Id";
 
     private final ForumPostMapper forumPostMapper;
     private final ForumPostCommentMapper forumPostCommentMapper;
     private final ForumPostImageMapper forumPostImageMapper;
     private final ForumPostReactionMapper forumPostReactionMapper;
+    private final ForumPostViewRecordMapper forumPostViewRecordMapper;
     private final FriendshipMapper friendshipMapper;
     private final FriendRequestMapper friendRequestMapper;
     private final UserMapper userMapper;
@@ -122,15 +132,16 @@ public class ForumService {
 
     /**
      * 获取帖子详情。
-     * 查看已通过审核的帖子时会累计浏览量；待审核帖子只有作者本人和管理员可见。
+     * 查看已通过审核的帖子时会按“同一用户/访客每天一次”累计浏览量；
+     * 待审核帖子只有作者本人和管理员可见。
      */
     @Transactional
-    public ForumPostDetailResponse getPostDetail(Long postId, String currentUsername) {
+    public ForumPostDetailResponse getPostDetail(Long postId, String currentUsername, HttpServletRequest request) {
         User currentUser = resolveCurrentUser(currentUsername);
         ForumPost post = requireAccessiblePost(postId, currentUser);
         if (post.getStatus() == ForumPostStatus.APPROVED) {
-            // 只有对外可见的帖子才记浏览量，避免管理员审核操作污染真实数据。
-            forumPostMapper.updateViewCount(postId, 1L);
+            // 只有对外可见的帖子才记浏览量，且同一用户/访客当天只计一次。
+            recordDailyPostView(post, currentUser, request);
             post = requireAccessiblePost(postId, currentUser);
         }
 
@@ -366,6 +377,25 @@ public class ForumService {
         return new ForumPostReactionResponse(postId, type.name(), active, safeLong(post.getLikeCount()), safeLong(post.getFavoriteCount()));
     }
 
+    private void recordDailyPostView(ForumPost post, User currentUser, HttpServletRequest request) {
+        if (post == null || post.getId() == null || request == null) {
+            return;
+        }
+
+        ForumPostViewRecord viewRecord = new ForumPostViewRecord();
+        viewRecord.setPostId(post.getId());
+        viewRecord.setUserId(currentUser != null ? currentUser.getId() : null);
+        viewRecord.setViewerKey(buildDailyViewerKey(currentUser, request));
+        viewRecord.setViewedOn(LocalDate.now());
+
+        try {
+            forumPostViewRecordMapper.insert(viewRecord);
+            forumPostMapper.updateViewCount(post.getId(), 1L);
+        } catch (DuplicateKeyException ignored) {
+            // 唯一索引命中说明今天已经记过这位访客的浏览量，不再重复累计。
+        }
+    }
+
     private void incrementReactionCount(Long postId, ForumReactionType type, long delta) {
         if (type == ForumReactionType.LIKE) {
             forumPostMapper.updateLikeCount(postId, delta);
@@ -510,12 +540,35 @@ public class ForumService {
         return value == null ? 0L : value;
     }
 
+    private String buildDailyViewerKey(User currentUser, HttpServletRequest request) {
+        if (currentUser != null && currentUser.getId() != null) {
+            return "USER:" + currentUser.getId();
+        }
+
+        String visitorId = normalizeNullable(request.getHeader(VISITOR_ID_HEADER));
+        if (visitorId != null) {
+            return "GUEST:" + trimToLength(visitorId, 64);
+        }
+
+        String ip = normalizeNullable(IpAddressUtils.resolveClientIp(request));
+        String userAgent = normalizeNullable(request.getHeader("User-Agent"));
+        String fingerprint = (ip == null ? "unknown-ip" : ip) + "|" + (userAgent == null ? "unknown-agent" : userAgent);
+        return "GUEST:" + DigestUtils.md5DigestAsHex(fingerprint.getBytes(StandardCharsets.UTF_8));
+    }
+
     private String normalizeNullable(String value) {
         if (value == null) {
             return null;
         }
         String normalized = value.trim();
         return normalized.isEmpty() ? null : normalized;
+    }
+
+    private String trimToLength(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength);
     }
 
     private List<String> normalizeImageUrls(ForumPostCreateRequest request) {

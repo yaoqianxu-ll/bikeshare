@@ -11,6 +11,7 @@ import com.example.bickdemo.dto.ForumPostListResponse;
 import com.example.bickdemo.dto.ForumPostReactionResponse;
 import com.example.bickdemo.dto.ForumPostResponse;
 import com.example.bickdemo.service.ForumService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -79,12 +80,14 @@ public class ForumController {
     @GetMapping("/posts/{postId}")
     public ResponseEntity<ApiResponse<ForumPostDetailResponse>> getPostDetail(
             @PathVariable Long postId,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest request
     ) {
         try {
             ForumPostDetailResponse response = forumService.getPostDetail(
                     postId,
-                    userDetails == null ? null : userDetails.getUsername()
+                    userDetails == null ? null : userDetails.getUsername(),
+                    request
             );
             return ResponseEntity.ok(ApiResponse.success(response));
         } catch (RuntimeException ex) {

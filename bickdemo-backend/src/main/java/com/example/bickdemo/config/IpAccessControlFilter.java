@@ -74,7 +74,9 @@ public class IpAccessControlFilter extends OncePerRequestFilter {
         } finally {
             long duration = Math.max(System.currentTimeMillis() - start, 0L);
             try {
-                systemLogService.recordVisit(request, statusCode, duration, null);
+                if (!systemLogService.shouldSkipRequestVisitLog(request)) {
+                    systemLogService.recordVisit(request, statusCode, duration, null);
+                }
             } catch (RuntimeException ex) {
                 log.warn("Failed to record visit log for {}", request.getRequestURI(), ex);
             }
