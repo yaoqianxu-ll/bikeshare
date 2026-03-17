@@ -132,6 +132,16 @@
             <span class="nav-icon-bg"><el-icon><ChatDotRound /></el-icon></span>
             <span>好友</span>
           </router-link>
+          <a
+            :href="openSourceProjectUrl"
+            class="nav-link nav-link-gitee"
+            target="_blank"
+            rel="noreferrer"
+            @click="closeNav"
+          >
+            <span class="nav-icon-bg"><el-icon><StarFilled /></el-icon></span>
+            <span>开源 Gitee</span>
+          </a>
           <!-- Mobile: the header login button is hidden, so keep a nav item. -->
           <router-link to="/login" class="nav-link nav-link-auth" v-if="!userStore.isLoggedIn" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><User /></el-icon></span>
@@ -141,7 +151,6 @@
 
         <div class="header-actions">
           <a
-            v-if="isHomePage"
             :href="openSourceProjectUrl"
             class="header-support-link"
             target="_blank"
@@ -1308,8 +1317,16 @@ watch(
   display: none;
 }
 
+.nav-link-gitee {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .nav-link-auth {
+    display: flex;
+  }
+
+  .nav-link-gitee {
     display: flex;
   }
 }
