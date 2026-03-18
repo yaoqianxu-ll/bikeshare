@@ -32,8 +32,10 @@
       <el-upload
         :auto-upload="false"
         :show-file-list="true"
+        :file-list="fileList"
         :limit="1"
         accept="image/*"
+        list-type="picture"
         :on-change="handleChange"
         :on-remove="handleRemove"
       >
@@ -41,7 +43,7 @@
       </el-upload>
       <div class="form-grid">
         <el-input v-model="uploadForm.name" placeholder="背景名称" />
-        <el-input-number v-model="uploadForm.sort" :min="0" :max="999" />
+        <el-input-number v-model="uploadForm.sort" :min="1" :max="999" />
         <el-button type="primary" :loading="uploading" @click="submit">上传背景</el-button>
       </div>
     </el-card>
@@ -77,6 +79,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { deleteBackground, getAllBackgrounds, setEnabledBackground, updateBackground, uploadBackground } from '@/api/background'
 
 const records = ref([])
+const fileList = ref([])
 const uploading = ref(false)
 const uploadForm = reactive({
   file: null,
@@ -91,6 +94,7 @@ const load = async () => {
 
 const handleChange = (file) => {
   uploadForm.file = file.raw
+  fileList.value = [file]
   if (!uploadForm.name) {
     uploadForm.name = file.name?.replace(/\.[^.]+$/, '') || ''
   }
@@ -98,6 +102,7 @@ const handleChange = (file) => {
 
 const handleRemove = () => {
   uploadForm.file = null
+  fileList.value = []
 }
 
 const submit = async () => {
@@ -110,6 +115,7 @@ const submit = async () => {
     await uploadBackground(uploadForm.file, uploadForm.name, uploadForm.sort)
     ElMessage.success('背景上传成功')
     uploadForm.file = null
+    fileList.value = []
     uploadForm.name = ''
     uploadForm.sort = 0
     await load()

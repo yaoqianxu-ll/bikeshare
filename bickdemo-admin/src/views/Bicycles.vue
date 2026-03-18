@@ -32,7 +32,6 @@
           <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </div>
-      <el-button type="primary" @click="openDialog()">新增车辆</el-button>
     </div>
 
     <el-card class="page-card" shadow="never">

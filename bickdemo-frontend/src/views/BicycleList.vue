@@ -54,6 +54,7 @@
             <div class="card-badges">
               <el-tag :type="getStatusType(bike)" class="status-badge">
                 {{ getStatusText(bike) }}
+                <span v-if="isOutOfServiceRange(bike)" class="distance-text">({{ getDistanceText(bike) }})</span>
               </el-tag>
               <el-tag class="type-badge" v-if="getTypeText(bike.type)">
                 {{ getTypeText(bike.type) }}
@@ -475,6 +476,10 @@ const getStatusType = (target) => {
     MAINTENANCE: 'info',
     DISABLED: 'danger'
   }
+  // 如果不在服务范围内，返回 warning 类型
+  if (target && typeof target === 'object' && target.status === 'AVAILABLE' && isOutOfServiceRange(target)) {
+    return 'warning'
+  }
   return types[status] || 'info'
 }
 
@@ -496,6 +501,19 @@ const getStatusText = (target) => {
     return '不在服务范围'
   }
   return texts[status] || status
+}
+
+const getDistanceText = (bike) => {
+  if (!userLocation.value || !bike.latitude || !bike.longitude) {
+    return ''
+  }
+  const distance = calculateDistance(
+    userLocation.value.latitude,
+    userLocation.value.longitude,
+    bike.latitude,
+    bike.longitude
+  )
+  return distance.toFixed(1) + 'km'
 }
 
 const getTypeText = (type) => {
@@ -775,6 +793,15 @@ onMounted(() => {
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.distance-text {
+  font-size: 11px;
+  opacity: 0.9;
+  font-weight: 500;
 }
 
 .type-badge {
