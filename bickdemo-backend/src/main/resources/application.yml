@@ -111,6 +111,12 @@ app:
   mail:
     from-name: ${MAIL_FROM_NAME:BikeShare}
     code-expire-minutes: 10
+  # 高德地图 API 配置（用于根据经纬度反查地区信息）
+  # 申请地址：https://lbs.amap.com/api/webservice/guide/api/georegeo
+  gaode:
+    map:
+      api:
+        key: ${GAODE_MAP_API_KEY:}
   redis:
     key-prefix: ${APP_REDIS_KEY_PREFIX:bickdemo:local:}
   rental:

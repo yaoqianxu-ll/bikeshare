@@ -59,6 +59,10 @@
               <el-tag class="type-badge" v-if="getTypeText(bike.type)">
                 {{ getTypeText(bike.type) }}
               </el-tag>
+              <el-tag type="warning" class="range-badge" v-if="isOutOfServiceRange(bike)">
+                <el-icon><Warning /></el-icon>
+                不在服务范围
+              </el-tag>
             </div>
           </div>
           <div class="bike-card-content">
@@ -242,11 +246,13 @@ import {
   Filter,
   Right,
   Check,
-  Close
+  Close,
+  Warning
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getBicycles } from '@/api/bicycle'
 import { createRental, endRental, getMyActiveRentals } from '@/api/rental'
+import { getMarketplaceLocationHint } from '@/api/marketplace'
 
 const userStore = useUserStore()
 const bicycles = ref([])
@@ -259,6 +265,8 @@ const selectedBicycle = ref(null)
 const renting = ref(false)
 const returning = ref(false)
 const currentRentalId = ref(null)
+const userLocation = ref(null) // { latitude, longitude, locationText }
+const SERVICE_RANGE_KM = 10 // 服务半径（公里）
 
 const bikeTypes = [
   { value: 'MOUNTAIN', label: '山地车' },
@@ -363,12 +371,92 @@ const loadUserActiveRentals = async () => {
   }
 }
 
+/**
+ * 加载用户当前位置（基于 IP 推断）
+ */
+const loadUserLocation = async () => {
+  try {
+    const res = await getMarketplaceLocationHint()
+    if (res.data && res.data.latitude && res.data.longitude) {
+      userLocation.value = {
+        latitude: res.data.latitude,
+        longitude: res.data.longitude,
+        locationText: res.data.locationText
+      }
+    }
+  } catch (error) {
+    console.debug('获取用户位置失败:', error.message)
+  }
+}
+
 const isBikeSoldOut = (bike) => {
   return bike?.status === 'AVAILABLE' && (bike?.quantity ?? 0) <= 0
 }
 
+/**
+ * 计算两点之间的距离（使用 Haversine 公式）
+ * @param {number} lat1 - 第一个点的纬度
+ * @param {number} lon1 - 第一个点的经度
+ * @param {number} lat2 - 第二个点的纬度
+ * @param {number} lon2 - 第二个点的经度
+ * @returns {number} 距离（公里）
+ */
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371 // 地球半径（公里）
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+const toRad = (value) => {
+  return value * Math.PI / 180
+}
+
+/**
+ * 判断自行车是否可租赁
+ * 需要满足：状态可用、有库存、且在服务范围内（10 公里）
+ */
 const isBikeRentable = (bike) => {
-  return bike?.status === 'AVAILABLE' && (bike?.quantity ?? 0) > 0
+  if (bike?.status !== 'AVAILABLE' || (bike?.quantity ?? 0) <= 0) {
+    return false
+  }
+
+  // 如果用户位置已知且自行车有坐标信息，检查距离
+  if (userLocation.value && bike.latitude && bike.longitude) {
+    const distance = calculateDistance(
+      userLocation.value.latitude,
+      userLocation.value.longitude,
+      bike.latitude,
+      bike.longitude
+    )
+    if (distance > SERVICE_RANGE_KM) {
+      return false
+    }
+  }
+
+  return true
+}
+
+/**
+ * 检查自行车是否超出服务范围
+ */
+const isOutOfServiceRange = (bike) => {
+  if (!userLocation.value || !bike.latitude || !bike.longitude) {
+    return false
+  }
+
+  const distance = calculateDistance(
+    userLocation.value.latitude,
+    userLocation.value.longitude,
+    bike.latitude,
+    bike.longitude
+  )
+  return distance > SERVICE_RANGE_KM
 }
 
 const getDisplayStatus = (target) => {
@@ -473,6 +561,7 @@ const confirmReturn = async () => {
 }
 
 onMounted(() => {
+  loadUserLocation()
   loadBicycles()
 })
 </script>
@@ -702,6 +791,20 @@ onMounted(() => {
   border: none;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.range-badge {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: rgba(255, 153, 0, 0.15);
+  color: #ff9900;
+  border: 1px solid rgba(255, 153, 0, 0.3);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255, 153, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .bike-card-content {
@@ -1158,6 +1261,13 @@ html.dark .modern-dialog .bike-subinfo,
 html.dark .modern-dialog .qty-hint,
 html.dark .modern-dialog .confirm-text {
   color: #cbd5e1;
+}
+
+html.dark .range-badge {
+  background: rgba(255, 153, 0, 0.2);
+  color: #ffb14d;
+  border-color: rgba(255, 153, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(255, 153, 0, 0.3);
 }
 
 html.dark .modern-dialog .return-dialog-content {

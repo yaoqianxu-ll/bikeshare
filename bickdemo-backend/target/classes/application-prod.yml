@@ -81,6 +81,10 @@ management:
       show-details: when_authorized
 
 app:
+  gaode:
+    map:
+      api:
+        key: ${GAODE_MAP_API_KEY:}
   redis:
     key-prefix: ${APP_REDIS_KEY_PREFIX:bickdemo:prod:}
   rental:

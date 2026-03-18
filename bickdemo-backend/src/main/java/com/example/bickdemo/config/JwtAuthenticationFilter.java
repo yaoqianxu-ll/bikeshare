@@ -61,8 +61,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 // 只有当前上下文还没有认证主体时才尝试填充，避免覆盖已建立的认证信息。
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-                if (jwtService.isTokenValid(jwt, userDetails)) {
+                UserDetails userDetails;
+                try {
+                    userDetails = this.userDetailsService.loadUserByUsername(username);
+                } catch (Exception e) {
+                    // 用户不存在（如被删除），记录日志后放过，让后续流程以"未登录"处理
+                    log.debug("Failed to load user '{}' from token: {}", username, e.getMessage());
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
+                if (userDetails != null && jwtService.isTokenValid(jwt, userDetails)) {
                     var authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
@@ -72,11 +81,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             new WebAuthenticationDetailsSource().buildDetails(request)
                     );
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    // Token 无效（过期或被篡改），记录日志后放过，让 Security 拦截器返回 401
+                    log.debug("Invalid JWT token for user: {}", username);
                 }
             }
         } catch (Exception e) {
-            // token 异常不直接中断请求，让后续鉴权流程以“未登录”状态处理即可。
-            log.error("JWT Authentication filter error", e);
+            // token 解析异常不直接中断请求，让后续鉴权流程以"未登录"状态处理即可。
+            log.debug("JWT Authentication filter error: {}", e.getMessage());
         }
         filterChain.doFilter(request, response);
     }
