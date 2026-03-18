@@ -23,6 +23,25 @@ bikeshare.online_bundle.pem   # PEM 格式证书
 bikeshare.online.csr          # 证书签名请求（备用）
 ```
 
+## 快速诊断
+
+### 检查域名解析
+
+```bash
+# 在本地电脑执行
+ping bikeshare.online
+# 应该返回 124.221.113.208
+```
+
+### 检查服务器端口
+
+```bash
+# 检查 443 端口是否开放
+telnet bikeshare.online 443
+# 或
+curl -I https://bikeshare.online
+```
+
 ## 部署步骤
 
 ### 1. 上传 SSL 证书到服务器

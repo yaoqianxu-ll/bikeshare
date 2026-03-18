@@ -89,8 +89,14 @@ services:
     build:
       context: ./bickdemo-admin
       dockerfile: Dockerfile.simple
+    dns:
+      - 183.60.83.19
+      - 183.60.82.98
     ports:
       - "3001:80"
+      - "3002:443"
+    volumes:
+      - ./ssl/bikeshare.online_nginx:/etc/nginx/ssl:ro
     restart: always
     networks:
       - bikeshare-network
