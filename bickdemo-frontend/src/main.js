@@ -11,6 +11,19 @@ import App from './App.vue'
 import router from './router'
 import { useThemeStore } from './stores/theme'
 
+// 修复下拉框悬停文字下沉问题
+function fixDropdownSpans() {
+  const observer = new MutationObserver(() => {
+    document.querySelectorAll('.el-select-dropdown__item span, .el-dropdown-menu__item span').forEach(span => {
+      span.style.transform = 'none'
+      span.style.position = 'static'
+      span.style.top = 'auto'
+      span.style.left = 'auto'
+    })
+  })
+  observer.observe(document.body, { childList: true, subtree: true })
+}
+
 const app = createApp(App)
 const pinia = createPinia()
 const themeStore = useThemeStore(pinia)
@@ -33,4 +46,5 @@ app.use(ElementPlus, {
 
 router.isReady().then(() => {
   app.mount('#app')
+  fixDropdownSpans()
 })

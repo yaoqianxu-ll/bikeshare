@@ -25,10 +25,10 @@
 
     <div class="page-toolbar">
       <div class="toolbar-left">
-        <el-select v-model="query.type" clearable placeholder="车辆类型" @change="handleFilter">
+        <el-select v-model="query.type" clearable placeholder="车辆类型" @change="handleFilter" >
           <el-option v-for="item in typeOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
-        <el-select v-model="query.status" clearable placeholder="车辆状态" @change="handleFilter">
+        <el-select v-model="query.status" clearable placeholder="车辆状态" @change="handleFilter" >
           <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </div>

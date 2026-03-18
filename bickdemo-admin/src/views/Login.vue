@@ -54,6 +54,9 @@ const submit = async () => {
     authStore.setAuth(res.data)
     ElMessage.success('登录成功')
     router.push('/dashboard')
+  } catch (error) {
+    console.error('登录失败:', error)
+    // 错误信息通常由 API 拦截器处理，这里只处理未捕获的情况
   } finally {
     loading.value = false
   }

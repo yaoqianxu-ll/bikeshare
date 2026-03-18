@@ -206,7 +206,7 @@
         </el-card>
       </el-tab-pane>
 
-      <el-tab-pane label="我的申请" name="applications">
+      <el-tab-pane label="我的租用" name="applications">
         <el-card shadow="never">
           <el-empty v-if="!userStore.isLoggedIn" description="登录后可以查看自己提交的租用申请">
             <el-button type="primary" @click="goLogin">去登录</el-button>
@@ -383,7 +383,7 @@ const currentLocationText = computed(() => {
   const regionText = getRegionLabelText(discoverRegion.provinceCode, discoverRegion.cityCode, discoverRegion.districtCode)
   if (regionText) return `已选中 ${regionText}，点击“按所选地区推荐”后刷新附近资源`
   if (hasDiscoverRegion.value) return '请选择到区/县后再按地区推荐'
-  return '进入页面后会自动按 IP 静默定位，不会触发浏览器定位授权，且仅可租用 10 公里内车辆'
+  return ''
 })
 const listingLocationText = computed(() => listingForm.location || '请选择中国省/市/区，系统会自动生成标准交付地点')
 const listingCoordinateText = computed(() => listingForm.latitude === null || listingForm.longitude === null ? '系统会根据你选中的区/县中心点自动写入经纬度' : `经度 ${Number(listingForm.longitude).toFixed(6)} · 纬度 ${Number(listingForm.latitude).toFixed(6)}`)

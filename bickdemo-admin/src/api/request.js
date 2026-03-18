@@ -31,10 +31,17 @@ request.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response
       if (status === 401) {
-        const authStore = useAuthStore()
-        authStore.logout()
-        ElMessage.error((data && data.message) || '登录已过期，请重新登录')
-        window.location.href = '/login'
+        // 如果是在登录页，显示错误信息但不跳转
+        const isLoginPage = window.location.pathname === '/login'
+        if (isLoginPage) {
+          ElMessage.error(data?.message || '用户名或密码错误')
+        } else {
+          // 其他页面则跳转登录
+          const authStore = useAuthStore()
+          authStore.logout()
+          ElMessage.error(data?.message || '登录已过期，请重新登录')
+          window.location.href = '/login'
+        }
       } else if (data?.message) {
         ElMessage.error(data.message)
       } else {

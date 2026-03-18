@@ -54,7 +54,6 @@
             <div class="card-badges">
               <el-tag :type="getStatusType(bike)" class="status-badge">
                 {{ getStatusText(bike) }}
-                <span v-if="isOutOfServiceRange(bike)" class="distance-text">({{ getDistanceText(bike) }})</span>
               </el-tag>
               <el-tag class="type-badge" v-if="getTypeText(bike.type)">
                 {{ getTypeText(bike.type) }}
@@ -72,6 +71,7 @@
             <p class="bike-location" v-if="bike.location">
               <el-icon><Location /></el-icon>
               <span>{{ bike.location }}</span>
+              <span v-if="bike.latitude && bike.longitude" class="bike-distance">{{ getDistanceText(bike) }}</span>
             </p>
             <div class="bike-actions">
               <el-button
@@ -793,15 +793,6 @@ onMounted(() => {
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   border: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.distance-text {
-  font-size: 11px;
-  opacity: 0.9;
-  font-weight: 500;
 }
 
 .type-badge {
@@ -876,6 +867,13 @@ onMounted(() => {
   font-size: 13px;
   margin-bottom: 18px;
   font-weight: 500;
+}
+
+.bike-distance {
+  color: #ff9900;
+  font-weight: 600;
+  font-size: 12px;
+  margin-left: auto;
 }
 
 .qty-hint {

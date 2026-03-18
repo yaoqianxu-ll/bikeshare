@@ -76,6 +76,9 @@ services:
       - 183.60.82.98
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ./ssl/bikeshare.online_nginx:/etc/nginx/ssl:ro
     restart: always
     networks:
       - bikeshare-network
