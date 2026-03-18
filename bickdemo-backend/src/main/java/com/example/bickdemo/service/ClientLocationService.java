@@ -26,7 +26,7 @@ import java.util.Set;
 
 /**
  * 基于公网 IP 做静默归属地推断。
- * 直接使用高德地图 IP 定位 API 一步获取地区信息。
+ * 使用 ip-api.com 直接获取 IP 对应的地区信息（免费、无需 key）。
  *
  * 目的不是替代 GPS，而是在不弹浏览器定位权限框的前提下，
  * 给"附近可租"提供一个足够接近国家/地区/城市的默认推荐点。
@@ -40,16 +40,13 @@ public class ClientLocationService {
     private static final String ENGLISH_LOCATION_SEGMENT_REGEX = "\\b[A-Za-z]+(?:[\\s-]+[A-Za-z]+)*\\b";
 
     /**
-     * 高德地图 IP 定位 API（一步到位获取地区信息）
-     * 文档：https://lbs.amap.com/api/webservice/guide/api/ipconfig
+     * 使用 ip-api.com 获取 IP 对应的地区信息
+     * 文档：http://ip-api.com/docs/api:json
      */
     private static final String IP_LOCATION_URL_TEMPLATE =
-            "https://restapi.amap.com/v5/ip?ip=%s&key=%s&type=4";
+            "http://ip-api.com/json/%s?fields=status,message,country,regionName,city,district,lat,lon,query&lang=zh-CN";
 
     private final ObjectMapper objectMapper;
-
-    @Value("${gaode.map.api.key:}")
-    private String gaodeApiKey;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
@@ -76,11 +73,20 @@ public class ClientLocationService {
         }
 
         try {
-            // 使用高德 IP 定位 API 直接获取地区信息
-            ClientLocationResponse result = fetchLocationFromGaodeIp(clientIp);
-            if (result != null) {
+            // 使用 ip-api.com 直接获取地区信息
+            IpLocationResponse payload = fetchLocationFromIp(clientIp);
+            if (payload != null) {
+                ClientLocationResponse result = new ClientLocationResponse();
                 result.setIp(clientIp);
                 result.setSource(LOCATION_SOURCE);
+                result.setLatitude(payload.getLat());
+                result.setLongitude(payload.getLon());
+                result.setCountry(cleanLocationPart(payload.getCountry()));
+                result.setProvince(cleanLocationPart(payload.getRegionName()));
+                result.setCity(cleanLocationPart(payload.getCity()));
+                result.setDistrict(cleanLocationPart(payload.getDistrict()));
+                result.setLocationText(joinLocationText(result.getCountry(), result.getProvince(), result.getCity(), result.getDistrict()));
+
                 locationCache.put(clientIp, result);
                 return result;
             }
@@ -94,57 +100,30 @@ public class ClientLocationService {
     }
 
     /**
-     * 使用高德地图 IP 定位 API 直接获取地区信息
-     * 文档：https://lbs.amap.com/api/webservice/guide/api/ipconfig
+     * 使用 ip-api.com 获取 IP 地区信息
      */
-    private ClientLocationResponse fetchLocationFromGaodeIp(String ip) throws Exception {
-        if (!StringUtils.hasText(gaodeApiKey)) {
-            log.debug("Gaode API key not configured, cannot lookup IP location");
-            return null;
-        }
-
-        String locationParam = URLEncoder.encode(ip, StandardCharsets.UTF_8.name());
+    private IpLocationResponse fetchLocationFromIp(String ip) throws Exception {
+        String encodedIp = URLEncoder.encode(ip, StandardCharsets.UTF_8);
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(IP_LOCATION_URL_TEMPLATE.formatted(locationParam, gaodeApiKey)))
-                .timeout(Duration.ofSeconds(5))
+                .uri(URI.create(IP_LOCATION_URL_TEMPLATE.formatted(encodedIp)))
+                .timeout(Duration.ofSeconds(4))
                 .header("Accept", "application/json")
                 .GET()
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            log.debug("Gaode IP location API failed with status {} for ip {}", response.statusCode(), ip);
+            log.debug("IP location lookup failed with status {} for ip {}", response.statusCode(), ip);
             return null;
         }
 
-        GaodeIpLocationResponse payload = objectMapper.readValue(response.body(), GaodeIpLocationResponse.class);
-        if (payload == null || !"1".equals(payload.getStatus())) {
-            log.debug("Gaode IP location returned failure for ip {}: {}", ip, payload == null ? "empty" : payload.getInfo());
+        IpLocationResponse payload = objectMapper.readValue(response.body(), IpLocationResponse.class);
+        if (payload == null || !"success".equalsIgnoreCase(payload.getStatus())) {
+            log.debug("IP location lookup returned failure for ip {}: {}", ip, payload == null ? "empty" : payload.getMessage());
             return null;
         }
 
-        if (payload.getProvince() == null && payload.getCity() == null && payload.getDistrict() == null) {
-            log.debug("Gaode IP location returned empty address for ip {}", ip);
-            return null;
-        }
-
-        ClientLocationResponse result = new ClientLocationResponse();
-        result.setCountry(cleanLocationPart(payload.getCountry()));
-        result.setProvince(cleanLocationPart(payload.getProvince()));
-        result.setCity(cleanLocationPart(payload.getCity()));
-        result.setDistrict(cleanLocationPart(payload.getDistrict()));
-        result.setLocationText(joinLocationText(result.getCountry(), result.getProvince(), result.getCity(), result.getDistrict()));
-
-        // 如果 API 返回了经纬度，也保存下来
-        if (StringUtils.hasText(payload.getLatitude()) && StringUtils.hasText(payload.getLongitude())) {
-            try {
-                result.setLatitude(Double.parseDouble(payload.getLatitude()));
-                result.setLongitude(Double.parseDouble(payload.getLongitude()));
-            } catch (NumberFormatException ignored) {
-            }
-        }
-
-        return result;
+        return payload;
     }
 
     private String joinLocationText(String country, String province, String city, String district) {
@@ -195,22 +174,19 @@ public class ClientLocationService {
     }
 
     /**
-     * 高德地图 IP 定位 API 响应
-     * 文档：https://lbs.amap.com/api/webservice/guide/api/ipconfig
+     * ip-api.com 响应
      */
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class GaodeIpLocationResponse {
+    private static class IpLocationResponse {
         private String status;
-        private String info;
-        private String infocode;
+        private String message;
         private String country;
-        private String province;
+        private String regionName;
         private String city;
         private String district;
-        private String adcode;
-        private String rectangle;
-        private String latitude;
-        private String longitude;
+        private Double lat;
+        private Double lon;
+        private String query;
     }
 }
