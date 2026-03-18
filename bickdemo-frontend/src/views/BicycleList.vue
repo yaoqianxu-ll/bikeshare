@@ -58,9 +58,6 @@
               <el-tag class="type-badge" v-if="getTypeText(bike.type)">
                 {{ getTypeText(bike.type) }}
               </el-tag>
-              <el-tag type="warning" class="range-badge" v-if="isOutOfServiceRange(bike)">
-                不在服务范围
-              </el-tag>
             </div>
           </div>
           <div class="bike-card-content">
@@ -489,6 +486,14 @@ const getStatusText = (target) => {
     SOLD_OUT: '已租罄',
     MAINTENANCE: '维修中',
     DISABLED: '不可用'
+  }
+  // 如果在服务范围内，显示正常状态
+  if (target && typeof target === 'object' && !isOutOfServiceRange(target)) {
+    return texts[status] || status
+  }
+  // 不在服务范围内，将"可租赁"替换为"不在服务范围"
+  if (status === 'AVAILABLE') {
+    return '不在服务范围'
   }
   return texts[status] || status
 }
