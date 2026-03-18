@@ -26,7 +26,7 @@ import java.util.Set;
 
 /**
  * 基于公网 IP 做静默归属地推断。
- * 使用 ip-api.com 直接获取 IP 对应的地区信息（免费、无需 key）。
+ * 使用 ipwhois.app 直接获取 IP 对应的地区信息（免费、无需 key、支持中文）。
  *
  * 目的不是替代 GPS，而是在不弹浏览器定位权限框的前提下，
  * 给"附近可租"提供一个足够接近国家/地区/城市的默认推荐点。
@@ -40,11 +40,12 @@ public class ClientLocationService {
     private static final String ENGLISH_LOCATION_SEGMENT_REGEX = "\\b[A-Za-z]+(?:[\\s-]+[A-Za-z]+)*\\b";
 
     /**
-     * 使用 ip-api.com 获取 IP 对应的地区信息
-     * 文档：http://ip-api.com/docs/api:json
+     * 使用 ipwhois.app 获取 IP 对应的地区信息
+     * 文档：https://ipwhois.app/documentation/
+     * 免费不限次数，支持中文
      */
     private static final String IP_LOCATION_URL_TEMPLATE =
-            "http://ip-api.com/json/%s?fields=status,message,country,regionName,city,district,lat,lon,query&lang=zh-CN";
+            "https://ipwhois.app/json/%s?lang=zh-CN";
 
     private final ObjectMapper objectMapper;
 
@@ -73,19 +74,24 @@ public class ClientLocationService {
         }
 
         try {
-            // 使用 ip-api.com 直接获取地区信息
+            // 使用 ipwhois.app 直接获取地区信息
             IpLocationResponse payload = fetchLocationFromIp(clientIp);
-            if (payload != null) {
+            if (payload != null && payload.getSuccess()) {
                 ClientLocationResponse result = new ClientLocationResponse();
                 result.setIp(clientIp);
                 result.setSource(LOCATION_SOURCE);
-                result.setLatitude(payload.getLat());
-                result.setLongitude(payload.getLon());
+                result.setLatitude(payload.getLatitude());
+                result.setLongitude(payload.getLongitude());
                 result.setCountry(cleanLocationPart(payload.getCountry()));
-                result.setProvince(cleanLocationPart(payload.getRegionName()));
+                result.setProvince(cleanLocationPart(payload.getRegion()));
                 result.setCity(cleanLocationPart(payload.getCity()));
-                result.setDistrict(cleanLocationPart(payload.getDistrict()));
-                result.setLocationText(joinLocationText(result.getCountry(), result.getProvince(), result.getCity(), result.getDistrict()));
+                // ipwhois.app 的 district 字段通常为空，这里不使用
+                result.setLocationText(joinLocationText(
+                    result.getCountry(),
+                    result.getProvince(),
+                    result.getCity(),
+                    null
+                ));
 
                 locationCache.put(clientIp, result);
                 return result;
@@ -100,13 +106,13 @@ public class ClientLocationService {
     }
 
     /**
-     * 使用 ip-api.com 获取 IP 地区信息
+     * 使用 ipwhois.app 获取 IP 地区信息
      */
     private IpLocationResponse fetchLocationFromIp(String ip) throws Exception {
         String encodedIp = URLEncoder.encode(ip, StandardCharsets.UTF_8);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(IP_LOCATION_URL_TEMPLATE.formatted(encodedIp)))
-                .timeout(Duration.ofSeconds(4))
+                .timeout(Duration.ofSeconds(5))
                 .header("Accept", "application/json")
                 .GET()
                 .build();
@@ -118,7 +124,7 @@ public class ClientLocationService {
         }
 
         IpLocationResponse payload = objectMapper.readValue(response.body(), IpLocationResponse.class);
-        if (payload == null || !"success".equalsIgnoreCase(payload.getStatus())) {
+        if (payload == null || !payload.getSuccess()) {
             log.debug("IP location lookup returned failure for ip {}: {}", ip, payload == null ? "empty" : payload.getMessage());
             return null;
         }
@@ -174,19 +180,18 @@ public class ClientLocationService {
     }
 
     /**
-     * ip-api.com 响应
+     * ipwhois.app 响应
      */
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static class IpLocationResponse {
-        private String status;
+        private String ip;
+        private Boolean success;
         private String message;
         private String country;
-        private String regionName;
+        private String region;
         private String city;
-        private String district;
-        private Double lat;
-        private Double lon;
-        private String query;
+        private Double latitude;
+        private Double longitude;
     }
 }
