@@ -1,5 +1,8 @@
 import request from './request'
 
+/**
+ * 获取市场发现数据
+ */
 export function getMarketplaceDiscover(params) {
   return request({
     url: '/marketplace/discover',
@@ -8,10 +11,15 @@ export function getMarketplaceDiscover(params) {
   })
 }
 
+/**
+ * 获取当前位置提示（基于 IP）
+ * 该接口为公开接口，不需要携带 token
+ */
 export function getMarketplaceLocationHint() {
   return request({
     url: '/public/location-hint',
-    method: 'get'
+    method: 'get',
+    skipAuth: true  // 标记为不需要认证
   })
 }
 

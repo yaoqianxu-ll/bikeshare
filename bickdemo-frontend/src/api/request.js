@@ -33,7 +33,8 @@ request.interceptors.request.use(
   config => {
     config.headers = config.headers || {}
     const userStore = useUserStore()
-    if (userStore.token) {
+    // 只有当请求没有标记 skipAuth 时才添加 token
+    if (userStore.token && !config.skipAuth) {
       config.headers.Authorization = `Bearer ${userStore.token}`
     }
     const visitorId = resolveVisitorId()

@@ -7,6 +7,7 @@ import com.example.bickdemo.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -103,6 +104,11 @@ public class AuthController {
      */
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<User>> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(401, "未登录或 Token 已过期"));
+        }
         Optional<User> user = authService.getCurrentUser(userDetails.getUsername());
         return user.map(value -> ResponseEntity.ok(ApiResponse.success(value)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -115,6 +121,11 @@ public class AuthController {
     @PutMapping("/update")
     public ResponseEntity<ApiResponse<AuthResponse>> updateUser(@Valid @RequestBody UpdateUserRequest request,
                                                                 @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(401, "未登录或 Token 已过期"));
+        }
         AuthResponse response = authService.updateUser(userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success("更新成功", response));
     }
@@ -125,6 +136,11 @@ public class AuthController {
     @PutMapping("/password")
     public ResponseEntity<ApiResponse<Void>> updatePassword(@Valid @RequestBody UpdatePasswordRequest request,
                                                             @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(401, "未登录或 Token 已过期"));
+        }
         authService.updatePassword(userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success("密码修改成功", null));
     }
@@ -137,6 +153,11 @@ public class AuthController {
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<ApiResponse<User>> uploadAvatar(@RequestParam("file") MultipartFile file,
                                                           @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(401, "未登录或 Token 已过期"));
+        }
         try {
             User user = authService.uploadAvatar(userDetails.getUsername(), file);
             return ResponseEntity.ok(ApiResponse.success("头像已更新", user));
@@ -153,6 +174,11 @@ public class AuthController {
     @DeleteMapping("/avatar")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<ApiResponse<User>> deleteAvatar(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(401, "未登录或 Token 已过期"));
+        }
         try {
             User user = authService.deleteAvatar(userDetails.getUsername());
             return ResponseEntity.ok(ApiResponse.success("头像已删除", user));

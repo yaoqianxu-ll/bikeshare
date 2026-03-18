@@ -121,8 +121,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // 登录注册、公开查询和 WebSocket 握手接口允许匿名访问。
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // 登录注册接口允许匿名访问。
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/verify-code").permitAll()
+                        // 公开查询和 WebSocket 握手接口允许匿名访问。
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/ws", "/ws/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
