@@ -38,7 +38,6 @@
           v-for="bike in bicycles"
           :key="bike.id"
           class="bike-card"
-          :class="{ 'unavailable': !isBikeRentable(bike) }"
         >
           <div class="bike-card-image">
             <div class="image-wrapper">
@@ -60,7 +59,6 @@
                 {{ getTypeText(bike.type) }}
               </el-tag>
               <el-tag type="warning" class="range-badge" v-if="isOutOfServiceRange(bike)">
-                <el-icon><Warning /></el-icon>
                 不在服务范围
               </el-tag>
             </div>
@@ -246,8 +244,7 @@ import {
   Filter,
   Right,
   Check,
-  Close,
-  Warning
+  Close
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getBicycles } from '@/api/bicycle'
@@ -335,7 +332,7 @@ const toggleAvailable = () => {
 }
 
 const sortBicycles = () => {
-  // 排序规则：可租赁 > 维修中 > 不可用 > 已租出
+  // 排序规则：服务范围内可租赁 > 可租赁 > 维修中 > 不可用 > 已租出
   const statusOrder = {
     'AVAILABLE': 1,
     'MAINTENANCE': 2,
@@ -346,6 +343,8 @@ const sortBicycles = () => {
     const rank = (bike) => {
       const base = statusOrder[bike.status] || 99
       if (bike.status === 'AVAILABLE' && (bike.quantity ?? 0) <= 0) return 4.5
+      // 在服务范围内且可租赁的排最前面
+      if (bike.status === 'AVAILABLE' && (bike.quantity ?? 0) > 0 && !isOutOfServiceRange(bike)) return 0
       return base
     }
     return rank(a) - rank(b)
@@ -713,15 +712,6 @@ onMounted(() => {
 .bike-card:hover {
   transform: translateY(-6px);
   box-shadow: 0 26px 70px rgba(15, 23, 42, 0.16);
-}
-
-.bike-card.unavailable {
-  opacity: 0.7;
-  filter: grayscale(0.3);
-}
-
-.bike-card.unavailable:hover {
-  transform: translateY(-6px) scale(1.01);
 }
 
 .bike-card-image {
