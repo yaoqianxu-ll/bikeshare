@@ -559,6 +559,17 @@ a {
   white-space: nowrap;
 }
 
+/* 防止下拉选项 span 文字出现滚动动画 - 修复鼠标移入 span 元素时的 tooltip 问题 */
+.el-select-dropdown__item span,
+.el-dropdown-menu__item span {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+}
+
 .el-dropdown .el-tooltip__trigger,
 .el-dropdown [title] {
   pointer-events: auto;
