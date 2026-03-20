@@ -297,6 +297,32 @@ onMounted(() => {
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
+  animation: rentalsPageFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes rentalsPageFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 卡片进入动画 */
+.my-rentals > .el-card {
+  animation: cardSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes cardSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .filter-card {
@@ -602,10 +628,10 @@ onMounted(() => {
 
 /* ========== 黑夜模式 ========== */
 html.dark .filter-card {
-  background: rgba(17, 25, 40, 0.82);
+  background: rgba(15, 23, 42, 0.92);
   backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
 }
 
 html.dark .filter-card::before {
@@ -613,24 +639,24 @@ html.dark .filter-card::before {
 }
 
 html.dark .card-header h2 {
-  color: #dbe6f3;
+  color: #ffffff;
 }
 
 html.dark .meta {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 html.dark :deep(.el-radio-group) {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.20);
 }
 
 html.dark :deep(.el-radio-button__outer) {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 html.dark :deep(.el-radio-button__outer:hover) {
-  color: #dbe6f3;
+  color: #ffffff;
 }
 
 html.dark :deep(.el-radio-button__original-radio:checked + .el-radio-button__outer) {
@@ -642,22 +668,22 @@ html.dark .price-text {
 }
 
 html.dark :deep(.el-table) {
-  color: #dbe6f3;
+  color: #ffffff;
 }
 
 html.dark :deep(.el-table th) {
-  background: rgba(255, 255, 255, 0.04);
-  color: #94a3b8;
-  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark :deep(.el-table__row:hover) {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 html.dark :deep(.el-table__cell) {
-  border-color: rgba(255, 255, 255, 0.08);
-  color: #dbe6f3;
+  border-color: rgba(148, 163, 184, 0.20);
+  color: #ffffff;
 }
 
 html.dark :deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
@@ -665,64 +691,64 @@ html.dark :deep(.el-table--striped .el-table__body tr.el-table__row--striped td)
 }
 
 html.dark :deep(.el-table__empty-text) {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 html.dark :deep(.el-tag--warning) {
-  background: rgba(245, 158, 11, 0.20);
+  background: rgba(245, 158, 11, 0.25);
   color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  border: 1px solid rgba(245, 158, 11, 0.40);
 }
 
 html.dark :deep(.el-tag--success) {
-  background: rgba(16, 185, 129, 0.20);
+  background: rgba(16, 185, 129, 0.25);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  border: 1px solid rgba(16, 185, 129, 0.40);
 }
 
 html.dark :deep(.el-tag--info) {
-  background: rgba(148, 163, 184, 0.20);
-  color: #94a3b8;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.40);
 }
 
 html.dark :deep(.el-card__header) {
-  background: rgba(17, 25, 40, 0.95);
+  background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(16px) saturate(140%);
-  border-bottom-color: rgba(255, 255, 255, 0.10);
+  border-bottom-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark :deep(.el-button--default) {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #dbe6f3;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  color: #ffffff;
 }
 
 html.dark :deep(.el-button--default:hover) {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.10);
 }
 
 html.dark :deep(.el-button--primary.is-plain) {
-  background: rgba(255, 107, 53, 0.15);
-  border: 1px solid rgba(255, 107, 53, 0.40);
+  background: rgba(255, 107, 53, 0.20);
+  border: 1px solid rgba(255, 107, 53, 0.45);
   color: #fb923c;
 }
 
 html.dark :deep(.el-button--primary.is-plain:hover) {
-  background: rgba(255, 107, 53, 0.22);
-  border-color: rgba(255, 107, 53, 0.55);
+  background: rgba(255, 107, 53, 0.28);
+  border-color: rgba(255, 107, 53, 0.60);
   color: #fdba74;
 }
 
 html.dark :deep(.el-button--success.is-plain) {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.38);
+  background: rgba(16, 185, 129, 0.20);
+  border: 1px solid rgba(16, 185, 129, 0.45);
   color: #34d399;
 }
 
 html.dark :deep(.el-button--success.is-plain:hover) {
-  background: rgba(16, 185, 129, 0.22);
-  border-color: rgba(16, 185, 129, 0.50);
+  background: rgba(16, 185, 129, 0.28);
+  border-color: rgba(16, 185, 129, 0.55);
   color: #6ee7b7;
 }
 
@@ -731,44 +757,44 @@ html.dark :deep(.el-button--primary:not(.is-plain):hover) {
 }
 
 html.dark :deep(.el-dialog) {
-  background: rgba(17, 25, 40, 0.95);
+  background: rgba(15, 23, 42, 0.95);
 }
 
 html.dark :deep(.el-dialog__header) {
-  background: rgba(17, 25, 40, 0.95);
-  border-bottom-color: rgba(255, 255, 255, 0.10);
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark :deep(.el-dialog__title) {
-  color: #dbe6f3;
+  color: #ffffff;
 }
 
 html.dark :deep(.el-dialog__footer) {
-  border-top-color: rgba(255, 255, 255, 0.10);
+  border-top-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark :deep(.el-descriptions__label) {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 html.dark :deep(.el-descriptions__content) {
-  color: #dbe6f3;
+  color: #ffffff;
 }
 
 html.dark :deep(.el-descriptions-item__cell) {
-  border-color: rgba(255, 255, 255, 0.10);
+  border-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark :deep(.el-pagination .btn-prev),
 html.dark :deep(.el-pagination .btn-next) {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #dbe6f3;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  color: #ffffff;
 }
 
 html.dark :deep(.el-pagination .btn-prev:hover),
 html.dark :deep(.el-pagination .btn-next:hover) {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.10);
 }
 
 html.dark :deep(.el-pagination li.is-active) {
@@ -784,20 +810,20 @@ html.dark :deep(.el-table__fixed-right-patch),
 html.dark :deep(.el-table__fixed-body-wrapper),
 html.dark :deep(.el-table__fixed-left-body-wrapper),
 html.dark :deep(.el-table__fixed-right-body-wrapper) {
-  background: rgba(17, 25, 40, 0.70);
+  background: rgba(15, 23, 42, 0.85);
 }
 
 html.dark :deep(.el-table th.el-table__cell) {
-  background: rgba(255, 255, 255, 0.04) !important;
-  color: #94a3b8;
-  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark :deep(.el-table td.el-table__cell),
 html.dark :deep(.el-table__body-wrapper .el-table__body tr.el-table__row > td) {
   background: transparent;
-  color: #dbe6f3;
-  border-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark :deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
@@ -805,11 +831,11 @@ html.dark :deep(.el-table--striped .el-table__body tr.el-table__row--striped td)
 }
 
 html.dark :deep(.el-table__body-wrapper .el-table__body tr.el-table__row:hover > td) {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 html.dark :deep(.el-table__header-wrapper) {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 /* 按钮样式 */

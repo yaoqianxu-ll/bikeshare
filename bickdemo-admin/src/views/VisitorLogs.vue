@@ -24,29 +24,15 @@
       <div class="toolbar-left">
         <el-input v-model="query.username" clearable placeholder="访问用户" @keyup.enter="search" />
         <el-select v-model="query.method" clearable placeholder="请求方式">
-          <el-option value="GET">
-            <span>GET</span>
-          </el-option>
-          <el-option value="POST">
-            <span>POST</span>
-          </el-option>
-          <el-option value="PUT">
-            <span>PUT</span>
-          </el-option>
-          <el-option value="DELETE">
-            <span>DELETE</span>
-          </el-option>
+          <el-option label="GET" value="GET" />
+          <el-option label="POST" value="POST" />
+          <el-option label="PUT" value="PUT" />
+          <el-option label="DELETE" value="DELETE" />
         </el-select>
         <el-select v-model="query.status" clearable placeholder="状态">
-          <el-option value="SUCCESS">
-            <span>成功</span>
-          </el-option>
-          <el-option value="FAIL">
-            <span>失败</span>
-          </el-option>
-          <el-option value="BLOCKED">
-            <span>已拦截</span>
-          </el-option>
+          <el-option label="成功" value="SUCCESS" />
+          <el-option label="失败" value="FAIL" />
+          <el-option label="已拦截" value="BLOCKED" />
         </el-select>
         <el-input v-model="query.ip" clearable placeholder="访问 IP" @keyup.enter="search" />
         <el-input v-model="query.requestUri" clearable placeholder="请求 URL" @keyup.enter="search" />

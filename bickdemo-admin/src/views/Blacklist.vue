@@ -5,13 +5,12 @@
         <div class="hero-copy">
           <span class="hero-tag">Blacklist</span>
           <h2>黑名单管理</h2>
-          <p>超过 1 分钟 30 次访问的 IP 会被 Redis 自动封禁 1 小时，这里可以查看和手动处理。</p>
         </div>
       </div>
       <div class="hero-chips">
         <div class="hero-chip">
           <span>当前封禁</span>
-          <strong>{{ total }}</strong>
+          <strong>{{ totalActive }}</strong>
         </div>
         <div class="hero-chip">
           <span>自动规则</span>
@@ -57,7 +56,16 @@
         </el-table-column>
         <el-table-column label="操作" width="110" align="center">
           <template #default="{ row }">
-            <el-button size="small" type="primary" plain @click="unban(row)">解除</el-button>
+            <el-button
+              v-if="row.status === 'ACTIVE'"
+              size="small"
+              type="primary"
+              plain
+              @click="unban(row)"
+            >
+              解除
+            </el-button>
+            <el-tag v-else size="small" effect="plain">已解封</el-tag>
           </template>
         </el-table-column>
       </el-table>
@@ -106,6 +114,7 @@ const dialogVisible = ref(false)
 const formRef = ref()
 const records = ref([])
 const total = ref(0)
+const totalActive = ref(0)
 
 const query = reactive({
   page: 1,
@@ -140,6 +149,8 @@ const load = async () => {
     })
     records.value = res.data?.records || []
     total.value = Number(res.data?.total || 0)
+    // 统计当前有效的封禁数量
+    totalActive.value = records.value.filter(r => r.status === 'ACTIVE').length
   } finally {
     loading.value = false
   }

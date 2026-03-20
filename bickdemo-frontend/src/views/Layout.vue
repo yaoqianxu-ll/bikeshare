@@ -166,7 +166,6 @@
                 <div class="user-avatar" v-if="!userStore.avatar">{{ userStore.username.charAt(0).toUpperCase() }}</div>
                 <el-avatar v-else :src="userStore.avatar" :size="32" class="user-avatar-img" />
                 <span class="user-text">{{ userStore.username }}</span>
-                <el-tag size="small" class="admin-tag" v-if="userStore.isAdmin">ADMIN</el-tag>
               </span>
               <template #dropdown>
                 <el-dropdown-menu>
@@ -201,7 +200,9 @@
 
     <!-- 主内容区 -->
     <main class="main-content" :class="{ 'is-home-main': isHomePage }">
-      <router-view />
+      <div class="page-content-wrapper">
+        <router-view />
+      </div>
     </main>
 
     <!-- 底部 -->
@@ -1001,17 +1002,6 @@ watch(
   -webkit-appearance: none;
 }
 
-.admin-tag {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: #fff;
-  border: none;
-  font-weight: 700;
-  font-size: 10px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
-}
-
 /* 按钮样式 */
 .auth-section {
   display: flex;
@@ -1101,6 +1091,54 @@ watch(
   padding: 0;
   margin-top: 72px;
   min-height: calc(100vh - 120px);
+}
+
+/* 页面内容缓入动画 - 卡片级别 */
+.page-content-wrapper {
+  animation: pageContentFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pageContentFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 卡片依次进入动画 */
+.page-content-wrapper > *:not(.app-header):not(.app-footer) {
+  animation: cardSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.page-content-wrapper > .el-card:nth-child(1),
+.page-content-wrapper > section:nth-child(1),
+.page-content-wrapper > div:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.page-content-wrapper > .el-card:nth-child(2),
+.page-content-wrapper > section:nth-child(2),
+.page-content-wrapper > div:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.page-content-wrapper > .el-card:nth-child(3),
+.page-content-wrapper > section:nth-child(3),
+.page-content-wrapper > div:nth-child(3) {
+  animation-delay: 0.19s;
+}
+
+@keyframes cardSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .main-content.is-home-main {

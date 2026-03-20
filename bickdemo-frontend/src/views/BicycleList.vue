@@ -1494,4 +1494,173 @@ html.dark .detail-dialog .detail-tags .el-tag {
     opacity: 1;
   }
 }
+
+/* ========== 黑夜模式 ========== */
+html.dark .filter-section {
+  background: rgba(15, 23, 42, 0.88);
+  border-color: rgba(148, 163, 184, 0.20);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.35);
+}
+
+html.dark .filter-title {
+  color: #f8fafc;
+}
+
+html.dark .filter-title .el-icon {
+  background: rgba(255, 107, 53, 0.20);
+  border-color: rgba(255, 107, 53, 0.35);
+  color: #fdba74;
+}
+
+html.dark .filter-subtitle {
+  color: #cbd5e1;
+}
+
+html.dark .filter-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(148, 163, 184, 0.20);
+  color: #cbd5e1;
+}
+
+html.dark .filter-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .bike-card {
+  background: rgba(15, 23, 42, 0.75);
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+html.dark .bike-card:hover {
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.40);
+}
+
+html.dark .bike-card-image {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.80) 0%, rgba(15, 23, 42, 0.85) 100%);
+}
+
+html.dark .bike-name,
+html.dark .detail-bike-name {
+  color: #ffffff;
+}
+
+html.dark .bike-location,
+html.dark .price-unit,
+html.dark .bike-subinfo,
+html.dark .confirm-text,
+html.dark .qty-hint {
+  color: #cbd5e1;
+}
+
+html.dark .no-image {
+  color: #475569;
+}
+
+html.dark .type-badge {
+  background: rgba(255, 255, 255, 0.90);
+  color: #1a1a2e;
+  border: none;
+}
+
+html.dark .status-badge {
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+html.dark .detail-btn {
+  background: rgba(148, 163, 184, 0.10);
+  border-color: rgba(148, 163, 184, 0.20);
+  color: #e2e8f0;
+}
+
+html.dark .detail-btn:hover {
+  background: rgba(148, 163, 184, 0.18);
+  border-color: rgba(203, 213, 225, 0.30);
+  color: #ffffff;
+}
+
+html.dark .modern-dialog :deep(.el-dialog) {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+
+html.dark .modern-dialog :deep(.el-dialog__header) {
+  background: rgba(15, 23, 42, 0.92);
+  border-bottom-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark .modern-dialog :deep(.el-dialog__title) {
+  color: #ffffff;
+}
+
+html.dark .modern-dialog :deep(.el-dialog__body) {
+  color: #e2e8f0;
+}
+
+html.dark .modern-dialog :deep(.el-dialog__footer) {
+  background: rgba(255, 255, 255, 0.02);
+  border-top-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark .rent-dialog-content .selected-bike-info {
+  background: rgba(255, 107, 53, 0.12);
+  border-color: rgba(255, 107, 53, 0.25);
+}
+
+html.dark .return-dialog-content {
+  background: rgba(30, 41, 59, 0.50);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 18px;
+}
+
+html.dark .detail-dialog :deep(.el-dialog) {
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+
+html.dark .detail-dialog :deep(.el-dialog__body) {
+  background: rgba(15, 23, 42, 0.98);
+}
+
+html.dark .detail-dialog .dialog-header {
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark .detail-dialog .detail-content {
+  background: rgba(15, 23, 42, 0.98);
+}
+
+html.dark .detail-dialog .detail-image-section {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.70) 0%, rgba(15, 23, 42, 0.80) 100%);
+}
+
+html.dark .detail-dialog .detail-info-section {
+  background: rgba(15, 23, 42, 0.95);
+}
+
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__label) {
+  color: #cbd5e1;
+}
+
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__content) {
+  color: #ffffff;
+}
+
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__cell) {
+  border-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__label.el-descriptions__cell.is-bordered-label) {
+  background: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
+}
+
+html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__content.el-descriptions__cell.is-bordered-content) {
+  background: rgba(30, 41, 59, 0.50);
+  color: #ffffff;
+}
+
+html.dark .detail-dialog .detail-tags .el-tag {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
 </style>

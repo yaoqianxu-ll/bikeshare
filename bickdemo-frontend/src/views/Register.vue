@@ -640,4 +640,106 @@ const handleRegister = async () => {
     grid-template-columns: 1fr;
   }
 }
+
+/* ========== 黑夜模式 ========== */
+html.dark .register-card-inner {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+
+html.dark .card-form {
+  background: rgba(15, 23, 42, 0.85);
+}
+
+html.dark .register-title {
+  color: #ffffff;
+}
+
+html.dark .register-subtitle {
+  color: #cbd5e1;
+}
+
+html.dark :deep(.el-form-item__label) {
+  color: #cbd5e1;
+}
+
+html.dark .input-wrapper {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+html.dark .input-wrapper:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+html.dark .input-wrapper:focus-within {
+  background: rgba(30, 41, 59, 0.60);
+  border-color: rgba(255, 107, 53, 0.45);
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.12);
+}
+
+html.dark .input-icon {
+  color: #94a3b8;
+}
+
+html.dark :deep(.el-input__inner) {
+  color: #ffffff;
+}
+
+html.dark :deep(.el-input__inner::placeholder) {
+  color: #64748b;
+}
+
+html.dark .code-row {
+  background: transparent;
+}
+
+html.dark :deep(.el-button--default) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(148, 163, 184, 0.20);
+  color: #e2e8f0;
+}
+
+html.dark :deep(.el-button--default:hover) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(203, 213, 225, 0.30);
+  color: #ffffff;
+}
+
+html.dark .link-text {
+  color: #cbd5e1;
+}
+
+html.dark .login-link {
+  color: #fdba74;
+}
+
+html.dark .login-link:hover {
+  color: #fb923c;
+}
+
+html.dark :deep(.el-checkbox__label) {
+  color: #cbd5e1;
+}
+
+html.dark :deep(.el-checkbox__input .el-checkbox__inner) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(148, 163, 184, 0.30);
+}
+
+html.dark :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+html.dark .agreement-tip {
+  color: #94a3b8;
+}
+
+html.dark .agreement-tip a {
+  color: #fdba74;
+}
+
+html.dark .agreement-tip a:hover {
+  color: #fb923c;
+}
 </style>

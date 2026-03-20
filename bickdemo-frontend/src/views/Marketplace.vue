@@ -903,4 +903,194 @@ watch(() => userStore.isLoggedIn, (loggedIn) => { if (loggedIn) { loadPrivateDat
     flex-direction: column;
   }
 }
+
+/* ========== 黑夜模式 ========== */
+html.dark .marketplace-page {
+  --market-ink: #f1f5f9;
+  --market-muted: #94a3b8;
+  --market-panel: rgba(30, 41, 59, 0.60);
+  --market-line: rgba(148, 163, 184, 0.20);
+  --market-accent: #fdba74;
+  --market-sand: rgba(30, 41, 59, 0.50);
+  --market-warm: rgba(51, 65, 85, 0.60);
+}
+
+html.dark .hero-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.80) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark .hero-kicker {
+  background: rgba(255, 107, 53, 0.15);
+  color: #fdba74;
+}
+
+html.dark .hero-head h1,
+html.dark .card-header strong,
+html.dark .sub-title,
+html.dark .location-primary {
+  color: #ffffff;
+}
+
+html.dark .hero-head p,
+html.dark .muted,
+html.dark .toolbar-text,
+html.dark .review-remark {
+  color: #cbd5e1;
+}
+
+html.dark .resource-card :deep(.el-card__body),
+html.dark .marketplace-page :deep(.el-card__body) {
+  background: rgba(30, 41, 59, 0.50);
+}
+
+html.dark .price-line {
+  color: #fdba74;
+}
+
+html.dark .review-hint {
+  background: rgba(51, 65, 85, 0.50);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+html.dark .review-hint--approved {
+  background: rgba(20, 83, 45, 0.30);
+  color: #6ee7b7;
+  border-color: rgba(52, 211, 153, 0.20);
+}
+
+html.dark .review-hint--pending {
+  background: rgba(120, 53, 15, 0.25);
+  color: #fcd34d;
+  border-color: rgba(251, 191, 36, 0.20);
+}
+
+html.dark .review-hint--rejected {
+  background: rgba(127, 29, 29, 0.25);
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.20);
+}
+
+html.dark .dialog-summary {
+  background: rgba(30, 41, 59, 0.60);
+  color: #f1f5f9;
+}
+
+html.dark .location-panel {
+  background: rgba(30, 41, 59, 0.60);
+  border-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark :deep(.el-card) {
+  background: rgba(15, 23, 42, 0.80);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+
+html.dark :deep(.el-card__header) {
+  background: rgba(15, 23, 42, 0.90);
+  border-bottom-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+html.dark :deep(.el-input__inner) {
+  color: #ffffff;
+}
+
+html.dark :deep(.el-textarea__inner) {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+html.dark :deep(.el-select .el-input__wrapper) {
+  background: rgba(30, 41, 59, 0.60);
+}
+
+html.dark :deep(.el-tag--info) {
+  background: rgba(148, 163, 184, 0.20);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.30);
+}
+
+html.dark :deep(.el-tag--success) {
+  background: rgba(34, 197, 94, 0.20);
+  color: #86efac;
+  border: 1px solid rgba(74, 222, 128, 0.30);
+}
+
+html.dark :deep(.el-tag--warning) {
+  background: rgba(245, 158, 11, 0.20);
+  color: #fcd34d;
+  border: 1px solid rgba(251, 191, 36, 0.30);
+}
+
+html.dark :deep(.el-tag--primary) {
+  background: rgba(255, 107, 53, 0.20);
+  color: #fdba74;
+  border: 1px solid rgba(255, 107, 53, 0.30);
+}
+
+html.dark :deep(.el-tag--danger) {
+  background: rgba(239, 68, 68, 0.20);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.30);
+}
+
+html.dark :deep(.el-button--primary) {
+  background: var(--brand-primary);
+  border: none;
+}
+
+html.dark :deep(.el-button--primary:hover) {
+  background: #ff7b4a;
+}
+
+html.dark :deep(.el-button--default) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(148, 163, 184, 0.20);
+  color: #e2e8f0;
+}
+
+html.dark :deep(.el-button--default:hover) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(203, 213, 225, 0.30);
+  color: #ffffff;
+}
+
+html.dark :deep(.el-button--success) {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.30);
+  color: #34d399;
+}
+
+html.dark :deep(.el-button--warning) {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.30);
+  color: #fbbf24;
+}
+
+html.dark :deep(.el-button--danger) {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.30);
+  color: #f87171;
+}
+
+html.dark .timeline :deep(.el-timeline-item__node) {
+  border-color: rgba(148, 163, 184, 0.30);
+}
+
+html.dark :deep(.el-divider) {
+  background: rgba(148, 163, 184, 0.20);
+}
+
+html.dark :deep(.el-button--text) {
+  color: #fdba74;
+}
+
+html.dark :deep(.el-button--text:hover) {
+  color: #fb923c;
+}
 </style>

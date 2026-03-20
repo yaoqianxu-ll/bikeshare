@@ -858,4 +858,147 @@ onMounted(() => {
     padding-right: 16px;
   }
 }
+
+/* ========== 黑夜模式 ========== */
+html.dark .login-card-inner {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+
+html.dark .card-form {
+  background: rgba(15, 23, 42, 0.85);
+}
+
+html.dark .login-title {
+  color: #ffffff;
+}
+
+html.dark .login-subtitle {
+  color: #cbd5e1;
+}
+
+html.dark :deep(.el-tabs__nav-wrap::after) {
+  background: rgba(148, 163, 184, 0.30);
+}
+
+html.dark :deep(.el-tabs__item) {
+  color: #cbd5e1;
+}
+
+html.dark :deep(.el-tabs__item.is-active) {
+  color: #ffffff;
+}
+
+html.dark :deep(.el-tabs__active-bar) {
+  background: var(--brand-primary);
+}
+
+html.dark :deep(.el-form-item__label) {
+  color: #cbd5e1;
+}
+
+html.dark .input-wrapper {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html.dark .input-wrapper:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .input-wrapper:focus-within {
+  background: rgba(30, 41, 59, 0.70);
+  border-color: rgba(255, 107, 53, 0.55);
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.15);
+}
+
+html.dark .input-icon {
+  color: #cbd5e1;
+}
+
+html.dark :deep(.el-input__inner) {
+  color: #f1f5f9;
+}
+
+html.dark :deep(.el-input__inner::placeholder) {
+  color: #94a3b8;
+}
+
+html.dark :deep(.el-checkbox__label) {
+  color: #cbd5e1;
+}
+
+html.dark :deep(.el-checkbox__input .el-checkbox__inner) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(148, 163, 184, 0.30);
+}
+
+html.dark :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+html.dark .email-tip {
+  color: #94a3b8;
+}
+
+html.dark .text-link-btn {
+  color: #fdba74;
+}
+
+html.dark .text-link-btn:hover {
+  color: #fb923c;
+}
+
+html.dark .link-text {
+  color: #cbd5e1;
+}
+
+html.dark .register-link {
+  color: #fdba74;
+}
+
+html.dark .register-link:hover {
+  color: #fb923c;
+}
+
+html.dark :deep(.el-dialog) {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+
+html.dark :deep(.el-dialog__header) {
+  border-bottom-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark :deep(.el-dialog__title) {
+  color: #ffffff;
+}
+
+html.dark :deep(.el-dialog__body) {
+  color: #e2e8f0;
+}
+
+html.dark :deep(.el-dialog__footer) {
+  border-top-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+html.dark :deep(.el-input__inner) {
+  color: #ffffff;
+}
+
+html.dark :deep(.el-button--default) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(148, 163, 184, 0.20);
+  color: #e2e8f0;
+}
+
+html.dark :deep(.el-button--default:hover) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(203, 213, 225, 0.30);
+  color: #ffffff;
+}
 </style>

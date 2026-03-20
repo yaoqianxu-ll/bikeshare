@@ -502,6 +502,111 @@ onMounted(() => {
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
+  animation: statisticsPageFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes statisticsPageFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 页面元素依次进入动画 */
+.page-header {
+  animation: headerSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.stat-cards {
+  animation: cardsSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: 0.08s;
+}
+
+.stat-cards .stat-card {
+  animation: statCardSlideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.stat-cards .stat-card:nth-child(1) { animation-delay: 0.10s; }
+.stat-cards .stat-card:nth-child(2) { animation-delay: 0.14s; }
+.stat-cards .stat-card:nth-child(3) { animation-delay: 0.18s; }
+.stat-cards .stat-card:nth-child(4) { animation-delay: 0.22s; }
+
+.chart-row {
+  animation: chartRowSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.chart-row:first-of-type {
+  animation-delay: 0.26s;
+}
+
+.chart-row:last-of-type {
+  animation-delay: 0.30s;
+}
+
+.chart-row .chart-card {
+  animation: chartCardSlideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.chart-row:first-of-type .chart-card:nth-child(1) { animation-delay: 0.28s; }
+.chart-row:first-of-type .chart-card:nth-child(2) { animation-delay: 0.32s; }
+.chart-row:last-of-type .chart-card:nth-child(1) { animation-delay: 0.34s; }
+.chart-row:last-of-type .chart-card:nth-child(2) { animation-delay: 0.38s; }
+
+@keyframes headerSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardsSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes statCardSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chartRowSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chartCardSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 页面标题 */
@@ -897,61 +1002,61 @@ onMounted(() => {
 
 /* ========== 黑夜模式 ========== */
 html.dark .page-title {
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 html.dark .page-subtitle {
-  color: #94a3b8;
-}
-
-html.dark .refresh-btn {
-  background: rgba(51, 65, 85, 0.60);
-  border: 1px solid rgba(148, 163, 184, 0.20);
   color: #cbd5e1;
 }
 
+html.dark .refresh-btn {
+  background: rgba(51, 65, 85, 0.70);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: #e2e8f0;
+}
+
 html.dark .refresh-btn:hover {
-  background: rgba(51, 65, 85, 0.80);
+  background: rgba(51, 65, 85, 0.85);
 }
 
 html.dark .title-icon {
-  background: rgba(255, 107, 53, 0.20);
-  border-color: rgba(255, 107, 53, 0.35);
+  background: rgba(255, 107, 53, 0.25);
+  border-color: rgba(255, 107, 53, 0.40);
   color: #fdba74;
 }
 
 html.dark .stat-card {
-  background: rgba(17, 25, 40, 0.70);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
 }
 
 html.dark .stat-card::before {
-  background: rgba(255, 107, 53, 0.7);
+  background: rgba(255, 107, 53, 0.75);
 }
 
 html.dark .stat-card:hover {
-  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.42);
 }
 
 html.dark .stat-label {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 html.dark .stat-value {
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 html.dark .stat-unit {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 html.dark .stat-footer {
-  border-top-color: rgba(255, 255, 255, 0.08);
+  border-top-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark .footer-label {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 html.dark .footer-value {
@@ -963,8 +1068,8 @@ html.dark .footer-value.positive {
 }
 
 html.dark .stat-icon-wrap {
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.20);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
 }
 
 html.dark .stat-icon-wrap .el-icon {
@@ -972,37 +1077,37 @@ html.dark .stat-icon-wrap .el-icon {
 }
 
 html.dark .tone-indigo {
-  background: rgba(99, 102, 241, 0.20);
-  border-color: rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.25);
+  border-color: rgba(99, 102, 241, 0.40);
 }
 
 html.dark .tone-teal {
-  background: rgba(14, 165, 164, 0.20);
-  border-color: rgba(14, 165, 164, 0.35);
+  background: rgba(14, 165, 164, 0.25);
+  border-color: rgba(14, 165, 164, 0.40);
 }
 
 html.dark .tone-rose {
-  background: rgba(244, 63, 94, 0.20);
-  border-color: rgba(244, 63, 94, 0.35);
+  background: rgba(244, 63, 94, 0.25);
+  border-color: rgba(244, 63, 94, 0.40);
 }
 
 html.dark .tone-amber {
-  background: rgba(245, 158, 11, 0.20);
-  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.40);
 }
 
 html.dark .chart-card {
-  background: rgba(17, 25, 40, 0.70);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
 }
 
 html.dark .chart-card:hover {
-  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.42);
 }
 
 html.dark .card-title {
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 html.dark .card-title .el-icon {
@@ -1010,26 +1115,26 @@ html.dark .card-title .el-icon {
 }
 
 html.dark :deep(.el-card__header) {
-  background: rgba(17, 25, 40, 0.80);
+  background: rgba(15, 23, 42, 0.92);
   backdrop-filter: blur(16px) saturate(140%);
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  border-bottom-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark :deep(.el-table) {
-  color: #cbd5e1;
+  color: #ffffff;
 }
 
 html.dark :deep(.el-table th) {
-  background: rgba(255, 255, 255, 0.04);
-  color: #94a3b8;
-  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark :deep(.el-table td),
 html.dark :deep(.el-table__cell) {
   background: transparent;
-  color: #cbd5e1;
-  border-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark :deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
@@ -1037,13 +1142,13 @@ html.dark :deep(.el-table--striped .el-table__body tr.el-table__row--striped td)
 }
 
 html.dark :deep(.el-table__row:hover) {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 html.dark .rank-badge {
-  background: rgba(51, 65, 85, 0.50);
-  color: #94a3b8;
-  border-color: rgba(148, 163, 184, 0.20);
+  background: rgba(51, 65, 85, 0.60);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.25);
 }
 
 html.dark .rank-top {
@@ -1052,16 +1157,16 @@ html.dark .rank-top {
 }
 
 html.dark .overview-label {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 html.dark .overview-value {
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 html.dark .overview-icon {
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.20);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
 }
 
 html.dark .overview-icon .el-icon {
@@ -1069,17 +1174,17 @@ html.dark .overview-icon .el-icon {
 }
 
 html.dark :deep(.el-divider) {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.10);
 }
 
 html.dark :deep(.el-tag--warning) {
-  background: rgba(245, 158, 11, 0.20);
+  background: rgba(245, 158, 11, 0.25);
   color: #fbbf24;
-  border-color: rgba(245, 158, 11, 0.35);
+  border-color: rgba(245, 158, 11, 0.40);
 }
 
 html.dark :deep(.el-progress__text) {
-  color: #cbd5e1;
+  color: #e2e8f0;
 }
 
 /* ECharts 图表黑夜模式适配 */

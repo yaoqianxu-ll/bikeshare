@@ -905,7 +905,7 @@ h2 {
 }
 
 :deep(.el-input__wrapper.is-focus) {
-  background: #fff;
+  background: rgba(15, 23, 42, 0.05);
   border-color: rgba(255, 107, 53, 0.55);
   box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.10);
 }
@@ -930,7 +930,7 @@ h2 {
 }
 
 :deep(.el-textarea__inner:focus) {
-  background: #fff;
+  background: rgba(15, 23, 42, 0.05);
   border-color: rgba(255, 107, 53, 0.55);
   box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.10);
 }
@@ -1000,5 +1000,169 @@ h2 {
   .code-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* ========== 黑夜模式 ========== */
+html.dark .profile-panel {
+  background: rgba(30, 41, 59, 0.60);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+
+html.dark .panel-title {
+  color: #e2e8f0;
+}
+
+html.dark .panel-desc,
+html.dark .panel-tip {
+  color: #cbd5e1;
+}
+
+html.dark :deep(.el-card) {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+html.dark :deep(.el-card__header) {
+  background: rgba(15, 23, 42, 0.92);
+  border-bottom-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark :deep(.el-card__body) {
+  background: transparent;
+}
+
+html.dark .header-text h2 {
+  color: #ffffff;
+}
+
+html.dark .subline {
+  color: #cbd5e1;
+}
+
+html.dark .avatar {
+  background: rgba(255, 107, 53, 0.20);
+  border-color: rgba(255, 107, 53, 0.35);
+  color: #fdba74;
+}
+
+html.dark .avatar-img {
+  border-color: rgba(255, 107, 53, 0.35);
+}
+
+html.dark .profile-desc :deep(.el-descriptions__label) {
+  color: #cbd5e1;
+}
+
+html.dark .profile-desc :deep(.el-descriptions__content) {
+  color: #ffffff;
+}
+
+html.dark .profile-desc :deep(.el-descriptions-item__cell) {
+  border-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark .profile-desc :deep(.el-descriptions__label.el-descriptions__cell.is-bordered-label) {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+}
+
+html.dark .profile-desc :deep(.el-descriptions__content.el-descriptions__cell.is-bordered-content) {
+  background: rgba(30, 41, 59, 0.50);
+  color: #ffffff;
+}
+
+html.dark .email-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.80) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+
+html.dark .email-card__label {
+  color: #ffffff;
+}
+
+html.dark .email-card__hint {
+  color: #cbd5e1;
+}
+
+html.dark .email-card__value {
+  color: #ffffff;
+}
+
+html.dark .email-editor {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+html.dark :deep(.el-form-item__label) {
+  color: #cbd5e1;
+}
+
+html.dark :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+html.dark :deep(.el-input__wrapper:hover) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+html.dark :deep(.el-input__wrapper.is-focus) {
+  background: rgba(30, 41, 59, 0.60);
+  border-color: rgba(255, 107, 53, 0.45);
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.12);
+}
+
+html.dark :deep(.el-input__inner) {
+  color: #ffffff;
+}
+
+html.dark :deep(.el-textarea__inner) {
+  background: rgba(255, 255, 255, 0.03);
+  color: #ffffff;
+}
+
+html.dark :deep(.el-textarea__inner:hover) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+html.dark :deep(.el-textarea__inner:focus) {
+  background: rgba(30, 41, 59, 0.60);
+  border-color: rgba(255, 107, 53, 0.45);
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.12);
+}
+
+html.dark :deep(.el-tag--primary) {
+  background: rgba(99, 102, 241, 0.20);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+
+html.dark :deep(.el-tag--danger) {
+  background: rgba(255, 107, 53, 0.20);
+  color: #fdba74;
+  border: 1px solid rgba(255, 107, 53, 0.35);
+}
+
+html.dark :deep(.el-button--primary) {
+  background: var(--brand-primary);
+  border: none;
+}
+
+html.dark :deep(.el-button--primary:hover) {
+  background: #ff7b4a;
+}
+
+html.dark :deep(.el-button--danger) {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.30);
+}
+
+html.dark :deep(.el-button--text) {
+  color: #fdba74;
+}
+
+html.dark :deep(.el-button--text:hover) {
+  color: #fb923c;
 }
 </style>

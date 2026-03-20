@@ -1403,6 +1403,92 @@ onMounted(() => {
   max-width: 1440px;
   margin: 0 auto;
   padding: 24px 20px 40px;
+  animation: forumPageFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes forumPageFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 卡片依次进入动画 */
+.forum-page .el-card,
+.forum-page .post-card,
+.forum-page .side-card {
+  animation: cardSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.forum-page .el-card:nth-child(1),
+.forum-page .composer-card {
+  animation-delay: 0.05s;
+}
+
+.forum-page .feed-header,
+.forum-page .forum-hero {
+  animation: cardSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: 0.08s;
+}
+
+.forum-page .post-list .post-card {
+  animation: postCardSlideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.forum-page .post-list .post-card:nth-child(1) { animation-delay: 0.05s; }
+.forum-page .post-list .post-card:nth-child(2) { animation-delay: 0.09s; }
+.forum-page .post-list .post-card:nth-child(3) { animation-delay: 0.13s; }
+.forum-page .post-list .post-card:nth-child(4) { animation-delay: 0.17s; }
+.forum-page .post-list .post-card:nth-child(5) { animation-delay: 0.21s; }
+.forum-page .post-list .post-card:nth-child(6) { animation-delay: 0.25s; }
+.forum-page .post-list .post-card:nth-child(7) { animation-delay: 0.29s; }
+.forum-page .post-list .post-card:nth-child(8) { animation-delay: 0.33s; }
+.forum-page .post-list .post-card:nth-child(9) { animation-delay: 0.37s; }
+.forum-page .post-list .post-card:nth-child(10) { animation-delay: 0.41s; }
+
+.forum-side .side-card {
+  animation: sideCardSlideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.forum-side .side-card:nth-child(1) { animation-delay: 0.08s; }
+.forum-side .side-card:nth-child(2) { animation-delay: 0.14s; }
+.forum-side .side-card:nth-child(3) { animation-delay: 0.20s; }
+.forum-side .side-card:nth-child(4) { animation-delay: 0.26s; }
+.forum-side .side-card:nth-child(5) { animation-delay: 0.32s; }
+
+@keyframes cardSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes postCardSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sideCardSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .forum-hero {
@@ -2844,18 +2930,19 @@ onMounted(() => {
 
 /* ========== 黑夜模式 ========== */
 html.dark .forum-hero {
-  background: rgba(15, 23, 42, 0.60);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.20);
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.30);
 }
 
 html.dark .hero-badge {
-  background: rgba(var(--brand-primary-rgb), 0.20);
-  color: #fdba74;
+  background: rgba(251, 191, 36, 0.25);
+  color: #fbbf24;
+  font-weight: 600;
 }
 
 html.dark .hero-title-section h1 {
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 html.dark .hero-desc {
@@ -2863,77 +2950,79 @@ html.dark .hero-desc {
 }
 
 html.dark .category-bar {
-  border-top-color: rgba(148, 163, 184, 0.15);
+  border-top-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark .category-pill {
-  background: rgba(30, 41, 59, 0.60);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  color: #cbd5e1;
+  background: rgba(30, 41, 59, 0.80);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: #e2e8f0;
 }
 
 html.dark .category-pill:hover {
-  border-color: rgba(var(--brand-primary-rgb), 0.40);
-  color: #f8fafc;
+  background: rgba(51, 65, 85, 0.90);
+  border-color: rgba(148, 163, 184, 0.35);
+  color: #ffffff;
 }
 
 html.dark .category-pill.active {
-  background: rgba(var(--brand-primary-rgb), 0.20);
-  border-color: rgba(var(--brand-primary-rgb), 0.50);
-  color: #fdba74;
+  background: rgba(59, 130, 246, 0.30);
+  border-color: rgba(59, 130, 246, 0.50);
+  color: #93c5fd;
+  font-weight: 600;
 }
 
 html.dark .category-count {
-  background: rgba(var(--brand-primary-rgb), 0.28);
-  color: #fdba74;
+  background: rgba(59, 130, 246, 0.35);
+  color: #93c5fd;
 }
 
 html.dark .composer-card,
 html.dark .side-card {
-  background: rgba(17, 25, 40, 0.70);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.28);
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.40);
 }
 
 html.dark .composer-toggle {
-  color: #cbd5e1;
+  color: #e2e8f0;
 }
 
 html.dark .composer-toggle:hover {
-  background: rgba(var(--brand-primary-rgb), 0.08);
+  background: rgba(51, 65, 85, 0.50);
 }
 
 html.dark .composer-toggle-text {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 html.dark .composer-toggle-icon {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 html.dark .composer-form {
-  border-top-color: rgba(148, 163, 184, 0.15);
+  border-top-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark .composer-toolbar {
-  border-top-color: rgba(148, 163, 184, 0.15);
+  border-top-color: rgba(148, 163, 184, 0.20);
 }
 
 html.dark .composer-tip {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 html.dark .composer-guest {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 html.dark .composer-guest p {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 html.dark .feed-header h2,
 html.dark .comments-header h3 {
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 html.dark .feed-header p,
@@ -2965,23 +3054,23 @@ html.dark .remove-btn {
 }
 
 html.dark .post-card {
-  background: rgba(17, 25, 40, 0.60);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
 }
 
 html.dark .post-card:hover {
-  border-color: rgba(var(--brand-primary-rgb), 0.30);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+  border-color: rgba(59, 130, 246, 0.40);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
 }
 
 html.dark .post-card.is-pinned {
-  border-color: rgba(var(--brand-primary-rgb), 0.45);
-  background: rgba(30, 41, 59, 0.50);
+  border-color: rgba(249, 115, 22, 0.50);
+  background: rgba(30, 41, 59, 0.70);
 }
 
 html.dark .post-title {
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 html.dark .post-content {
@@ -2994,157 +3083,158 @@ html.dark .detail-stats {
 }
 
 html.dark .stat-pill {
-  background: rgba(30, 41, 59, 0.50);
-  border: 1px solid rgba(148, 163, 184, 0.20);
-  color: #cbd5e1;
+  background: rgba(30, 41, 59, 0.70);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: #e2e8f0;
 }
 
 html.dark .stat-action:hover:not(:disabled) {
-  color: #f8fafc;
-  border-color: rgba(var(--brand-primary-rgb), 0.35);
+  color: #ffffff;
+  border-color: rgba(59, 130, 246, 0.45);
 }
 
 html.dark .stat-action.is-active {
-  color: #fdba74;
-  border-color: rgba(var(--brand-primary-rgb), 0.45);
-  background: rgba(var(--brand-primary-rgb), 0.12);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.55);
+  background: rgba(59, 130, 246, 0.20);
 }
 
 html.dark .post-image-item,
 html.dark .detail-image-item {
-  background: rgba(30, 41, 59, 0.40);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(30, 41, 59, 0.60);
+  border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
 html.dark .more-images-mask {
-  background: rgba(2, 6, 23, 0.70);
+  background: rgba(2, 6, 23, 0.80);
 }
 
 html.dark .author-text strong {
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 html.dark .author-text span {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 /* 标签黑夜模式 */
 html.dark .badge {
   color: #e2e8f0;
+  font-weight: 500;
 }
 
 html.dark .category-badge {
-  background: rgba(51, 65, 85, 0.50);
-  color: #94a3b8;
-  border: 1px solid rgba(148, 163, 184, 0.20);
+  background: rgba(51, 65, 85, 0.70);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.30);
 }
 
 html.dark .status-approved {
-  background: rgba(16, 185, 129, 0.20);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.40);
 }
 
 html.dark .status-pending {
-  background: rgba(245, 158, 11, 0.20);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.25);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.40);
 }
 
 html.dark .status-rejected {
-  background: rgba(239, 68, 68, 0.20);
+  background: rgba(239, 68, 68, 0.25);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  border: 1px solid rgba(239, 68, 68, 0.40);
 }
 
 html.dark .mine-badge {
-  background: rgba(59, 130, 246, 0.20);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.40);
 }
 
 html.dark .pinned-badge {
-  background: rgba(249, 115, 22, 0.20);
+  background: rgba(249, 115, 22, 0.25);
   color: #fb923c;
-  border: 1px solid rgba(249, 115, 22, 0.35);
+  border: 1px solid rgba(249, 115, 22, 0.40);
 }
 
 /* 按钮黑夜模式 */
 html.dark .btn-approve {
-  background: rgba(16, 185, 129, 0.20) !important;
-  border-color: rgba(16, 185, 129, 0.35) !important;
-  color: #34d399 !important;
+  background: rgba(16, 185, 129, 0.25) !important;
+  border-color: rgba(16, 185, 129, 0.40) !important;
+  color: #6ee7b7 !important;
 }
 
 html.dark .btn-approve:hover {
-  background: rgba(16, 185, 129, 0.30) !important;
-  border-color: rgba(16, 185, 129, 0.50) !important;
+  background: rgba(16, 185, 129, 0.35) !important;
+  border-color: rgba(16, 185, 129, 0.55) !important;
 }
 
 html.dark .btn-reject {
-  background: rgba(239, 68, 68, 0.20) !important;
-  border-color: rgba(239, 68, 68, 0.35) !important;
+  background: rgba(239, 68, 68, 0.25) !important;
+  border-color: rgba(239, 68, 68, 0.40) !important;
   color: #f87171 !important;
 }
 
 html.dark .btn-reject:hover {
-  background: rgba(239, 68, 68, 0.30) !important;
-  border-color: rgba(239, 68, 68, 0.50) !important;
+  background: rgba(239, 68, 68, 0.35) !important;
+  border-color: rgba(239, 68, 68, 0.55) !important;
 }
 
 html.dark .btn-pin {
-  background: rgba(249, 115, 22, 0.20) !important;
-  border-color: rgba(249, 115, 22, 0.35) !important;
+  background: rgba(249, 115, 22, 0.25) !important;
+  border-color: rgba(249, 115, 22, 0.40) !important;
   color: #fb923c !important;
 }
 
 html.dark .btn-pin:hover {
-  background: rgba(249, 115, 22, 0.30) !important;
-  border-color: rgba(249, 115, 22, 0.50) !important;
+  background: rgba(249, 115, 22, 0.35) !important;
+  border-color: rgba(249, 115, 22, 0.55) !important;
 }
 
 html.dark .btn-unpin {
-  background: rgba(51, 65, 85, 0.50) !important;
-  border-color: rgba(148, 163, 184, 0.25) !important;
-  color: #cbd5e1 !important;
+  background: rgba(51, 65, 85, 0.70) !important;
+  border-color: rgba(148, 163, 184, 0.30) !important;
+  color: #e2e8f0 !important;
 }
 
 html.dark .btn-unpin:hover {
-  background: rgba(51, 65, 85, 0.70) !important;
+  background: rgba(71, 85, 105, 0.80) !important;
 }
 
 html.dark .btn-delete {
-  background: rgba(239, 68, 68, 0.20) !important;
-  border-color: rgba(239, 68, 68, 0.35) !important;
+  background: rgba(239, 68, 68, 0.25) !important;
+  border-color: rgba(239, 68, 68, 0.40) !important;
   color: #f87171 !important;
 }
 
 html.dark .btn-delete:hover {
-  background: rgba(239, 68, 68, 0.30) !important;
-  border-color: rgba(239, 68, 68, 0.50) !important;
+  background: rgba(239, 68, 68, 0.35) !important;
+  border-color: rgba(239, 68, 68, 0.55) !important;
 }
 
 /* 侧边栏卡片 */
 html.dark .side-card h3 {
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 html.dark .side-list {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 html.dark .metric-item {
-  background: rgba(30, 41, 59, 0.50);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.20);
+  background: rgba(30, 41, 59, 0.70);
+  border: 1px solid rgba(59, 130, 246, 0.20);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.30);
 }
 
 html.dark .metric-item span {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 html.dark .metric-item strong {
-  color: #60a5fa;
+  color: #93c5fd;
 }
 
 /* 热门帖子 */

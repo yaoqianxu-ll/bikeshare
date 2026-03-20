@@ -457,6 +457,12 @@ a {
   border-radius: 14px;
   box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06) inset;
   background: rgba(255, 255, 255, 0.86);
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+:deep(.el-input__inner) {
+  line-height: normal;
 }
 
 :deep(.el-button) {
@@ -557,17 +563,6 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* 防止下拉选项 span 文字出现滚动动画 - 修复鼠标移入 span 元素时的 tooltip 问题 */
-.el-select-dropdown__item span,
-.el-dropdown-menu__item span {
-  transform: none !important;
-  transition: none !important;
-  animation: none !important;
-  position: static !important;
-  top: auto !important;
-  left: auto !important;
 }
 
 .el-dropdown .el-tooltip__trigger,
