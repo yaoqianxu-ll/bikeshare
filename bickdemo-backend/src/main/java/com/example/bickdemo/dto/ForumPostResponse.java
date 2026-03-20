@@ -25,6 +25,8 @@ public class ForumPostResponse {
     private Long likeCount;
     private Long favoriteCount;
     private Long commentCount;
+    private String category;
+    private Boolean pinned;
     private String status;
     private String reviewRemark;
     private LocalDateTime reviewedAt;

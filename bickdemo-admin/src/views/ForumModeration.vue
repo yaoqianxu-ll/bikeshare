@@ -17,6 +17,10 @@
           <span>最近帖子</span>
           <strong>{{ records.length }}</strong>
         </div>
+        <div class="hero-chip">
+          <span>置顶帖子</span>
+          <strong>{{ pinnedCount }}</strong>
+        </div>
       </div>
     </section>
 
@@ -56,23 +60,39 @@
         </div>
       </template>
       <el-table v-loading="loading" :data="records" size="small">
-        <el-table-column prop="title" label="标题" min-width="190" show-overflow-tooltip />
-        <el-table-column prop="authorName" label="作者" width="110" />
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column prop="title" label="标题" min-width="170" show-overflow-tooltip />
+        <el-table-column prop="authorName" label="作者" width="100" />
+        <el-table-column label="分类" width="90" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.category" type="info" effect="plain" size="small">{{ categoryLabel(row.category) }}</el-tag>
+            <span v-else class="muted-inline">--</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="forumStatusType(row.status)" effect="light">{{ forumStatusText(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="浏览" width="80" align="center">
+        <el-table-column label="置顶" width="70" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.pinned" type="danger" effect="light" size="small">置顶</el-tag>
+            <span v-else class="muted-inline">--</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="浏览" width="70" align="center">
           <template #default="{ row }">{{ row.viewCount }}</template>
         </el-table-column>
-        <el-table-column label="评论" width="80" align="center">
+        <el-table-column label="评论" width="70" align="center">
           <template #default="{ row }">{{ row.commentCount }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center">
+        <el-table-column label="操作" width="140" align="center">
           <template #default="{ row }">
-            <el-button v-if="row.canDelete" size="small" type="danger" plain @click="remove(row)">删除</el-button>
-            <span v-else class="muted-inline">--</span>
+            <div class="table-actions">
+              <el-button size="small" :type="row.pinned ? 'warning' : 'success'" plain @click="togglePin(row)">
+                {{ row.pinned ? '取消置顶' : '置顶' }}
+              </el-button>
+              <el-button v-if="row.canDelete" size="small" type="danger" plain @click="remove(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -81,14 +101,26 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { approveForumPost, deleteForumPost, getForumPosts, getPendingForumPosts, rejectForumPost } from '@/api/forum'
+import { approveForumPost, deleteForumPost, getForumPosts, getPendingForumPosts, pinForumPost, rejectForumPost } from '@/api/forum'
 import { excerpt, formatDate, forumStatusText, forumStatusType } from '@/utils/format'
 
 const loading = ref(false)
 const records = ref([])
 const pendingPosts = ref([])
+
+const pinnedCount = computed(() => records.value.filter(r => r.pinned).length)
+
+const categoryLabel = (category) => {
+  const map = {
+    EXPERIENCE: '用车体验',
+    ROUTE: '路线分享',
+    FEEDBACK: '问题反馈',
+    CHAT: '闲聊'
+  }
+  return map[category] || category
+}
 
 const load = async () => {
   loading.value = true

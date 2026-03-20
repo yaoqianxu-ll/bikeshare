@@ -1,6 +1,6 @@
 spring:
   application:
-    name: bickdemo
+    name: bikeshare
   main:
     # 保留 Spring Boot 启动信息，便于开发时观察应用启动过程。
     banner-mode: console
@@ -98,7 +98,7 @@ logging:
     path: logs
   level:
     root: INFO
-    com.example.bickdemo: INFO
+    com.example.bickdemo: DEBUG
     org.springframework.security: INFO
     # Bean 创建阶段真正刷屏的是 DEBUG，这里保留 INFO，去掉冗余的调试级输出。
     org.springframework.beans.factory.support: INFO

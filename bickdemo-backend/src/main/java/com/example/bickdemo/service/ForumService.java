@@ -88,7 +88,7 @@ public class ForumService {
      * 游客只能看到已通过审核的帖子；普通用户还能看到自己待审核/被驳回的帖子；
      * 管理员则可以查看所有帖子。
      */
-    public ForumPostListResponse getPosts(String currentUsername, Integer page, Integer size, String keyword) {
+    public ForumPostListResponse getPosts(String currentUsername, Integer page, Integer size, String keyword, String category, String sortBy) {
         User currentUser = resolveCurrentUser(currentUsername);
         int current = page == null || page < 1 ? DEFAULT_PAGE : page;
         int resolvedSize = size == null ? DEFAULT_SIZE : Math.max(1, Math.min(size, MAX_SIZE));
@@ -99,13 +99,16 @@ public class ForumService {
             String trimmedKeyword = keyword.trim();
             wrapper.and(item -> item.like("title", trimmedKeyword).or().like("content", trimmedKeyword));
         }
+        if (StringUtils.hasText(category)) {
+            wrapper.eq("category", category);
+        }
         if (currentUser == null) {
             wrapper.eq("status", ForumPostStatus.APPROVED.name());
         } else if (!isAdmin(currentUser)) {
-            // 普通用户除了公开帖子外，还能看到自己发的未审核帖子，方便在“我的内容”里查看状态。
+            // 普通用户除了公开帖子外，还能看到自己发的未审核帖子，方便在"我的内容"里查看状态。
             wrapper.and(item -> item.eq("status", ForumPostStatus.APPROVED.name()).or().eq("user_id", currentUser.getId()));
         }
-        wrapper.orderByDesc("created_at").orderByDesc("id");
+        applySort(wrapper, sortBy);
 
         Page<ForumPost> postPage = forumPostMapper.selectPage(new Page<>(current, resolvedSize), wrapper);
         List<ForumPost> posts = postPage.getRecords();
@@ -130,9 +133,22 @@ public class ForumService {
         return new ForumPostListResponse(records, postPage.getTotal(), postPage.getCurrent(), postPage.getSize(), hasMore);
     }
 
+    private void applySort(QueryWrapper<ForumPost> wrapper, String sortBy) {
+        if ("mostViewed".equals(sortBy)) {
+            wrapper.orderByDesc("view_count").orderByDesc("created_at");
+        } else if ("mostLiked".equals(sortBy)) {
+            wrapper.orderByDesc("like_count").orderByDesc("created_at");
+        } else if ("mostCommented".equals(sortBy)) {
+            wrapper.orderByDesc("comment_count").orderByDesc("created_at");
+        } else {
+            // 默认最新发布，置顶帖子优先
+            wrapper.orderByDesc("pinned").orderByDesc("created_at").orderByDesc("id");
+        }
+    }
+
     /**
      * 获取帖子详情。
-     * 查看已通过审核的帖子时会按“同一用户/访客每天一次”累计浏览量；
+     * 查看已通过审核的帖子时会按"同一用户/访客每天一次"累计浏览量；
      * 待审核帖子只有作者本人和管理员可见。
      */
     @Transactional
@@ -193,12 +209,13 @@ public class ForumService {
         post.setUserId(currentUser.getId());
         post.setTitle(request.getTitle().trim());
         post.setContent(request.getContent().trim());
+        post.setCategory(request.getCategory());
         post.setImageUrl(imageUrls.isEmpty() ? null : imageUrls.get(0));
         post.setViewCount(0L);
         post.setLikeCount(0L);
         post.setFavoriteCount(0L);
         post.setCommentCount(0L);
-        // 论坛采用“普通用户先审后发、管理员直接发布”的审核策略。
+        // 论坛采用"普通用户先审后发、管理员直接发布"的审核策略。
         post.setStatus(isAdmin(currentUser) ? ForumPostStatus.APPROVED : ForumPostStatus.PENDING);
         post.setReviewRemark(isAdmin(currentUser) ? "管理员发布，已直接通过审核" : "等待管理员审核后展示");
         if (isAdmin(currentUser)) {
@@ -239,6 +256,96 @@ public class ForumService {
                         postImagesMap.get(post.getId())
                 ))
                 .toList();
+    }
+
+    /**
+     * 获取热门帖子列表。
+     * 根据浏览量、点赞数、评论数综合计算热度。
+     */
+    public List<ForumPostResponse> getHotPosts(String currentUsername, Integer limit) {
+        User currentUser = resolveCurrentUser(currentUsername);
+        int resolvedLimit = limit == null ? 5 : Math.max(1, Math.min(limit, 20));
+
+        QueryWrapper<ForumPost> wrapper = new QueryWrapper<>();
+        wrapper.eq("deleted", 0)
+                .eq("status", ForumPostStatus.APPROVED.name())
+                .orderByDesc("view_count")
+                .orderByDesc("like_count")
+                .orderByDesc("comment_count")
+                .last("LIMIT " + resolvedLimit);
+
+        List<ForumPost> posts = forumPostMapper.selectList(wrapper);
+        Map<Long, User> userMap = loadUsers(posts.stream().map(ForumPost::getUserId).toList());
+        Map<Long, List<String>> postImagesMap = loadPostImages(posts);
+        Set<Long> likedIds = resolveReactionPostIds(currentUser, posts, ForumReactionType.LIKE);
+        Set<Long> favoritedIds = resolveReactionPostIds(currentUser, posts, ForumReactionType.FAVORITE);
+
+        return posts.stream()
+                .map(post -> toPostResponse(
+                        post,
+                        userMap.get(post.getUserId()),
+                        currentUser,
+                        likedIds,
+                        favoritedIds,
+                        postImagesMap.get(post.getId())
+                ))
+                .toList();
+    }
+
+    /**
+     * 获取当前用户的帖子列表。
+     */
+    public ForumPostListResponse getMyPosts(String currentUsername, Integer page, Integer size) {
+        User currentUser = requireUser(currentUsername);
+        int current = page == null || page < 1 ? DEFAULT_PAGE : page;
+        int resolvedSize = size == null ? 5 : Math.max(1, Math.min(size, MAX_SIZE));
+
+        QueryWrapper<ForumPost> wrapper = new QueryWrapper<>();
+        wrapper.eq("deleted", 0)
+                .eq("user_id", currentUser.getId())
+                .orderByDesc("created_at")
+                .orderByDesc("id");
+
+        Page<ForumPost> postPage = forumPostMapper.selectPage(new Page<>(current, resolvedSize), wrapper);
+        List<ForumPost> posts = postPage.getRecords();
+        Map<Long, User> userMap = loadUsers(posts.stream().map(ForumPost::getUserId).toList());
+        Map<Long, List<String>> postImagesMap = loadPostImages(posts);
+        Set<Long> likedIds = resolveReactionPostIds(currentUser, posts, ForumReactionType.LIKE);
+        Set<Long> favoritedIds = resolveReactionPostIds(currentUser, posts, ForumReactionType.FAVORITE);
+
+        List<ForumPostResponse> records = posts.stream()
+                .map(post -> toPostResponse(
+                        post,
+                        userMap.get(post.getUserId()),
+                        currentUser,
+                        likedIds,
+                        favoritedIds,
+                        postImagesMap.get(post.getId())
+                ))
+                .toList();
+
+        boolean hasMore = postPage.getCurrent() * postPage.getSize() < postPage.getTotal();
+        return new ForumPostListResponse(records, postPage.getTotal(), postPage.getCurrent(), postPage.getSize(), hasMore);
+    }
+
+    /**
+     * 置顶/取消置顶帖子，仅管理员使用。
+     */
+    @Transactional
+    public ForumPostResponse pinPost(String currentUsername, Long postId, Boolean pinned) {
+        User currentUser = requireUser(currentUsername);
+        ensureAdmin(currentUser);
+
+        ForumPost post = requirePost(postId);
+        post.setPinned(pinned != null && pinned);
+        forumPostMapper.updateById(post);
+
+        post = requirePost(postId);
+        User author = userMapper.selectById(post.getUserId());
+        List<String> imageUrls = resolveImageUrls(post, forumPostImageMapper.findByPostId(postId));
+        Set<Long> likedIds = resolveReactionPostIds(currentUser, List.of(post), ForumReactionType.LIKE);
+        Set<Long> favoritedIds = resolveReactionPostIds(currentUser, List.of(post), ForumReactionType.FAVORITE);
+        return toPostResponse(post, author, currentUser, likedIds, favoritedIds, imageUrls);
     }
 
     /**
@@ -320,7 +427,7 @@ public class ForumService {
 
     /**
      * 获取论坛作者主页信息。
-     * 同时返回与当前登录用户之间的好友关系，方便前端决定是否显示“加好友”按钮。
+     * 同时返回与当前登录用户之间的好友关系，方便前端决定是否显示"加好友"按钮。
      */
     public ForumAuthorProfileResponse getUserProfile(Long userId, String currentUsername) {
         User user = userMapper.selectById(userId);
@@ -506,6 +613,8 @@ public class ForumService {
                 safeLong(post.getLikeCount()),
                 safeLong(post.getFavoriteCount()),
                 safeLong(post.getCommentCount()),
+                post.getCategory(),
+                post.getPinned(),
                 post.getStatus() == null ? ForumPostStatus.APPROVED.name() : post.getStatus().name(),
                 post.getReviewRemark(),
                 post.getReviewedAt(),
@@ -723,7 +832,7 @@ public class ForumService {
         if (friendshipMapper.existsFriendship(currentUser.getId(), targetUser.getId())) {
             return RELATION_FRIEND;
         }
-        // 作者主页需要带出好友申请状态，便于前端直接展示“已发送/待处理”等文案。
+        // 作者主页需要带出好友申请状态，便于前端直接展示"已发送/待处理"等文案。
         var pendingRequest = friendRequestMapper.findPendingBetweenUsers(currentUser.getId(), targetUser.getId());
         if (pendingRequest == null) {
             return RELATION_NONE;

@@ -8,6 +8,29 @@ export function getForumPosts(params) {
   })
 }
 
+export function getHotForumPosts(limit = 5) {
+  return request({
+    url: '/forum/posts/hot',
+    method: 'get',
+    params: { limit }
+  })
+}
+
+export function getMyForumPosts(params) {
+  return request({
+    url: '/forum/posts/my',
+    method: 'get',
+    params
+  })
+}
+
+export function getForumCategories() {
+  return request({
+    url: '/forum/categories',
+    method: 'get'
+  })
+}
+
 export function getForumPostDetail(postId) {
   return request({
     url: `/forum/posts/${postId}`,
@@ -78,5 +101,13 @@ export function getForumAuthorProfile(userId) {
   return request({
     url: `/forum/users/${userId}`,
     method: 'get'
+  })
+}
+
+export function pinForumPost(postId, pinned) {
+  return request({
+    url: `/forum/posts/${postId}/pin`,
+    method: 'post',
+    params: { pinned }
   })
 }

@@ -1,46 +1,24 @@
 <template>
   <div class="friends-page">
-    <section class="hero-card">
-      <div class="hero-copy">
-        <span class="hero-kicker">BikeShare Social</span>
-        <h1>快和你心仪的好友聊天吧！</h1>
-      </div>
-      <div class="hero-metrics">
-        <div class="metric-chip">
-          <span class="metric-chip__label">联系人</span>
-          <strong>{{ contacts.length }}</strong>
+    <!-- 简洁的两栏布局：左侧会话列表，右侧聊天区域 -->
+    <div class="chat-layout">
+      <!-- 左侧边栏：会话列表 -->
+      <aside v-show="showSidebarPane" class="sidebar">
+        <!-- 侧边栏头部 -->
+        <div class="sidebar-header">
+          <h1 class="sidebar-title">消息</h1>
+          <el-button circle size="small" @click="showNewChatDialog">
+            <el-icon><Plus /></el-icon>
+          </el-button>
         </div>
-        <div class="metric-chip metric-chip--accent">
-          <span class="metric-chip__label">未读消息</span>
-          <strong>{{ totalUnreadCount }}</strong>
-        </div>
-        <div class="metric-chip">
-          <span class="metric-chip__label">待处理申请</span>
-          <strong>{{ receivedRequests.length }}</strong>
-        </div>
-        <el-tag class="socket-tag" :type="socketStateType">{{ socketStateLabel }}</el-tag>
-      </div>
-    </section>
 
-    <div class="workspace-grid">
-      <aside v-show="showSidebarPane" ref="sidebarColumnRef" class="sidebar-column">
-        <section class="panel panel-search">
-          <div class="panel-head">
-            <div>
-              <h2>搜索好友</h2>
-
-            </div>
-            <div class="panel-badge">
-              <el-icon><Search /></el-icon>
-              <span>{{ searchKeyword ? searchResults.length : 0 }}</span>
-            </div>
-          </div>
-
+        <!-- 搜索框 -->
+        <div class="search-box">
           <el-input
             v-model="searchKeyword"
             clearable
-            size="large"
-            placeholder="输入用户名，例如admin"
+            size="default"
+            placeholder="搜索好友"
             @input="handleSearchInput"
             @clear="resetSearch"
           >
@@ -48,555 +26,503 @@
               <el-icon><Search /></el-icon>
             </template>
           </el-input>
+        </div>
 
-          <div class="search-results">
-            <div v-if="searchLoading" class="section-state">
-              <el-icon class="is-loading"><Loading /></el-icon>
-              <span>正在搜索用户...</span>
-            </div>
-
-            <template v-else-if="searchKeyword">
-              <div
-                v-for="user in searchResults"
-                :key="user.id"
-                class="search-card"
-              >
-                <div class="identity-block">
-                  <div class="avatar-shell avatar-shell--lg" :style="buildAvatarStyle(user.avatar)">
-                    <img v-if="user.avatar" :src="user.avatar" :alt="user.username" />
-                    <span v-else>{{ getInitial(user.username) }}</span>
-                  </div>
-                  <div class="identity-copy">
-                    <div class="identity-line">
-                      <strong>{{ user.username }}</strong>
-                      <el-tag size="small" effect="plain" :type="getRelationTagType(user.relationStatus)">
-                        {{ getRelationLabel(user.relationStatus) }}
-                      </el-tag>
-                    </div>
-                    <p>{{ user.bio || '这个用户还没有填写个人简介。' }}</p>
-                  </div>
-                </div>
-
-                <div class="search-actions">
-                  <el-button size="small" plain @click="openFriendProfile(buildContactFromSearch(user))">
-                    资料
-                  </el-button>
-                  <el-button
-                    v-if="user.relationStatus === 'NONE'"
-                    type="primary"
-                    size="small"
-                    @click="handleCreateFriendRequest(user)"
-                  >
-                    发送申请
-                  </el-button>
-
-                  <template v-else-if="user.relationStatus === 'REQUEST_RECEIVED'">
-                    <el-button type="success" size="small" @click="handleQuickAccept(user)">同意</el-button>
-                    <el-button size="small" @click="openChatFromSearch(user)">私信</el-button>
-                  </template>
-
-                  <template v-else>
-                    <el-button size="small" @click="openChatFromSearch(user)">私信</el-button>
-                  </template>
-                </div>
+        <!-- 搜索结果 -->
+        <div v-if="searchKeyword" class="search-results-panel">
+          <div v-if="searchLoading" class="loading-state">
+            <el-icon class="is-loading"><Loading /></el-icon>
+            <span>搜索中...</span>
+          </div>
+          <div v-else-if="searchResults.length" class="search-list">
+            <div
+              v-for="user in searchResults"
+              :key="user.id"
+              class="search-item"
+              @click="handleSearchItemClick(user)"
+            >
+              <div class="avatar" :style="buildAvatarStyle(user.avatar)">
+                <img v-if="user.avatar" :src="user.avatar" :alt="user.username" />
+                <span v-else>{{ getInitial(user.username) }}</span>
               </div>
-
-              <el-empty
-                v-if="!searchResults.length"
-                description="没有找到匹配的用户"
-                :image-size="64"
-              />
-            </template>
-
-            <div v-else class="search-placeholder">
-              <el-icon><UserFilled /></el-icon>
-              <span>先搜一个用户名，我们就能直接发起好友申请。</span>
+              <div class="user-info">
+                <div class="user-name">
+                  {{ user.username }}
+                  <el-tag size="small" :type="getRelationTagType(user.relationStatus)">
+                    {{ getRelationLabel(user.relationStatus) }}
+                  </el-tag>
+                </div>
+                <div class="user-bio">{{ user.bio || '暂无简介' }}</div>
+              </div>
             </div>
           </div>
-        </section>
+          <el-empty v-else description="未找到匹配的用户" :image-size="60" />
+        </div>
 
-        <section class="panel panel-inbox">
-          <div class="panel-head">
-            <div>
-              <h2>会话中心</h2>
-            </div>
-            <div class="panel-summary">
-              <span class="summary-pill">
-                <el-icon><Bell /></el-icon>
-                {{ totalUnreadCount }}
-              </span>
-            </div>
+        <!-- 好友申请提醒（仅在有待处理申请时显示） -->
+        <div v-if="receivedRequests.length && !searchKeyword" class="request-notice" @click="sidebarTab = 'received'">
+          <el-icon><Bell /></el-icon>
+          <span>{{ receivedRequests.length }} 条好友申请待处理</span>
+          <el-icon class="arrow"><ArrowRight /></el-icon>
+        </div>
+
+        <!-- 会话/申请列表 -->
+        <div v-show="!searchKeyword" class="conversation-tabs">
+          <div
+            class="tab-item"
+            :class="{ active: sidebarTab === 'contacts' }"
+            @click="sidebarTab = 'contacts'"
+          >
+            会话
+            <span v-if="totalUnreadCount" class="tab-badge">{{ totalUnreadCount }}</span>
           </div>
-
-          <div class="sidebar-tabs">
-            <button
-              type="button"
-              class="sidebar-tab"
-              :class="{ active: sidebarTab === 'contacts' }"
-              @click="sidebarTab = 'contacts'"
-            >
-              <span>会话</span>
-              <span class="sidebar-tab__count">{{ totalUnreadCount }}</span>
-            </button>
-            <button
-              type="button"
-              class="sidebar-tab"
-              :class="{ active: sidebarTab === 'received' }"
-              @click="sidebarTab = 'received'"
-            >
-              <span>收到申请</span>
-              <span class="sidebar-tab__count">{{ receivedRequests.length }}</span>
-            </button>
-            <button
-              type="button"
-              class="sidebar-tab"
-              :class="{ active: sidebarTab === 'sent' }"
-              @click="sidebarTab = 'sent'"
-            >
-              <span>我发出的</span>
-              <span class="sidebar-tab__count">{{ sentRequests.length }}</span>
-            </button>
+          <div
+            class="tab-item"
+            :class="{ active: sidebarTab === 'received' }"
+            @click="sidebarTab = 'received'"
+          >
+            收到申请
+            <span v-if="receivedRequests.length" class="tab-badge">{{ receivedRequests.length }}</span>
           </div>
+          <div
+            class="tab-item"
+            :class="{ active: sidebarTab === 'sent' }"
+            @click="sidebarTab = 'sent'"
+          >
+            已发送
+          </div>
+        </div>
 
-          <div v-if="sidebarTab === 'contacts'" class="list-shell">
-            <div v-if="contactsLoading" class="section-state">
+        <!-- 列表内容 -->
+        <div v-show="!searchKeyword" class="list-content">
+          <!-- 会话列表 -->
+          <div v-if="sidebarTab === 'contacts'" class="conversation-list">
+            <div v-if="contactsLoading" class="loading-state">
               <el-icon class="is-loading"><Loading /></el-icon>
-              <span>正在同步联系人...</span>
+              <span>加载中...</span>
             </div>
-
-            <div v-else-if="contacts.length" class="conversation-list">
-              <button
-                type="button"
+            <div v-else-if="contacts.length" class="contact-items">
+              <div
                 v-for="contact in contacts"
                 :key="contact.userId"
-                class="conversation-card"
+                class="contact-item"
                 :class="{ active: activeContact?.userId === contact.userId }"
                 @click="selectContact(contact)"
               >
-                <div class="avatar-shell avatar-shell--md" :style="buildAvatarStyle(contact.avatar)">
-                  <img v-if="contact.avatar" :src="contact.avatar" :alt="contact.username" />
-                  <span v-else>{{ getInitial(contact.username) }}</span>
-                </div>
-
-                <div class="conversation-copy">
-                  <div class="conversation-top">
-                    <strong>{{ contact.username }}</strong>
-                    <span class="time-copy">{{ formatTime(contact.lastMessageTime || contact.activityTime) }}</span>
+                <div class="avatar-wrapper">
+                  <div class="avatar" :style="buildAvatarStyle(contact.avatar)">
+                    <img v-if="contact.avatar" :src="contact.avatar" :alt="contact.username" />
+                    <span v-else>{{ getInitial(contact.username) }}</span>
                   </div>
-                  <div class="conversation-bottom">
-                    <span class="preview-copy">
-                      {{ contact.lastMessagePreview || buildRelationCopy(contact) }}
-                    </span>
-                    <el-badge v-if="contact.unreadCount" :value="contact.unreadCount" class="conversation-badge" />
+                  <span v-if="isUserOnline(contact.userId)" class="online-indicator" title="在线"></span>
+                </div>
+                <div class="contact-info">
+                  <div class="contact-header">
+                    <span class="contact-name">{{ contact.username }}</span>
+                    <span class="contact-time">{{ formatTime(contact.lastMessageTime || contact.activityTime) }}</span>
+                  </div>
+                  <div class="contact-preview">
+                    <span class="message-text">{{ contact.lastMessagePreview || '暂无消息' }}</span>
+                    <el-badge v-if="contact.unreadCount" :value="contact.unreadCount" class="unread-dot" />
                   </div>
                 </div>
-              </button>
+              </div>
             </div>
-
-            <el-empty v-else description="先搜索一个用户开始聊天吧" :image-size="70" />
+            <el-empty v-else description="暂无会话，点击右上角 + 开始聊天" :image-size="60" />
           </div>
 
-          <div v-else-if="sidebarTab === 'received'" class="list-shell">
-            <div v-if="receivedRequests.length" class="request-list">
+          <!-- 收到的申请 -->
+          <div v-else-if="sidebarTab === 'received'" class="request-list">
+            <div v-if="receivedRequests.length" class="request-items">
               <div
                 v-for="request in receivedRequests"
-                :key="`received-${request.id}`"
-                class="request-card"
+                :key="request.id"
+                class="request-item"
               >
-                <div class="identity-block identity-block--compact">
-                  <div class="avatar-shell avatar-shell--md" :style="buildAvatarStyle(request.senderAvatar)">
-                    <img v-if="request.senderAvatar" :src="request.senderAvatar" :alt="request.senderUsername" />
-                    <span v-else>{{ getInitial(request.senderUsername) }}</span>
-                  </div>
-                  <div class="identity-copy">
-                    <div class="identity-line">
-                      <strong>{{ request.senderUsername }}</strong>
-                      <span class="time-copy">{{ formatTime(request.createdAt) }}</span>
-                    </div>
-                    <p>{{ request.remark || '对方向你发送了一条好友申请。' }}</p>
-                  </div>
+                <div class="avatar" :style="buildAvatarStyle(request.senderAvatar)">
+                  <img v-if="request.senderAvatar" :src="request.senderAvatar" :alt="request.senderUsername" />
+                  <span v-else>{{ getInitial(request.senderUsername) }}</span>
                 </div>
-
+                <div class="request-info">
+                  <div class="request-name">{{ request.senderUsername }}</div>
+                  <div class="request-remark">{{ request.remark || '请求添加你为好友' }}</div>
+                </div>
                 <div class="request-actions">
-                  <el-button size="small" plain @click="openFriendProfile(buildContactFromRequest(request, 'INCOMING'))">
-                    资料
-                  </el-button>
-                  <el-button size="small" @click="openChatWithRequest(request, 'INCOMING')">私信</el-button>
-                  <el-button size="small" type="success" @click="handleAcceptRequest(request)">同意</el-button>
-                  <el-button size="small" type="danger" plain @click="handleRejectRequest(request)">拒绝</el-button>
+                  <el-button size="small" type="primary" @click="handleAcceptRequest(request)">同意</el-button>
+                  <el-button size="small" @click="handleRejectRequest(request)">忽略</el-button>
                 </div>
               </div>
             </div>
-            <el-empty v-else description="暂时没有新的好友申请" :image-size="64" />
+            <el-empty v-else description="暂时没有新的好友申请" :image-size="60" />
           </div>
 
-          <div v-else class="list-shell">
-            <div v-if="sentRequests.length" class="request-list">
+          <!-- 发送的申请 -->
+          <div v-else class="request-list">
+            <div v-if="sentRequests.length" class="request-items">
               <div
                 v-for="request in sentRequests"
-                :key="`sent-${request.id}`"
-                class="request-card request-card--soft"
+                :key="request.id"
+                class="request-item"
               >
-                <div class="identity-block identity-block--compact">
-                  <div class="avatar-shell avatar-shell--md" :style="buildAvatarStyle(request.receiverAvatar)">
-                    <img v-if="request.receiverAvatar" :src="request.receiverAvatar" :alt="request.receiverUsername" />
-                    <span v-else>{{ getInitial(request.receiverUsername) }}</span>
-                  </div>
-                  <div class="identity-copy">
-                    <div class="identity-line">
-                      <strong>{{ request.receiverUsername }}</strong>
-                      <span class="time-copy">{{ formatTime(request.createdAt) }}</span>
-                    </div>
-                    <p>{{ request.remark || '等待对方确认你的好友申请。' }}</p>
-                  </div>
+                <div class="avatar" :style="buildAvatarStyle(request.receiverAvatar)">
+                  <img v-if="request.receiverAvatar" :src="request.receiverAvatar" :alt="request.receiverUsername" />
+                  <span v-else>{{ getInitial(request.receiverUsername) }}</span>
                 </div>
-
-                <div class="request-actions">
-                  <el-button size="small" plain @click="openFriendProfile(buildContactFromRequest(request, 'OUTGOING'))">
-                    资料
-                  </el-button>
-                  <el-tag size="small" type="warning" effect="plain">等待通过</el-tag>
-                  <el-button size="small" @click="openChatWithRequest(request, 'OUTGOING')">私信</el-button>
+                <div class="request-info">
+                  <div class="request-name">{{ request.receiverUsername }}</div>
+                  <div class="request-remark">{{ request.remark || '等待对方确认' }}</div>
                 </div>
+                <el-tag size="small" type="info">等待中</el-tag>
               </div>
             </div>
-            <el-empty v-else description="你还没有发出任何好友申请" :image-size="64" />
+            <el-empty v-else description="你还没有发出任何好友申请" :image-size="60" />
           </div>
-        </section>
+        </div>
       </aside>
 
-      <section v-show="showChatPane" class="chat-column">
-        <div v-if="activeContact" class="chat-card" :style="chatPanelStyle">
-          <header class="chat-head">
-            <div class="chat-head__main">
-              <button
-                v-if="isMobile"
-                type="button"
-                class="mobile-pane-toggle"
-                @click="showConversationList"
-              >
-                <el-icon><ArrowLeft /></el-icon>
-                <span>返回会话</span>
-              </button>
-              <div class="avatar-shell avatar-shell--xl" :style="buildAvatarStyle(activeContact.avatar)">
+      <!-- 右侧聊天区域 -->
+      <main v-show="showChatPane" class="chat-area">
+        <template v-if="activeContact">
+          <!-- 聊天头部 -->
+          <div class="chat-header">
+            <div v-if="isMobile" class="back-btn" @click="showConversationList">
+              <el-icon><ArrowLeft /></el-icon>
+            </div>
+            <div class="chat-user">
+              <div class="avatar" :style="buildAvatarStyle(activeContact.avatar)">
                 <img v-if="activeContact.avatar" :src="activeContact.avatar" :alt="activeContact.username" />
                 <span v-else>{{ getInitial(activeContact.username) }}</span>
               </div>
-              <div class="chat-head__copy">
-                <div class="identity-line">
-                  <h2>{{ activeContact.username }}</h2>
-                  <el-tag size="small" effect="plain" :type="getRelationTagType(activeContact.relationStatus)">
-                    {{ getRelationLabel(activeContact.relationStatus) }}
-                  </el-tag>
-                </div>
-                <p>{{ activeContact.bio || buildRelationCopy(activeContact) }}</p>
+              <div class="user-meta">
+                <div class="user-name">{{ activeContact.username }}</div>
+                <div class="user-status">{{ activeContact.bio || getRelationLabel(activeContact.relationStatus) }}</div>
               </div>
             </div>
+            <el-button v-if="!isMobile" text @click="openFriendProfile(activeContact)">
+              <el-icon><MoreFilled /></el-icon>
+            </el-button>
+          </div>
 
-            <div class="chat-head__side">
-              <el-button plain class="profile-view-button" @click="openFriendProfile(activeContact)">
-                查看好友信息
+          <!-- 消息列表 -->
+          <div ref="messageListRef" class="message-list">
+            <div v-if="messageHasMore" class="load-more">
+              <el-button text size="small" :loading="messageLoadingMore" @click="loadOlderMessages">
+                加载更多消息
               </el-button>
             </div>
-          </header>
 
-          <div ref="messageListRef" class="message-board">
-            <div v-if="messageHasMore" class="history-entry">
-              <button
-                type="button"
-                class="history-button"
-                :disabled="messageLoadingMore"
-                @click="loadOlderMessages"
-              >
-                <el-icon v-if="messageLoadingMore" class="is-loading"><Loading /></el-icon>
-                <span>{{ messageLoadingMore ? '正在加载更早消息...' : '加载更早消息' }}</span>
-              </button>
-            </div>
-
-            <div v-if="messagesLoading && !messages.length" class="section-state section-state--board">
+            <div v-if="messagesLoading && !messages.length" class="loading-messages">
               <el-icon class="is-loading"><Loading /></el-icon>
-              <span>正在加载聊天记录...</span>
             </div>
 
             <template v-else-if="messages.length">
               <div
                 v-for="message in messages"
                 :key="message.id"
-                class="message-row"
-                :class="{ mine: message.mine }"
+                class="message-item"
+                :class="{ self: message.mine }"
               >
-                <div class="message-stack">
-                  <div
-                    class="message-head"
-                    :class="{ 'message-head--mine': message.mine }"
-                  >
-                    <div
-                      v-if="!message.mine"
-                      class="avatar-shell avatar-shell--sm message-head__avatar"
-                      :style="buildAvatarStyle(message.senderAvatar)"
-                    >
-                      <img v-if="message.senderAvatar" :src="message.senderAvatar" :alt="message.senderUsername" />
-                      <span v-else>{{ getInitial(message.senderUsername) }}</span>
-                    </div>
+                <div v-if="!message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar)">
+                  <img v-if="message.senderAvatar" :src="message.senderAvatar" :alt="message.senderUsername" />
+                  <span v-else>{{ getInitial(message.senderUsername) }}</span>
+                </div>
 
-                    <div class="message-meta message-meta--head">
-                      <span>{{ message.mine ? '我' : message.senderUsername }}</span>
-                      <span>{{ formatTime(message.createdAt) }}</span>
-                      <span v-if="message.mine" class="message-read-state" :class="{ read: isMessageRead(message) }">
-                        {{ formatReadState(message) }}
-                      </span>
-                    </div>
+                <div class="message-content">
+                  <div class="message-meta">
+                    <span class="sender-name">{{ message.mine ? '我' : message.senderUsername }}</span>
+                    <span class="message-time">{{ formatTime(message.createdAt) }}</span>
                   </div>
 
-                  <div class="message-bubble" :class="`message-bubble--${(message.type || 'TEXT').toLowerCase()}`">
+                  <div class="message-bubble" :class="message.type?.toLowerCase()">
                     <template v-if="message.type === 'IMAGE'">
                       <el-image
-                        class="message-image"
                         :src="message.mediaUrl"
                         :preview-src-list="[message.mediaUrl]"
                         fit="cover"
                         preview-teleported
                       />
-                      <p v-if="message.content" class="message-caption">{{ message.content }}</p>
+                      <p v-if="message.content" class="image-caption">{{ message.content }}</p>
                     </template>
-
-                    <template v-else-if="message.type === 'STICKER'">
-                      <el-image
-                        class="message-sticker"
-                        :src="message.mediaUrl"
-                        :preview-src-list="[message.mediaUrl]"
-                        fit="contain"
-                        preview-teleported
-                      />
-                      <p v-if="message.content" class="message-caption">{{ message.content }}</p>
-                    </template>
-
                     <template v-else-if="message.type === 'EMOJI'">
-                      <span class="message-emoji">{{ message.content }}</span>
+                      <span class="emoji-content">{{ message.content }}</span>
                     </template>
-
                     <template v-else>
                       {{ message.content }}
                     </template>
                   </div>
 
-                  <div v-if="false" class="message-meta">
-                    <span>{{ message.mine ? '我' : message.senderUsername }}</span>
-                    <span>{{ formatTime(message.createdAt) }}</span>
-                    <span v-if="message.mine" class="message-read-state" :class="{ read: isMessageRead(message) }">
-                      {{ formatReadState(message) }}
-                    </span>
+                  <div v-if="message.mine" class="read-status" :class="{ read: isMessageRead(message) }">
+                    {{ formatReadState(message) }}
                   </div>
+                </div>
+
+                <div v-if="message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar || userStore.avatar)">
+                  <img v-if="message.senderAvatar || userStore.avatar" :src="message.senderAvatar || userStore.avatar" />
+                  <span v-else>{{ getInitial(message.senderUsername || userStore.username) }}</span>
                 </div>
               </div>
             </template>
 
-            <div v-else class="chat-empty">
+            <div v-else class="empty-chat">
               <el-icon><ChatDotRound /></el-icon>
-              <h3>先发第一条消息吧</h3>
-
+              <p>还没有消息，发送一条问候吧</p>
             </div>
           </div>
 
-          <footer class="composer">
-            <div class="composer-toolbar">
-              <div v-if="false" class="composer-tools">
-                <button
-                  class="tool-button"
-                  :class="{ active: pickerVisible }"
-                  @click="togglePickerPanel"
-                >
-                  <el-icon><ChatDotRound /></el-icon>
-                  <span>表情</span>
-                </button>
-                <button v-if="false"
-                  class="tool-button"
-                  :class="{ active: pickerVisible && pickerTab === 'sticker' }"
-                  @click="togglePicker('sticker')"
-                >
-                  <el-icon><Promotion /></el-icon>
-                  <span>表情包</span>
-                </button>
-                <el-button plain :loading="imageUploading" @click="triggerImagePicker">
-                  <el-icon><PictureFilled /></el-icon>
-                  图片
-                </el-button>
-                <input
-                  ref="imageInputRef"
-                  class="hidden-input"
-                  type="file"
-                  accept="image/*"
-                  @change="handleImageSelected"
-                />
-              </div>
-
+          <!-- 输入区域 -->
+          <div class="input-area">
+            <div class="input-toolbar">
+              <el-button text circle size="small" @click="toggleEmojiPicker">
+                <el-icon><ChatLineRound /></el-icon>
+              </el-button>
+              <el-button text circle size="small" :loading="imageUploading" @click="triggerImagePicker">
+                <el-icon><PictureRounded /></el-icon>
+              </el-button>
+              <input
+                ref="imageInputRef"
+                type="file"
+                accept="image/*"
+                style="display: none"
+                @change="handleImageSelected"
+              />
             </div>
 
-            <div v-if="pickerVisible" class="picker-panel">
-              <div class="picker-panel__head">
-                <span>常用表情</span>
-              </div>
-
-              <div v-if="false" class="picker-switch">
-                <button
-                  class="picker-switch__button"
-                  :class="{ active: pickerTab === 'emoji' }"
-                  @click="pickerTab = 'emoji'"
-                >
-                  常用表情
-                </button>
-                <button
-                  class="picker-switch__button"
-                  :class="{ active: pickerTab === 'sticker' }"
-                  @click="pickerTab = 'sticker'"
-                >
-                  骑行表情包库
-                </button>
-              </div>
-
+            <!-- 表情选择器 -->
+            <div v-if="emojiPickerVisible" class="emoji-picker">
               <div class="emoji-grid">
                 <button
                   v-for="emoji in emojiPresets"
                   :key="emoji.value"
-                  type="button"
-                  class="emoji-card"
+                  class="emoji-btn"
                   @click="handleEmojiSend(emoji)"
                 >
-                  <span class="emoji-card__icon">{{ emoji.value }}</span>
-                  <span class="emoji-card__label">{{ emoji.label }}</span>
-                </button>
-              </div>
-
-              <div v-if="false" class="sticker-grid">
-                <button
-                  v-for="sticker in stickerPresets"
-                  :key="sticker.key"
-                  type="button"
-                  class="sticker-card"
-                  @click="handleStickerSend(sticker)"
-                >
-                  <img :src="sticker.url" :alt="sticker.label" />
-                  <span>{{ sticker.label }}</span>
+                  {{ emoji.value }}
                 </button>
               </div>
             </div>
 
-            <div class="composer-input-wrap">
-              <button
-                type="button"
-                class="composer-sticker-button"
-                :class="{ active: pickerVisible }"
-                @click="togglePicker('emoji')"
-              >
-                <span class="composer-emoji-mark" aria-hidden="true">😊</span>
-              </button>
-              <button type="button" class="composer-image-button" :disabled="imageUploading" @click="triggerImagePicker">
-                <el-icon><PictureFilled /></el-icon>
-              </button>
-              <input
-                ref="imageInputRef"
-                class="hidden-input"
-                type="file"
-                accept="image/*"
-                @change="handleImageSelected"
-              />
+            <div class="input-box">
               <el-input
                 v-model="draft"
-                class="composer-textarea"
                 type="textarea"
+                :rows="2"
                 resize="none"
-                :rows="4"
-                maxlength="1000"
-                show-word-limit
-                placeholder="请输入消息..."
+                maxlength="500"
+                placeholder="输入消息，按 Enter 发送，Shift+Enter 换行"
                 @keydown.enter.exact.prevent="handleSendText"
               />
-
-              <div class="composer-actions">
-                <el-button type="primary" @click="handleSendText"><span>发送</span></el-button>
-              </div>
+              <el-button type="primary" :disabled="!draft.trim()" @click="handleSendText">
+                发送
+              </el-button>
             </div>
-          </footer>
-        </div>
+          </div>
+        </template>
 
-        <div v-else class="chat-placeholder panel" :style="chatPanelStyle">
-          <div class="placeholder-mark">BikeShare Chat</div>
-          <h2>从左侧搜一个好友，或者直接点开已有会话</h2>
+        <!-- 空状态 -->
+        <div v-else class="empty-state">
+          <div class="empty-content">
+            <el-icon class="empty-icon"><ChatDotRound /></el-icon>
+            <h3>选择一个会话开始聊天</h3>
+            <p>或点击左侧 + 按钮搜索好友</p>
+          </div>
         </div>
-      </section>
+      </main>
     </div>
 
+    <!-- 好友资料抽屉 -->
     <el-drawer
       v-model="profileDrawerVisible"
       :with-header="false"
-      :modal="false"
-      :size="profileDrawerSize"
-      class="friend-profile-drawer"
+      :size="isMobile ? '90%' : '420px'"
+      direction="rtl"
+      class="profile-drawer"
     >
       <div v-if="friendProfile" class="friend-profile">
-        <div class="friend-profile__top">
-          <span class="friend-profile__eyebrow">好友资料</span>
-          <button type="button" class="friend-profile__close" @click="closeFriendProfile">关闭</button>
+        <!-- 头部关闭按钮 -->
+        <div class="profile-header">
+          <span class="header-title">好友资料</span>
+          <el-button text circle @click="closeFriendProfile">
+            <el-icon><Close /></el-icon>
+          </el-button>
         </div>
 
-        <div class="friend-profile__hero">
-          <div class="avatar-shell avatar-shell--profile" :style="buildAvatarStyle(friendProfile.avatar)">
+        <!-- 基本信息卡片 -->
+        <div class="profile-card profile-hero">
+          <div class="avatar large" :style="buildAvatarStyle(friendProfile.avatar)">
             <img v-if="friendProfile.avatar" :src="friendProfile.avatar" :alt="friendProfile.username" />
             <span v-else>{{ getInitial(friendProfile.username) }}</span>
           </div>
-
-          <div class="friend-profile__hero-copy">
-            <div class="friend-profile__title">
-              <h3>{{ friendProfile.username }}</h3>
-              <el-tag size="small" effect="plain" :type="getRelationTagType(friendProfile.relationStatus)">
+          <div class="hero-info">
+            <h3 class="username">{{ friendProfile.username }}</h3>
+            <div class="user-tags">
+              <el-tag :type="getRelationTagType(friendProfile.relationStatus)" size="small">
                 {{ getRelationLabel(friendProfile.relationStatus) }}
               </el-tag>
+              <el-tag v-if="friendProfile.role === 'ADMIN'" type="danger" size="small">管理员</el-tag>
+              <el-tag v-else type="info" size="small">普通用户</el-tag>
+              <el-tag :type="friendProfile.enabled ? 'success' : 'danger'" size="small">
+                {{ friendProfile.enabled ? '正常' : '已禁用' }}
+              </el-tag>
             </div>
-            <p>{{ friendProfile.bio || '这个好友还没有填写个人简介。' }}</p>
           </div>
         </div>
 
-        <div class="friend-profile__stats">
-          <div class="friend-profile__stat">
-            <span>私信状态</span>
-            <strong>{{ getProfileChatLabel(friendProfile) }}</strong>
-          </div>
-          <div class="friend-profile__stat">
-            <span>未读消息</span>
-            <strong>{{ friendProfile.unreadCount || 0 }}</strong>
-          </div>
-          <div class="friend-profile__stat">
-            <span>{{ getProfileActivityLabel(friendProfile) }}</span>
-            <strong>{{ getProfileActivityTime(friendProfile) }}</strong>
-          </div>
-          <div class="friend-profile__stat">
-            <span>用户编号</span>
-            <strong>#{{ friendProfile.userId }}</strong>
+        <!-- 联系信息 -->
+        <div class="profile-section">
+          <h4 class="section-title">
+            <el-icon><Message /></el-icon>
+            联系信息
+          </h4>
+          <div class="info-grid">
+            <div class="info-row">
+              <span class="info-label">邮箱</span>
+              <span class="info-value">{{ friendProfile.email || '未设置' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">用户编号</span>
+              <span class="info-value copyable" @click="copyToClipboard(friendProfile.userId)">
+                #{{ friendProfile.userId }}
+                <el-icon class="copy-icon"><CopyDocument /></el-icon>
+              </span>
+            </div>
           </div>
         </div>
 
-        <div class="friend-profile__section">
-          <span class="friend-profile__section-label">资料说明</span>
-          <p>{{ buildRelationCopy(friendProfile) }}</p>
+        <!-- 个人简介 -->
+        <div class="profile-section">
+          <h4 class="section-title">
+            <el-icon><Document /></el-icon>
+            个人简介
+          </h4>
+          <div class="bio-content">
+            {{ friendProfile.bio || '这位好友很神秘，还没有填写个人简介。' }}
+          </div>
         </div>
 
-        <div class="friend-profile__section">
-          <span class="friend-profile__section-label">最近一条</span>
-          <p>{{ friendProfile.lastMessagePreview || '当前还没有聊天记录。' }}</p>
+        <!-- 互动统计 -->
+        <div class="profile-section">
+          <h4 class="section-title">
+            <el-icon><TrendCharts /></el-icon>
+            互动统计
+          </h4>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">{{ friendProfile.unreadCount || 0 }}</div>
+              <div class="stat-label">未读消息</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">{{ formatFriendSince(friendProfile.friendSince) }}</div>
+              <div class="stat-label">成为好友</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">{{ formatTimeShort(friendProfile.lastMessageTime) }}</div>
+              <div class="stat-label">最近消息</div>
+            </div>
+          </div>
         </div>
 
-        <div class="friend-profile__footer">
-<!--          <el-button @click="closeFriendProfile">关闭</el-button>-->
-<!--          <el-button
-            v-if="friendProfile.canChat"
-            type="primary"
-            @click="openChatFromProfile"
+        <!-- 账号信息 -->
+        <div class="profile-section">
+          <h4 class="section-title">
+            <el-icon><InfoFilled /></el-icon>
+            账号信息
+          </h4>
+          <div class="info-grid">
+            <div class="info-row">
+              <span class="info-label">注册时间</span>
+              <span class="info-value">{{ formatDateTime(friendProfile.createdAt) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">最后更新</span>
+              <span class="info-value">{{ formatDateTime(friendProfile.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="profile-actions">
+          <el-button 
+            v-if="friendProfile.canChat" 
+            type="primary" 
+            size="large" 
+            class="action-btn"
+            @click="closeFriendProfile"
           >
-            打开会话
-          </el-button>-->
+            <el-icon><ChatDotRound /></el-icon>
+            继续聊天
+          </el-button>
+          <el-button 
+            v-else-if="friendProfile.relationStatus === 'NONE'" 
+            type="primary" 
+            size="large" 
+            class="action-btn"
+            @click="handleCreateFriendRequestFromProfile"
+          >
+            <el-icon><Plus /></el-icon>
+            添加好友
+          </el-button>
+          <el-button 
+            v-else-if="friendProfile.relationStatus === 'REQUEST_RECEIVED'" 
+            type="success" 
+            size="large" 
+            class="action-btn"
+            @click="handleAcceptFromProfile"
+          >
+            <el-icon><Check /></el-icon>
+            接受申请
+          </el-button>
         </div>
       </div>
     </el-drawer>
+
+    <!-- 新建聊天对话框 -->
+    <el-dialog
+      v-model="newChatDialogVisible"
+      title="新建聊天"
+      width="420px"
+      destroy-on-close
+    >
+      <el-input
+        v-model="newChatKeyword"
+        clearable
+        placeholder="搜索用户名"
+        @input="handleNewChatSearch"
+      >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+      <div class="new-chat-results">
+        <div v-if="newChatLoading" class="loading-state">
+          <el-icon class="is-loading"><Loading /></el-icon>
+        </div>
+        <div v-else-if="newChatResults.length" class="user-list">
+          <div
+            v-for="user in newChatResults"
+            :key="user.id"
+            class="user-item"
+            @click="startNewChat(user)"
+          >
+            <div class="avatar" :style="buildAvatarStyle(user.avatar)">
+              <img v-if="user.avatar" :src="user.avatar" />
+              <span v-else>{{ getInitial(user.username) }}</span>
+            </div>
+            <div class="user-info">
+              <div class="user-name">{{ user.username }}</div>
+              <div class="user-relation">{{ getRelationLabel(user.relationStatus) }}</div>
+            </div>
+            <el-button v-if="user.relationStatus === 'NONE'" size="small" @click.stop="handleCreateFriendRequest(user)">
+              添加
+            </el-button>
+          </div>
+        </div>
+        <el-empty v-else-if="newChatKeyword" description="未找到用户" :image-size="80" />
+        <div v-else class="search-tip">
+          <el-icon><Search /></el-icon>
+          <span>输入用户名搜索</span>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -607,11 +533,19 @@ import {
   ArrowLeft,
   Bell,
   ChatDotRound,
+  ChatLineRound,
+  Check,
+  Close,
+  CopyDocument,
+  Document,
+  InfoFilled,
   Loading,
-  PictureFilled,
-  Promotion,
+  Message,
+  MoreFilled,
+  PictureRounded,
+  Plus,
   Search,
-  UserFilled
+  TrendCharts
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import {
@@ -621,6 +555,7 @@ import {
   getConversationMessages,
   getReceivedFriendRequests,
   getSentFriendRequests,
+  getUserProfile,
   markConversationRead,
   rejectFriendRequest,
   searchUsers,
@@ -636,37 +571,146 @@ const userStore = useUserStore()
 const router = useRouter()
 const route = useRoute()
 
+// 搜索相关
 const searchKeyword = ref('')
 const searchLoading = ref(false)
 const searchResults = ref([])
+
+// 好友申请
 const receivedRequests = ref([])
 const sentRequests = ref([])
+
+// 联系人
 const contactsLoading = ref(false)
 const contacts = ref([])
 const activeContact = ref(null)
 const sidebarTab = ref('contacts')
 
+// 消息
 const messagesLoading = ref(false)
 const messageLoadingMore = ref(false)
 const messages = ref([])
 const messagePage = ref(1)
 const messageHasMore = ref(false)
-const messageTotal = ref(0)
 
+// 输入
 const draft = ref('')
-const pickerVisible = ref(false)
-const pickerTab = ref('emoji')
+const emojiPickerVisible = ref(false)
 const imageUploading = ref(false)
-const socketState = ref('CONNECTING')
+
+/**
+ * 在线状态管理
+ * 
+ * 方案说明：
+ * 1. 基于 JWT token 过期时间判断用户是否在线
+ * 2. 每个用户定期广播自己的在线状态（心跳）
+ * 3. 收到其他用户的心跳时，记录其在线状态和过期时间
+ * 4. 超过 token 过期时间未收到心跳，则认为用户离线
+ * 
+ * 存储格式：{ userId: { expiresAt: timestamp, lastSeen: timestamp } }
+ */
+
+// localStorage 存储键名
+const ONLINE_STATUS_KEY = 'bickdemo:onlineStatus'
+
+// 心跳间隔：每 30 秒广播一次在线状态
+const HEARTBEAT_INTERVAL = 30 * 1000
+
+// 离线判定缓冲时间：token 过期后额外宽限 5 分钟
+const OFFLINE_BUFFER = 5 * 60 * 1000
+
+/**
+ * 从 localStorage 加载在线状态
+ * 只保留尚未过期的状态
+ */
+const loadOnlineStatus = () => {
+  try {
+    const stored = localStorage.getItem(ONLINE_STATUS_KEY)
+    if (stored) {
+      const data = JSON.parse(stored)
+      const now = Date.now()
+      const validStatus = {}
+      
+      // 过滤掉已过期超过缓冲时间的记录
+      Object.entries(data).forEach(([userId, status]) => {
+        if (status.expiresAt + OFFLINE_BUFFER > now) {
+          validStatus[userId] = status
+        }
+      })
+      
+      return validStatus
+    }
+  } catch (e) {
+    console.error('[在线状态] 加载失败:', e)
+  }
+  return {}
+}
+
+/**
+ * 保存在线状态到 localStorage
+ */
+const saveOnlineStatus = (status) => {
+  try {
+    localStorage.setItem(ONLINE_STATUS_KEY, JSON.stringify(status))
+  } catch (e) {
+    console.error('[在线状态] 保存失败:', e)
+  }
+}
+
+/**
+ * 获取当前用户的 JWT 过期时间
+ * 从 token 的 payload 中解析 exp 字段
+ */
+const getTokenExpiresAt = () => {
+  try {
+    const token = userStore.token
+    if (!token) return null
+    
+    // JWT 格式: header.payload.signature
+    const payload = token.split('.')[1]
+    if (!payload) return null
+    
+    // Base64 解码 payload
+    const decoded = JSON.parse(atob(payload))
+    // exp 是秒级时间戳，转换为毫秒
+    return decoded.exp * 1000
+  } catch (e) {
+    console.error('[在线状态] 解析 token 失败:', e)
+    return null
+  }
+}
+
+/**
+ * 检查指定用户是否在线
+ * 条件：当前时间在 token 过期时间 + 缓冲时间之内
+ */
+const isUserOnline = (userId) => {
+  const status = onlineStatus.value[userId]
+  if (!status) return false
+  
+  const now = Date.now()
+  // 用户在线条件：token 未过期 或 在缓冲期内
+  return status.expiresAt + OFFLINE_BUFFER > now
+}
+
+// 在线状态响应式数据
+const onlineStatus = ref(loadOnlineStatus())
+
+// 心跳定时器
+let heartbeatTimer = null
+
+// UI 状态
 const profileDrawerVisible = ref(false)
 const friendProfile = ref(null)
-const sidebarColumnRef = ref(null)
+const newChatDialogVisible = ref(false)
+const newChatKeyword = ref('')
+const newChatLoading = ref(false)
+const newChatResults = ref([])
+
 const messageListRef = ref(null)
 const imageInputRef = ref(null)
-const chatPanelHeight = ref(0)
 const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440)
 const mobilePane = ref('sidebar')
-const routeConversationLock = ref(false)
 
 const emojiPresets = [
   { label: '开心', value: '😄' },
@@ -678,18 +722,12 @@ const emojiPresets = [
   { label: '想法', value: '💡' },
   { label: '冲呀', value: '🔥' },
   { label: '太强了', value: '🤩' },
-  { label: '笑哭', value: '😂' }
+  { label: '笑哭', value: '😂' },
+  { label: '爱心', value: '❤️' },
+  { label: 'OK', value: '👌' }
 ]
 
-const stickerPresets = [
-  { key: 'ride-on', label: '一路骑行', url: '/stickers/ride-on.svg' },
-  { key: 'lets-go', label: '马上出发', url: '/stickers/lets-go.svg' },
-  { key: 'coffee-break', label: '先歇一会', url: '/stickers/coffee-break.svg' },
-  { key: 'approved', label: '安排上了', url: '/stickers/approved.svg' },
-  { key: 'wow', label: '太酷了', url: '/stickers/wow.svg' },
-  { key: 'slow-down', label: '慢一点', url: '/stickers/slow-down.svg' }
-]
-
+// 计算属性
 const totalUnreadCount = computed(() =>
   contacts.value.reduce((sum, contact) => sum + Number(contact.unreadCount || 0), 0)
 )
@@ -699,36 +737,9 @@ const isMobile = computed(() => viewportWidth.value <= 768)
 const showSidebarPane = computed(() => !isMobile.value || mobilePane.value === 'sidebar')
 const showChatPane = computed(() => !isMobile.value || mobilePane.value === 'chat')
 
-const chatPanelStyle = computed(() => {
-  if (viewportWidth.value <= 1280 || !chatPanelHeight.value) return {}
-  const height = `${chatPanelHeight.value}px`
-  return {
-    height,
-    minHeight: height,
-    maxHeight: height
-  }
-})
+const socketStateLabel = computed(() => '已连接')
 
-const profileDrawerSize = computed(() => (viewportWidth.value <= 768 ? '92%' : '380px'))
-
-const socketStateLabel = computed(() => {
-  if (socketState.value === 'ONLINE') return '实时在线'
-  if (socketState.value === 'ERROR') return '连接异常'
-  if (socketState.value === 'OFFLINE') return '正在重连'
-  return '连接中'
-})
-
-const socketStateType = computed(() => {
-  if (socketState.value === 'ONLINE') return 'success'
-  if (socketState.value === 'ERROR') return 'danger'
-  if (socketState.value === 'OFFLINE') return 'warning'
-  return 'info'
-})
-
-let searchTimer = null
-let socketClient = null
-let layoutObserver = null
-
+// 工具函数
 const getInitial = (value) => {
   const text = String(value || '').trim()
   return text ? text.slice(0, 1).toUpperCase() : '?'
@@ -737,35 +748,28 @@ const getInitial = (value) => {
 const buildAvatarStyle = (avatar) => {
   if (avatar) return {}
   return {
-    background: 'linear-gradient(135deg, rgba(255,107,53,0.20), rgba(14,165,164,0.22))'
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
   }
 }
 
-const getRelationLabel = (relationStatus) => {
+const getRelationLabel = (status) => {
   const map = {
-    NONE: '可添加',
+    NONE: '陌生人',
     FRIEND: '好友',
     REQUEST_SENT: '已申请',
     REQUEST_RECEIVED: '待处理'
   }
-  return map[relationStatus] || '未知'
+  return map[status] || '未知'
 }
 
-const getRelationTagType = (relationStatus) => {
+const getRelationTagType = (status) => {
   const map = {
     NONE: 'info',
     FRIEND: 'success',
     REQUEST_SENT: 'warning',
     REQUEST_RECEIVED: 'danger'
   }
-  return map[relationStatus] || 'info'
-}
-
-const buildRelationCopy = (contact = {}) => {
-  if (contact.relationStatus === 'FRIEND') return '已经是好友，可以随时开始聊天。'
-  if (contact.relationStatus === 'REQUEST_RECEIVED') return '你收到了对方发来的好友申请。'
-  if (contact.relationStatus === 'REQUEST_SENT') return '你已经发出了好友申请，等待对方确认。'
-  return '还没有建立好友关系。'
+  return map[status] || 'info'
 }
 
 const formatTime = (value) => {
@@ -789,12 +793,94 @@ const formatTime = (value) => {
 
 const formatReadState = (message) => {
   if (!message?.mine) return ''
-  if (isMessageRead(message) && message.readAt) return `已读 ${formatTime(message.readAt)}`
   if (isMessageRead(message)) return '已读'
   return '未读'
 }
 
 const isMessageRead = (message) => Boolean(message?.read) || Boolean(message?.readAt)
+
+// 新增时间格式化函数
+const formatDateTime = (value) => {
+  if (!value) return '未知'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '未知'
+  
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hh = String(date.getHours()).padStart(2, '0')
+  const mm = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hh}:${mm}`
+}
+
+const formatTimeShort = (value) => {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  
+  if (days === 0) {
+    const hh = String(date.getHours()).padStart(2, '0')
+    const mm = String(date.getMinutes()).padStart(2, '0')
+    return `${hh}:${mm}`
+  } else if (days === 1) {
+    return '昨天'
+  } else if (days < 7) {
+    return `${days}天前`
+  } else {
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${month}-${day}`
+  }
+}
+
+const formatFriendSince = (value) => {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  
+  if (days === 0) return '今天'
+  if (days === 1) return '昨天'
+  if (days < 30) return `${days}天`
+  if (days < 365) return `${Math.floor(days / 30)}个月`
+  return `${Math.floor(days / 365)}年`
+}
+
+// 复制到剪贴板
+const copyToClipboard = async (text) => {
+  try {
+    await navigator.clipboard.writeText(String(text))
+    ElMessage.success('已复制到剪贴板')
+  } catch (err) {
+    ElMessage.error('复制失败')
+  }
+}
+
+// 从资料卡片操作
+const handleCreateFriendRequestFromProfile = async () => {
+  if (!friendProfile.value) return
+  closeFriendProfile()
+  await handleCreateFriendRequest({
+    id: friendProfile.value.userId,
+    username: friendProfile.value.username,
+    relationStatus: friendProfile.value.relationStatus
+  })
+}
+
+const handleAcceptFromProfile = async () => {
+  if (!friendProfile.value?.pendingRequestId) return
+  await acceptFriendRequest(friendProfile.value.pendingRequestId)
+  ElMessage.success('已同意好友申请')
+  await Promise.all([loadRequests(), loadContacts()])
+  closeFriendProfile()
+}
 
 const normalizeMessage = (message) => ({
   ...message,
@@ -804,251 +890,65 @@ const normalizeMessage = (message) => ({
   readAt: message?.readAt || null
 })
 
-const mergeMessages = (baseMessages, incomingMessages) => {
-  const messageMap = new Map()
-  ;[...baseMessages, ...incomingMessages]
-    .map(normalizeMessage)
-    .forEach((message) => {
-      messageMap.set(message.id, {
-        ...(messageMap.get(message.id) || {}),
-        ...message
-      })
-    })
-
-  return Array.from(messageMap.values()).sort((left, right) => {
-    const leftTime = new Date(left.createdAt || 0).getTime()
-    const rightTime = new Date(right.createdAt || 0).getTime()
-    if (leftTime === rightTime) return Number(left.id || 0) - Number(right.id || 0)
-    return leftTime - rightTime
-  })
-}
-
-const scrollMessageBoard = async (position = 'bottom', smooth = true) => {
-  await nextTick()
-  const board = messageListRef.value
-  if (!board) return
-
-  board.scrollTo({
-    top: position === 'top' ? 0 : board.scrollHeight,
-    behavior: smooth ? 'smooth' : 'auto'
-  })
-}
-
-const syncChatPanelHeight = () => {
-  if (typeof window === 'undefined') return
-
-  viewportWidth.value = window.innerWidth
-  if (viewportWidth.value > 768) {
-    mobilePane.value = 'sidebar'
-  } else if (!activeContact.value) {
-    mobilePane.value = 'sidebar'
-  }
-  if (viewportWidth.value <= 1280) {
-    chatPanelHeight.value = 0
-    return
-  }
-
-  const sidebar = sidebarColumnRef.value
-  if (!sidebar) return
-  chatPanelHeight.value = Math.ceil(sidebar.getBoundingClientRect().height)
-}
-
-const resetConversationState = () => {
-  messages.value = []
-  messagePage.value = 1
-  messageHasMore.value = false
-  messageTotal.value = 0
-}
-
-const clearUnreadState = (targetUserId) => {
-  contacts.value = contacts.value.map((contact) =>
-    contact.userId === targetUserId
-      ? { ...contact, unreadCount: 0 }
-      : contact
-  )
-
-  if (activeContact.value?.userId === targetUserId) {
-    activeContact.value = {
-      ...activeContact.value,
-      unreadCount: 0
-    }
-  }
-
-  if (friendProfile.value?.userId === targetUserId) {
-    friendProfile.value = {
-      ...friendProfile.value,
-      unreadCount: 0
-    }
-  }
-}
-
-const buildMessagePreview = (message) => {
-  if (!message) return ''
-  if (message.type === 'IMAGE') return message.content ? `[图片] ${message.content}` : '[图片]'
-  if (message.type === 'STICKER') return message.content ? `[表情包] ${message.content}` : '[表情包]'
-  return message.content || ''
-}
-
-const isCurrentUserContact = (userId) => Number(userId || 0) === currentUserId.value
-
-const buildProfileSnapshot = (contact = {}) => {
-  const matched = contacts.value.find((item) => item.userId === contact.userId)
-  return {
-    ...(matched || {}),
-    ...contact,
-    bio: contact.bio || matched?.bio || '',
-    lastMessagePreview: contact.lastMessagePreview || matched?.lastMessagePreview || '',
-    lastMessageTime: contact.lastMessageTime || matched?.lastMessageTime || null,
-    activityTime: contact.activityTime || matched?.activityTime || matched?.lastMessageTime || null,
-    unreadCount: Number(contact.unreadCount ?? matched?.unreadCount ?? 0),
-    canChat: Boolean(contact.canChat ?? matched?.canChat ?? contact.relationStatus !== 'NONE')
-  }
-}
-
-const getConversationUserId = (message) => (message?.mine ? message.receiverId : message.senderId)
-
-const syncFriendProfile = (contact) => {
-  if (!friendProfile.value?.userId || friendProfile.value.userId !== contact?.userId) return
-  friendProfile.value = buildProfileSnapshot({
-    ...friendProfile.value,
-    ...contact
-  })
-}
-
-const touchContactActivity = (message, { incrementUnread = false } = {}) => {
-  const contactUserId = getConversationUserId(message)
-  if (!contactUserId || isCurrentUserContact(contactUserId)) return
-
-  const existing = contacts.value.find((item) => item.userId === contactUserId)
-  const fallbackContact = activeContact.value?.userId === contactUserId ? activeContact.value : null
-  const nextPreview = buildMessagePreview(message)
-  const nextTime = message.createdAt || new Date().toISOString()
-
-  const nextContact = {
-    ...(existing || fallbackContact || {}),
-    userId: contactUserId,
-    username: existing?.username || fallbackContact?.username || message.senderUsername || message.receiverUsername,
-    avatar: existing?.avatar || fallbackContact?.avatar || (message.mine ? message.receiverAvatar : message.senderAvatar),
-    bio: existing?.bio || fallbackContact?.bio || '',
-    relationStatus: existing?.relationStatus || fallbackContact?.relationStatus || 'FRIEND',
-    canChat: true,
-    lastMessagePreview: nextPreview,
-    lastMessageTime: nextTime,
-    activityTime: nextTime,
-    unreadCount: incrementUnread
-      ? Number(existing?.unreadCount || fallbackContact?.unreadCount || 0) + 1
-      : Number(existing?.unreadCount || fallbackContact?.unreadCount || 0)
-  }
-
-  const others = contacts.value.filter((item) => item.userId !== contactUserId)
-  contacts.value = [nextContact, ...others].sort((left, right) =>
-    new Date(right.activityTime || 0).getTime() - new Date(left.activityTime || 0).getTime()
-  )
-
-  if (activeContact.value?.userId === contactUserId) {
-    activeContact.value = {
-      ...activeContact.value,
-      ...nextContact
-    }
-  }
-
-  syncFriendProfile(nextContact)
-}
-
-const applyReadReceipt = (receipt) => {
-  const messageIds = new Set((receipt?.messageIds || []).map((id) => Number(id)))
-  if (!messageIds.size) return
-
-  messages.value = messages.value.map((message) =>
-    messageIds.has(Number(message.id))
-      ? normalizeMessage({ ...message, read: true, readAt: receipt.readAt || message.readAt })
-      : message
-  )
-}
-
+// 数据加载
 const loadRequests = async () => {
-  const [receivedRes, sentRes] = await Promise.all([
-    getReceivedFriendRequests(),
-    getSentFriendRequests()
-  ])
-  receivedRequests.value = receivedRes.data || []
-  sentRequests.value = sentRes.data || []
+  try {
+    const [receivedRes, sentRes] = await Promise.all([
+      getReceivedFriendRequests(),
+      getSentFriendRequests()
+    ])
+    receivedRequests.value = receivedRes.data || []
+    sentRequests.value = sentRes.data || []
+  } catch (error) {
+    console.error('加载好友申请失败:', error)
+  }
 }
 
 const loadContacts = async ({ silent = false } = {}) => {
-  if (!silent) {
-    contactsLoading.value = true
-  }
+  if (!silent) contactsLoading.value = true
   try {
     const res = await getContacts()
     contacts.value = res.data || []
     if (activeContact.value) {
       const matched = contacts.value.find((item) => item.userId === activeContact.value.userId)
       if (matched) {
-        activeContact.value = {
-          ...activeContact.value,
-          ...matched
-        }
+        activeContact.value = { ...activeContact.value, ...matched }
       }
     }
-    if (friendProfile.value) {
-      const profileMatch = contacts.value.find((item) => item.userId === friendProfile.value.userId)
-      if (profileMatch) {
-        syncFriendProfile(profileMatch)
-      }
-    }
+  } catch (error) {
+    console.error('加载联系人失败:', error)
+    contacts.value = []
   } finally {
-    if (!silent) {
-      contactsLoading.value = false
-    }
+    if (!silent) contactsLoading.value = false
   }
 }
 
 const loadMessages = async (targetUserId, options = {}) => {
-  const { page = 1, prepend = false, silent = false, scroll = 'bottom' } = options
-
-  const board = messageListRef.value
-  const previousScrollHeight = prepend && board ? board.scrollHeight : 0
-  const previousScrollTop = prepend && board ? board.scrollTop : 0
-
-  if (prepend) {
-    messageLoadingMore.value = true
-  } else if (!silent) {
-    messagesLoading.value = true
-  }
+  const { page = 1, prepend = false } = options
+  if (prepend) messageLoadingMore.value = true
+  else messagesLoading.value = true
 
   try {
-    const res = await getConversationMessages(targetUserId, {
-      page,
-      size: MESSAGE_PAGE_SIZE
-    })
+    const res = await getConversationMessages(targetUserId, { page, size: MESSAGE_PAGE_SIZE })
     const payload = res.data || {}
     const records = (payload.records || []).map(normalizeMessage)
 
-    messages.value = prepend
-      ? mergeMessages(records, messages.value)
-      : mergeMessages([], records)
+    if (prepend) {
+      messages.value = [...records, ...messages.value]
+    } else {
+      messages.value = records
+    }
 
     messagePage.value = Number(payload.page || page)
     messageHasMore.value = Boolean(payload.hasMore)
-    messageTotal.value = Number(payload.total || messages.value.length)
-    clearUnreadState(targetUserId)
 
-    await nextTick()
-    if (prepend && board) {
-      const nextHeight = board.scrollHeight
-      board.scrollTop = previousScrollTop + (nextHeight - previousScrollHeight)
-    } else if (scroll === 'top') {
-      await scrollMessageBoard('top', false)
-    } else if (scroll === 'bottom') {
-      await scrollMessageBoard('bottom', false)
+    if (!prepend) {
+      await nextTick()
+      scrollToBottom()
     }
   } finally {
-    if (prepend) {
-      messageLoadingMore.value = false
-    } else if (!silent) {
-      messagesLoading.value = false
-    }
+    if (prepend) messageLoadingMore.value = false
+    else messagesLoading.value = false
   }
 }
 
@@ -1056,93 +956,56 @@ const loadOlderMessages = async () => {
   if (!activeContact.value || !messageHasMore.value || messageLoadingMore.value) return
   await loadMessages(activeContact.value.userId, {
     page: messagePage.value + 1,
-    prepend: true,
-    silent: true,
-    scroll: 'keep'
+    prepend: true
   })
 }
 
-const selectContact = async (contact) => {
-  if (!contact?.userId || isCurrentUserContact(contact.userId)) {
-    return
+// 定时器变量（必须在函数使用前定义）
+let searchTimer = null
+let newChatTimer = null
+let socketClient = null
+
+// 用户交互
+const selectContact = async (contact, skipProfileFetch = false) => {
+  if (!contact?.userId || contact.userId === currentUserId.value) return
+
+  // 如果信息不完整且不是从联系人列表来的，尝试获取完整信息
+  let fullContact = { ...contact }
+  if (!skipProfileFetch && (!contact.email || !contact.createdAt)) {
+    try {
+      const res = await getUserProfile(contact.userId)
+      if (res.data) {
+        fullContact = { ...fullContact, ...res.data }
+      }
+    } catch (error) {
+      console.warn('获取用户详情失败:', error)
+      // 继续用原有信息
+    }
   }
-  if (isMobile.value) {
-    mobilePane.value = 'chat'
-  }
-  activeContact.value = { ...contact }
+
+  if (isMobile.value) mobilePane.value = 'chat'
+  activeContact.value = fullContact
   sidebarTab.value = 'contacts'
-  pickerVisible.value = false
-  resetConversationState()
-  clearUnreadState(contact.userId)
-  await loadMessages(contact.userId, {
-    page: 1,
-    scroll: 'bottom'
-  })
-  await acknowledgeConversation(contact.userId)
+  emojiPickerVisible.value = false
+  messages.value = []
+  messagePage.value = 1
+  messageHasMore.value = false
+
+  await loadMessages(fullContact.userId, { page: 1 })
+  await markConversationRead(fullContact.userId)
+  clearUnreadState(fullContact.userId)
 }
 
 const showConversationList = () => {
   mobilePane.value = 'sidebar'
-  pickerVisible.value = false
+  emojiPickerVisible.value = false
 }
 
-const buildContactFromSearch = (user) => ({
-  userId: user.id,
-  username: user.username,
-  avatar: user.avatar,
-  bio: user.bio,
-  relationStatus: user.relationStatus,
-  pendingRequestId: user.pendingRequestId,
-  pendingDirection: user.relationStatus === 'REQUEST_RECEIVED' ? 'INCOMING' : 'OUTGOING',
-  lastMessagePreview: '',
-  lastMessageTime: null,
-  activityTime: new Date().toISOString(),
-  unreadCount: 0,
-  canChat: user.relationStatus !== 'NONE'
-})
-
-const buildContactFromRequest = (request, direction) => ({
-  userId: direction === 'INCOMING' ? request.senderId : request.receiverId,
-  username: direction === 'INCOMING' ? request.senderUsername : request.receiverUsername,
-  avatar: direction === 'INCOMING' ? request.senderAvatar : request.receiverAvatar,
-  bio: '',
-  relationStatus: direction === 'INCOMING' ? 'REQUEST_RECEIVED' : 'REQUEST_SENT',
-  pendingRequestId: request.id,
-  pendingDirection: direction,
-  lastMessagePreview: '',
-  lastMessageTime: null,
-  activityTime: request.createdAt,
-  unreadCount: 0,
-  canChat: true
-})
-
-const closeFriendProfile = () => {
-  profileDrawerVisible.value = false
-}
-
-const openFriendProfile = (contact) => {
-  if (!contact?.userId) return
-  friendProfile.value = buildProfileSnapshot(contact)
-  profileDrawerVisible.value = true
-}
-
-const getProfileActivityLabel = (profile = {}) => (profile.lastMessageTime ? '最近消息' : '最近互动')
-
-const getProfileActivityTime = (profile = {}) => {
-  const value = profile.lastMessageTime || profile.activityTime
-  return value ? formatTime(value) : '暂无'
-}
-
-const getProfileChatLabel = (profile = {}) => {
-  if (profile.canChat) return '可直接私信'
-  if (profile.relationStatus === 'REQUEST_SENT') return '等待对方通过'
-  if (profile.relationStatus === 'REQUEST_RECEIVED') return '待你处理申请'
-  return '需要先加好友'
-}
-
-const resetSearch = () => {
-  searchKeyword.value = ''
-  searchResults.value = []
+const handleSearchInput = () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    performSearch()
+  }, 300)
 }
 
 const performSearch = async () => {
@@ -1151,7 +1014,6 @@ const performSearch = async () => {
     searchResults.value = []
     return
   }
-
   searchLoading.value = true
   try {
     const res = await searchUsers(keyword)
@@ -1161,29 +1023,40 @@ const performSearch = async () => {
   }
 }
 
-const handleSearchInput = () => {
-  clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => {
-    performSearch().catch(() => {})
-  }, 280)
+const resetSearch = () => {
+  searchKeyword.value = ''
+  searchResults.value = []
 }
 
-const openChatWithRequest = async (request, direction) => {
-  const contactId = direction === 'INCOMING' ? request.senderId : request.receiverId
-  const matched = contacts.value.find((item) => item.userId === contactId)
-  await selectContact(matched || buildContactFromRequest(request, direction))
-}
-
-const openChatFromSearch = async (user) => {
+const handleSearchItemClick = (user) => {
+  resetSearch()
   const matched = contacts.value.find((item) => item.userId === user.id)
-  await selectContact(matched || buildContactFromSearch(user))
+  if (matched) {
+    // 联系人列表中的数据已经是完整的
+    selectContact(matched, true)
+  } else {
+    // 陌生人，需要获取完整信息
+    selectContact({
+      userId: user.id,
+      username: user.username,
+      avatar: user.avatar,
+      relationStatus: user.relationStatus,
+      canChat: true
+    }, false)
+  }
 }
 
-const openChatFromProfile = async () => {
-  if (!friendProfile.value?.canChat) return
-  closeFriendProfile()
-  const matched = contacts.value.find((item) => item.userId === friendProfile.value.userId)
-  await selectContact(matched || buildProfileSnapshot(friendProfile.value))
+// 好友申请处理
+const handleAcceptRequest = async (request) => {
+  await acceptFriendRequest(request.id)
+  ElMessage.success('已同意好友申请')
+  await Promise.all([loadRequests(), loadContacts()])
+}
+
+const handleRejectRequest = async (request) => {
+  await rejectFriendRequest(request.id)
+  ElMessage.success('已拒绝好友申请')
+  await Promise.all([loadRequests(), loadContacts()])
 }
 
 const handleCreateFriendRequest = async (user) => {
@@ -1197,14 +1070,12 @@ const handleCreateFriendRequest = async (user) => {
         inputPlaceholder: '比如：一起聊聊骑行路线吧'
       }
     )
-
     await createFriendRequest({
       receiverId: user.id,
       remark: value || ''
     })
-
     ElMessage.success('好友申请已发送')
-    await Promise.all([loadRequests(), loadContacts(), performSearch()])
+    await Promise.all([loadRequests(), loadContacts()])
   } catch (error) {
     if (error !== 'cancel' && error !== 'close') {
       console.error(error)
@@ -1212,89 +1083,72 @@ const handleCreateFriendRequest = async (user) => {
   }
 }
 
-const handleAcceptRequest = async (request) => {
-  await acceptFriendRequest(request.id)
-  ElMessage.success('已经同意好友申请')
-  sidebarTab.value = 'contacts'
-  await Promise.all([loadRequests(), loadContacts(), searchKeyword.value ? performSearch() : Promise.resolve()])
+// 消息发送
+const handleSendText = async () => {
+  const content = draft.value.trim()
+  if (!content || !activeContact.value) return
+
+  await sendPayload({ type: 'TEXT', content })
 }
 
-const handleQuickAccept = async (user) => {
-  if (!user.pendingRequestId) return
-  await acceptFriendRequest(user.pendingRequestId)
-  ElMessage.success('已经同意好友申请')
-  await Promise.all([loadRequests(), loadContacts(), performSearch()])
-}
-
-const handleRejectRequest = async (request) => {
-  await rejectFriendRequest(request.id)
-  ElMessage.success('已经拒绝好友申请')
-  await Promise.all([loadRequests(), loadContacts(), searchKeyword.value ? performSearch() : Promise.resolve()])
+const handleEmojiSend = async (emoji) => {
+  if (!activeContact.value) return
+  await sendPayload({ type: 'EMOJI', content: emoji.value })
+  emojiPickerVisible.value = false
 }
 
 const sendPayload = async (payload) => {
-  if (!activeContact.value) {
-    ElMessage.warning('请先选择一个聊天对象')
-    return
-  }
-
-  await acknowledgeConversation(activeContact.value.userId)
-
   const res = await sendChatMessage({
     receiverId: activeContact.value.userId,
     ...payload
   })
 
   const sentMessage = normalizeMessage(res.data)
-  messages.value = mergeMessages(messages.value, [sentMessage])
+  messages.value = [...messages.value, sentMessage]
   draft.value = ''
-  pickerVisible.value = false
-  touchContactActivity(sentMessage)
-  clearUnreadState(activeContact.value.userId)
+
+  // 更新或添加联系人
+  const contactIndex = contacts.value.findIndex((c) => c.userId === activeContact.value.userId)
+  const previewText = payload.type === 'IMAGE' ? '[图片]' : payload.content
+  const now = new Date().toISOString()
+  
+  if (contactIndex >= 0) {
+    // 更新现有联系人 - 使用响应式方式
+    contacts.value[contactIndex] = {
+      ...contacts.value[contactIndex],
+      lastMessagePreview: previewText,
+      lastMessageTime: now,
+      activityTime: now
+    }
+  } else {
+    // 添加新联系人（陌生人）到列表
+    contacts.value.unshift({
+      userId: activeContact.value.userId,
+      username: activeContact.value.username,
+      email: activeContact.value.email,
+      avatar: activeContact.value.avatar,
+      bio: activeContact.value.bio,
+      role: activeContact.value.role,
+      enabled: activeContact.value.enabled,
+      relationStatus: activeContact.value.relationStatus || 'NONE',
+      pendingRequestId: activeContact.value.pendingRequestId,
+      pendingDirection: activeContact.value.pendingDirection,
+      lastMessagePreview: previewText,
+      lastMessageTime: now,
+      activityTime: now,
+      createdAt: activeContact.value.createdAt,
+      updatedAt: activeContact.value.updatedAt,
+      unreadCount: 0,
+      canChat: true
+    })
+  }
 
   await nextTick()
-  await scrollMessageBoard('bottom')
+  scrollToBottom()
 }
 
-const handleSendText = async () => {
-  const content = draft.value.trim()
-  if (!content) return
-  await sendPayload({
-    type: 'TEXT',
-    content
-  })
-}
-
-const handleEmojiSend = async (emoji) => {
-  await sendPayload({
-    type: 'EMOJI',
-    content: emoji.value
-  })
-}
-
-const handleStickerSend = async (sticker) => {
-  await sendPayload({
-    type: 'STICKER',
-    content: sticker.label,
-    mediaUrl: sticker.url
-  })
-}
-
-const togglePickerPanel = () => {
-  pickerVisible.value = !pickerVisible.value
-}
-
-const togglePicker = (tab) => {
-  if (!activeContact.value) {
-    ElMessage.warning('请先选择一个聊天对象')
-    return
-  }
-  if (pickerVisible.value && pickerTab.value === tab) {
-    pickerVisible.value = false
-    return
-  }
-  pickerTab.value = tab
-  pickerVisible.value = true
+const toggleEmojiPicker = () => {
+  emojiPickerVisible.value = !emojiPickerVisible.value
 }
 
 const triggerImagePicker = () => {
@@ -1302,7 +1156,6 @@ const triggerImagePicker = () => {
     ElMessage.warning('请先选择一个聊天对象')
     return
   }
-  pickerVisible.value = false
   imageInputRef.value?.click()
 }
 
@@ -1315,1616 +1168,1337 @@ const handleImageSelected = async (event) => {
     const uploadRes = await uploadImage(file)
     const url = uploadRes?.data?.url
     if (!url) throw new Error('图片地址获取失败')
-
-    await sendPayload({
-      type: 'IMAGE',
-      mediaUrl: url
-    })
+    await sendPayload({ type: 'IMAGE', mediaUrl: url })
   } catch (error) {
     console.error(error)
     ElMessage.error('图片发送失败')
   } finally {
     imageUploading.value = false
-    if (event?.target) {
-      event.target.value = ''
-    }
+    if (event?.target) event.target.value = ''
   }
 }
 
-const acknowledgeConversation = async (targetUserId) => {
-  try {
-    const res = await markConversationRead(targetUserId)
-    const receipt = res.data
-    clearUnreadState(targetUserId)
-    if (receipt?.messageIds?.length) {
-      applyReadReceipt(receipt)
+// 新建聊天
+const showNewChatDialog = () => {
+  newChatDialogVisible.value = true
+  newChatKeyword.value = ''
+  newChatResults.value = []
+}
+
+const handleNewChatSearch = () => {
+  clearTimeout(newChatTimer)
+  newChatTimer = setTimeout(async () => {
+    const keyword = newChatKeyword.value.trim()
+    if (!keyword) {
+      newChatResults.value = []
+      return
     }
-  } catch (error) {
-    console.error(error)
+    newChatLoading.value = true
+    try {
+      const res = await searchUsers(keyword)
+      newChatResults.value = res.data || []
+    } finally {
+      newChatLoading.value = false
+    }
+  }, 300)
+}
+
+const startNewChat = (user) => {
+  newChatDialogVisible.value = false
+  handleSearchItemClick(user)
+}
+
+// 好友资料
+const openFriendProfile = (contact) => {
+  if (!contact?.userId) return
+  friendProfile.value = { ...contact }
+  profileDrawerVisible.value = true
+}
+
+const closeFriendProfile = () => {
+  profileDrawerVisible.value = false
+}
+
+// 辅助函数
+const clearUnreadState = (targetUserId) => {
+  contacts.value = contacts.value.map((contact) =>
+    contact.userId === targetUserId ? { ...contact, unreadCount: 0 } : contact
+  )
+}
+
+const scrollToBottom = () => {
+  const list = messageListRef.value
+  if (list) {
+    list.scrollTop = list.scrollHeight
   }
 }
 
-const openConversationFromRoute = async () => {
-  const targetUserId = Number(route.query.targetUserId || 0)
-  const prefill = String(route.query.prefill || '').trim()
-  if (!targetUserId || routeConversationLock.value) return
-
-  routeConversationLock.value = true
-
-  try {
-    if (!contacts.value.length) {
-      await loadContacts({ silent: true })
-    }
-
-    const matched = contacts.value.find((item) => Number(item.userId) === targetUserId)
-    if (!matched) return
-
-    // Clear deep-link query first so contact/message refreshes won't retrigger this flow.
-    if (route.query.targetUserId || route.query.prefill) {
-      await router.replace({ path: route.path, query: {} })
-    }
-
-    if (activeContact.value?.userId !== matched.userId) {
-      await selectContact(matched)
-    }
-
-    if (prefill && !draft.value.trim()) {
-      draft.value = prefill
-    }
-  } finally {
-    routeConversationLock.value = false
-  }
-}
-
+// 处理收到的 WebSocket 消息
 const handleSocketEvent = async (event) => {
   if (!event?.eventType) return
-
-  if (event.eventType === 'FRIEND_REQUEST_CREATED') {
-    await Promise.all([loadRequests(), loadContacts({ silent: true })])
-    if (searchKeyword.value) await performSearch()
+  
+  /**
+   * 处理在线状态心跳消息
+   * 当收到其他用户的心跳时，更新其在线状态和 token 过期时间
+   */
+  if (event.eventType === 'USER_HEARTBEAT' && event.heartbeat) {
+    const { userId, expiresAt } = event.heartbeat
+    if (userId && expiresAt) {
+      onlineStatus.value[userId] = {
+        expiresAt: Number(expiresAt),
+        lastSeen: Date.now()
+      }
+      saveOnlineStatus(onlineStatus.value)
+    }
     return
   }
-
-  if (event.eventType === 'FRIEND_REQUEST_ACCEPTED' || event.eventType === 'FRIEND_REQUEST_REJECTED') {
-    await Promise.all([loadRequests(), loadContacts({ silent: true })])
-    if (searchKeyword.value) await performSearch()
-    return
+  
+  // 收到聊天消息时，也更新发送方的在线状态
+  if (event.contactUserId && (event.eventType === 'CHAT_MESSAGE' || event.eventType === 'MESSAGE_READ')) {
+    // 从事件中推断 token 过期时间（如果对方发消息，说明 token 至少现在有效）
+    // 默认给 1 小时的在线时间，直到收到正式的心跳
+    const now = Date.now()
+    onlineStatus.value[event.contactUserId] = {
+      expiresAt: now + 60 * 60 * 1000, // 1 小时后过期
+      lastSeen: now
+    }
+    saveOnlineStatus(onlineStatus.value)
   }
-
-  if (event.eventType === 'MESSAGE_READ' && event.readReceipt) {
-    applyReadReceipt(event.readReceipt)
-    loadContacts({ silent: true }).catch(() => {})
-    return
-  }
-
+  
   if (event.eventType === 'CHAT_MESSAGE' && event.message) {
     const incomingMessage = normalizeMessage(event.message)
-    const conversationUserId = getConversationUserId(incomingMessage)
-    if (!conversationUserId || isCurrentUserContact(conversationUserId)) {
-      loadContacts({ silent: true }).catch(() => {})
-      return
-    }
-    const isActiveConversation = activeContact.value?.userId === conversationUserId
+    const conversationUserId = incomingMessage.mine ? incomingMessage.receiverId : incomingMessage.senderId
+    const previewText = incomingMessage.type === 'IMAGE' ? '[图片]' : incomingMessage.content
+    const now = new Date().toISOString()
 
-    touchContactActivity(incomingMessage, {
-      incrementUnread: !incomingMessage.mine && !isActiveConversation
-    })
-
-    if (isActiveConversation) {
-      messages.value = mergeMessages(messages.value, [incomingMessage])
-      if (!incomingMessage.mine) {
-        clearUnreadState(conversationUserId)
-      }
+    if (activeContact.value?.userId === conversationUserId) {
+      // 消息来自当前会话，直接显示
+      messages.value = [...messages.value, incomingMessage]
       await nextTick()
-      await scrollMessageBoard('bottom')
+      scrollToBottom()
       if (!incomingMessage.mine) {
-        await acknowledgeConversation(conversationUserId)
+        markConversationRead(conversationUserId)
       }
-      return
+    } else {
+      // 显示通知
+      ElMessage({
+        message: `${incomingMessage.senderUsername}: ${previewText}`,
+        type: 'info',
+        duration: 3000
+      })
     }
-
-    if (!incomingMessage.mine) {
-      loadContacts({ silent: true }).catch(() => {})
+    
+    // 更新联系人列表
+    const contactIndex = contacts.value.findIndex((c) => c.userId === conversationUserId)
+    if (contactIndex >= 0) {
+      const isCurrent = activeContact.value?.userId === conversationUserId
+      contacts.value[contactIndex] = {
+        ...contacts.value[contactIndex],
+        unreadCount: isCurrent ? 0 : (contacts.value[contactIndex].unreadCount || 0) + 1,
+        lastMessagePreview: previewText,
+        lastMessageTime: now,
+        activityTime: now
+      }
+      // 排序：最新消息在前
+      contacts.value.sort((a, b) => new Date(b.activityTime) - new Date(a.activityTime))
+    } else {
+      // 添加新联系人
+      contacts.value.unshift({
+        userId: conversationUserId,
+        username: incomingMessage.senderUsername,
+        email: '',
+        avatar: incomingMessage.senderAvatar,
+        bio: '',
+        role: 'USER',
+        enabled: true,
+        relationStatus: 'NONE',
+        pendingRequestId: null,
+        pendingDirection: null,
+        lastMessagePreview: previewText,
+        lastMessageTime: now,
+        activityTime: now,
+        createdAt: null,
+        updatedAt: null,
+        unreadCount: activeContact.value?.userId === conversationUserId ? 0 : 1,
+        canChat: true
+      })
     }
+  }
+  
+  if (event.eventType === 'FRIEND_REQUEST_CREATED' || 
+      event.eventType === 'FRIEND_REQUEST_ACCEPTED' || 
+      event.eventType === 'FRIEND_REQUEST_REJECTED') {
+    await Promise.all([loadRequests(), loadContacts({ silent: true })])
+  }
+  
+  // 处理已读回执 - 更新本地消息状态
+  if (event.eventType === 'MESSAGE_READ' && event.readReceipt) {
+    const messageIds = new Set((event.readReceipt.messageIds || []).map((id) => Number(id)))
+    messages.value = messages.value.map((msg) =>
+      messageIds.has(Number(msg.id)) ? { ...msg, read: true, readAt: event.readReceipt.readAt } : msg
+    )
   }
 }
 
-const connectSocket = () => {
-  if (!userStore.token) return
+/**
+ * 广播在线状态心跳
+ * 将自己的 userId 和 token 过期时间广播给所有联系人
+ */
+const broadcastHeartbeat = () => {
+  if (!socketClient || !userStore.userId) return
+  
+  const expiresAt = getTokenExpiresAt()
+  if (!expiresAt) {
+    console.warn('[在线状态] 无法获取 token 过期时间')
+    return
+  }
+  
+  // 构建心跳消息
+  const heartbeatEvent = {
+    eventType: 'USER_HEARTBEAT',
+    recipientUsername: 'all', // 广播给所有人
+    heartbeat: {
+      userId: Number(userStore.userId),
+      expiresAt: expiresAt,
+      timestamp: Date.now()
+    },
+    contactUserId: Number(userStore.userId)
+  }
+  
+  // 通过 WebSocket 发送心跳
+  try {
+    socketClient.client.publish({
+      destination: '/app/heartbeat',
+      body: JSON.stringify(heartbeatEvent)
+    })
+    console.log('[在线状态] 心跳已广播，过期时间:', new Date(expiresAt).toLocaleString())
+  } catch (e) {
+    console.error('[在线状态] 广播心跳失败:', e)
+  }
+}
 
-  socketState.value = 'CONNECTING'
+/**
+ * 启动心跳定时器
+ * 定期广播自己的在线状态
+ */
+const startHeartbeat = () => {
+  // 立即广播一次
+  broadcastHeartbeat()
+  
+  // 定期广播
+  heartbeatTimer = setInterval(() => {
+    broadcastHeartbeat()
+  }, HEARTBEAT_INTERVAL)
+}
+
+/**
+ * 停止心跳定时器
+ */
+const stopHeartbeat = () => {
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer)
+    heartbeatTimer = null
+  }
+}
+
+// WebSocket 连接
+const connectSocket = () => {
+  if (!userStore.token || socketClient) return
+  
   socketClient = createChatSocket(userStore.token, {
     onConnect: () => {
-      socketState.value = 'ONLINE'
+      // 连接成功后启动心跳
+      startHeartbeat()
     },
     onDisconnect: () => {
-      socketState.value = 'OFFLINE'
+      // 断开连接时停止心跳
+      stopHeartbeat()
     },
-    onEvent: (event) => {
-      handleSocketEvent(event).catch((error) => {
-        console.error(error)
-      })
-    },
-    onError: (error) => {
-      console.error(error)
-      socketState.value = 'ERROR'
-    }
+    onEvent: (event) => handleSocketEvent(event).catch(console.error),
+    onError: () => {}
   })
 }
 
+const disconnectSocket = async () => {
+  if (socketClient?.disconnect) {
+    await socketClient.disconnect()
+    socketClient = null
+  }
+}
+
+// 生命周期
 onMounted(async () => {
   await Promise.allSettled([loadRequests(), loadContacts()])
-  await openConversationFromRoute()
-  await nextTick()
-  syncChatPanelHeight()
-  if (typeof ResizeObserver !== 'undefined' && sidebarColumnRef.value) {
-    layoutObserver = new ResizeObserver(() => {
-      syncChatPanelHeight()
-    })
-    layoutObserver.observe(sidebarColumnRef.value)
-  }
-  if (typeof window !== 'undefined') {
-    window.addEventListener('resize', syncChatPanelHeight)
-  }
+  
+  // 连接 WebSocket
   connectSocket()
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', () => {
+      viewportWidth.value = window.innerWidth
+    })
+  }
+
+  // 处理路由参数
+  const targetUserId = Number(route.query.targetUserId || 0)
+  if (targetUserId) {
+    const matched = contacts.value.find((item) => item.userId === targetUserId)
+    if (matched) selectContact(matched)
+  }
 })
 
-watch(
-  () => [route.query.targetUserId, route.query.prefill],
-  () => {
-    openConversationFromRoute().catch((error) => {
-      console.error(error)
-    })
+watch(() => route.query.targetUserId, (newVal) => {
+  if (newVal) {
+    const targetUserId = Number(newVal)
+    const matched = contacts.value.find((item) => item.userId === targetUserId)
+    if (matched) selectContact(matched)
   }
-)
+})
 
 onBeforeUnmount(async () => {
   clearTimeout(searchTimer)
-  layoutObserver?.disconnect()
-  if (typeof window !== 'undefined') {
-    window.removeEventListener('resize', syncChatPanelHeight)
-  }
-  if (socketClient?.disconnect) {
-    await socketClient.disconnect()
-  }
+  clearTimeout(newChatTimer)
+  stopHeartbeat() // 停止心跳
+  await disconnectSocket()
 })
 </script>
 
 <style scoped>
+/* 整体布局 */
 .friends-page {
-  max-width: 1560px;
+  height: calc(100vh - 60px);
+  background: #f5f7fa;
+  overflow: hidden;
+}
+
+.chat-layout {
+  display: flex;
+  height: 100%;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 24px;
+  background: #fff;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
 }
 
-.hero-card,
-.panel,
-.chat-card {
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 28px;
-  backdrop-filter: blur(20px) saturate(150%);
-  box-shadow: 0 20px 54px rgba(15, 23, 42, 0.12);
+/* 左侧边栏 */
+.sidebar {
+  width: 300px;
+  min-width: 300px;
+  border-right: 1px solid #e4e7ed;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
 }
 
-.hero-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) auto;
-  gap: 20px;
-  padding: 28px 30px;
-  margin-bottom: 24px;
-  background:
-    radial-gradient(circle at top right, rgba(255, 107, 53, 0.16), transparent 26%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(247, 250, 253, 0.84));
-}
-
-.hero-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  color: var(--brand-primary);
-  background: rgba(255, 107, 53, 0.12);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.hero-copy h1 {
-  margin: 12px 0 10px;
-  color: var(--bs-ink);
-  font-size: clamp(26px, 2vw, 34px);
-  line-height: 1.18;
-}
-
-.hero-copy p {
-  margin: 0;
-  max-width: 760px;
-  color: var(--bs-muted);
-  line-height: 1.7;
-}
-
-.hero-metrics {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(130px, 1fr));
-  gap: 14px;
-  align-content: start;
-}
-
-.metric-chip {
-  min-width: 0;
-  display: grid;
-  gap: 8px;
-  padding: 16px 18px;
-  border-radius: 20px;
-  background: rgba(15, 23, 42, 0.04);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-}
-
-.metric-chip--accent {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.12), rgba(255, 140, 90, 0.08));
-  border-color: rgba(255, 107, 53, 0.14);
-}
-
-.metric-chip__label {
-  color: var(--bs-muted);
-  font-size: 12px;
-}
-
-.metric-chip strong {
-  color: var(--bs-ink);
-  font-size: 26px;
-  line-height: 1;
-}
-
-.socket-tag {
-  justify-self: start;
-}
-
-.workspace-grid {
-  display: grid;
-  grid-template-columns: minmax(380px, 430px) minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
-  min-height: calc(100vh - 170px);
-}
-
-.sidebar-column {
-  display: grid;
-  gap: 20px;
-  min-height: 0;
-}
-
-.chat-column {
-  min-width: 0;
-  min-height: 0;
-}
-
-.panel {
-  padding: 20px;
-}
-
-.panel-head,
-.identity-line,
-.conversation-top,
-.conversation-bottom,
-.composer-toolbar,
-.composer-actions,
-.search-actions,
-.request-actions,
-.chat-head {
+.sidebar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e4e7ed;
 }
 
-.panel-head {
-  align-items: flex-start;
-  margin-bottom: 16px;
-}
-
-.panel-head h2,
-.chat-head h2,
-.chat-empty h3,
-.chat-placeholder h2 {
-  margin: 0;
-  color: var(--bs-ink);
-}
-
-.panel-head p,
-.identity-copy p,
-.chat-head p,
-.chat-placeholder p,
-.composer-hint,
-.search-placeholder span,
-.chat-empty p {
-  margin: 0;
-  color: var(--bs-muted);
-  line-height: 1.65;
-}
-
-.panel-badge,
-.summary-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.05);
-  color: var(--bs-ink);
-  font-size: 13px;
+.sidebar-title {
+  font-size: 20px;
   font-weight: 600;
-  flex-shrink: 0;
+  margin: 0;
+  color: #303133;
 }
 
-.search-results,
-.list-shell {
-  min-height: 220px;
+/* 搜索框 */
+.search-box {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f2f5;
 }
 
-.search-results {
-  display: grid;
-  gap: 12px;
-  max-height: 360px;
-  overflow: auto;
-  padding-right: 4px;
+.search-box :deep(.el-input__wrapper) {
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
 }
 
-.section-state,
-.search-placeholder,
-.chat-empty,
-.chat-placeholder {
-  min-height: 180px;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  gap: 10px;
-  color: var(--bs-muted);
+/* 搜索结果 */
+.search-results-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
 }
 
-.section-state--board {
-  min-height: 320px;
+.search-list {
+  padding: 0 12px;
 }
 
-.search-placeholder {
-  border-radius: 20px;
-  background: rgba(15, 23, 42, 0.03);
-}
-
-.search-placeholder .el-icon,
-.chat-empty .el-icon {
-  font-size: 28px;
-}
-
-.search-card,
-.request-card,
-.conversation-card {
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  background: rgba(15, 23, 42, 0.03);
-  border-radius: 20px;
-}
-
-.search-card,
-.request-card {
-  display: grid;
-  gap: 14px;
-  padding: 14px;
-}
-
-.request-card--soft {
-  background: rgba(255, 107, 53, 0.06);
-  border-color: rgba(255, 107, 53, 0.12);
-}
-
-.identity-block {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 14px;
-  align-items: center;
-}
-
-.identity-block--compact {
-  align-items: flex-start;
-}
-
-.identity-copy,
-.conversation-copy,
-.chat-head__copy {
-  min-width: 0;
-}
-
-.identity-line strong,
-.conversation-top strong {
-  color: var(--bs-ink);
-  font-size: 15px;
-}
-
-.identity-copy p {
-  font-size: 13px;
-}
-
-.sidebar-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.sidebar-tab {
+.search-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: 18px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(15, 23, 42, 0.02);
-  color: var(--bs-muted);
-  cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-}
-
-.sidebar-tab:hover,
-.sidebar-tab.active {
-  transform: translateY(-1px);
-  border-color: rgba(255, 107, 53, 0.20);
-}
-
-.sidebar-tab.active {
-  background: rgba(255, 107, 53, 0.10);
-  color: var(--bs-ink);
-}
-
-.sidebar-tab__count {
-  min-width: 24px;
-  height: 24px;
-  padding: 0 6px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(15, 23, 42, 0.08);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.conversation-list,
-.request-list {
-  display: grid;
   gap: 12px;
-  max-height: 520px;
-  overflow: auto;
-  padding-right: 4px;
-}
-
-.conversation-card {
-  width: 100%;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 14px;
-  padding: 16px 18px;
-  appearance: none;
-  border: 1px solid rgba(255, 107, 53, 0.14);
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.76));
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  padding: 12px;
+  border-radius: 8px;
   cursor: pointer;
-  text-align: left;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: background 0.2s;
 }
 
-.conversation-card:focus-visible {
-  outline: 2px solid rgba(255, 107, 53, 0.24);
-  outline-offset: 3px;
+.search-item:hover {
+  background: #f5f7fa;
 }
 
-.conversation-card:hover,
-.conversation-card.active {
-  transform: translateY(-2px);
-  border-color: rgba(255, 107, 53, 0.24);
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.09);
-}
-
-.conversation-copy {
-  display: grid;
-  gap: 8px;
-  align-content: center;
-}
-
-.conversation-top {
-  align-items: center;
-  gap: 14px;
-}
-
-.conversation-bottom {
-  margin-top: 0;
-  align-items: center;
-  min-width: 0;
-}
-
-.preview-copy {
-  min-width: 0;
-  display: block;
+.user-info {
   flex: 1;
-  color: var(--bs-muted);
-  font-size: 13px;
-  line-height: 1.45;
+  min-width: 0;
+}
+
+.user-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.user-bio {
+  font-size: 12px;
+  color: #909399;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.time-copy {
-  flex-shrink: 0;
-  color: var(--bs-muted);
-  font-size: 12px;
-  line-height: 1;
-}
-
-.conversation-badge {
-  flex-shrink: 0;
-}
-
-.avatar-shell {
-  position: relative;
-  flex: 0 0 auto;
-  width: 56px;
-  height: 56px;
-  min-width: 56px;
-  min-height: 56px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  color: var(--bs-ink);
-  font-weight: 800;
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(255, 255, 255, 0.74);
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.10);
-  line-height: 1;
-}
-
-.avatar-shell img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center center;
-}
-
-.avatar-shell--sm {
-  width: 42px;
-  height: 42px;
-  min-width: 42px;
-  min-height: 42px;
-}
-
-.avatar-shell--md {
-  width: 58px;
-  height: 58px;
-  min-width: 58px;
-  min-height: 58px;
-}
-
-.avatar-shell--lg {
-  width: 66px;
-  height: 66px;
-  min-width: 66px;
-  min-height: 66px;
-}
-
-.avatar-shell--xl {
-  width: 78px;
-  height: 78px;
-  min-width: 78px;
-  min-height: 78px;
-  max-width: 78px;
-  max-height: 78px;
-}
-
-.avatar-shell--profile {
-  width: 96px;
-  height: 96px;
-  min-width: 96px;
-  min-height: 96px;
-  max-width: 96px;
-  max-height: 96px;
-}
-
-.chat-card {
-  height: calc(100vh - 170px);
-  max-height: calc(100vh - 170px);
-  min-height: calc(100vh - 170px);
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  overflow: hidden;
-}
-
-.chat-head {
-  padding: 22px 24px 18px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-  align-items: flex-start;
-}
-
-.chat-head__main {
+/* 好友申请提醒 */
+.request-notice {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  min-width: 0;
-}
-
-.mobile-pane-toggle {
-  display: none;
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(15, 23, 42, 0.04);
-  color: var(--bs-ink);
-  border-radius: 999px;
-  padding: 8px 12px;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.chat-head__copy h2 {
-  font-size: 26px;
-}
-
-.friend-profile {
-  display: grid;
-  gap: 18px;
-  padding: 8px 4px 8px;
-}
-
-.friend-profile__top,
-.friend-profile__title,
-.friend-profile__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.friend-profile__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: rgba(255, 107, 53, 0.10);
-  color: var(--brand-primary);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.friend-profile__close {
-  border: 0;
-  background: transparent;
-  color: var(--bs-muted);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.friend-profile__hero {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 18px;
-  align-items: center;
-  padding: 20px;
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.84));
-  border: 1px solid rgba(255, 107, 53, 0.12);
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
-}
-
-.friend-profile__hero-copy {
-  min-width: 0;
-  display: grid;
-  gap: 10px;
-}
-
-.friend-profile__hero-copy h3 {
-  margin: 0;
-  color: var(--bs-ink);
-  font-size: 24px;
-}
-
-.friend-profile__hero-copy p,
-.friend-profile__section p {
-  margin: 0;
-  color: var(--bs-muted);
-  line-height: 1.7;
-}
-
-.friend-profile__stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.friend-profile__stat,
-.friend-profile__section {
-  display: grid;
-  gap: 8px;
-  padding: 16px 18px;
-  border-radius: 20px;
-  background: rgba(15, 23, 42, 0.04);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-}
-
-.friend-profile__stat span,
-.friend-profile__section-label {
-  color: var(--bs-muted);
-  font-size: 12px;
-}
-
-.friend-profile__stat strong {
-  color: var(--bs-ink);
-  font-size: 16px;
-  line-height: 1.45;
-}
-
-.friend-profile__footer {
-  justify-content: flex-end;
-  padding-top: 4px;
-}
-
-.chat-head__side {
-  display: grid;
-  gap: 8px;
-  justify-items: end;
-}
-
-.profile-view-button {
-  min-width: 112px;
-  padding-left: 18px;
-  padding-right: 18px;
-  border-radius: 999px;
-  border-color: rgba(255, 107, 53, 0.18);
-  background: rgba(255, 107, 53, 0.08);
-  color: var(--bs-ink);
-}
-
-.profile-view-button:hover {
-  border-color: rgba(255, 107, 53, 0.32);
-  background: rgba(255, 107, 53, 0.14);
-}
-
-.message-board {
-  min-height: 0;
-  height: 100%;
-  overflow: auto;
-  padding: 22px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 18px;
-}
-
-.history-entry {
-  display: flex;
-  justify-content: center;
-}
-
-.history-button {
-  border: 1px solid rgba(255, 107, 53, 0.18);
-  background: rgba(255, 107, 53, 0.08);
-  color: var(--bs-ink);
-  border-radius: 999px;
-  padding: 10px 16px;
-  display: inline-flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
-}
-
-.history-button:disabled {
-  cursor: wait;
-  opacity: 0.75;
-}
-
-.message-row {
-  display: flex;
-  width: 100%;
-}
-
-.message-row.mine {
-  justify-content: flex-end;
-}
-
-.message-stack {
-  max-width: min(640px, 80%);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.message-head {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.message-head--mine {
-  justify-content: flex-end;
-}
-
-.message-head__avatar {
-  flex: 0 0 auto;
-}
-
-.message-bubble,
-.message-meta {
-  order: 2;
-}
-
-.message-bubble {
-  order: 1;
-}
-
-.message-row.mine .message-stack {
-  align-items: flex-end;
-}
-
-.message-bubble {
-  border-radius: 24px;
-  padding: 14px 16px;
-  max-width: 100%;
-  width: fit-content;
-  background: rgba(15, 23, 42, 0.05);
-  color: var(--bs-ink);
-  line-height: 1.7;
-  word-break: break-word;
-}
-
-.message-row.mine .message-bubble {
-  background: linear-gradient(135deg, #ff6b35, #ff8c5a);
-  color: #fff;
-}
-
-.message-bubble--emoji {
-  font-size: 30px;
-  line-height: 1.2;
   padding: 12px 16px;
+  margin: 8px 12px;
+  background: #fff5e6;
+  border-radius: 8px;
+  color: #e6a23c;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
-.message-bubble--image,
-.message-bubble--sticker {
-  display: grid;
-  justify-items: start;
-  order: 2;
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+.request-notice:hover {
+  background: #ffefd5;
 }
 
-.message-row.mine .message-bubble--image,
-.message-row.mine .message-bubble--sticker {
-  background: transparent;
-  color: var(--bs-ink);
-  justify-items: end;
+.request-notice .arrow {
+  margin-left: auto;
 }
 
-.message-bubble--image + .message-meta,
-.message-bubble--sticker + .message-meta {
-  order: 1;
-  margin-bottom: 2px;
-}
-
-.message-image {
-  width: min(340px, 100%);
-  border-radius: 18px;
-  overflow: hidden;
-}
-
-.message-sticker {
-  width: min(220px, 100%);
-  border-radius: 18px;
-  overflow: hidden;
-}
-
-.message-caption {
-  margin: 10px 0 0;
-  color: var(--bs-muted);
-  line-height: 1.5;
-}
-
-.message-emoji {
-  display: inline-block;
-}
-
-.message-meta {
+/* 会话标签页 */
+.conversation-tabs {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-  color: var(--bs-muted);
+  border-bottom: 1px solid #e4e7ed;
+  padding: 0 12px;
 }
 
-.message-meta--head {
+.tab-item {
+  flex: 1;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 13px;
+  color: #606266;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.tab-item:hover {
+  color: #409eff;
+}
+
+.tab-item.active {
+  color: #409eff;
+  font-weight: 500;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: #409eff;
+  border-radius: 2px;
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-left: 4px;
+  background: #f56c6c;
+  color: #fff;
+  font-size: 11px;
+  border-radius: 8px;
+}
+
+/* 列表内容 */
+.list-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.conversation-list,
+.request-list {
+  height: 100%;
+}
+
+.contact-items,
+.request-items {
+  padding: 8px 0;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.contact-item:hover,
+.contact-item.active {
+  background: #f5f7fa;
+}
+
+.contact-item.active {
+  background: #ecf5ff;
+}
+
+.contact-info {
   flex: 1;
   min-width: 0;
 }
 
-.message-head--mine .message-meta--head {
-  justify-content: flex-end;
-}
-
-.message-row.mine .message-caption,
-.message-row.mine .message-meta {
-  text-align: right;
-  justify-content: flex-end;
-}
-
-.message-read-state.read {
-  color: var(--brand-primary);
-  font-weight: 600;
-}
-
-.composer {
-  border-top: 1px solid rgba(15, 23, 42, 0.06);
-  padding: 18px 20px 20px;
-  display: grid;
-  gap: 14px;
-}
-
-.composer-toolbar {
-  display: none;
-}
-
-.composer-input-wrap {
-  position: relative;
-}
-
-.composer-image-button,
-.composer-sticker-button {
-  position: absolute;
-  top: 14px;
-  z-index: 3;
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  border-radius: 14px;
-  background: rgba(15, 23, 42, 0.04);
-  color: var(--bs-ink);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-}
-
-.composer-image-button {
-  right: 14px;
-}
-
-.composer-sticker-button {
-  right: 62px;
-}
-
-.composer-image-button:hover,
-.composer-sticker-button:hover,
-.composer-sticker-button.active {
-  transform: translateY(-1px);
-  border-color: rgba(255, 107, 53, 0.20);
-  background: rgba(255, 107, 53, 0.10);
-}
-
-.composer-image-button:disabled,
-.composer-sticker-button:disabled {
-  cursor: wait;
-  opacity: 0.65;
-  transform: none;
-}
-
-.composer-image-button .el-icon,
-.composer-sticker-button .el-icon {
-  font-size: 18px;
-}
-
-.composer-emoji-mark {
-  display: inline-block;
-  font-size: 18px;
-  line-height: 1;
-}
-
-.composer-textarea :deep(.el-textarea__inner) {
-  border-radius: 22px;
-  min-height: 152px !important;
-  max-height: 152px !important;
-  padding: 18px 112px 64px 18px;
-  line-height: 1.7;
-  text-align: left;
-  vertical-align: top;
-  overflow-y: auto;
-}
-
-.composer-textarea :deep(.el-input__count) {
-  right: 126px;
-  bottom: 16px;
-  background: transparent;
-  color: var(--bs-muted);
-  line-height: 1;
-}
-
-.composer-tools {
+.contact-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  margin-bottom: 4px;
 }
 
-.tool-button {
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(15, 23, 42, 0.03);
-  border-radius: 14px;
-  padding: 10px 12px;
-  display: inline-flex;
+.contact-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.contact-time {
+  font-size: 12px;
+  color: #909399;
+  flex-shrink: 0;
+}
+
+.contact-preview {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 8px;
-  color: var(--bs-ink);
-  cursor: pointer;
 }
 
-.tool-button.active {
-  background: rgba(255, 107, 53, 0.10);
-  border-color: rgba(255, 107, 53, 0.20);
+.message-text {
+  flex: 1;
+  font-size: 13px;
+  color: #909399;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.picker-panel {
-  justify-self: end;
-  width: min(420px, 100%);
-  padding: 14px;
-  border-radius: 22px;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.10);
-  display: grid;
-  gap: 14px;
+.unread-dot :deep(.el-badge__content) {
+  transform: translate(0, 0);
 }
 
-.picker-panel__head {
+/* 好友申请项 */
+.request-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  color: var(--bs-ink);
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.request-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.request-name {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 4px;
 }
 
-.picker-switch {
-  display: inline-flex;
-  width: fit-content;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.05);
+.request-remark {
+  font-size: 12px;
+  color: #909399;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.picker-switch__button {
-  border: none;
-  background: transparent;
-  color: var(--bs-muted);
-  padding: 10px 14px;
-  border-radius: 999px;
-  cursor: pointer;
+.request-actions {
+  display: flex;
+  gap: 8px;
 }
 
-.picker-switch__button.active {
+/* Socket 状态 */
+.socket-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid #e4e7ed;
+  font-size: 12px;
+  color: #909399;
+}
+
+.socket-status .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #909399;
+}
+
+.socket-status.online .status-dot {
+  background: #67c23a;
+}
+
+.socket-status.online {
+  color: #67c23a;
+}
+
+.socket-status.error .status-dot {
+  background: #f56c6c;
+}
+
+.socket-status.error {
+  color: #f56c6c;
+}
+
+.socket-status.offline .status-dot {
+  background: #e6a23c;
+}
+
+.socket-status.offline {
+  color: #e6a23c;
+}
+
+/* 右侧聊天区域 */
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #f5f7fa;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
   background: #fff;
-  color: var(--bs-ink);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.back-btn {
+  display: none;
+  cursor: pointer;
+  color: #606266;
+  padding: 4px;
+}
+
+.chat-user {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.user-meta {
+  min-width: 0;
+}
+
+.user-meta .user-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 2px;
+}
+
+.user-meta .user-status {
+  font-size: 12px;
+  color: #909399;
+}
+
+/* 消息列表 */
+.message-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.load-more {
+  text-align: center;
+  padding: 8px 0;
+}
+
+.message-item {
+  display: flex;
+  gap: 12px;
+  max-width: 70%;
+}
+
+.message-item.self {
+  margin-left: auto;
+  flex-direction: row-reverse;
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.message-item.self .message-content {
+  align-items: flex-end;
+}
+
+.message-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.sender-name {
+  font-weight: 500;
+}
+
+.message-bubble {
+  padding: 10px 14px;
+  background: #fff;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #303133;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  word-break: break-word;
+}
+
+.message-item.self .message-bubble {
+  background: #409eff;
+  color: #fff;
+}
+
+.message-bubble.emoji {
+  font-size: 32px;
+  padding: 8px 12px;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.message-bubble.image {
+  padding: 4px;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.message-bubble.image :deep(.el-image) {
+  border-radius: 8px;
+  max-width: 200px;
+  max-height: 200px;
+}
+
+.image-caption {
+  margin: 8px 4px 4px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.emoji-content {
+  line-height: 1;
+}
+
+.read-status {
+  font-size: 11px;
+  color: #909399;
+}
+
+.read-status.read {
+  color: #67c23a;
+}
+
+/* 输入区域 */
+.input-area {
+  padding: 12px 20px 20px;
+  background: #fff;
+  border-top: 1px solid #e4e7ed;
+}
+
+.input-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.input-toolbar :deep(.el-button) {
+  color: #606266;
+}
+
+.input-toolbar :deep(.el-button:hover) {
+  color: #409eff;
+}
+
+.emoji-picker {
+  margin-bottom: 8px;
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
 }
 
 .emoji-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
-  gap: 10px;
-}
-
-.emoji-card {
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.68);
-  border-radius: 18px;
-  padding: 14px 10px;
-  display: grid;
-  justify-items: center;
+  grid-template-columns: repeat(6, 1fr);
   gap: 8px;
+}
+
+.emoji-btn {
+  font-size: 24px;
+  padding: 8px;
+  border: none;
+  background: transparent;
   cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
 }
 
-.emoji-card__icon {
-  font-size: 28px;
+.emoji-btn:hover {
+  background: #e4e7ed;
 }
 
-.emoji-card__label {
-  font-size: 12px;
-  color: var(--bs-muted);
+.input-box {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
 }
 
-.sticker-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+.input-box :deep(.el-textarea__inner) {
+  min-height: 44px !important;
+  max-height: 120px !important;
+  border-radius: 8px;
+  resize: none;
+}
+
+.input-box :deep(.el-button) {
+  height: 44px;
+  padding: 0 24px;
+}
+
+/* 空状态 */
+.empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-content {
+  text-align: center;
+  color: #909399;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  color: #c0c4cc;
+}
+
+.empty-content h3 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #606266;
+  margin: 0 0 8px;
+}
+
+.empty-content p {
+  font-size: 14px;
+  margin: 0;
+}
+
+.empty-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #909399;
   gap: 12px;
 }
 
-.sticker-card {
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.76);
-  border-radius: 20px;
-  padding: 10px;
-  display: grid;
-  gap: 8px;
-  justify-items: center;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+.empty-chat .el-icon {
+  font-size: 48px;
+  color: #c0c4cc;
 }
 
-.sticker-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 107, 53, 0.18);
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
-}
-
-.sticker-card img {
-  display: block;
-  width: 100%;
-  max-width: 112px;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
-  border-radius: 16px;
-}
-
-.sticker-card span {
-  color: var(--bs-ink);
-  font-size: 12px;
+/* 头像 */
+.avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
   font-weight: 600;
+  font-size: 14px;
 }
 
-.hidden-input {
-  display: none;
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.composer-actions {
+.avatar.large {
+  width: 80px;
+  height: 80px;
+  font-size: 28px;
+}
+
+/* 在线状态 */
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.online-indicator {
   position: absolute;
-  right: 14px;
-  bottom: 12px;
-  z-index: 2;
-  justify-content: flex-end;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  background: #67c23a;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.composer-actions :deep(.el-button) {
-  min-width: 102px;
-  border-radius: 14px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+/* 好友资料抽屉 */
+.profile-drawer :deep(.el-drawer__body) {
+  padding: 0;
+  background: #f5f7fa;
 }
 
-.chat-placeholder {
-  min-height: calc(100vh - 170px);
-  align-content: center;
-  justify-items: start;
-  text-align: left;
-  padding: 34px;
-  background:
-    radial-gradient(circle at top right, rgba(255, 107, 53, 0.14), transparent 30%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(246, 249, 252, 0.84));
+.friend-profile {
+  padding: 0 0 20px;
+  min-height: 100%;
 }
 
-.placeholder-mark {
-  display: inline-flex;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: rgba(255, 107, 53, 0.12);
-  color: var(--brand-primary);
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+/* 资料卡片 */
+.profile-card {
+  background: #fff;
+  margin: 12px;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.profile-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.profile-hero .avatar.large {
+  width: 80px;
+  height: 80px;
+  font-size: 32px;
+}
+
+.hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.username {
+  font-size: 22px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0;
+}
+
+.user-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* 分区样式 */
+.profile-section {
+  background: #fff;
+  margin: 12px;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #606266;
+  margin: 0 0 16px 0;
+}
+
+.section-title .el-icon {
+  font-size: 16px;
+  color: #909399;
+}
+
+/* 信息网格 */
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 13px;
+  color: #909399;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.info-value.copyable {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #409eff;
+  transition: opacity 0.2s;
+}
+
+.info-value.copyable:hover {
+  opacity: 0.8;
+}
+
+.copy-icon {
+  font-size: 14px;
+}
+
+/* 个人简介 */
+.bio-content {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #606266;
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  min-height: 60px;
+}
+
+/* 统计卡片 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 16px 8px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  transition: transform 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.stat-label {
   font-size: 12px;
-  font-weight: 700;
+  color: #909399;
 }
 
-@media (max-width: 1280px) {
-  .hero-card,
-  .workspace-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .chat-card,
-  .chat-placeholder {
-    height: min(76vh, 860px);
-    max-height: min(76vh, 860px);
-    min-height: min(76vh, 860px);
-  }
+/* 操作按钮 */
+.profile-actions {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
 }
 
-@media (max-width: 900px) {
-  .friends-page {
-    padding: 14px;
+.action-btn {
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 新建聊天对话框 */
+.new-chat-results {
+  margin-top: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.user-item:hover {
+  background: #f5f7fa;
+}
+
+.user-relation {
+  font-size: 12px;
+  color: #909399;
+}
+
+.search-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px;
+  color: #909399;
+}
+
+.search-tip .el-icon {
+  font-size: 48px;
+  color: #c0c4cc;
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px;
+  color: #909399;
+}
+
+.loading-messages {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+  color: #909399;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    min-width: 100%;
   }
 
-  .hero-card,
-  .panel,
-  .chat-card {
-    border-radius: 22px;
+  .chat-area {
+    width: 100%;
   }
 
-  .sidebar-tabs {
-    grid-template-columns: 1fr;
+  .back-btn {
+    display: flex;
   }
 
-  .chat-head,
-  .message-board,
-  .composer {
-    padding-left: 16px;
-    padding-right: 16px;
+  .message-item {
+    max-width: 85%;
   }
 
-  .chat-head {
-    flex-direction: column;
-    align-items: stretch;
+  .input-box {
+    gap: 8px;
   }
 
-  .chat-card,
-  .chat-placeholder {
-    height: min(72vh, 780px);
-    max-height: min(72vh, 780px);
-    min-height: min(72vh, 780px);
-  }
-
-  .chat-head__main,
-  .panel-head,
-  .composer-toolbar,
-  .composer-actions,
-  .search-actions,
-  .request-actions,
-  .identity-line,
-  .conversation-top,
-  .conversation-bottom {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .hero-metrics {
-    grid-template-columns: 1fr;
-  }
-
-  .message-stack {
-    max-width: 88%;
-  }
-
-  .friend-profile__hero,
-  .friend-profile__stats {
-    grid-template-columns: 1fr;
-  }
-
-  .composer-actions {
-    right: 12px;
-    bottom: 12px;
-  }
-
-  .composer-image-button {
-    top: 12px;
-    right: 12px;
-  }
-
-  .composer-sticker-button {
-    top: 12px;
-    right: 60px;
-  }
-
-  .composer-actions :deep(.el-button) {
-    min-width: 92px;
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
-  .composer-textarea :deep(.el-textarea__inner) {
-    min-height: 148px !important;
-    max-height: 148px !important;
-    padding: 16px 108px 66px 16px;
-  }
-
-  .composer-textarea :deep(.el-input__count) {
-    right: 112px;
-    bottom: 16px;
+  .input-box :deep(.el-button) {
+    padding: 0 16px;
   }
 
   .emoji-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .sticker-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
-@media (max-width: 768px) {
-  .friends-page {
-    padding: 12px;
-  }
-
-  .hero-card {
-    padding: 20px 18px;
-    border-radius: 20px;
-  }
-
-  .hero-copy h1 {
-    font-size: 24px;
-  }
-
-  .workspace-grid {
-    gap: 16px;
-    min-height: 0;
-  }
-
-  .panel,
-  .chat-card,
-  .chat-placeholder {
-    border-radius: 20px;
-  }
-
-  .panel {
-    padding: 16px;
-  }
-
-  .chat-card,
-  .chat-placeholder {
-    height: calc(100vh - 140px);
-    max-height: calc(100vh - 140px);
-    min-height: calc(100vh - 140px);
-  }
-
-  .mobile-pane-toggle {
-    display: inline-flex;
-  }
-
-  .chat-head__main {
-    align-items: flex-start;
-  }
-
-  .chat-head__copy h2 {
-    font-size: 22px;
-  }
-
-  .chat-head__side {
-    width: 100%;
-    justify-items: stretch;
-  }
-
-  .profile-view-button {
-    width: 100%;
-  }
-
-  .message-board {
-    padding: 16px;
-    gap: 14px;
-  }
-
-  .message-stack {
-    max-width: 92%;
-  }
-
-  .message-image {
-    width: min(240px, 100%);
-  }
-
-  .message-sticker {
-    width: min(180px, 100%);
-  }
-
-  .composer {
-    padding: 14px;
-  }
-
-  .composer-sticker-button {
-    right: 56px;
-  }
-
-  .composer-image-button,
-  .composer-sticker-button {
-    width: 36px;
-    height: 36px;
-  }
-
-  .composer-textarea :deep(.el-textarea__inner) {
-    min-height: 136px !important;
-    max-height: 136px !important;
-    padding: 14px 96px 58px 14px;
-  }
-
-  .composer-textarea :deep(.el-input__count) {
-    right: 100px;
-    bottom: 14px;
-  }
-
-  .composer-actions {
-    right: 10px;
-    bottom: 10px;
-  }
-
-  .composer-actions :deep(.el-button) {
-    min-width: 80px;
-    min-height: 40px;
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-
-  .picker-panel {
-    width: 100%;
-  }
+/* 深色模式适配 */
+html.dark .friends-page {
+  background: #141414;
 }
 
-@media (max-width: 520px) {
-  .hero-card {
-    padding: 18px 16px;
-  }
-
-  .metric-chip {
-    padding: 14px 16px;
-  }
-
-  .metric-chip strong {
-    font-size: 22px;
-  }
-
-  .search-card,
-  .request-card,
-  .conversation-card {
-    padding: 14px;
-    border-radius: 18px;
-  }
-
-  .avatar-shell--xl {
-    width: 64px;
-    height: 64px;
-    min-width: 64px;
-    min-height: 64px;
-    max-width: 64px;
-    max-height: 64px;
-  }
-
-  .chat-head__copy h2 {
-    font-size: 20px;
-  }
-
-  .message-bubble {
-    border-radius: 20px;
-    padding: 12px 14px;
-  }
+html.dark .chat-layout {
+  background: #1f1f1f;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
-html.dark .friends-page .hero-card,
-html.dark .friends-page .panel,
-html.dark .friends-page .chat-card {
-  background: rgba(17, 25, 40, 0.82);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.28);
+html.dark .sidebar,
+html.dark .chat-header,
+html.dark .input-area {
+  background: #1f1f1f;
+  border-color: #303133;
 }
 
-html.dark .friends-page .hero-card {
-  background:
-    radial-gradient(circle at top right, rgba(64, 158, 255, 0.18), transparent 28%),
-    linear-gradient(135deg, rgba(17, 25, 40, 0.94), rgba(11, 18, 32, 0.90));
+html.dark .sidebar-title,
+html.dark .user-name,
+html.dark .contact-name,
+html.dark .message-bubble {
+  color: #e0e0e0;
 }
 
-html.dark .friends-page .metric-chip,
-html.dark .friends-page .panel-badge,
-html.dark .friends-page .summary-pill,
-html.dark .friends-page .search-placeholder,
-html.dark .friends-page .friend-profile__stat,
-html.dark .friends-page .friend-profile__section,
-html.dark .friends-page .message-bubble,
-html.dark .friends-page .history-button,
-html.dark .friends-page .profile-view-button,
-html.dark .friends-page .composer-image-button,
-html.dark .friends-page .composer-sticker-button,
-html.dark .friends-page .tool-button,
-html.dark .friends-page .picker-switch,
-html.dark .friends-page .picker-panel,
-html.dark .friends-page .emoji-card,
-html.dark .friends-page .sticker-card {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.10);
+html.dark .message-bubble {
+  background: #2a2a2a;
 }
 
-html.dark .friends-page .metric-chip--accent,
-html.dark .friends-page .hero-kicker,
-html.dark .friends-page .placeholder-mark,
-html.dark .friends-page .friend-profile__eyebrow,
-html.dark .friends-page .sidebar-tab.active,
-html.dark .friends-page .tool-button.active,
-html.dark .friends-page .composer-image-button:hover,
-html.dark .friends-page .composer-sticker-button:hover,
-html.dark .friends-page .composer-sticker-button.active,
-html.dark .friends-page .profile-view-button:hover,
-html.dark .friends-page .history-button:hover {
-  background: rgba(64, 158, 255, 0.16);
-  border-color: rgba(64, 158, 255, 0.26);
+html.dark .contact-item:hover,
+html.dark .search-item:hover {
+  background: #2a2a2a;
 }
 
-html.dark .friends-page .search-card,
-html.dark .friends-page .request-card,
-html.dark .friends-page .conversation-card,
-html.dark .friends-page .friend-profile__hero,
-html.dark .friends-page .chat-placeholder {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.20);
+html.dark .contact-item.active {
+  background: #1a3a5c;
 }
 
-html.dark .friends-page .conversation-card {
-  background: linear-gradient(180deg, rgba(24, 34, 52, 0.96), rgba(16, 23, 37, 0.92));
+html.dark .chat-area {
+  background: #141414;
 }
 
-html.dark .friends-page .conversation-card:hover,
-html.dark .friends-page .conversation-card.active {
-  border-color: rgba(64, 158, 255, 0.28);
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
+html.dark .message-bubble.image {
+  background: transparent !important;
 }
 
-html.dark .friends-page .request-card--soft {
-  background: rgba(64, 158, 255, 0.10);
-  border-color: rgba(64, 158, 255, 0.18);
+html.dark .emoji-picker {
+  background: #2a2a2a;
 }
 
-html.dark .friends-page .sidebar-tab {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.08);
+html.dark .request-notice {
+  background: #3d3d00;
 }
 
-html.dark .friends-page .sidebar-tab__count {
-  background: rgba(255, 255, 255, 0.08);
+/* 深色模式 - 好友资料 */
+html.dark .profile-drawer :deep(.el-drawer__body) {
+  background: #0a0a0a;
 }
 
-html.dark .friends-page .avatar-shell {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.10);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+html.dark .profile-header,
+html.dark .profile-card,
+html.dark .profile-section {
+  background: #1a1a1a;
+  border-color: #2a2a2a;
 }
 
-html.dark .friends-page .chat-placeholder {
-  background:
-    radial-gradient(circle at top right, rgba(64, 158, 255, 0.16), transparent 30%),
-    linear-gradient(135deg, rgba(17, 25, 40, 0.92), rgba(11, 18, 32, 0.88));
+html.dark .profile-header {
+  border-bottom-color: #2a2a2a;
 }
 
-html.dark .friends-page .message-bubble {
-  color: var(--el-text-color-primary);
+html.dark .header-title,
+html.dark .username,
+html.dark .info-value,
+html.dark .stat-value {
+  color: #e0e0e0;
 }
 
-html.dark .friends-page .message-row.mine .message-bubble {
-  background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
-  color: #ffffff;
+html.dark .section-title {
+  color: #a0a0a0;
 }
 
-html.dark .friends-page .message-bubble--image,
-html.dark .friends-page .message-bubble--sticker,
-html.dark .friends-page .message-row.mine .message-bubble--image,
-html.dark .friends-page .message-row.mine .message-bubble--sticker {
-  background: transparent;
+html.dark .section-title .el-icon {
+  color: #808080;
 }
 
-html.dark .friends-page .message-board,
-html.dark .friends-page .composer {
-  border-color: rgba(255, 255, 255, 0.08);
+html.dark .info-label,
+html.dark .stat-label {
+  color: #808080;
 }
 
-html.dark .friends-page .composer-textarea :deep(.el-textarea__inner) {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--el-text-color-primary);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+html.dark .info-row {
+  border-bottom-color: #2a2a2a;
 }
 
-html.dark .friends-page .composer-textarea :deep(.el-textarea__inner::placeholder) {
-  color: var(--el-text-color-secondary);
+html.dark .bio-content,
+html.dark .stat-card {
+  background: #252525;
+  color: #c0c0c0;
 }
 
-html.dark .friends-page .picker-switch__button.active {
-  background: rgba(255, 255, 255, 0.10);
-  color: var(--el-text-color-primary);
+html.dark .info-value.copyable {
+  color: #5b8cff;
+}
+
+html.dark .user-item:hover {
+  background: #2a2a2a;
 }
 </style>

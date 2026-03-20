@@ -234,6 +234,8 @@ CREATE TABLE `forum_posts` (
   `like_count` bigint NOT NULL DEFAULT 0 COMMENT '点赞数量',
   `favorite_count` bigint NOT NULL DEFAULT 0 COMMENT '收藏数量',
   `comment_count` bigint NOT NULL DEFAULT 0 COMMENT '评论数量',
+  `category` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '帖子分类：EXPERIENCE/ROUTE/FEEDBACK/CHAT',
+  `pinned` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否置顶：0-否，1-是',
   `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'APPROVED' COMMENT '审核状态：PENDING/APPROVED/REJECTED',
   `reviewer_id` bigint DEFAULT NULL COMMENT '审核人用户 ID',
   `reviewed_at` datetime DEFAULT NULL COMMENT '审核时间',

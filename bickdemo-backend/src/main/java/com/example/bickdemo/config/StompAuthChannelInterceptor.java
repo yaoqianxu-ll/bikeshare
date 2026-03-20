@@ -4,6 +4,7 @@ import com.example.bickdemo.entity.User;
 import com.example.bickdemo.mapper.UserMapper;
 import com.example.bickdemo.service.JwtService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -19,6 +20,7 @@ import org.springframework.util.StringUtils;
  * STOMP 连接鉴权拦截器。
  * 在 WebSocket CONNECT 阶段校验 JWT，并把当前用户写入 STOMP 会话。
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class StompAuthChannelInterceptor implements ChannelInterceptor {
@@ -53,11 +55,12 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
             // 认证成功后把用户身份挂到 STOMP 会话，后续 convertAndSendToUser 才能精准投递。
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    user,
+                    username,
                     null,
                     user.getAuthorities()
             );
             accessor.setUser(authentication);
+            log.info("[WebSocket] 用户 {} 连接成功", username);
         }
 
         return message;

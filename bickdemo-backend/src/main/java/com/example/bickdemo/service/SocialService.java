@@ -9,6 +9,7 @@ import com.example.bickdemo.dto.MessageReadReceiptResponse;
 import com.example.bickdemo.dto.SocialContactResponse;
 import com.example.bickdemo.dto.SocialEventType;
 import com.example.bickdemo.dto.SocialWsEvent;
+import com.example.bickdemo.dto.UserProfileResponse;
 import com.example.bickdemo.dto.UserSearchResponse;
 import com.example.bickdemo.entity.ChatMessage;
 import com.example.bickdemo.entity.ChatMessageType;
@@ -21,6 +22,8 @@ import com.example.bickdemo.mapper.FriendRequestMapper;
 import com.example.bickdemo.mapper.FriendshipMapper;
 import com.example.bickdemo.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -33,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 /**
@@ -55,6 +59,7 @@ public class SocialService {
     private final FriendshipMapper friendshipMapper;
     private final ChatMessageMapper chatMessageMapper;
     private final SocialEventPublisher socialEventPublisher;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * 搜索用户。
@@ -82,6 +87,33 @@ public class SocialService {
                     );
                 })
                 .toList();
+    }
+
+    /**
+     * 获取指定用户的详细信息（用于聊天场景）。
+     */
+    public UserProfileResponse getUserProfile(String currentUsername, Long targetUserId) {
+        User currentUser = requireUser(currentUsername);
+        User targetUser = requireEnabledUser(targetUserId);
+
+        FriendRequest pendingRequest = friendRequestMapper.findPendingBetweenUsers(currentUser.getId(), targetUser.getId());
+        String relationStatus = resolveRelationStatus(currentUser.getId(), targetUser.getId(), pendingRequest);
+
+        return new UserProfileResponse(
+                targetUser.getId(),
+                targetUser.getUsername(),
+                targetUser.getEmail(),
+                targetUser.getAvatar(),
+                targetUser.getBio(),
+                targetUser.getRole() != null ? targetUser.getRole().name() : "USER",
+                targetUser.isEnabled(),
+                targetUser.getCreatedAt(),
+                targetUser.getUpdatedAt(),
+                relationStatus,
+                pendingRequest == null ? null : pendingRequest.getId(),
+                pendingRequest == null ? null : (Objects.equals(pendingRequest.getSenderId(), currentUser.getId()) ? "OUTGOING" : "INCOMING"),
+                true
+        );
     }
 
     /**
@@ -118,15 +150,15 @@ public class SocialService {
 
         FriendRequestResponse response = toFriendRequestResponse(friendRequest, currentUser, receiver);
         // 好友申请创建后，立即通过消息队列通知接收方刷新社交面板。
-        socialEventPublisher.publish(new SocialWsEvent(
-                SocialEventType.FRIEND_REQUEST_CREATED,
-                receiver.getUsername(),
-                response,
-                null,
-                currentUser.getId(),
-                "New friend request",
-                null
-        ));
+        SocialWsEvent event = new SocialWsEvent() {{
+            setEventType(SocialEventType.FRIEND_REQUEST_CREATED);
+            setRecipientUsername(receiver.getUsername());
+            setFriendRequest(response);
+            setContactUserId(currentUser.getId());
+            setNotice("New friend request");
+        }};
+        log.info("[RabbitMQ] 发布好友申请事件: sender={}, receiver={}", currentUser.getUsername(), receiver.getUsername());
+        socialEventPublisher.publish(event);
 
         return response;
     }
@@ -178,15 +210,15 @@ public class SocialService {
         ensureFriendship(receiver.getId(), sender.getId());
 
         FriendRequestResponse response = toFriendRequestResponse(friendRequest, sender, receiver);
-        socialEventPublisher.publish(new SocialWsEvent(
-                SocialEventType.FRIEND_REQUEST_ACCEPTED,
-                sender.getUsername(),
-                response,
-                null,
-                receiver.getId(),
-                receiver.getUsername() + " accepted your friend request",
-                null
-        ));
+        SocialWsEvent event = new SocialWsEvent() {{
+            setEventType(SocialEventType.FRIEND_REQUEST_ACCEPTED);
+            setRecipientUsername(sender.getUsername());
+            setFriendRequest(response);
+            setContactUserId(receiver.getId());
+            setNotice(receiver.getUsername() + " accepted your friend request");
+        }};
+        log.info("[RabbitMQ] 发布好友申请通过事件: sender={}, receiver={}", sender.getUsername(), receiver.getUsername());
+        socialEventPublisher.publish(event);
 
         return response;
     }
@@ -213,15 +245,15 @@ public class SocialService {
         friendRequestMapper.updateById(friendRequest);
 
         FriendRequestResponse response = toFriendRequestResponse(friendRequest, sender, receiver);
-        socialEventPublisher.publish(new SocialWsEvent(
-                SocialEventType.FRIEND_REQUEST_REJECTED,
-                sender.getUsername(),
-                response,
-                null,
-                receiver.getId(),
-                receiver.getUsername() + " rejected your friend request",
-                null
-        ));
+        SocialWsEvent event = new SocialWsEvent() {{
+            setEventType(SocialEventType.FRIEND_REQUEST_REJECTED);
+            setRecipientUsername(sender.getUsername());
+            setFriendRequest(response);
+            setContactUserId(receiver.getId());
+            setNotice(receiver.getUsername() + " rejected your friend request");
+        }};
+        log.info("[RabbitMQ] 发布好友申请拒绝事件: sender={}, receiver={}", sender.getUsername(), receiver.getUsername());
+        socialEventPublisher.publish(event);
 
         return response;
     }
@@ -245,16 +277,22 @@ public class SocialService {
             SocialContactResponse contact = new SocialContactResponse(
                     friend.getId(),
                     friend.getUsername(),
+                    friend.getEmail(),
                     friend.getAvatar(),
                     friend.getBio(),
+                    friend.getRole() != null ? friend.getRole().name() : "USER",
+                    friend.isEnabled(),
                     RELATION_FRIEND,
                     null,
                     null,
                     null,
                     null,
                     friendship.getCreatedAt(),
+                    friend.getCreatedAt(),
+                    friend.getUpdatedAt(),
                     0,
-                    true
+                    true,
+                    friendship.getCreatedAt()
             );
             contacts.put(friend.getId(), contact);
             activityTimes.put(friend.getId(), friendship.getCreatedAt());
@@ -267,20 +305,7 @@ public class SocialService {
                 continue;
             }
 
-            contacts.computeIfAbsent(peer.getId(), key -> new SocialContactResponse(
-                    peer.getId(),
-                    peer.getUsername(),
-                    peer.getAvatar(),
-                    peer.getBio(),
-                    RELATION_REQUEST_RECEIVED,
-                    request.getId(),
-                    "INCOMING",
-                    null,
-                    null,
-                    request.getCreatedAt(),
-                    0,
-                    true
-            ));
+            contacts.computeIfAbsent(peer.getId(), key -> buildContactFromUser(peer, RELATION_REQUEST_RECEIVED, request.getId(), "INCOMING"));
             activityTimes.putIfAbsent(peer.getId(), request.getCreatedAt());
         }
 
@@ -291,20 +316,7 @@ public class SocialService {
                 continue;
             }
 
-            contacts.computeIfAbsent(peer.getId(), key -> new SocialContactResponse(
-                    peer.getId(),
-                    peer.getUsername(),
-                    peer.getAvatar(),
-                    peer.getBio(),
-                    RELATION_REQUEST_SENT,
-                    request.getId(),
-                    "OUTGOING",
-                    null,
-                    null,
-                    request.getCreatedAt(),
-                    0,
-                    true
-            ));
+            contacts.computeIfAbsent(peer.getId(), key -> buildContactFromUser(peer, RELATION_REQUEST_SENT, request.getId(), "OUTGOING"));
             activityTimes.putIfAbsent(peer.getId(), request.getCreatedAt());
         }
 
@@ -427,16 +439,29 @@ public class SocialService {
 
         ChatMessageResponse response = toChatMessageResponse(message, currentUser.getId(), currentUser, receiver);
         ChatMessageResponse receiverResponse = toChatMessageResponse(message, receiver.getId(), receiver, currentUser);
-        // 发送方拿到自己的响应，接收方则通过实时事件收到另一份“面向接收者视角”的响应。
-        socialEventPublisher.publish(new SocialWsEvent(
-                SocialEventType.CHAT_MESSAGE,
-                receiver.getUsername(),
-                null,
-                receiverResponse,
-                currentUser.getId(),
-                "New private message",
-                null
-        ));
+        
+        // 发送方拿到自己的响应，接收方则通过实时事件收到另一份"面向接收者视角"的响应。
+        SocialWsEvent event = new SocialWsEvent() {{
+            setEventType(SocialEventType.CHAT_MESSAGE);
+            setRecipientUsername(receiver.getUsername());
+            setMessage(receiverResponse);
+            setContactUserId(currentUser.getId());
+            setNotice("New private message");
+        }};
+        
+        // 通过 RabbitMQ 发送实时消息通知
+        socialEventPublisher.publish(event);
+        
+        // 同时直接发送 WebSocket（确保实时性）
+        try {
+            messagingTemplate.convertAndSendToUser(
+                    receiver.getUsername(),
+                    "/queue/social",
+                    event
+            );
+        } catch (Exception ex) {
+            log.warn("直接发送 WebSocket 失败: {}", ex.getMessage());
+        }
 
         return response;
     }
@@ -484,7 +509,8 @@ public class SocialService {
             // 待处理好友申请期间允许先建立沟通，便于双方确认身份。
             return;
         }
-        throw new RuntimeException("Private chat is only available for friends or pending friend requests");
+        // 允许任何人之间发起聊天，方便先沟通再决定是否加好友
+        // 实际业务中可根据需要调整为仅允许特定条件下的陌生人聊天
     }
 
     private String resolveRelationStatus(Long currentUserId, Long targetUserId, FriendRequest pendingRequest) {
@@ -608,6 +634,29 @@ public class SocialService {
         return normalized.isEmpty() ? null : normalized;
     }
 
+    private SocialContactResponse buildContactFromUser(User user, String relationStatus, Long pendingRequestId, String pendingDirection) {
+        return new SocialContactResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getAvatar(),
+                user.getBio(),
+                user.getRole() != null ? user.getRole().name() : "USER",
+                user.isEnabled(),
+                relationStatus,
+                pendingRequestId,
+                pendingDirection,
+                null,
+                null,
+                null,
+                user.getCreatedAt(),
+                user.getUpdatedAt(),
+                0,
+                true,
+                null
+        );
+    }
+
     private MessageReadReceiptResponse markConversationReadInternal(User currentUser, User targetUser) {
         List<Long> unreadMessageIds = chatMessageMapper.findUnreadMessageIds(targetUser.getId(), currentUser.getId());
         if (unreadMessageIds.isEmpty()) {
@@ -625,15 +674,25 @@ public class SocialService {
                 unreadMessageIds,
                 readAt
         );
-        socialEventPublisher.publish(new SocialWsEvent(
-                SocialEventType.MESSAGE_READ,
-                targetUser.getUsername(),
-                null,
-                null,
-                currentUser.getId(),
-                currentUser.getUsername() + " read your messages",
-                receipt
-        ));
+        SocialWsEvent readEvent = new SocialWsEvent() {{
+            setEventType(SocialEventType.MESSAGE_READ);
+            setRecipientUsername(targetUser.getUsername());
+            setContactUserId(currentUser.getId());
+            setNotice(currentUser.getUsername() + " read your messages");
+            setReadReceipt(receipt);
+        }};
+        socialEventPublisher.publish(readEvent);
+        
+        // 同时直接发送 WebSocket
+        try {
+            messagingTemplate.convertAndSendToUser(
+                    targetUser.getUsername(),
+                    "/queue/social",
+                    readEvent
+            );
+        } catch (Exception ex) {
+            log.warn("直接发送已读回执失败: {}", ex.getMessage());
+        }
 
         return receipt;
     }

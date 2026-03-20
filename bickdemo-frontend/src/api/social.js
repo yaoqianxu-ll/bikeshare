@@ -8,6 +8,13 @@ export function searchUsers(keyword) {
   })
 }
 
+export function getUserProfile(userId) {
+  return request({
+    url: `/social/users/${userId}`,
+    method: 'get'
+  })
+}
+
 export function createFriendRequest(data) {
   return request({
     url: '/social/friend-requests',

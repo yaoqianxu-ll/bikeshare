@@ -17,6 +17,8 @@ public class ForumPostCreateRequest {
     @Size(min = 5, max = 5000, message = "内容长度必须在 5-5000 个字符之间")
     private String content;
 
+    private String category;
+
     @Size(max = 500, message = "图片地址过长")
     private String imageUrl;
 

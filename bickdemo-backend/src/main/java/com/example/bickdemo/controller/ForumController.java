@@ -46,13 +46,50 @@ public class ForumController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String sortBy,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         ForumPostListResponse response = forumService.getPosts(
                 userDetails == null ? null : userDetails.getUsername(),
                 page,
                 size,
-                keyword
+                keyword,
+                category,
+                sortBy
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 获取热门帖子列表。
+     */
+    @GetMapping("/posts/hot")
+    public ResponseEntity<ApiResponse<java.util.List<ForumPostResponse>>> getHotPosts(
+            @RequestParam(defaultValue = "5") Integer limit,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        java.util.List<ForumPostResponse> response = forumService.getHotPosts(
+                userDetails == null ? null : userDetails.getUsername(),
+                limit
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 获取当前用户的帖子列表。
+     */
+    @GetMapping("/posts/my")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<ForumPostListResponse>> getMyPosts(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "5") Integer size,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        ForumPostListResponse response = forumService.getMyPosts(
+                userDetails.getUsername(),
+                page,
+                size
         );
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -69,6 +106,25 @@ public class ForumController {
     ) {
         try {
             return ResponseEntity.ok(ApiResponse.success(forumService.getPendingPosts(userDetails.getUsername(), limit)));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
+        }
+    }
+
+    /**
+     * 置顶/取消置顶帖子，仅管理员使用。
+     */
+    @PostMapping("/posts/{postId}/pin")
+    @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "论坛管理", action = "置顶/取消置顶帖子")
+    public ResponseEntity<ApiResponse<ForumPostResponse>> pinPost(
+            @PathVariable Long postId,
+            @RequestParam Boolean pinned,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        try {
+            ForumPostResponse response = forumService.pinPost(userDetails.getUsername(), postId, pinned);
+            return ResponseEntity.ok(ApiResponse.success(pinned ? "帖子已置顶" : "已取消置顶", response));
         } catch (RuntimeException ex) {
             return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
         }

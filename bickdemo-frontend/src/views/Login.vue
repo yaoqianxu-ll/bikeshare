@@ -463,17 +463,15 @@ onMounted(() => {
   box-shadow:
     0 25px 80px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-  animation: scale-in 0.6s ease-out;
+  animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes scale-in {
+@keyframes fade-in {
   from {
     opacity: 0;
-    transform: scale(0.95);
   }
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
@@ -706,26 +704,25 @@ onMounted(() => {
   justify-content: center;
   gap: 8px;
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.18);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .login-btn:hover:not(:disabled) {
-  transform: translateY(-3px);
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22);
   background: #ff7b4a;
 }
 
 .login-btn:active:not(:disabled) {
-  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
 }
 
 .btn-icon {
   font-size: 18px;
-  transition: transform 0.3s ease;
+  transition: transform 0.2s ease;
 }
 
 .login-btn:hover .btn-icon {
-  transform: translateX(4px);
+  transform: translateX(3px);
 }
 
 /* ========== 表单底部 ========== */

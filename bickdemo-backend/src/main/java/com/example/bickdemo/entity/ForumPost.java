@@ -45,6 +45,12 @@ public class ForumPost {
     @TableField("comment_count")
     private Long commentCount = 0L;
 
+    @TableField("category")
+    private String category;
+
+    @TableField("pinned")
+    private Boolean pinned = false;
+
     @TableField(value = "status", typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)
     private ForumPostStatus status = ForumPostStatus.APPROVED;
 

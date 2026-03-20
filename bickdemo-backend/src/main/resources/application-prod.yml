@@ -1,6 +1,6 @@
 spring:
   application:
-    name: bickdemo
+    name: bikeshare
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:mysql}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:bickdemo}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true
     username: ${MYSQL_USERNAME:root}

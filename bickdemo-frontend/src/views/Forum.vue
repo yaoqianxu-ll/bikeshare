@@ -1,105 +1,160 @@
 <template>
   <div class="forum-page">
+    <!-- 简化的顶部区域 -->
     <section class="forum-hero">
-      <div class="hero-copy">
-        <span class="hero-badge">BikeShare Forum</span>
-        <h1>骑行体验社区</h1>
-        <p>分享你的用车感受、路线见闻和真实评价，也可以在评论区和其他用户继续聊下去。</p>
+      <div class="hero-content">
+        <div class="hero-title-section">
+          <span class="hero-badge">BikeShare Forum</span>
+          <h1>骑行体验社区</h1>
+          <p class="hero-desc">分享用车感受、路线见闻和真实评价</p>
+        </div>
+        <div class="hero-actions">
+          <el-input
+            v-model="searchKeyword"
+            class="hero-search"
+            placeholder="搜索帖子"
+            clearable
+            @keyup.enter="handleSearch"
+            @clear="handleSearch"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+          <el-select v-model="sortBy" class="sort-select" @change="handleSortChange">
+            <el-option label="最新发布" value="newest" />
+            <el-option label="最多浏览" value="mostViewed" />
+            <el-option label="最多点赞" value="mostLiked" />
+            <el-option label="最多评论" value="mostCommented" />
+          </el-select>
+        </div>
       </div>
-      <div class="hero-actions">
-        <el-input
-          v-model="searchKeyword"
-          class="hero-search"
-          placeholder="搜索标题或内容"
-          clearable
-          @keyup.enter="handleSearch"
-          @clear="handleSearch"
+      
+      <!-- 分类筛选栏 -->
+      <div class="category-bar">
+        <button
+          v-for="cat in categories"
+          :key="cat.value"
+          type="button"
+          class="category-pill"
+          :class="{ active: selectedCategory === cat.value }"
+          @click="selectCategory(cat.value)"
         >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-        <el-button type="primary" plain :icon="Refresh" @click="loadPosts()">刷新社区</el-button>
+          <el-icon v-if="cat.icon"><component :is="cat.icon" /></el-icon>
+          <span>{{ cat.label }}</span>
+          <span v-if="cat.count" class="category-count">{{ cat.count }}</span>
+        </button>
       </div>
     </section>
 
     <div class="forum-layout">
       <section class="forum-main">
-        <el-card class="composer-card" shadow="never">
-          <div class="composer-header">
-            <div>
-              <h2>发布用车体验</h2>
-              <p>把你的真实骑行感受发出来，别人会在这里看到并和你讨论。</p>
+        <!-- 可折叠的发帖表单 -->
+        <el-card class="composer-card" shadow="never" :body-style="{ padding: showComposer ? '20px' : '0' }">
+          <div class="composer-toggle" @click="showComposer = !showComposer">
+            <div class="composer-toggle-left">
+              <el-avatar :src="userStore.avatar" :size="40">
+                {{ userStore.isLoggedIn ? getInitial(userStore.username) : '?' }}
+              </el-avatar>
+              <div class="composer-toggle-text">
+                <span v-if="userStore.isLoggedIn">{{ showComposer ? '发布新帖子' : '点击发布你的骑行体验...' }}</span>
+                <span v-else>登录后发布体验、参与讨论</span>
+              </div>
             </div>
-            <el-tag type="primary" effect="plain">{{ userStore.isLoggedIn ? '已登录' : '游客浏览' }}</el-tag>
+            <el-icon class="composer-toggle-icon" :class="{ 'is-open': showComposer }">
+              <ArrowDown v-if="!showComposer" />
+              <ArrowUp v-else />
+            </el-icon>
           </div>
 
-          <template v-if="userStore.isLoggedIn">
-            <el-input
-              v-model="publishForm.title"
-              placeholder="写一个有辨识度的标题"
-              maxlength="80"
-              show-word-limit
-              class="composer-title"
-            />
-            <el-input
-              v-model="publishForm.content"
-              type="textarea"
-              :rows="5"
-              resize="none"
-              maxlength="5000"
-              show-word-limit
-              placeholder="分享一下你这次骑行体验、车辆评价、路线建议或者踩坑心得"
-              class="composer-content"
-            />
-            <div class="composer-media">
-              <div class="composer-media-header">
-                <span>帖子图片</span>
-                <strong>{{ publishForm.imageUrls.length }}/9</strong>
+          <transition
+            name="composer-expand"
+            enter-active-class="composer-enter-active"
+            leave-active-class="composer-leave-active"
+            enter-from-class="composer-enter-from"
+            leave-to-class="composer-leave-to"
+          >
+            <div v-show="showComposer && userStore.isLoggedIn" class="composer-form-wrapper">
+              <div class="composer-form">
+              <div class="composer-row">
+                <el-select v-model="publishForm.category" placeholder="选择分类" class="category-select">
+                  <el-option
+                    v-for="cat in categories.filter(c => c.value)"
+                    :key="cat.value"
+                    :label="cat.label"
+                    :value="cat.value"
+                  >
+                    <el-icon v-if="cat.icon"><component :is="cat.icon" /></el-icon>
+                    <span>{{ cat.label }}</span>
+                  </el-option>
+                </el-select>
+                <el-input
+                  v-model="publishForm.title"
+                  placeholder="标题（简述你的体验）"
+                  maxlength="80"
+                  show-word-limit
+                  class="composer-title"
+                />
               </div>
-              <div v-if="publishForm.imageUrls.length" class="composer-image-grid">
+              <el-input
+                v-model="publishForm.content"
+                type="textarea"
+                :rows="4"
+                resize="none"
+                maxlength="5000"
+                show-word-limit
+                placeholder="详细描述你的骑行体验、车辆评价或路线建议..."
+                class="composer-content"
+              />
+              
+              <!-- 图片上传预览 -->
+              <div v-if="publishForm.imageUrls.length" class="composer-preview-grid">
                 <div
                   v-for="(imageUrl, index) in publishForm.imageUrls"
                   :key="`${imageUrl}-${index}`"
-                  class="composer-image-item"
+                  class="preview-item"
                 >
-                  <el-image
-                    :src="imageUrl"
-                    fit="cover"
-                    class="preview-image"
-                    :preview-src-list="publishForm.imageUrls"
-                    :initial-index="index"
-                    preview-teleported
-                  />
-                  <button class="remove-image-btn" type="button" @click="removePostImageAt(index)">移除</button>
+                  <el-image :src="imageUrl" fit="cover" />
+                  <button class="remove-btn" @click="removePostImageAt(index)">
+                    <el-icon><Close /></el-icon>
+                  </button>
                 </div>
               </div>
-              <el-upload
-                v-if="publishForm.imageUrls.length < 9"
-                class="forum-image-upload"
-                :show-file-list="false"
-                :before-upload="beforePostImageUpload"
-                :http-request="handlePostImageUpload"
-                :on-exceed="handleImageExceed"
-                :limit="9"
-                multiple
-                accept="image/*"
-              >
-                <div class="upload-placeholder">
-                  <el-icon><Picture /></el-icon>
-                  <span>{{ imageUploadingCount > 0 ? `上传中 ${imageUploadingCount} 张...` : '上传帖子图片（最多 9 张）' }}</span>
-                </div>
-              </el-upload>
+              
+              <div class="composer-toolbar">
+                <el-upload
+                  v-if="publishForm.imageUrls.length < 9"
+                  class="image-upload-btn"
+                  :show-file-list="false"
+                  :before-upload="beforePostImageUpload"
+                  :http-request="handlePostImageUpload"
+                  :limit="9"
+                  multiple
+                  accept="image/*"
+                >
+                  <el-button text type="primary" :icon="Picture">
+                    图片 {{ publishForm.imageUrls.length }}/9
+                  </el-button>
+                </el-upload>
+                <span class="composer-tip">普通用户发帖需审核</span>
+                <el-button type="primary" :loading="publishLoading" @click="submitPost">发布</el-button>
+              </div>
             </div>
-            <div class="composer-footer">
-              <span>支持文字加最多 9 张配图。普通用户发帖后会先进入管理员审核。</span>
-              <el-button type="primary" :loading="publishLoading" @click="submitPost">发布帖子</el-button>
             </div>
-          </template>
-          <div v-else class="guest-tip">
-            <p>游客可以先浏览社区内容。登录后就能发布体验、评论交流、点赞和收藏。</p>
-            <el-button type="primary" @click="router.push('/login')">去登录</el-button>
-          </div>
+          </transition>
+          
+          <transition
+            name="composer-expand"
+            enter-active-class="composer-enter-active"
+            leave-active-class="composer-leave-active"
+            enter-from-class="composer-enter-from"
+            leave-to-class="composer-leave-to"
+          >
+            <div v-show="showComposer && !userStore.isLoggedIn" class="composer-guest">
+              <p>登录后可以发布帖子、评论和互动</p>
+              <el-button type="primary" @click="router.push('/login')">去登录</el-button>
+            </div>
+          </transition>
         </el-card>
 
         <div class="feed-header">
@@ -118,11 +173,16 @@
               v-for="post in posts"
               :key="post.id"
               class="post-card"
+              :class="{ 'is-pinned': post.pinned }"
               @click="openPost(post.id)"
             >
+              <div v-if="post.pinned" class="pinned-badge">
+                <el-icon><Top /></el-icon>
+                <span>置顶</span>
+              </div>
               <div class="post-top">
                 <button class="author-chip" type="button" @click.stop="openAuthorProfile(post.authorId)">
-                  <el-avatar :src="post.authorAvatar" :size="46">
+                  <el-avatar :src="post.authorAvatar" :size="46" lazy>
                     {{ getInitial(post.authorName) }}
                   </el-avatar>
                   <div class="author-text">
@@ -131,8 +191,20 @@
                   </div>
                 </button>
                 <div class="post-badges">
-                  <el-tag :type="getPostStatusType(post.status)" effect="light">{{ getPostStatusText(post.status) }}</el-tag>
-                  <el-tag v-if="post.mine" type="primary" effect="light">我的帖子</el-tag>
+                  <!-- 分类标签 -->
+                  <span v-if="post.category" class="badge category-badge">
+                    {{ getCategoryLabel(post.category) }}
+                  </span>
+                  <!-- 状态标签 -->
+                  <span class="badge" :class="getPostStatusClass(post.status)">
+                    {{ getPostStatusText(post.status) }}
+                  </span>
+                  <!-- 我的帖子标记 -->
+                  <span v-if="post.mine" class="badge mine-badge">我的</span>
+                  <!-- 置顶标记 -->
+                  <span v-if="post.pinned" class="badge pinned-badge">
+                    <el-icon><Top /></el-icon>置顶
+                  </span>
                 </div>
               </div>
 
@@ -200,9 +272,17 @@
 
               <div class="post-actions">
                 <el-button
+                  v-if="userStore.isAdmin"
+                  size="small"
+                  :class="post.pinned ? 'btn-unpin' : 'btn-pin'"
+                  @click.stop="handlePinPost(post)"
+                >
+                  {{ post.pinned ? '取消置顶' : '置顶' }}
+                </el-button>
+                <el-button
                   v-if="post.canReview"
                   size="small"
-                  type="success"
+                  class="btn-approve"
                   @click.stop="handleReviewPost(post, true)"
                 >
                   通过
@@ -210,7 +290,7 @@
                 <el-button
                   v-if="post.canReview"
                   size="small"
-                  type="warning"
+                  class="btn-reject"
                   @click.stop="handleReviewPost(post, false)"
                 >
                   驳回
@@ -218,13 +298,12 @@
                 <el-button
                   v-if="post.canDelete"
                   size="small"
-                  type="danger"
-                  plain
+                  class="btn-delete"
                   @click.stop="handleDeletePost(post)"
                 >
                   删除
                 </el-button>
-                <el-button size="small" text type="primary" @click.stop="openPost(post.id)">查看详情</el-button>
+                <el-button size="small" text @click.stop="openPost(post.id)">查看详情</el-button>
               </div>
             </article>
           </div>
@@ -245,6 +324,64 @@
       </section>
 
       <aside class="forum-side">
+        <!-- 热门帖子 -->
+        <el-card class="side-card hot-posts-card" shadow="never">
+          <div class="hot-posts-header">
+            <h3><el-icon><HotWater /></el-icon> 热门帖子</h3>
+          </div>
+          <div v-if="hotPosts.length" class="hot-posts-list">
+            <article
+              v-for="(hotPost, index) in hotPosts"
+              :key="`hot-${hotPost.id}`"
+              class="hot-post-item"
+              @click="openPost(hotPost.id)"
+            >
+              <span class="hot-rank" :class="{ top3: index < 3 }">{{ index + 1 }}</span>
+              <div class="hot-post-content">
+                <strong class="hot-post-title">{{ hotPost.title }}</strong>
+                <div class="hot-post-meta">
+                  <span><el-icon><View /></el-icon>{{ hotPost.viewCount }}</span>
+                  <span><el-icon><Star /></el-icon>{{ hotPost.likeCount }}</span>
+                </div>
+              </div>
+            </article>
+          </div>
+          <el-empty v-else description="暂无热门帖子" :image-size="72" />
+        </el-card>
+
+        <!-- 我的帖子 -->
+        <el-card v-if="userStore.isLoggedIn" class="side-card my-posts-card" shadow="never">
+          <div class="my-posts-header">
+            <h3><el-icon><User /></el-icon> 我的帖子</h3>
+            <el-button v-if="myPosts.length" type="primary" link size="small" @click="loadMyPosts">
+              <el-icon><Refresh /></el-icon>
+            </el-button>
+          </div>
+          <div v-if="myPosts.length" class="my-posts-list">
+            <article
+              v-for="myPost in myPosts"
+              :key="`my-${myPost.id}`"
+              class="my-post-item"
+              @click="openPost(myPost.id)"
+            >
+              <div class="my-post-info">
+                <strong class="my-post-title">{{ myPost.title }}</strong>
+                <div class="my-post-meta">
+                  <span class="badge" :class="getPostStatusClass(myPost.status)">
+                    {{ getPostStatusText(myPost.status) }}
+                  </span>
+                  <span>{{ formatDate(myPost.createdAt) }}</span>
+                </div>
+              </div>
+              <div class="my-post-stats">
+                <span><el-icon><View /></el-icon>{{ myPost.viewCount }}</span>
+              </div>
+            </article>
+          </div>
+          <el-empty v-else description="还没有发布帖子" :image-size="72" />
+        </el-card>
+
+        <!-- 待审核帖子（管理员） -->
         <el-card v-if="userStore.isAdmin" class="side-card review-card" shadow="never">
           <div class="review-card-head">
             <div>
@@ -266,9 +403,9 @@
                 </div>
                 <p class="review-item-content">{{ getExcerpt(pendingPost.content, 72) }}</p>
                 <div class="review-item-actions">
-                  <el-button size="small" text type="primary" @click="openPost(pendingPost.id)">查看</el-button>
-                  <el-button size="small" type="success" @click="handleReviewPost(pendingPost, true)">通过</el-button>
-                  <el-button size="small" type="warning" @click="handleReviewPost(pendingPost, false)">驳回</el-button>
+                  <el-button size="small" text @click="openPost(pendingPost.id)">查看</el-button>
+                  <el-button size="small" class="btn-approve" @click="handleReviewPost(pendingPost, true)">通过</el-button>
+                  <el-button size="small" class="btn-reject" @click="handleReviewPost(pendingPost, false)">驳回</el-button>
                 </div>
               </article>
             </div>
@@ -276,6 +413,7 @@
           </div>
         </el-card>
 
+        <!-- 社区提示 -->
         <el-card class="side-card" shadow="never">
           <h3>社区提示</h3>
           <ul class="side-list">
@@ -286,6 +424,7 @@
           </ul>
         </el-card>
 
+        <!-- 当前状态 -->
         <el-card class="side-card" shadow="never">
           <h3>当前状态</h3>
           <div class="side-metrics">
@@ -297,10 +436,6 @@
               <span>当前页数</span>
               <strong>{{ pagination.page }}</strong>
             </div>
-<!--            <div class="metric-item">
-              <span>当前用户</span>
-              <strong>{{ userStore.isLoggedIn ? userStore.username : '游客' }}</strong>
-            </div>-->
           </div>
         </el-card>
       </aside>
@@ -317,7 +452,7 @@
         <template v-if="selectedPost">
           <div class="detail-head">
             <button class="author-chip detail-author" type="button" @click="openAuthorProfile(selectedPost.authorId)">
-              <el-avatar :src="selectedPost.authorAvatar" :size="52">
+              <el-avatar :src="selectedPost.authorAvatar" :size="52" lazy>
                 {{ getInitial(selectedPost.authorName) }}
               </el-avatar>
               <div class="author-text">
@@ -326,27 +461,36 @@
               </div>
             </button>
             <div class="detail-toolbar">
-              <el-tag :type="getPostStatusType(selectedPost.status)" effect="light">
-                {{ getPostStatusText(selectedPost.status) }}
+              <el-tag v-if="selectedPost.category" type="info" effect="plain">
+                {{ getCategoryLabel(selectedPost.category) }}
               </el-tag>
+              <span class="badge" :class="getPostStatusClass(selectedPost.status)">
+                {{ getPostStatusText(selectedPost.status) }}
+              </span>
+              <el-button
+                v-if="userStore.isAdmin"
+                :class="selectedPost.pinned ? 'btn-unpin' : 'btn-pin'"
+                @click="handlePinPost(selectedPost)"
+              >
+                {{ selectedPost.pinned ? '取消置顶' : '置顶' }}
+              </el-button>
               <el-button
                 v-if="selectedPost.canReview"
-                type="success"
+                class="btn-approve"
                 @click="handleReviewPost(selectedPost, true)"
               >
                 审核通过
               </el-button>
               <el-button
                 v-if="selectedPost.canReview"
-                type="warning"
+                class="btn-reject"
                 @click="handleReviewPost(selectedPost, false)"
               >
                 驳回帖子
               </el-button>
               <el-button
                 v-if="selectedPost.canDelete"
-                type="danger"
-                plain
+                class="btn-delete"
                 @click="handleDeletePost(selectedPost)"
               >
                 删除帖子
@@ -504,7 +648,7 @@
       <div class="profile-shell" v-loading="profileLoading">
         <template v-if="authorProfile">
           <div class="profile-top">
-            <el-avatar :src="authorProfile.avatar" :size="72">
+            <el-avatar :src="authorProfile.avatar" :size="72" lazy>
               {{ getInitial(authorProfile.username) }}
             </el-avatar>
             <div class="profile-text">
@@ -591,7 +735,7 @@
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Picture, Refresh, Search } from '@element-plus/icons-vue'
+import { Picture, Refresh, Search, HotWater, Star, ChatDotRound, View, User, Top, ArrowDown, ArrowUp, Close } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import {
   approveForumPost,
@@ -602,6 +746,10 @@ import {
   getForumPostDetail,
   getForumPosts,
   getPendingForumPosts,
+  getHotForumPosts,
+  getMyForumPosts,
+  getForumCategories,
+  pinForumPost,
   rejectForumPost,
   toggleForumFavorite,
   toggleForumLike
@@ -614,6 +762,7 @@ const userStore = useUserStore()
 
 const loading = ref(false)
 const publishLoading = ref(false)
+const showComposer = ref(false)
 const imageUploadingCount = ref(0)
 const detailLoading = ref(false)
 const commentLoading = ref(false)
@@ -625,6 +774,17 @@ const searchKeyword = ref('')
 const total = ref(0)
 const posts = ref([])
 const pendingPosts = ref([])
+const hotPosts = ref([])
+const myPosts = ref([])
+const categories = ref([
+  { label: '全部', value: '', count: 0, icon: null },
+  { label: '用车体验', value: 'EXPERIENCE', icon: 'Star' },
+  { label: '路线分享', value: 'ROUTE', icon: 'HotWater' },
+  { label: '问题反馈', value: 'FEEDBACK', icon: 'ChatDotRound' },
+  { label: '闲聊', value: 'CHAT', icon: 'User' }
+])
+const selectedCategory = ref('')
+const sortBy = ref('newest')
 const selectedPost = ref(null)
 const detailComments = ref([])
 const commentDraft = ref('')
@@ -640,9 +800,16 @@ const pagination = reactive({
   size: 10
 })
 
+const myPostsPagination = reactive({
+  page: 1,
+  size: 5,
+  total: 0
+})
+
 const publishForm = reactive({
   title: '',
   content: '',
+  category: '',
   imageUrls: []
 })
 
@@ -654,16 +821,62 @@ const loadPosts = async (page = pagination.page) => {
     const res = await getForumPosts({
       page,
       size: pagination.size,
-      keyword: searchKeyword.value.trim() || undefined
+      keyword: searchKeyword.value.trim() || undefined,
+      category: selectedCategory.value || undefined,
+      sortBy: sortBy.value
     })
     posts.value = res.data.records || []
     total.value = Number(res.data.total || 0)
     pagination.page = Number(res.data.current || page || 1)
     pagination.size = Number(res.data.size || pagination.size)
+    // 更新分类计数
+    if (res.data.categoryCounts) {
+      categories.value = categories.value.map(cat => ({
+        ...cat,
+        count: res.data.categoryCounts[cat.value] || 0
+      }))
+    }
   } catch (error) {
     console.error(error)
   } finally {
     loading.value = false
+  }
+}
+
+const selectCategory = (value) => {
+  selectedCategory.value = value
+  pagination.page = 1
+  loadPosts(1)
+}
+
+const handleSortChange = () => {
+  pagination.page = 1
+  loadPosts(1)
+}
+
+const loadHotPosts = async () => {
+  try {
+    const res = await getHotForumPosts(5)
+    hotPosts.value = res.data || []
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const loadMyPosts = async () => {
+  if (!userStore.isLoggedIn) {
+    myPosts.value = []
+    return
+  }
+  try {
+    const res = await getMyForumPosts({
+      page: myPostsPagination.page,
+      size: myPostsPagination.size
+    })
+    myPosts.value = res.data.records || []
+    myPostsPagination.total = Number(res.data.total || 0)
+  } catch (error) {
+    console.error(error)
   }
 }
 
@@ -710,17 +923,23 @@ const submitPost = async () => {
     ElMessage.warning('标题和内容都要填写')
     return
   }
+  if (!publishForm.category) {
+    ElMessage.warning('请选择一个分类')
+    return
+  }
 
   publishLoading.value = true
   try {
     const res = await createForumPost({
       title: publishForm.title.trim(),
       content: publishForm.content.trim(),
+      category: publishForm.category,
       imageUrls: [...publishForm.imageUrls]
     })
     const createdPost = res.data
     publishForm.title = ''
     publishForm.content = ''
+    publishForm.category = ''
     publishForm.imageUrls = []
     ElMessage.success(
       createdPost?.status === 'APPROVED'
@@ -790,6 +1009,18 @@ const handleCommentKeydown = (event) => {
 const handleSearch = () => {
   pagination.page = 1
   loadPosts(1)
+}
+
+const handlePinPost = async (post) => {
+  if (!userStore.isAdmin) return
+  try {
+    const res = await pinForumPost(post.id, !post.pinned)
+    syncPostState(post.id, res.data)
+    ElMessage.success(post.pinned ? '已取消置顶' : '帖子已置顶')
+    await loadPosts()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const startReply = async (comment) => {
@@ -1124,6 +1355,21 @@ const getPostStatusType = (status) => {
   }
 }
 
+/**
+ * 获取帖子状态的 CSS 类名
+ * 使用更自然的配色替代 Element Plus 默认的鲜艳颜色
+ */
+const getPostStatusClass = (status) => {
+  switch (status) {
+    case 'PENDING':
+      return 'status-pending'
+    case 'REJECTED':
+      return 'status-rejected'
+    default:
+      return 'status-approved'
+  }
+}
+
 const getPostStatusHint = (status) => {
   switch (status) {
     case 'PENDING':
@@ -1135,6 +1381,11 @@ const getPostStatusHint = (status) => {
   }
 }
 
+const getCategoryLabel = (category) => {
+  const cat = categories.value.find(c => c.value === category)
+  return cat ? cat.label : category
+}
+
 const isPostApproved = (post) => {
   return !!post && post.status === 'APPROVED'
 }
@@ -1142,6 +1393,8 @@ const isPostApproved = (post) => {
 onMounted(() => {
   loadPosts()
   loadPendingPosts()
+  loadHotPosts()
+  loadMyPosts()
 })
 </script>
 
@@ -1153,63 +1406,130 @@ onMounted(() => {
 }
 
 .forum-hero {
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 28px;
-  border-radius: 28px;
+  padding: 24px;
+  border-radius: 20px;
   background:
-    radial-gradient(circle at top left, rgba(64, 158, 255, 0.18), transparent 34%),
-    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 92%, transparent) 0%, var(--bs-surface) 100%);
+    radial-gradient(circle at top left, rgba(64, 158, 255, 0.12), transparent 40%),
+    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 94%, transparent) 0%, var(--bs-surface) 100%);
   border: 1px solid var(--bs-stroke);
-  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  margin-bottom: 20px;
   backdrop-filter: blur(20px) saturate(160%);
 }
 
-.hero-copy {
+/* Hero 区域 - 更紧凑的布局 */
+.hero-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.hero-title-section {
   flex: 1;
-  min-width: 0;
 }
 
 .hero-badge {
   display: inline-flex;
   align-items: center;
-  padding: 6px 12px;
+  padding: 4px 10px;
   border-radius: 999px;
   background: rgba(var(--brand-primary-rgb), 0.12);
   color: var(--brand-primary);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
-.hero-copy h1 {
-  margin: 14px 0 10px;
-  font-size: 34px;
-  line-height: 1.1;
+.hero-title-section h1 {
+  margin: 8px 0 4px;
+  font-size: 28px;
+  line-height: 1.2;
   color: var(--bs-ink);
 }
 
-.hero-copy p {
+.hero-desc {
   margin: 0;
-  max-width: 720px;
   color: var(--bs-muted);
-  font-size: 15px;
-  line-height: 1.8;
+  font-size: 14px;
 }
 
 .hero-actions {
-  width: 320px;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 14px;
+  align-items: center;
+  gap: 12px;
+}
+
+.hero-search {
+  width: 200px;
 }
 
 .hero-search :deep(.el-input__wrapper) {
-  min-height: 48px;
-  border-radius: 16px;
+  min-height: 40px;
+  border-radius: 12px;
+}
+
+.sort-select {
+  width: 130px;
+}
+
+.sort-select :deep(.el-input__wrapper) {
+  min-height: 40px;
+  border-radius: 12px;
+}
+
+/* 分类筛选栏 */
+.category-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--bs-stroke);
+}
+
+.category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--bs-stroke);
+  background: color-mix(in srgb, var(--bs-surface-solid) 92%, transparent);
+  color: var(--bs-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.category-pill:hover {
+  border-color: rgba(var(--brand-primary-rgb), 0.3);
+  color: var(--bs-ink);
+}
+
+.category-pill.active {
+  background: rgba(var(--brand-primary-rgb), 0.14);
+  border-color: rgba(var(--brand-primary-rgb), 0.4);
+  color: var(--el-color-primary);
+}
+
+.category-pill .el-icon {
+  font-size: 14px;
+}
+
+.category-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(var(--brand-primary-rgb), 0.2);
+  color: var(--el-color-primary);
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .forum-layout {
@@ -1233,7 +1553,123 @@ onMounted(() => {
   backdrop-filter: blur(18px) saturate(150%);
 }
 
-.composer-header,
+/* 可折叠的发帖表单 */
+.composer-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  border-radius: 12px;
+}
+
+.composer-toggle:hover {
+  background: rgba(var(--brand-primary-rgb), 0.04);
+}
+
+.composer-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.composer-toggle-text {
+  color: var(--bs-muted);
+  font-size: 15px;
+}
+
+.composer-toggle-icon {
+  font-size: 18px;
+  color: var(--bs-muted);
+  transition: transform 0.3s ease;
+}
+
+.composer-toggle-icon.is-open {
+  transform: rotate(180deg);
+}
+
+.composer-form {
+  padding-top: 16px;
+  border-top: 1px solid var(--bs-stroke);
+  margin-top: 4px;
+}
+
+.composer-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.category-select {
+  width: 140px;
+  flex-shrink: 0;
+}
+
+.composer-title {
+  flex: 1;
+}
+
+.composer-content {
+  margin-bottom: 12px;
+}
+
+.composer-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.preview-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-item .el-image {
+  width: 100%;
+  height: 100%;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.composer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--bs-stroke);
+}
+
+.composer-tip {
+  flex: 1;
+  color: var(--bs-muted);
+  font-size: 12px;
+}
+
+.composer-guest {
+  padding: 20px;
+  text-align: center;
+  color: var(--bs-muted);
+}
+
 .feed-header,
 .comments-header,
 .detail-head {
@@ -1243,14 +1679,12 @@ onMounted(() => {
   align-items: flex-start;
 }
 
-.composer-header h2,
 .feed-header h2,
 .comments-header h3 {
   margin: 0;
   color: var(--bs-ink);
 }
 
-.composer-header p,
 .feed-header p,
 .comments-header p {
   margin: 8px 0 0;
@@ -1258,9 +1692,8 @@ onMounted(() => {
   line-height: 1.7;
 }
 
-.composer-title,
-.composer-content {
-  margin-top: 18px;
+.category-select :deep(.el-input__wrapper) {
+  border-radius: 16px;
 }
 
 .composer-media {
@@ -1397,6 +1830,28 @@ onMounted(() => {
   box-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
   cursor: pointer;
   transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+  position: relative;
+}
+
+.post-card.is-pinned {
+  border-color: rgba(var(--brand-primary-rgb), 0.35);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--el-color-primary-light-9) 50%, var(--bs-surface-solid)) 0%, var(--bs-surface) 100%);
+}
+
+.pinned-badge {
+  position: absolute;
+  top: 0;
+  right: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 0 0 12px 12px;
+  background: linear-gradient(135deg, var(--el-color-danger) 0%, var(--el-color-danger-light-3) 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .post-card:hover {
@@ -1416,7 +1871,65 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
+}
+
+/* 自定义标签样式 - 更自然的配色 */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* 分类标签 - 柔和的灰色 */
+.category-badge {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+/* 状态标签 - 已通过：自然绿色 */
+.status-approved {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+/* 状态标签 - 审核中：柔和琥珀色 */
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* 状态标签 - 未通过：柔和红色 */
+.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* 我的帖子标记 - 柔和蓝色 */
+.mine-badge {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+/* 置顶标记 - 柔和橙色 */
+.pinned-badge {
+  background: #ffedd5;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+}
+
+.pinned-badge .el-icon {
+  font-size: 11px;
 }
 
 .author-chip {
@@ -1605,6 +2118,173 @@ onMounted(() => {
   font-size: 13px;
 }
 
+/* 热门帖子 */
+.hot-posts-header h3 {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--bs-ink);
+}
+
+.hot-posts-header h3 .el-icon {
+  color: var(--el-color-danger);
+}
+
+.hot-posts-list {
+  display: grid;
+  gap: 12px;
+}
+
+.hot-post-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--bs-stroke);
+  background: color-mix(in srgb, var(--bs-surface-solid) 94%, transparent);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hot-post-item:hover {
+  transform: translateX(4px);
+  border-color: rgba(var(--brand-primary-rgb), 0.25);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.hot-rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bs-muted) 20%, transparent);
+  color: var(--bs-muted);
+  font-size: 13px;
+  font-weight: 700;
+  flex: none;
+}
+
+.hot-rank.top3 {
+  background: linear-gradient(135deg, var(--el-color-danger) 0%, var(--el-color-danger-light-3) 100%);
+  color: #fff;
+}
+
+.hot-post-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.hot-post-title {
+  display: block;
+  color: var(--bs-ink);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hot-post-meta {
+  display: flex;
+  gap: 12px;
+  color: var(--bs-muted);
+  font-size: 12px;
+}
+
+.hot-post-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hot-post-meta .el-icon {
+  font-size: 14px;
+}
+
+/* 我的帖子 */
+.my-posts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.my-posts-header h3 {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--bs-ink);
+}
+
+.my-posts-header h3 .el-icon {
+  color: var(--el-color-primary);
+}
+
+.my-posts-list {
+  display: grid;
+  gap: 10px;
+}
+
+.my-post-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--bs-stroke);
+  background: color-mix(in srgb, var(--bs-surface-solid) 94%, transparent);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.my-post-item:hover {
+  border-color: rgba(var(--brand-primary-rgb), 0.25);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.my-post-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.my-post-title {
+  display: block;
+  color: var(--bs-ink);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-post-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--bs-muted);
+  font-size: 12px;
+}
+
+.my-post-stats {
+  display: flex;
+  align-items: center;
+  color: var(--bs-muted);
+  font-size: 12px;
+}
+
+.my-post-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .side-card h3 {
   margin: 0 0 14px;
   color: var(--bs-ink);
@@ -1652,6 +2332,128 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* 自定义按钮样式 - 更自然的配色 */
+.btn-approve {
+  background: #dcfce7 !important;
+  border-color: #bbf7d0 !important;
+  color: #166534 !important;
+}
+
+.btn-approve:hover {
+  background: #bbf7d0 !important;
+  border-color: #86efac !important;
+}
+
+.btn-reject {
+  background: #fee2e2 !important;
+  border-color: #fecaca !important;
+  color: #991b1b !important;
+}
+
+.btn-reject:hover {
+  background: #fecaca !important;
+  border-color: #fca5a5 !important;
+}
+
+.btn-pin {
+  background: #ffedd5 !important;
+  border-color: #fed7aa !important;
+  color: #9a3412 !important;
+}
+
+.btn-pin:hover {
+  background: #fed7aa !important;
+  border-color: #fdba74 !important;
+}
+
+.btn-unpin {
+  background: #f3f4f6 !important;
+  border-color: #e5e7eb !important;
+  color: #4b5563 !important;
+}
+
+.btn-unpin:hover {
+  background: #e5e7eb !important;
+}
+
+.btn-delete {
+  background: #fee2e2 !important;
+  border-color: #fecaca !important;
+  color: #991b1b !important;
+}
+
+.btn-delete:hover {
+  background: #fecaca !important;
+  border-color: #fca5a5 !important;
+}
+
+/* ========== 发布框平滑展开动画 ========== */
+.composer-form-wrapper {
+  overflow: hidden;
+}
+
+.composer-enter-active {
+  transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  max-height: 600px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.composer-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 1, 1);
+}
+
+.composer-enter-from {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-12px);
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.composer-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* 发布框内部元素依次淡入 */
+.composer-enter-active .composer-form > * {
+  animation: composerItemFadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.composer-enter-active .composer-form > *:nth-child(1) { animation-delay: 0.06s; }
+.composer-enter-active .composer-form > *:nth-child(2) { animation-delay: 0.12s; }
+.composer-enter-active .composer-form > *:nth-child(3) { animation-delay: 0.18s; }
+.composer-enter-active .composer-form > *:nth-child(4) { animation-delay: 0.24s; }
+.composer-enter-active .composer-form > *:nth-child(5) { animation-delay: 0.30s; }
+
+@keyframes composerItemFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 展开图标旋转动画 */
+.composer-toggle-icon {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.composer-toggle-icon.is-open {
+  transform: rotate(180deg);
 }
 
 .side-list {
@@ -1962,8 +2764,39 @@ onMounted(() => {
     padding: 16px 12px 30px;
   }
 
-  .forum-hero,
-  .composer-header,
+  .hero-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .hero-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .hero-search,
+  .sort-select {
+    width: 100%;
+  }
+
+  .category-bar {
+    justify-content: center;
+  }
+
+  .category-pill {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .composer-row {
+    flex-direction: column;
+  }
+
+  .category-select {
+    width: 100%;
+  }
+
   .feed-header,
   .comments-header,
   .detail-head,
@@ -1973,10 +2806,6 @@ onMounted(() => {
   .comment-editor-footer {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .hero-actions {
-    width: 100%;
   }
 
   .post-top {

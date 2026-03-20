@@ -1,5 +1,7 @@
 <template>
-  <router-view />
+  <transition name="page-fade" mode="out-in">
+    <router-view :key="route.fullPath" />
+  </transition>
   <ThemeToggle v-if="showFloatingToggle" />
 </template>
 

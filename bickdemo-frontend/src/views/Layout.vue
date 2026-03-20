@@ -231,6 +231,8 @@ const backgrounds = ref([])
 const uploading = ref(false)
 const isMobile = ref(false)
 
+
+
 const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
 const openSourceProjectUrl = 'https://gitee.com/loopeasen/bikelease'
 const isHomePage = computed(() => route.name === 'Home')
@@ -387,6 +389,8 @@ const syncViewport = () => {
   }
 }
 
+
+
 // 启动时加载背景图片
 onMounted(() => {
   syncViewport()
@@ -403,6 +407,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', syncViewport)
 })
+
+
 
 watch(
   () => route.fullPath,

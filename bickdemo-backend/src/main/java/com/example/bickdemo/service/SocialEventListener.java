@@ -26,16 +26,21 @@ public class SocialEventListener {
     @RabbitListener(queues = SocialMessagingConstants.SOCIAL_QUEUE)
     public void handleSocialEvent(SocialWsEvent event) {
         if (event == null || !StringUtils.hasText(event.getRecipientUsername())) {
+            log.warn("[WebSocket] 收到无效事件，忽略处理");
             return;
         }
 
-        // convertAndSendToUser 会把消息发到 /user/{username}/queue/social。
-        messagingTemplate.convertAndSendToUser(
-                event.getRecipientUsername(),
-                SocialMessagingConstants.USER_SOCIAL_DESTINATION,
-                event
-        );
-
-        log.debug("Delivered social event {} to {}", event.getEventType(), event.getRecipientUsername());
+        try {
+            messagingTemplate.convertAndSendToUser(
+                    event.getRecipientUsername(),
+                    SocialMessagingConstants.USER_SOCIAL_DESTINATION,
+                    event
+            );
+            log.debug("[WebSocket] 消息发送成功: eventType={}, recipient={}", 
+                    event.getEventType(), event.getRecipientUsername());
+        } catch (Exception ex) {
+            log.error("[WebSocket] 消息发送失败: eventType={}, recipient={}, error={}", 
+                    event.getEventType(), event.getRecipientUsername(), ex.getMessage());
+        }
     }
 }

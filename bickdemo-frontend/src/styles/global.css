@@ -552,7 +552,50 @@ a:hover {
   background-size: 1000px 100%;
 }
 
-/* ========== 减少动画 ========== */
+/* ========== 全局页面缓入动画 - 平滑升级版 ========== */
+.page-fade-enter-active {
+  transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.page-fade-leave-active {
+  transition: all 0.35s cubic-bezier(0.4, 0, 1, 1);
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.995);
+  filter: blur(2px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.99);
+  filter: blur(1px);
+}
+
+/* 页面元素依次进入动画 */
+.page-fade-enter-active .animate-in {
+  animation: staggerFadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.page-fade-enter-active .animate-in:nth-child(1) { animation-delay: 0.08s; }
+.page-fade-enter-active .animate-in:nth-child(2) { animation-delay: 0.14s; }
+.page-fade-enter-active .animate-in:nth-child(3) { animation-delay: 0.20s; }
+.page-fade-enter-active .animate-in:nth-child(4) { animation-delay: 0.26s; }
+.page-fade-enter-active .animate-in:nth-child(5) { animation-delay: 0.32s; }
+
+@keyframes staggerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 减少动画 */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -560,6 +603,17 @@ a:hover {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .page-fade-enter-active,
+  .page-fade-leave-active {
+    transition: none;
+  }
+
+  .page-fade-enter-from,
+  .page-fade-leave-to {
+    opacity: 1;
+    transform: none;
   }
 }
 

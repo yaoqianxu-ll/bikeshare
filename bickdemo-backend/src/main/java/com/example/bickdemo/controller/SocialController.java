@@ -8,8 +8,13 @@ import com.example.bickdemo.dto.FriendRequestCreateRequest;
 import com.example.bickdemo.dto.FriendRequestResponse;
 import com.example.bickdemo.dto.MessageReadReceiptResponse;
 import com.example.bickdemo.dto.SocialContactResponse;
+import com.example.bickdemo.dto.SocialEventType;
+import com.example.bickdemo.dto.SocialWsEvent;
+import com.example.bickdemo.dto.UserProfileResponse;
 import com.example.bickdemo.dto.UserSearchResponse;
 import com.example.bickdemo.service.SocialService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/social")
 @RequiredArgsConstructor
@@ -38,6 +44,7 @@ import java.util.List;
 public class SocialController {
 
     private final SocialService socialService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * 按用户名关键字搜索用户。
@@ -52,6 +59,22 @@ public class SocialController {
         }
         List<UserSearchResponse> response = socialService.searchUsers(keyword, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 获取指定用户的详细信息（用于聊天场景查看陌生人资料）。
+     */
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> getUserProfile(
+            @PathVariable Long userId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        try {
+            UserProfileResponse response = socialService.getUserProfile(userDetails.getUsername(), userId);
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
+        }
     }
 
     /**
@@ -189,6 +212,32 @@ public class SocialController {
             ChatMessageResponse response = socialService.sendMessage(userDetails.getUsername(), request);
             return ResponseEntity.ok(ApiResponse.success("Message sent", response));
         } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
+        }
+    }
+
+    /**
+     * 测试 WebSocket 直接发送（调试用）。
+     */
+    @PostMapping("/test-ws/{targetUsername}")
+    public ResponseEntity<ApiResponse<String>> testWebSocket(
+            @PathVariable String targetUsername,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        try {
+            SocialWsEvent testEvent = new SocialWsEvent();
+            testEvent.setEventType(SocialEventType.CHAT_MESSAGE);
+            testEvent.setRecipientUsername(targetUsername);
+            testEvent.setNotice("Test message from " + userDetails.getUsername());
+            
+            messagingTemplate.convertAndSendToUser(
+                    targetUsername,
+                    "/queue/social",
+                    testEvent
+            );
+            
+            return ResponseEntity.ok(ApiResponse.success("Test message sent to " + targetUsername, null));
+        } catch (Exception ex) {
             return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
         }
     }

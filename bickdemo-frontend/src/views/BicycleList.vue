@@ -712,9 +712,23 @@ onMounted(() => {
   border-radius: 20px;
   overflow: hidden;
   position: relative;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(15, 23, 42, 0.10);
+  opacity: 0;
+  animation: fadeIn 0.4s ease forwards;
 }
+
+.bike-card:nth-child(1) { animation-delay: 0.05s; }
+.bike-card:nth-child(2) { animation-delay: 0.1s; }
+.bike-card:nth-child(3) { animation-delay: 0.15s; }
+.bike-card:nth-child(4) { animation-delay: 0.2s; }
+.bike-card:nth-child(5) { animation-delay: 0.25s; }
+.bike-card:nth-child(6) { animation-delay: 0.3s; }
+.bike-card:nth-child(7) { animation-delay: 0.35s; }
+.bike-card:nth-child(8) { animation-delay: 0.4s; }
+.bike-card:nth-child(9) { animation-delay: 0.45s; }
+.bike-card:nth-child(10) { animation-delay: 0.5s; }
+.bike-card:nth-child(n+11) { animation-delay: 0.55s; }
 
 .bike-card::before {
   content: '';
@@ -725,7 +739,7 @@ onMounted(() => {
   height: 5px;
   background: rgba(255, 107, 53, 0.55);
   opacity: 0;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.3s ease;
 }
 
 .bike-card:hover::before {
@@ -733,8 +747,7 @@ onMounted(() => {
 }
 
 .bike-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 26px 70px rgba(15, 23, 42, 0.16);
+  box-shadow: 0 16px 50px rgba(15, 23, 42, 0.12);
 }
 
 .bike-card-image {
@@ -756,12 +769,12 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: block;
 }
 
 .bike-card:hover .bike-img {
-  transform: scale(1.06);
+  transform: scale(1.03);
 }
 
 .no-image {
@@ -1471,5 +1484,14 @@ html.dark .detail-dialog .detail-tags .el-tag {
 :deep(.el-empty__description) {
   color: #6c757d;
   font-size: 15px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

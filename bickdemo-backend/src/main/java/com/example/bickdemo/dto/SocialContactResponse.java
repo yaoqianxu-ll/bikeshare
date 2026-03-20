@@ -15,14 +15,21 @@ import java.time.LocalDateTime;
 public class SocialContactResponse {
     private Long userId;
     private String username;
+    private String email;
     private String avatar;
     private String bio;
+    private String role;
+    private Boolean enabled;
     private String relationStatus;
     private Long pendingRequestId;
     private String pendingDirection;
     private String lastMessagePreview;
     private LocalDateTime lastMessageTime;
     private LocalDateTime activityTime;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private Integer unreadCount;
     private Boolean canChat;
+    // 好友关系相关时间
+    private LocalDateTime friendSince;
 }

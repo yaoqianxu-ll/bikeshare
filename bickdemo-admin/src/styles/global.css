@@ -539,3 +539,27 @@ a {
 [class*="button"]:hover {
   transform: none !important;
 }
+
+/* ========== 禁用 el-select 的 title tooltip 文字滚动问题 ========== */
+.el-select .el-input__inner,
+.el-select .el-select__wrapper {
+  pointer-events: auto;
+}
+
+.el-select__selection .el-select__selection-text,
+.el-select .el-input__inner {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.el-select-dropdown__item {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.el-dropdown .el-tooltip__trigger,
+.el-dropdown [title] {
+  pointer-events: auto;
+}

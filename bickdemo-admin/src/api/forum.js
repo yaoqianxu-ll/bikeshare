@@ -36,3 +36,11 @@ export function deleteForumPost(id) {
     method: 'delete'
   })
 }
+
+export function pinForumPost(id, pinned) {
+  return request({
+    url: `/forum/posts/${id}/pin`,
+    method: 'post',
+    params: { pinned }
+  })
+}

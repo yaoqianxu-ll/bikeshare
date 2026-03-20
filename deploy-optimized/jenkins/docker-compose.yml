@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: bikeshare-jenkins
+    privileged: true
+    user: root
+    ports:
+      - "8081:8080"    # Jenkins Web 界面
+      - "50000:50000"  # Jenkins Agent 通信端口
+    environment:
+      - TZ=Asia/Shanghai
+      - JAVA_OPTS=-Duser.timezone=Asia/Shanghai
+    volumes:
+      # Jenkins 主目录 - 持久化配置和数据
+      - jenkins-data:/var/jenkins_home
+      # 挂载 Docker socket 以支持 Docker-in-Docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      # 挂载 Docker 命令
+      - /usr/bin/docker:/usr/bin/docker
+      # 项目代码目录 (优化方案)
+      - ../../:/workspace/bickdeploy
+      # Maven 仓库缓存
+      - maven-repo:/root/.m2
+      # Node.js 缓存
+      - node-cache:/root/.npm
+    networks:
+      - jenkins-network
+    restart: always
+
+networks:
+  jenkins-network:
+    driver: bridge
+
+volumes:
+  jenkins-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/jenkins
+  maven-repo:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/maven
+  node-cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/npm
