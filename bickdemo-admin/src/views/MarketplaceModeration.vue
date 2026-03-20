@@ -35,15 +35,29 @@
           @clear="handleFilter"
         />
         <el-select v-model="query.reviewStatus" clearable placeholder="审核状态" @change="handleFilter">
-          <el-option label="待审核" value="PENDING" />
-          <el-option label="已通过" value="APPROVED" />
-          <el-option label="已驳回" value="REJECTED" />
+          <el-option value="PENDING">
+            <span>待审核</span>
+          </el-option>
+          <el-option value="APPROVED">
+            <span>已通过</span>
+          </el-option>
+          <el-option value="REJECTED">
+            <span>已驳回</span>
+          </el-option>
         </el-select>
         <el-select v-model="query.status" clearable placeholder="挂牌状态" @change="handleFilter">
-          <el-option label="可出租" value="AVAILABLE" />
-          <el-option label="待交付" value="RESERVED" />
-          <el-option label="租赁中" value="RENTED" />
-          <el-option label="已下架" value="OFFLINE" />
+          <el-option value="AVAILABLE">
+            <span>可出租</span>
+          </el-option>
+          <el-option value="RESERVED">
+            <span>待交付</span>
+          </el-option>
+          <el-option value="RENTED">
+            <span>租赁中</span>
+          </el-option>
+          <el-option value="OFFLINE">
+            <span>已下架</span>
+          </el-option>
         </el-select>
       </div>
       <el-button plain @click="load">刷新列表</el-button>

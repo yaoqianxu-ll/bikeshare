@@ -894,4 +894,197 @@ onMounted(() => {
     height: 280px;
   }
 }
+
+/* ========== 黑夜模式 ========== */
+html.dark .page-title {
+  color: #f8fafc;
+}
+
+html.dark .page-subtitle {
+  color: #94a3b8;
+}
+
+html.dark .refresh-btn {
+  background: rgba(51, 65, 85, 0.60);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  color: #cbd5e1;
+}
+
+html.dark .refresh-btn:hover {
+  background: rgba(51, 65, 85, 0.80);
+}
+
+html.dark .title-icon {
+  background: rgba(255, 107, 53, 0.20);
+  border-color: rgba(255, 107, 53, 0.35);
+  color: #fdba74;
+}
+
+html.dark .stat-card {
+  background: rgba(17, 25, 40, 0.70);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+}
+
+html.dark .stat-card::before {
+  background: rgba(255, 107, 53, 0.7);
+}
+
+html.dark .stat-card:hover {
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.35);
+}
+
+html.dark .stat-label {
+  color: #94a3b8;
+}
+
+html.dark .stat-value {
+  color: #f8fafc;
+}
+
+html.dark .stat-unit {
+  color: #64748b;
+}
+
+html.dark .stat-footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .footer-label {
+  color: #94a3b8;
+}
+
+html.dark .footer-value {
+  color: #e2e8f0;
+}
+
+html.dark .footer-value.positive {
+  color: #34d399;
+}
+
+html.dark .stat-icon-wrap {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.20);
+}
+
+html.dark .stat-icon-wrap .el-icon {
+  color: #e2e8f0;
+}
+
+html.dark .tone-indigo {
+  background: rgba(99, 102, 241, 0.20);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+html.dark .tone-teal {
+  background: rgba(14, 165, 164, 0.20);
+  border-color: rgba(14, 165, 164, 0.35);
+}
+
+html.dark .tone-rose {
+  background: rgba(244, 63, 94, 0.20);
+  border-color: rgba(244, 63, 94, 0.35);
+}
+
+html.dark .tone-amber {
+  background: rgba(245, 158, 11, 0.20);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+html.dark .chart-card {
+  background: rgba(17, 25, 40, 0.70);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+}
+
+html.dark .chart-card:hover {
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.35);
+}
+
+html.dark .card-title {
+  color: #f8fafc;
+}
+
+html.dark .card-title .el-icon {
+  color: #fdba74;
+}
+
+html.dark :deep(.el-card__header) {
+  background: rgba(17, 25, 40, 0.80);
+  backdrop-filter: blur(16px) saturate(140%);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark :deep(.el-table) {
+  color: #cbd5e1;
+}
+
+html.dark :deep(.el-table th) {
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark :deep(.el-table td),
+html.dark :deep(.el-table__cell) {
+  background: transparent;
+  color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark :deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+html.dark :deep(.el-table__row:hover) {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.dark .rank-badge {
+  background: rgba(51, 65, 85, 0.50);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark .rank-top {
+  background: var(--brand-primary);
+  color: #fff;
+}
+
+html.dark .overview-label {
+  color: #94a3b8;
+}
+
+html.dark .overview-value {
+  color: #f8fafc;
+}
+
+html.dark .overview-icon {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.20);
+}
+
+html.dark .overview-icon .el-icon {
+  color: #e2e8f0;
+}
+
+html.dark :deep(.el-divider) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark :deep(.el-tag--warning) {
+  background: rgba(245, 158, 11, 0.20);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+html.dark :deep(.el-progress__text) {
+  color: #cbd5e1;
+}
+
+/* ECharts 图表黑夜模式适配 */
+html.dark .pie-chart,
+html.dark .bar-chart {
+  background: transparent;
+}
 </style>

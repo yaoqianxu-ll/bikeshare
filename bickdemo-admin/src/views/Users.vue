@@ -28,12 +28,20 @@
       <div class="toolbar-left">
         <el-input v-model="query.keyword" clearable placeholder="搜索用户名或邮箱" @keyup.enter="search" />
         <el-select v-model="query.role" clearable placeholder="角色">
-          <el-option label="管理员" value="ADMIN" />
-          <el-option label="普通用户" value="USER" />
+          <el-option value="ADMIN">
+            <span>管理员</span>
+          </el-option>
+          <el-option value="USER">
+            <span>普通用户</span>
+          </el-option>
         </el-select>
         <el-select v-model="query.enabled" clearable placeholder="状态">
-          <el-option label="正常" :value="true" />
-          <el-option label="禁用" :value="false" />
+          <el-option :value="true">
+            <span>正常</span>
+          </el-option>
+          <el-option :value="false">
+            <span>禁用</span>
+          </el-option>
         </el-select>
       </div>
       <div class="table-actions">

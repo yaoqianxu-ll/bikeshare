@@ -28,22 +28,42 @@
       <div class="toolbar-left">
         <el-input v-model="query.username" clearable placeholder="操作人员" @keyup.enter="search" />
         <el-select v-model="query.roleName" clearable placeholder="操作角色">
-          <el-option label="管理员" value="ADMIN" />
-          <el-option label="普通用户" value="USER" />
+          <el-option value="ADMIN">
+            <span>管理员</span>
+          </el-option>
+          <el-option value="USER">
+            <span>普通用户</span>
+          </el-option>
         </el-select>
         <el-select v-model="query.module" clearable placeholder="功能模块">
-          <el-option v-for="item in moduleOptions" :key="item" :label="item" :value="item" />
+          <el-option v-for="item in moduleOptions" :key="item" :value="item">
+            <span>{{ item }}</span>
+          </el-option>
         </el-select>
         <el-select v-model="query.type" clearable placeholder="操作类型">
-          <el-option label="查询" value="查询" />
-          <el-option label="新增" value="新增" />
-          <el-option label="修改" value="修改" />
-          <el-option label="删除" value="删除" />
-          <el-option label="审核" value="审核" />
+          <el-option value="查询">
+            <span>查询</span>
+          </el-option>
+          <el-option value="新增">
+            <span>新增</span>
+          </el-option>
+          <el-option value="修改">
+            <span>修改</span>
+          </el-option>
+          <el-option value="删除">
+            <span>删除</span>
+          </el-option>
+          <el-option value="审核">
+            <span>审核</span>
+          </el-option>
         </el-select>
         <el-select v-model="query.status" clearable placeholder="操作状态">
-          <el-option label="成功" value="SUCCESS" />
-          <el-option label="失败" value="FAIL" />
+          <el-option value="SUCCESS">
+            <span>成功</span>
+          </el-option>
+          <el-option value="FAIL">
+            <span>失败</span>
+          </el-option>
         </el-select>
         <el-input v-model="query.ip" clearable placeholder="操作 IP" @keyup.enter="search" />
         <el-input v-model="query.requestUri" clearable placeholder="请求 URL" @keyup.enter="search" />

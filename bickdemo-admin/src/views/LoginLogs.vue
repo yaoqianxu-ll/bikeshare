@@ -24,12 +24,20 @@
       <div class="toolbar-left">
         <el-input v-model="query.username" clearable placeholder="用户名 / 邮箱" @keyup.enter="search" />
         <el-select v-model="query.method" clearable placeholder="登录方式">
-          <el-option label="用户名登录" value="USERNAME" />
-          <el-option label="邮箱登录" value="EMAIL" />
+          <el-option value="USERNAME">
+            <span>用户名登录</span>
+          </el-option>
+          <el-option value="EMAIL">
+            <span>邮箱登录</span>
+          </el-option>
         </el-select>
         <el-select v-model="query.status" clearable placeholder="状态">
-          <el-option label="成功" value="SUCCESS" />
-          <el-option label="失败" value="FAIL" />
+          <el-option value="SUCCESS">
+            <span>成功</span>
+          </el-option>
+          <el-option value="FAIL">
+            <span>失败</span>
+          </el-option>
         </el-select>
         <el-input v-model="query.ip" clearable placeholder="登录 IP" @keyup.enter="search" />
         <el-date-picker

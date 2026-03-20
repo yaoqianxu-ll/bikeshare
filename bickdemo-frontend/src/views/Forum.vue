@@ -1408,13 +1408,10 @@ onMounted(() => {
 .forum-hero {
   padding: 24px;
   border-radius: 20px;
-  background:
-    radial-gradient(circle at top left, rgba(64, 158, 255, 0.12), transparent 40%),
-    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 94%, transparent) 0%, var(--bs-surface) 100%);
+  background: #f8f9fa;
   border: 1px solid var(--bs-stroke);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
   margin-bottom: 20px;
-  backdrop-filter: blur(20px) saturate(160%);
 }
 
 /* Hero 区域 - 更紧凑的布局 */
@@ -1495,7 +1492,7 @@ onMounted(() => {
   padding: 6px 14px;
   border-radius: 999px;
   border: 1px solid var(--bs-stroke);
-  background: color-mix(in srgb, var(--bs-surface-solid) 92%, transparent);
+  background: #f9fafb;
   color: var(--bs-muted);
   font-size: 13px;
   font-weight: 500;
@@ -1548,9 +1545,8 @@ onMounted(() => {
 .side-card {
   border-radius: 26px;
   border: 1px solid var(--bs-stroke);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 90%, transparent) 0%, var(--bs-surface) 100%);
+  background: #ffffff;
   box-shadow: 0 20px 54px rgba(15, 23, 42, 0.10);
-  backdrop-filter: blur(18px) saturate(150%);
 }
 
 /* 可折叠的发帖表单 */
@@ -1726,7 +1722,7 @@ onMounted(() => {
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--bs-stroke);
-  background: color-mix(in srgb, var(--bs-surface-solid) 92%, transparent);
+  background: #f3f4f6;
 }
 
 .forum-image-upload :deep(.el-upload),
@@ -1739,8 +1735,7 @@ onMounted(() => {
   min-height: 116px;
   border: 1px dashed color-mix(in srgb, var(--el-color-primary) 28%, var(--bs-stroke));
   border-radius: 18px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--bs-surface) 88%, transparent) 100%);
+  background: #f9fafb;
   color: var(--bs-ink);
   display: flex;
   flex-direction: column;
@@ -1801,8 +1796,7 @@ onMounted(() => {
   align-items: center;
   padding: 18px 20px;
   border-radius: 20px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 95%, transparent) 0%, color-mix(in srgb, var(--bs-surface) 88%, transparent) 100%);
+  background: #f9fafb;
   border: 1px solid color-mix(in srgb, var(--el-color-primary) 14%, var(--bs-stroke));
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
@@ -1826,7 +1820,7 @@ onMounted(() => {
   padding: 22px;
   border-radius: 24px;
   border: 1px solid var(--bs-stroke);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 90%, transparent) 0%, var(--bs-surface) 100%);
+  background: #ffffff;
   box-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
   cursor: pointer;
   transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
@@ -1835,7 +1829,7 @@ onMounted(() => {
 
 .post-card.is-pinned {
   border-color: rgba(var(--brand-primary-rgb), 0.35);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--el-color-primary-light-9) 50%, var(--bs-surface-solid)) 0%, var(--bs-surface) 100%);
+  background: #fafafa;
 }
 
 .pinned-badge {
@@ -1979,7 +1973,7 @@ onMounted(() => {
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--bs-stroke);
-  background: color-mix(in srgb, var(--bs-surface-solid) 92%, transparent);
+  background: #f3f4f6;
 }
 
 .post-image,
@@ -2040,7 +2034,7 @@ onMounted(() => {
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--bs-stroke) 88%, transparent);
-  background: color-mix(in srgb, var(--bs-surface-solid) 95%, transparent);
+  background: #f9fafb;
   color: var(--bs-muted);
   font-size: 13px;
   line-height: 1;
@@ -2143,7 +2137,7 @@ onMounted(() => {
   padding: 14px;
   border-radius: 16px;
   border: 1px solid var(--bs-stroke);
-  background: color-mix(in srgb, var(--bs-surface-solid) 94%, transparent);
+  background: #f9fafb;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -2238,7 +2232,7 @@ onMounted(() => {
   padding: 14px;
   border-radius: 16px;
   border: 1px solid var(--bs-stroke);
-  background: color-mix(in srgb, var(--bs-surface-solid) 94%, transparent);
+  background: #f9fafb;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -2299,8 +2293,7 @@ onMounted(() => {
   padding: 16px;
   border-radius: 18px;
   border: 1px solid var(--bs-stroke);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--bs-surface) 90%, transparent) 100%);
+  background: #f9fafb;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
@@ -2479,8 +2472,7 @@ onMounted(() => {
   align-items: center;
   padding: 14px 16px;
   border-radius: 18px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--bs-surface) 88%, transparent) 100%);
+  background: #f9fafb;
   border: 1px solid color-mix(in srgb, var(--el-color-primary) 10%, var(--bs-stroke));
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
 }
@@ -2531,8 +2523,7 @@ onMounted(() => {
   padding: 16px 18px;
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--el-color-warning) 26%, var(--bs-stroke));
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--el-color-warning-light-9) 52%, var(--bs-surface)) 100%);
+  background: #fffbeb;
   color: var(--bs-muted);
   display: grid;
   gap: 6px;
@@ -2558,8 +2549,7 @@ onMounted(() => {
   margin-bottom: 12px;
   padding: 12px 14px;
   border-radius: 16px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--el-color-primary-light-9) 68%, var(--bs-surface)) 100%);
+  background: #f9fafb;
   border: 1px solid color-mix(in srgb, var(--el-color-primary) 18%, var(--bs-stroke));
   display: flex;
   justify-content: space-between;
@@ -2581,8 +2571,7 @@ onMounted(() => {
   align-items: center;
   padding: 14px 16px;
   border-radius: 16px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--el-fill-color-light) 82%, var(--bs-surface)) 100%);
+  background: #f9fafb;
   border: 1px solid color-mix(in srgb, var(--el-color-primary) 12%, var(--bs-stroke));
   color: var(--bs-muted);
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
@@ -2598,7 +2587,7 @@ onMounted(() => {
   padding: 16px 18px;
   border-radius: 22px;
   border: 1px solid var(--bs-stroke);
-  background: color-mix(in srgb, var(--bs-surface-solid) 92%, transparent);
+  background: #f9fafb;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -2609,7 +2598,7 @@ onMounted(() => {
   margin-left: 24px;
   padding-left: 20px;
   border-left: 3px solid rgba(var(--brand-primary-rgb), 0.20);
-  background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.06) 0%, rgba(var(--brand-primary-rgb), 0.02) 100%);
+  background: #f3f4f6;
   border-color: rgba(var(--brand-primary-rgb), 0.14);
 }
 
@@ -2686,8 +2675,7 @@ onMounted(() => {
   margin-top: 20px;
   padding: 18px;
   border-radius: 18px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, color-mix(in srgb, var(--bs-surface) 88%, transparent) 100%);
+  background: #f9fafb;
   border: 1px solid color-mix(in srgb, var(--el-color-primary) 10%, var(--bs-stroke));
   color: var(--bs-muted);
   line-height: 1.8;
@@ -2705,7 +2693,7 @@ onMounted(() => {
   padding: 16px;
   border-radius: 18px;
   border: 1px solid var(--bs-stroke);
-  background: color-mix(in srgb, var(--bs-surface-solid) 92%, transparent);
+  background: #f9fafb;
 }
 
 .profile-stat span,
@@ -2726,14 +2714,14 @@ onMounted(() => {
   padding: 16px;
   border-radius: 18px;
   border: 1px solid var(--bs-stroke);
-  background: color-mix(in srgb, var(--bs-surface-solid) 92%, transparent);
+  background: #f9fafb;
 }
 
 .feed-skeleton,
 .forum-empty {
   border-radius: 22px;
   border: 1px solid var(--bs-stroke);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--bs-surface-solid) 90%, transparent) 0%, var(--bs-surface) 100%);
+  background: #ffffff;
   box-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
   padding: 20px;
 }
@@ -2741,7 +2729,7 @@ onMounted(() => {
 :deep(.post-detail-drawer .el-drawer__body),
 :deep(.author-profile-drawer .el-drawer__body) {
   padding: 24px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bs-surface-solid) 96%, transparent) 0%, var(--bs-surface) 100%);
+  background: #ffffff;
 }
 
 :deep(.composer-card .el-card__body),
@@ -2852,5 +2840,637 @@ onMounted(() => {
     margin-left: 0;
     padding-left: 16px;
   }
+}
+
+/* ========== 黑夜模式 ========== */
+html.dark .forum-hero {
+  background: rgba(15, 23, 42, 0.60);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.20);
+}
+
+html.dark .hero-badge {
+  background: rgba(var(--brand-primary-rgb), 0.20);
+  color: #fdba74;
+}
+
+html.dark .hero-title-section h1 {
+  color: #f8fafc;
+}
+
+html.dark .hero-desc {
+  color: #cbd5e1;
+}
+
+html.dark .category-bar {
+  border-top-color: rgba(148, 163, 184, 0.15);
+}
+
+html.dark .category-pill {
+  background: rgba(30, 41, 59, 0.60);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+}
+
+html.dark .category-pill:hover {
+  border-color: rgba(var(--brand-primary-rgb), 0.40);
+  color: #f8fafc;
+}
+
+html.dark .category-pill.active {
+  background: rgba(var(--brand-primary-rgb), 0.20);
+  border-color: rgba(var(--brand-primary-rgb), 0.50);
+  color: #fdba74;
+}
+
+html.dark .category-count {
+  background: rgba(var(--brand-primary-rgb), 0.28);
+  color: #fdba74;
+}
+
+html.dark .composer-card,
+html.dark .side-card {
+  background: rgba(17, 25, 40, 0.70);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.28);
+}
+
+html.dark .composer-toggle {
+  color: #cbd5e1;
+}
+
+html.dark .composer-toggle:hover {
+  background: rgba(var(--brand-primary-rgb), 0.08);
+}
+
+html.dark .composer-toggle-text {
+  color: #94a3b8;
+}
+
+html.dark .composer-toggle-icon {
+  color: #64748b;
+}
+
+html.dark .composer-form {
+  border-top-color: rgba(148, 163, 184, 0.15);
+}
+
+html.dark .composer-toolbar {
+  border-top-color: rgba(148, 163, 184, 0.15);
+}
+
+html.dark .composer-tip {
+  color: #64748b;
+}
+
+html.dark .composer-guest {
+  color: #94a3b8;
+}
+
+html.dark .composer-guest p {
+  color: #94a3b8;
+}
+
+html.dark .feed-header h2,
+html.dark .comments-header h3 {
+  color: #f8fafc;
+}
+
+html.dark .feed-header p,
+html.dark .comments-header p {
+  color: #94a3b8;
+}
+
+html.dark .composer-media-header,
+html.dark .composer-toolbar {
+  color: #94a3b8;
+}
+
+html.dark .composer-media-header strong {
+  color: #e2e8f0;
+}
+
+html.dark .upload-placeholder {
+  background: rgba(30, 41, 59, 0.50);
+  border-color: rgba(var(--brand-primary-rgb), 0.30);
+  color: #e2e8f0;
+}
+
+html.dark .preview-item {
+  background: rgba(51, 65, 85, 0.40);
+}
+
+html.dark .remove-btn {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+html.dark .post-card {
+  background: rgba(17, 25, 40, 0.60);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
+}
+
+html.dark .post-card:hover {
+  border-color: rgba(var(--brand-primary-rgb), 0.30);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+}
+
+html.dark .post-card.is-pinned {
+  border-color: rgba(var(--brand-primary-rgb), 0.45);
+  background: rgba(30, 41, 59, 0.50);
+}
+
+html.dark .post-title {
+  color: #f8fafc;
+}
+
+html.dark .post-content {
+  color: #cbd5e1;
+}
+
+html.dark .post-stats,
+html.dark .detail-stats {
+  color: #94a3b8;
+}
+
+html.dark .stat-pill {
+  background: rgba(30, 41, 59, 0.50);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  color: #cbd5e1;
+}
+
+html.dark .stat-action:hover:not(:disabled) {
+  color: #f8fafc;
+  border-color: rgba(var(--brand-primary-rgb), 0.35);
+}
+
+html.dark .stat-action.is-active {
+  color: #fdba74;
+  border-color: rgba(var(--brand-primary-rgb), 0.45);
+  background: rgba(var(--brand-primary-rgb), 0.12);
+}
+
+html.dark .post-image-item,
+html.dark .detail-image-item {
+  background: rgba(30, 41, 59, 0.40);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+html.dark .more-images-mask {
+  background: rgba(2, 6, 23, 0.70);
+}
+
+html.dark .author-text strong {
+  color: #f8fafc;
+}
+
+html.dark .author-text span {
+  color: #64748b;
+}
+
+/* 标签黑夜模式 */
+html.dark .badge {
+  color: #e2e8f0;
+}
+
+html.dark .category-badge {
+  background: rgba(51, 65, 85, 0.50);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+}
+
+html.dark .status-approved {
+  background: rgba(16, 185, 129, 0.20);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+html.dark .status-pending {
+  background: rgba(245, 158, 11, 0.20);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+html.dark .status-rejected {
+  background: rgba(239, 68, 68, 0.20);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+html.dark .mine-badge {
+  background: rgba(59, 130, 246, 0.20);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+html.dark .pinned-badge {
+  background: rgba(249, 115, 22, 0.20);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.35);
+}
+
+/* 按钮黑夜模式 */
+html.dark .btn-approve {
+  background: rgba(16, 185, 129, 0.20) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #34d399 !important;
+}
+
+html.dark .btn-approve:hover {
+  background: rgba(16, 185, 129, 0.30) !important;
+  border-color: rgba(16, 185, 129, 0.50) !important;
+}
+
+html.dark .btn-reject {
+  background: rgba(239, 68, 68, 0.20) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  color: #f87171 !important;
+}
+
+html.dark .btn-reject:hover {
+  background: rgba(239, 68, 68, 0.30) !important;
+  border-color: rgba(239, 68, 68, 0.50) !important;
+}
+
+html.dark .btn-pin {
+  background: rgba(249, 115, 22, 0.20) !important;
+  border-color: rgba(249, 115, 22, 0.35) !important;
+  color: #fb923c !important;
+}
+
+html.dark .btn-pin:hover {
+  background: rgba(249, 115, 22, 0.30) !important;
+  border-color: rgba(249, 115, 22, 0.50) !important;
+}
+
+html.dark .btn-unpin {
+  background: rgba(51, 65, 85, 0.50) !important;
+  border-color: rgba(148, 163, 184, 0.25) !important;
+  color: #cbd5e1 !important;
+}
+
+html.dark .btn-unpin:hover {
+  background: rgba(51, 65, 85, 0.70) !important;
+}
+
+html.dark .btn-delete {
+  background: rgba(239, 68, 68, 0.20) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  color: #f87171 !important;
+}
+
+html.dark .btn-delete:hover {
+  background: rgba(239, 68, 68, 0.30) !important;
+  border-color: rgba(239, 68, 68, 0.50) !important;
+}
+
+/* 侧边栏卡片 */
+html.dark .side-card h3 {
+  color: #f8fafc;
+}
+
+html.dark .side-list {
+  color: #94a3b8;
+}
+
+html.dark .metric-item {
+  background: rgba(30, 41, 59, 0.50);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.20);
+}
+
+html.dark .metric-item span {
+  color: #94a3b8;
+}
+
+html.dark .metric-item strong {
+  color: #60a5fa;
+}
+
+/* 热门帖子 */
+html.dark .hot-posts-header h3 {
+  color: #f8fafc;
+}
+
+html.dark .hot-post-item {
+  background: rgba(30, 41, 59, 0.40);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+html.dark .hot-post-item:hover {
+  border-color: rgba(var(--brand-primary-rgb), 0.30);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+html.dark .hot-rank {
+  background: rgba(71, 85, 105, 0.40);
+  color: #94a3b8;
+}
+
+html.dark .hot-rank.top3 {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #fff;
+}
+
+html.dark .hot-post-title {
+  color: #f8fafc;
+}
+
+html.dark .hot-post-meta {
+  color: #64748b;
+}
+
+/* 我的帖子 */
+html.dark .my-posts-header h3 {
+  color: #f8fafc;
+}
+
+html.dark .my-post-item {
+  background: rgba(30, 41, 59, 0.40);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+html.dark .my-post-item:hover {
+  border-color: rgba(var(--brand-primary-rgb), 0.30);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+html.dark .my-post-title {
+  color: #f8fafc;
+}
+
+html.dark .my-post-meta {
+  color: #64748b;
+}
+
+html.dark .my-post-stats {
+  color: #64748b;
+}
+
+/* 审核卡片 */
+html.dark .review-card-head h3 {
+  color: #f8fafc;
+}
+
+html.dark .review-card-head p {
+  color: #64748b;
+}
+
+html.dark .review-item {
+  background: rgba(30, 41, 59, 0.40);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.20);
+}
+
+html.dark .review-item-title {
+  color: #f8fafc;
+}
+
+html.dark .review-item-meta {
+  color: #64748b;
+}
+
+html.dark .review-item-content {
+  color: #94a3b8;
+}
+
+/* 评论区域 */
+html.dark .comment-item {
+  background: rgba(30, 41, 59, 0.40);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.20);
+}
+
+html.dark .comment-item-reply {
+  background: rgba(15, 23, 42, 0.60);
+  border-color: rgba(var(--brand-primary-rgb), 0.20);
+  border-left-color: rgba(var(--brand-primary-rgb), 0.25);
+}
+
+html.dark .comment-content {
+  color: #e2e8f0;
+}
+
+html.dark .reply-banner {
+  background: rgba(30, 41, 59, 0.40);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.25);
+  color: #94a3b8;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.20);
+}
+
+html.dark .reply-banner strong {
+  color: #f8fafc;
+}
+
+html.dark .comment-login-tip {
+  background: rgba(30, 41, 59, 0.40);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.18);
+  color: #94a3b8;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.20);
+}
+
+html.dark .reply-pill {
+  background: rgba(var(--brand-primary-rgb), 0.15);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.25);
+  color: #93c5fd;
+}
+
+html.dark .reply-action {
+  background: rgba(var(--brand-primary-rgb), 0.12);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.20);
+}
+
+/* 详情抽屉 */
+html.dark :deep(.post-detail-drawer .el-drawer__body),
+html.dark :deep(.author-profile-drawer .el-drawer__body) {
+  background: rgba(15, 23, 42, 0.80);
+}
+
+html.dark .detail-title {
+  color: #f8fafc;
+}
+
+html.dark .detail-content {
+  color: #e2e8f0;
+}
+
+html.dark .detail-review-note {
+  background: rgba(254, 240, 138, 0.10);
+  border: 1px solid rgba(245, 158, 11, 0.30);
+  color: #94a3b8;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.20);
+}
+
+html.dark .detail-review-note strong {
+  color: #fbbf24;
+}
+
+/* 作者资料 */
+html.dark .profile-text h3 {
+  color: #f8fafc;
+}
+
+html.dark .profile-bio {
+  background: rgba(30, 41, 59, 0.40);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
+  color: #94a3b8;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.20);
+}
+
+html.dark .profile-stat {
+  background: rgba(30, 41, 59, 0.40);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+html.dark .profile-stat span,
+html.dark .profile-joined span {
+  color: #94a3b8;
+}
+
+html.dark .profile-stat strong,
+html.dark .profile-joined strong {
+  color: #e2e8f0;
+}
+
+html.dark .profile-joined {
+  background: rgba(30, 41, 59, 0.40);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+/* 空状态和骨架屏 */
+html.dark .feed-skeleton,
+html.dark .forum-empty {
+  background: rgba(17, 25, 40, 0.60);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
+}
+
+/* 分页 */
+html.dark .pagination-wrap :deep(.el-pagination .btn-prev),
+html.dark .pagination-wrap :deep(.el-pagination .btn-next) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+html.dark .pagination-wrap :deep(.el-pagination .btn-prev:hover),
+html.dark .pagination-wrap :deep(.el-pagination .btn-next:hover) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+html.dark .pagination-wrap :deep(.el-pagination li.is-active) {
+  background: var(--el-color-primary);
+}
+
+/* Element Plus 输入框黑夜模式 */
+html.dark :deep(.el-input__wrapper),
+html.dark :deep(.el-textarea__inner),
+html.dark :deep(.el-select__wrapper) {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+html.dark :deep(.el-input__wrapper:hover),
+html.dark :deep(.el-textarea__inner:hover),
+html.dark :deep(.el-select__wrapper:hover) {
+  box-shadow: 0 0 0 1px rgba(var(--brand-primary-rgb), 0.45) inset;
+}
+
+html.dark :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px rgba(var(--brand-primary-rgb), 0.68) inset;
+}
+
+/* Element Plus 按钮黑夜模式 */
+html.dark :deep(.el-button--default) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(148, 163, 184, 0.20);
+  color: #cbd5e1;
+}
+
+html.dark :deep(.el-button--default:hover) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Element Plus 标签黑夜模式 */
+html.dark :deep(.el-tag--info) {
+  background: rgba(148, 163, 184, 0.20);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.30);
+}
+
+/* Element Plus 对话框黑夜模式 */
+html.dark :deep(.el-dialog) {
+  background: rgba(15, 23, 42, 0.95);
+}
+
+html.dark :deep(.el-dialog__header) {
+  background: rgba(15, 23, 42, 0.80);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark :deep(.el-dialog__title) {
+  color: #f8fafc;
+}
+
+html.dark :deep(.el-dialog__footer) {
+  background: rgba(15, 23, 42, 0.60);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Element Plus 描述列表黑夜模式 */
+html.dark :deep(.el-descriptions__label) {
+  color: #94a3b8;
+}
+
+html.dark :deep(.el-descriptions__content) {
+  color: #e2e8f0;
+}
+
+html.dark :deep(.el-descriptions-item__cell) {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Element Plus 抽屉黑夜模式 */
+html.dark :deep(.el-drawer) {
+  background: rgba(15, 23, 42, 0.98);
+}
+
+/* Element Plus 头像黑夜模式 */
+html.dark :deep(.el-avatar) {
+  background: rgba(51, 65, 85, 0.60);
+  color: #e2e8f0;
+}
+
+/* Element Plus 下拉菜单黑夜模式 */
+html.dark :deep(.el-select-dropdown) {
+  background: rgba(17, 25, 40, 0.95);
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+html.dark :deep(.el-select-dropdown__item) {
+  color: #cbd5e1;
+}
+
+html.dark :deep(.el-select-dropdown__item:hover) {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.dark :deep(.el-select-dropdown__item.selected) {
+  color: var(--el-color-primary);
+}
+
+/* Element Plus 滚动条黑夜模式 */
+html.dark :deep(.el-select-dropdown .el-scrollbar__wrap) {
+  overflow-x: hidden;
+}
+
+/* Element Plus 加载动画黑夜模式 */
+html.dark :deep(.el-loading-mask) {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+/* Element Plus 空状态黑夜模式 */
+html.dark :deep(.el-empty__description) {
+  color: #64748b;
 }
 </style>

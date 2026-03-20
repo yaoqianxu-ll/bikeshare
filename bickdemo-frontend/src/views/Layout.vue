@@ -1086,14 +1086,16 @@ watch(
 }
 
 :deep(.el-dropdown-menu__item a) {
-  text-decoration: none;
+  text-decoration: none !important;
   color: inherit;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-/* 主内容区 */
+:deep(.el-dropdown-menu__item span) {
+  text-decoration: none !important;
+}
 .main-content {
   flex: 1;
   padding: 0;
