@@ -3,15 +3,15 @@
     <!-- 粒子背景 -->
     <ParticlesBg />
 
-    <!-- 登录卡片 -->
-    <div class="login-card">
-      <!-- 左侧动画区 -->
+    <!-- 登录容器 - 全屏布局 -->
+    <div class="login-container">
+      <!-- 左侧视觉区 -->
       <div class="login-visual">
         <div class="visual-content">
           <lottie-animation
             :animation-data="lottieSrc"
             :loop="true"
-            :speed="1"
+            :speed="0.8"
             class="brand-animation"
           />
           <h1 class="brand-title">BikeShare</h1>
@@ -37,7 +37,9 @@
       <div class="login-form-section">
         <div class="form-wrapper">
           <div class="form-header">
-            <span class="login-badge">Admin Portal</span>
+            <div class="logo-small">
+              <n-icon :component="BicycleIcon" size="32" color="#3b82f6" />
+            </div>
             <h2>欢迎回来</h2>
             <p class="form-subtitle">请登录您的管理员账户</p>
           </div>
@@ -108,6 +110,8 @@ const PersonIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox
   h('path', { d: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' }))
 const LockIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
   h('path', { d: 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' }))
+const BicycleIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
+  h('path', { d: 'M15.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM5 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5zm5.8-10l2.4-2.4.8.8c1.3 1.3 3 2.1 5.1 2.1V9c-1.5 0-2.7-.6-3.6-1.5l-1.9-1.9c-.5-.4-1-.6-1.6-.6s-1.1.2-1.4.6L7.8 8.4c-.4.4-.6.9-.6 1.4 0 .6.2 1.1.6 1.4L11 14v5h2v-6.2l-2.2-2.3zM19 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z' }))
 const DataIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
   h('path', { d: 'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z' }))
 const UserIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
@@ -299,40 +303,32 @@ const goToHome = () => {
 
 <style scoped>
 .login-page {
-  min-height: 100vh;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.login-card {
-  position: relative;
-  z-index: 1;
   width: 100%;
-  max-width: 900px;
-  display: grid;
-  grid-template-columns: 420px 1fr;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+  height: 100vh;
+  position: relative;
   overflow: hidden;
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  display: flex;
 }
 
-/* ========== 左侧动画区 ========== */
+.login-container {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 55% 1fr;
+}
+
+/* ========== 左侧视觉区 - 全屏 ========== */
 .login-visual {
+  height: 100%;
   background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
-  padding: 48px 42px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   position: relative;
   overflow: hidden;
+  padding: 60px;
 }
 
 .login-visual::before {
@@ -340,8 +336,8 @@ const goToHome = () => {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(300px 200px at 20% 10%, rgba(96, 165, 250, 0.25), transparent 60%),
-    radial-gradient(400px 300px at 80% 80%, rgba(139, 92, 246, 0.15), transparent 60%);
+    radial-gradient(400px 300px at 20% 10%, rgba(96, 165, 250, 0.25), transparent 60%),
+    radial-gradient(500px 400px at 80% 80%, rgba(139, 92, 246, 0.15), transparent 60%);
   pointer-events: none;
 }
 
@@ -352,62 +348,66 @@ const goToHome = () => {
   flex-direction: column;
   align-items: center;
   text-align: center;
+  max-width: 480px;
 }
 
 .brand-animation {
-  width: 200px;
-  height: 200px;
-  margin-bottom: 24px;
-  filter: drop-shadow(0 10px 30px rgba(96, 165, 250, 0.3));
+  width: 280px;
+  height: 280px;
+  margin-bottom: 32px;
+  filter: drop-shadow(0 15px 40px rgba(96, 165, 250, 0.3));
 }
 
 .brand-title {
   color: #fff;
-  font-size: 32px;
+  font-size: 48px;
   font-weight: 700;
-  margin: 0 0 8px;
-  letter-spacing: -0.5px;
+  margin: 0 0 12px;
+  letter-spacing: -1px;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
 }
 
 .brand-subtitle {
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 14px;
-  margin: 0 0 32px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  margin: 0 0 48px;
   font-weight: 400;
+  letter-spacing: 2px;
 }
 
 .brand-features {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   width: 100%;
+  justify-content: center;
 }
 
 .feature-item {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
-  padding: 12px 18px;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px);
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: rgba(255, 255, 255, 0.95);
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.25s ease;
+  transition: all 0.3s ease;
+  cursor: default;
 }
 
 .feature-item:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.25);
-  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .feature-item .n-icon {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -416,49 +416,48 @@ const goToHome = () => {
 
 /* ========== 右侧表单区 ========== */
 .login-form-section {
-  padding: 40px 48px 56px 48px;
-  background: rgba(255, 255, 255, 0.98);
+  height: 100%;
+  background: #fff;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  padding: 60px 80px;
+  position: relative;
 }
 
 .form-wrapper {
   width: 100%;
-  max-width: 320px;
-  padding-bottom: 8px;
+  max-width: 400px;
 }
 
 .form-header {
-  margin-bottom: 36px;
+  margin-bottom: 48px;
   text-align: center;
 }
 
-.login-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 999px;
+.logo-small {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 197, 253, 0.08));
-  color: #3b82f6;
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 18px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(59, 130, 246, 0.15);
 }
 
 .form-header h2 {
-  margin: 0 0 8px;
-  color: #1e293b;
-  font-size: 24px;
+  margin: 0 0 12px;
+  color: #0f172a;
+  font-size: 28px;
   font-weight: 700;
-  letter-spacing: -0.3px;
 }
 
 .form-subtitle {
   margin: 0;
-  color: #94a3b8;
-  font-size: 14px;
+  color: #64748b;
+  font-size: 15px;
 }
 
 /* 表单样式 */
@@ -467,7 +466,7 @@ const goToHome = () => {
 }
 
 .n-form-item {
-  margin-bottom: 18px !important;
+  margin-bottom: 24px !important;
 }
 
 .n-form-item:last-child {
@@ -477,7 +476,7 @@ const goToHome = () => {
 :deep(.n-input) {
   background: #f8fafc;
   border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 14px;
   transition: all 0.3s ease;
 }
 
@@ -487,7 +486,7 @@ const goToHome = () => {
 
 :deep(.n-input--focus) {
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
 }
 
 :deep(.n-input__prefix) {
@@ -499,14 +498,15 @@ const goToHome = () => {
 }
 
 :deep(.n-input__input) {
-  color: #1e293b;
+  color: #0f172a;
+  font-size: 15px;
 }
 
 /* 修复浏览器自动填充白底问题 */
 :deep(.n-input__input:-webkit-autofill),
 :deep(.n-input__input:-webkit-autofill:hover),
 :deep(.n-input__input:-webkit-autofill:focus) {
-  -webkit-text-fill-color: #1e293b;
+  -webkit-text-fill-color: #0f172a;
   -webkit-box-shadow: 0 0 0 1000px #f8fafc inset;
   transition: background-color 5000s ease-in-out 0s;
 }
@@ -517,30 +517,30 @@ const goToHome = () => {
 
 /* 登录按钮 */
 .submit-btn {
-  margin-top: 8px;
-  height: 46px;
-  font-size: 15px;
+  margin-top: 12px;
+  height: 52px;
+  font-size: 16px;
   font-weight: 600;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   transition: all 0.3s ease;
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
 }
 
 .submit-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 32px rgba(59, 130, 246, 0.35);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(59, 130, 246, 0.35);
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
 }
 
 .submit-btn:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(-1px);
 }
 
 /* 底部链接 */
 .login-footer {
-  margin-top: 24px;
+  margin-top: 32px;
   text-align: center;
 }
 
@@ -554,67 +554,61 @@ const goToHome = () => {
 }
 
 /* ========== 响应式 ========== */
-@media (max-width: 820px) {
-  .login-page {
-    padding: 16px;
-  }
-
-  .login-card {
+@media (max-width: 1024px) {
+  .login-container {
     grid-template-columns: 1fr;
-    max-width: 420px;
   }
 
   .login-visual {
-    padding: 36px 28px;
+    height: 45vh;
+    padding: 40px 30px;
+  }
+
+  .brand-animation {
+    width: 180px;
+    height: 180px;
+    margin-bottom: 24px;
+  }
+
+  .brand-title {
+    font-size: 36px;
+  }
+
+  .brand-subtitle {
+    font-size: 14px;
+    margin-bottom: 32px;
+  }
+
+  .brand-features {
+    flex-wrap: wrap;
+  }
+
+  .feature-item {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+
+  .login-form-section {
+    height: 55vh;
+    padding: 40px 30px;
+  }
+}
+
+@media (max-width: 640px) {
+  .login-visual {
+    height: auto;
+    min-height: 40vh;
+    padding: 30px 20px;
   }
 
   .brand-animation {
     width: 140px;
     height: 140px;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
   }
 
   .brand-title {
-    font-size: 24px;
-  }
-
-  .brand-subtitle {
-    font-size: 12px;
-    margin-bottom: 20px;
-  }
-
-  .brand-features {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-  }
-
-  .feature-item {
-    flex: 1;
-    min-width: 90px;
-    padding: 10px 14px;
-    font-size: 13px;
-  }
-
-  .login-form-section {
-    padding: 40px 32px;
-  }
-}
-
-@media (max-width: 520px) {
-  .login-visual {
-    padding: 28px 20px;
-  }
-
-  .brand-animation {
-    width: 100px;
-    height: 100px;
-    margin-bottom: 14px;
-  }
-
-  .brand-title {
-    font-size: 20px;
+    font-size: 28px;
   }
 
   .brand-features {
@@ -626,11 +620,17 @@ const goToHome = () => {
   }
 
   .form-header h2 {
-    font-size: 20px;
+    font-size: 24px;
   }
 
-  .form-wrapper {
-    max-width: 100%;
+  .logo-small {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 16px;
+  }
+
+  .submit-btn {
+    height: 48px;
   }
 }
 </style>
