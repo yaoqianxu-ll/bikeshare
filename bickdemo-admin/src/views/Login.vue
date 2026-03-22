@@ -414,17 +414,44 @@ const goToHome = () => {
   font-size: 15px;
 }
 
+/* 修复密码框显示/隐藏密码按钮可见性问题 */
+:deep(.n-input__suffix),
+:deep(.n-base-icon.n-input__icon) {
+  color: #64748b;
+  transition: color 0.2s ease;
+}
+
+:deep(.n-input__suffix:hover),
+:deep(.n-base-icon.n-input__icon:hover) {
+  color: #3b82f6;
+}
+
+/* 确保密码切换按钮有足够的对比度 */
+:deep(.n-input .n-input__icon_el) {
+  color: #475569;
+}
+
+:deep(.n-input .n-input__icon_el:hover) {
+  color: #1e40af;
+}
+
 /* 修复浏览器自动填充白底问题 */
 :deep(.n-input__input:-webkit-autofill),
 :deep(.n-input__input:-webkit-autofill:hover),
-:deep(.n-input__input:-webkit-autofill:focus) {
-  -webkit-text-fill-color: #0f172a;
-  -webkit-box-shadow: 0 0 0 1000px #f8fafc inset;
-  transition: background-color 5000s ease-in-out 0s;
+:deep(.n-input__input:-webkit-autofill:focus),
+:deep(.n-input__input:-webkit-autofill:active) {
+  -webkit-text-fill-color: #0f172a !important;
+  -webkit-box-shadow: 0 0 0 50px #f8fafc inset !important;
+  background-color: #f8fafc !important;
+  box-shadow: 0 0 0 1px #e2e8f0, 0 0 0 50px #f8fafc inset;
+  transition: background-color 999999s ease-in-out 0s;
 }
 
-:deep(.n-input--focus .n-input__input:-webkit-autofill) {
-  -webkit-box-shadow: 0 0 0 1000px rgba(59, 130, 246, 0.05) inset;
+/* 密码框特殊处理 */
+:deep(.n-input[type="password"] .n-input__input:-webkit-autofill) {
+  -webkit-text-fill-color: #0f172a !important;
+  -webkit-box-shadow: 0 0 0 50px #f8fafc inset !important;
+  background-color: #f8fafc !important;
 }
 
 /* 登录按钮 */
