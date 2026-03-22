@@ -397,7 +397,7 @@ const goToHome = () => {
 }
 
 :deep(.n-input) {
-  background: #f8fafc;
+  background: #ffffff;
   border: 1.5px solid #e2e8f0;
   border-radius: 14px;
   transition: all 0.3s ease;
@@ -413,16 +413,18 @@ const goToHome = () => {
 }
 
 :deep(.n-input__prefix) {
-  color: #94a3b8;
+  color: #64748b;
 }
 
 :deep(.n-input__placeholder) {
-  color: #cbd5e1;
+  color: #94a3b8;
 }
 
+/* 确保输入文字清晰可见 */
 :deep(.n-input__input) {
-  color: #0f172a;
+  color: #000000 !important;
   font-size: 15px;
+  background-color: transparent;
 }
 
 /* ========== 密码框显示/隐藏按钮样式 ========== */
@@ -438,7 +440,7 @@ const goToHome = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-right: 8px;
+  padding-right: 12px;
 }
 
 /* 密码切换图标 - 使用深色确保可见 */
@@ -447,7 +449,7 @@ const goToHome = () => {
   font-size: 20px !important;
   cursor: pointer;
   transition: color 0.2s ease;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .password-toggle-icon:hover {
@@ -464,18 +466,18 @@ const goToHome = () => {
 :deep(.n-input__input:-webkit-autofill:hover),
 :deep(.n-input__input:-webkit-autofill:focus),
 :deep(.n-input__input:-webkit-autofill:active) {
-  -webkit-text-fill-color: #0f172a !important;
-  -webkit-box-shadow: 0 0 0 50px #f8fafc inset !important;
-  background-color: #f8fafc !important;
-  box-shadow: 0 0 0 1px #e2e8f0, 0 0 0 50px #f8fafc inset;
+  -webkit-text-fill-color: #000000 !important;
+  -webkit-box-shadow: 0 0 0 50px #ffffff inset !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 1px #e2e8f0, 0 0 0 50px #ffffff inset;
   transition: background-color 999999s ease-in-out 0s;
 }
 
 /* 密码框特殊处理 */
 :deep(.n-input[type="password"] .n-input__input:-webkit-autofill) {
-  -webkit-text-fill-color: #0f172a !important;
-  -webkit-box-shadow: 0 0 0 50px #f8fafc inset !important;
-  background-color: #f8fafc !important;
+  -webkit-text-fill-color: #000000 !important;
+  -webkit-box-shadow: 0 0 0 50px #ffffff inset !important;
+  background-color: #ffffff !important;
 }
 
 /* 登录按钮 */
