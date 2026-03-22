@@ -24,7 +24,7 @@ import { darkTheme } from 'naive-ui'
 }
 
 .n-input__placeholder {
-  color: #94a3b8 !important;
+  color: #cbd5e1 !important;
 }
 
 .n-input__prefix {
