@@ -72,7 +72,7 @@
                 <template #suffix>
                   <n-icon
                     :component="showPassword ? EyeOffIcon : EyeIcon"
-                    style="cursor: pointer; color: #475569; font-size: 18px;"
+                    class="password-toggle-icon"
                     @click="showPassword = !showPassword"
                   />
                 </template>
@@ -425,14 +425,38 @@ const goToHome = () => {
   font-size: 15px;
 }
 
-/* 密码框显示/隐藏按钮样式 */
-:deep(.n-input .n-input__icon_el) {
-  color: #475569 !important;
-  transition: color 0.2s ease;
+/* ========== 密码框显示/隐藏按钮样式 ========== */
+/* 隐藏 Naive UI 内置的密码切换图标 */
+:deep(.n-input__password-icon),
+:deep(.n-base-icon.n-input__icon.n-input--show-password-wrapper),
+:deep(.n-input .n-input__icon_el.n-input__icon--password) {
+  display: none !important;
 }
 
-:deep(.n-input .n-input__icon_el:hover) {
-  color: #1e40af !important;
+/* 自定义 suffix 图标样式 */
+:deep(.n-input__suffix) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-right: 8px;
+}
+
+/* 密码切换图标 - 使用深色确保可见 */
+.password-toggle-icon {
+  color: #000000 !important;
+  font-size: 20px !important;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  opacity: 0.8;
+}
+
+.password-toggle-icon:hover {
+  color: #000000 !important;
+  opacity: 1;
+}
+
+:deep(.password-toggle-icon svg) {
+  fill: #000000 !important;
 }
 
 /* 修复浏览器自动填充白底问题 */
