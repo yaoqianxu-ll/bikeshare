@@ -62,13 +62,19 @@
             <n-form-item path="password">
               <n-input
                 v-model:value="form.password"
-                type="password"
-                show-password-on="click"
+                :type="showPassword ? 'text' : 'password'"
                 placeholder="请输入密码"
                 @keyup.enter="submit"
               >
                 <template #prefix>
                   <n-icon :component="LockIcon" />
+                </template>
+                <template #suffix>
+                  <n-icon
+                    :component="showPassword ? EyeOffIcon : EyeIcon"
+                    style="cursor: pointer; color: #475569; font-size: 18px;"
+                    @click="showPassword = !showPassword"
+                  />
                 </template>
               </n-input>
             </n-form-item>
@@ -99,7 +105,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, h } from 'vue'
+import { reactive, ref, h, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { NIcon, NButton, NInput, NForm, NFormItem, useMessage } from 'naive-ui'
 import { login } from '@/api/auth'
@@ -111,6 +117,10 @@ const PersonIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox
   h('path', { d: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' }))
 const LockIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
   h('path', { d: 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' }))
+const EyeIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
+  h('path', { d: 'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z' }))
+const EyeOffIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
+  h('path', { d: 'M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z' }))
 const BicycleIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
   h('path', { d: 'M15.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM5 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5zm5.8-10l2.4-2.4.8.8c1.3 1.3 3 2.1 5.1 2.1V9c-1.5 0-2.7-.6-3.6-1.5l-1.9-1.9c-.5-.4-1-.6-1.6-.6s-1.1.2-1.4.6L7.8 8.4c-.4.4-.6.9-.6 1.4 0 .6.2 1.1.6 1.4L11 14v5h2v-6.2l-2.2-2.3zM19 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z' }))
 const DataIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
@@ -127,6 +137,7 @@ const message = useMessage()
 const authStore = useAuthStore()
 const formRef = ref(null)
 const loading = ref(false)
+const showPassword = ref(false)
 
 const form = reactive({
   username: '',
@@ -414,25 +425,14 @@ const goToHome = () => {
   font-size: 15px;
 }
 
-/* 修复密码框显示/隐藏密码按钮可见性问题 */
-:deep(.n-input__suffix),
-:deep(.n-base-icon.n-input__icon) {
-  color: #64748b;
+/* 密码框显示/隐藏按钮样式 */
+:deep(.n-input .n-input__icon_el) {
+  color: #475569 !important;
   transition: color 0.2s ease;
 }
 
-:deep(.n-input__suffix:hover),
-:deep(.n-base-icon.n-input__icon:hover) {
-  color: #3b82f6;
-}
-
-/* 确保密码切换按钮有足够的对比度 */
-:deep(.n-input .n-input__icon_el) {
-  color: #475569;
-}
-
 :deep(.n-input .n-input__icon_el:hover) {
-  color: #1e40af;
+  color: #1e40af !important;
 }
 
 /* 修复浏览器自动填充白底问题 */
