@@ -8,12 +8,14 @@
       <!-- 左侧视觉区 -->
       <div class="login-visual">
         <div class="visual-content">
-          <lottie-animation
-            :animation-data="lottieSrc"
-            :loop="true"
-            :speed="0.8"
-            class="brand-animation"
-          />
+          <!-- 自行车图标动画 -->
+          <div class="bicycle-animation">
+            <div class="bicycle-body">
+              <n-icon :component="BicycleIcon" size="120" color="rgba(255,255,255,0.9)" />
+            </div>
+            <div class="wheel wheel-left"></div>
+            <div class="wheel wheel-right"></div>
+          </div>
           <h1 class="brand-title">BikeShare</h1>
           <p class="brand-subtitle">管理后台</p>
           <div class="brand-features">
@@ -103,7 +105,6 @@ import { NIcon, NButton, NInput, NForm, NFormItem, useMessage } from 'naive-ui'
 import { login } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import ParticlesBg from '@/components/ParticlesBg.vue'
-import LottieAnimation from '@/components/LottieAnimation.vue'
 
 // 图标组件
 const PersonIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
@@ -120,142 +121,6 @@ const SettingIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBo
   h('path', { d: 'M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z' }))
 const HomeIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
   h('path', { d: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z' }))
-
-// Lottie 动画数据 - 自行车主题动画
-const lottieSrc = {
-  v: '5.5.7',
-  fr: 30,
-  ip: 0,
-  op: 90,
-  w: 400,
-  h: 400,
-  nm: 'Bicycle',
-  ddd: 0,
-  assets: [],
-  layers: [
-    {
-      ddd: 0,
-      ind: 1,
-      ty: 4,
-      nm: 'Wheel_Back',
-      sr: 1,
-      ks: {
-        o: { a: 0, k: 100 },
-        r: { a: 1, k: [{ t: 0, s: [0] }, { t: 90, s: [360] }] },
-        p: { a: 0, k: [140, 280, 0] },
-        a: { a: 0, k: [0, 0, 0] },
-        s: { a: 0, k: [100, 100, 100] }
-      },
-      ao: 0,
-      shapes: [
-        {
-          ty: 'el',
-          p: { a: 0, k: [0, 0] },
-          s: { a: 0, k: [80, 80] },
-          nm: 'Ellipse'
-        },
-        {
-          ty: 'st',
-          c: { a: 0, k: [1, 1, 1, 1] },
-          o: { a: 0, k: 100 },
-          w: { a: 0, k: 8 },
-          lc: 'round',
-          lj: 'round'
-        }
-      ],
-      ip: 0,
-      op: 90,
-      st: 0
-    },
-    {
-      ddd: 0,
-      ind: 2,
-      ty: 4,
-      nm: 'Wheel_Front',
-      sr: 1,
-      ks: {
-        o: { a: 0, k: 100 },
-        r: { a: 1, k: [{ t: 0, s: [0] }, { t: 90, s: [360] }] },
-        p: { a: 0, k: [260, 280, 0] },
-        a: { a: 0, k: [0, 0, 0] },
-        s: { a: 0, k: [100, 100, 100] }
-      },
-      ao: 0,
-      shapes: [
-        {
-          ty: 'el',
-          p: { a: 0, k: [0, 0] },
-          s: { a: 0, k: [80, 80] },
-          nm: 'Ellipse'
-        },
-        {
-          ty: 'st',
-          c: { a: 0, k: [1, 1, 1, 1] },
-          o: { a: 0, k: 100 },
-          w: { a: 0, k: 8 },
-          lc: 'round',
-          lj: 'round'
-        }
-      ],
-      ip: 0,
-      op: 90,
-      st: 0
-    },
-    {
-      ddd: 0,
-      ind: 3,
-      ty: 4,
-      nm: 'Frame',
-      sr: 1,
-      ks: {
-        o: { a: 0, k: 100 },
-        p: { a: 0, k: [200, 200, 0] },
-        a: { a: 0, k: [0, 0, 0] },
-        s: { a: 0, k: [100, 100, 100] }
-      },
-      ao: 0,
-      shapes: [
-        {
-          ty: 'sh',
-          d: 1,
-          ks: {
-            a: 0,
-            c: 0,
-            v: [
-              { x: 0, y: 0 },
-              { x: 60, y: 80 },
-              { x: -60, y: 80 },
-              { x: 0, y: 0 }
-            ],
-            o: [
-              { x: 0, y: 0 },
-              { x: 0, y: 0 },
-              { x: 0, y: 0 },
-              { x: 0, y: 0 }
-            ],
-            i: [
-              { x: 0, y: 0 },
-              { x: 0, y: 0 },
-              { x: 0, y: 0 },
-              { x: 0, y: 0 }
-            ]
-          },
-          nm: 'Triangle'
-        },
-        {
-          ty: 'fl',
-          c: { a: 0, k: [0.4, 0.6, 1, 1] },
-          o: { a: 0, k: 100 },
-          r: 1
-        }
-      ],
-      ip: 0,
-      op: 90,
-      st: 0
-    }
-  ],
-  markers: []
-}
 
 const router = useRouter()
 const message = useMessage()
@@ -324,11 +189,11 @@ const goToHome = () => {
   background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   position: relative;
   overflow: hidden;
-  padding: 60px;
+  padding: 80px 60px 40px;
 }
 
 .login-visual::before {
@@ -349,12 +214,59 @@ const goToHome = () => {
   align-items: center;
   text-align: center;
   max-width: 480px;
+  margin-top: 40px;
+}
+
+/* 自行车动画容器 */
+.bicycle-animation {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 24px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.bicycle-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* 车轮 */
+.wheel {
+  position: absolute;
+  bottom: 30px;
+  width: 60px;
+  height: 60px;
+  border: 6px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  animation: spin 2s linear infinite;
+}
+
+.wheel-left {
+  left: 20px;
+}
+
+.wheel-right {
+  right: 20px;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .brand-animation {
-  width: 280px;
-  height: 280px;
-  margin-bottom: 32px;
+  width: 220px;
+  height: 220px;
+  margin-bottom: 24px;
   filter: drop-shadow(0 15px 40px rgba(96, 165, 250, 0.3));
 }
 
@@ -370,7 +282,7 @@ const goToHome = () => {
 .brand-subtitle {
   color: rgba(255, 255, 255, 0.8);
   font-size: 16px;
-  margin: 0 0 48px;
+  margin: 0 0 40px;
   font-weight: 400;
   letter-spacing: 2px;
 }
