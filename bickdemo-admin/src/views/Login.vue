@@ -5,62 +5,89 @@
 
     <!-- 登录卡片 -->
     <div class="login-card">
-      <div class="login-content">
-        <!-- Logo 区 -->
-        <div class="login-header">
-          <div class="logo-wrapper">
-            <n-icon :component="BicycleIcon" size="48" color="#667eea" />
-          </div>
+      <!-- 左侧动画区 -->
+      <div class="login-visual">
+        <div class="visual-content">
+          <lottie-animation
+            :animation-data="lottieSrc"
+            :loop="true"
+            :speed="1"
+            class="brand-animation"
+          />
           <h1 class="brand-title">BikeShare</h1>
           <p class="brand-subtitle">管理后台</p>
+          <div class="brand-features">
+            <div class="feature-item">
+              <n-icon :component="DataIcon" size="18" />
+              <span>数据管理</span>
+            </div>
+            <div class="feature-item">
+              <n-icon :component="UserIcon" size="18" />
+              <span>用户运营</span>
+            </div>
+            <div class="feature-item">
+              <n-icon :component="SettingIcon" size="18" />
+              <span>系统配置</span>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <!-- 登录表单 -->
-        <n-form ref="formRef" :model="form" :rules="rules" size="large">
-          <n-form-item path="username">
-            <n-input
-              v-model:value="form.username"
-              placeholder="请输入管理员用户名"
-              @keyup.enter="submit"
+      <!-- 右侧登录表单区 -->
+      <div class="login-form-section">
+        <div class="form-wrapper">
+          <div class="form-header">
+            <span class="login-badge">Admin Portal</span>
+            <h2>欢迎回来</h2>
+            <p class="form-subtitle">请登录您的管理员账户</p>
+          </div>
+
+          <n-form ref="formRef" :model="form" :rules="rules" size="large">
+            <n-form-item path="username">
+              <n-input
+                v-model:value="form.username"
+                placeholder="请输入管理员用户名"
+                @keyup.enter="submit"
+              >
+                <template #prefix>
+                  <n-icon :component="PersonIcon" />
+                </template>
+              </n-input>
+            </n-form-item>
+
+            <n-form-item path="password">
+              <n-input
+                v-model:value="form.password"
+                type="password"
+                show-password-on="click"
+                placeholder="请输入密码"
+                @keyup.enter="submit"
+              >
+                <template #prefix>
+                  <n-icon :component="LockIcon" />
+                </template>
+              </n-input>
+            </n-form-item>
+
+            <n-button
+              type="primary"
+              block
+              size="large"
+              :loading="loading"
+              @click="submit"
+              class="submit-btn"
             >
-              <template #prefix>
-                <n-icon :component="UserIcon" />
-              </template>
-            </n-input>
-          </n-form-item>
+              {{ loading ? '登录中...' : '登录后台' }}
+            </n-button>
+          </n-form>
 
-          <n-form-item path="password">
-            <n-input
-              v-model:value="form.password"
-              type="password"
-              show-password-on="click"
-              placeholder="请输入密码"
-              @keyup.enter="submit"
-            >
-              <template #prefix>
-                <n-icon :component="LockIcon" />
-              </template>
-            </n-input>
-          </n-form-item>
-
-          <n-button
-            type="primary"
-            block
-            size="large"
-            :loading="loading"
-            @click="submit"
-            class="submit-btn"
-          >
-            {{ loading ? '登录中...' : '登录后台' }}
-          </n-button>
-        </n-form>
-
-        <!-- 底部链接 -->
-        <div class="login-footer">
-          <n-button text @click="goToHome">
-            <n-icon :component="HomeIcon" style="margin-right: 6px;" />
-            返回用户端
-          </n-button>
+          <!-- 底部链接 -->
+          <div class="login-footer">
+            <n-button text @click="goToHome">
+              <n-icon :component="HomeIcon" style="margin-right: 6px;" />
+              返回用户端
+            </n-button>
+          </div>
         </div>
       </div>
     </div>
@@ -74,16 +101,157 @@ import { NIcon, NButton, NInput, NForm, NFormItem, useMessage } from 'naive-ui'
 import { login } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import ParticlesBg from '@/components/ParticlesBg.vue'
+import LottieAnimation from '@/components/LottieAnimation.vue'
 
 // 图标组件
-const UserIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
+const PersonIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
   h('path', { d: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' }))
 const LockIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
   h('path', { d: 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' }))
-const BicycleIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
-  h('path', { d: 'M15.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM5 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5zm5.8-10l2.4-2.4.8.8c1.3 1.3 3 2.1 5.1 2.1V9c-1.5 0-2.7-.6-3.6-1.5l-1.9-1.9c-.5-.4-1-.6-1.6-.6s-1.1.2-1.4.6L7.8 8.4c-.4.4-.6.9-.6 1.4 0 .6.2 1.1.6 1.4L11 14v5h2v-6.2l-2.2-2.3zM19 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z' }))
+const DataIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
+  h('path', { d: 'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z' }))
+const UserIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
+  h('path', { d: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' }))
+const SettingIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
+  h('path', { d: 'M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z' }))
 const HomeIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
   h('path', { d: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z' }))
+
+// Lottie 动画数据 - 自行车主题动画
+const lottieSrc = {
+  v: '5.5.7',
+  fr: 30,
+  ip: 0,
+  op: 90,
+  w: 400,
+  h: 400,
+  nm: 'Bicycle',
+  ddd: 0,
+  assets: [],
+  layers: [
+    {
+      ddd: 0,
+      ind: 1,
+      ty: 4,
+      nm: 'Wheel_Back',
+      sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        r: { a: 1, k: [{ t: 0, s: [0] }, { t: 90, s: [360] }] },
+        p: { a: 0, k: [140, 280, 0] },
+        a: { a: 0, k: [0, 0, 0] },
+        s: { a: 0, k: [100, 100, 100] }
+      },
+      ao: 0,
+      shapes: [
+        {
+          ty: 'el',
+          p: { a: 0, k: [0, 0] },
+          s: { a: 0, k: [80, 80] },
+          nm: 'Ellipse'
+        },
+        {
+          ty: 'st',
+          c: { a: 0, k: [1, 1, 1, 1] },
+          o: { a: 0, k: 100 },
+          w: { a: 0, k: 8 },
+          lc: 'round',
+          lj: 'round'
+        }
+      ],
+      ip: 0,
+      op: 90,
+      st: 0
+    },
+    {
+      ddd: 0,
+      ind: 2,
+      ty: 4,
+      nm: 'Wheel_Front',
+      sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        r: { a: 1, k: [{ t: 0, s: [0] }, { t: 90, s: [360] }] },
+        p: { a: 0, k: [260, 280, 0] },
+        a: { a: 0, k: [0, 0, 0] },
+        s: { a: 0, k: [100, 100, 100] }
+      },
+      ao: 0,
+      shapes: [
+        {
+          ty: 'el',
+          p: { a: 0, k: [0, 0] },
+          s: { a: 0, k: [80, 80] },
+          nm: 'Ellipse'
+        },
+        {
+          ty: 'st',
+          c: { a: 0, k: [1, 1, 1, 1] },
+          o: { a: 0, k: 100 },
+          w: { a: 0, k: 8 },
+          lc: 'round',
+          lj: 'round'
+        }
+      ],
+      ip: 0,
+      op: 90,
+      st: 0
+    },
+    {
+      ddd: 0,
+      ind: 3,
+      ty: 4,
+      nm: 'Frame',
+      sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        p: { a: 0, k: [200, 200, 0] },
+        a: { a: 0, k: [0, 0, 0] },
+        s: { a: 0, k: [100, 100, 100] }
+      },
+      ao: 0,
+      shapes: [
+        {
+          ty: 'sh',
+          d: 1,
+          ks: {
+            a: 0,
+            c: 0,
+            v: [
+              { x: 0, y: 0 },
+              { x: 60, y: 80 },
+              { x: -60, y: 80 },
+              { x: 0, y: 0 }
+            ],
+            o: [
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 }
+            ],
+            i: [
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 }
+            ]
+          },
+          nm: 'Triangle'
+        },
+        {
+          ty: 'fl',
+          c: { a: 0, k: [0.4, 0.6, 1, 1] },
+          o: { a: 0, k: 100 },
+          r: 1
+        }
+      ],
+      ip: 0,
+      op: 90,
+      st: 0
+    }
+  ],
+  markers: []
+}
 
 const router = useRouter()
 const message = useMessage()
@@ -119,7 +287,6 @@ const submit = async () => {
     router.push('/dashboard')
   } catch (error) {
     console.error('登录失败:', error)
-    // 错误信息由 API 拦截器处理
   } finally {
     loading.value = false
   }
@@ -146,56 +313,152 @@ const goToHome = () => {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 420px;
+  max-width: 900px;
+  display: grid;
+  grid-template-columns: 420px 1fr;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
-  padding: 48px 40px;
+  overflow: hidden;
 }
 
-.login-content {
+/* ========== 左侧动画区 ========== */
+.login-visual {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+  padding: 48px 42px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-visual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(300px 200px at 20% 10%, rgba(96, 165, 250, 0.25), transparent 60%),
+    radial-gradient(400px 300px at 80% 80%, rgba(139, 92, 246, 0.15), transparent 60%);
+  pointer-events: none;
+}
+
+.visual-content {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.login-header {
   text-align: center;
-  margin-bottom: 40px;
 }
 
-.logo-wrapper {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 20px;
-  background: rgba(102, 126, 234, 0.2);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(10px);
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+.brand-animation {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 10px 30px rgba(96, 165, 250, 0.3));
 }
 
 .brand-title {
-  font-size: 36px;
-  font-weight: 700;
   color: #fff;
+  font-size: 32px;
+  font-weight: 700;
   margin: 0 0 8px;
   letter-spacing: -0.5px;
 }
 
 .brand-subtitle {
+  color: rgba(255, 255, 255, 0.75);
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 32px;
+  font-weight: 400;
+}
+
+.brand-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.25s ease;
+}
+
+.feature-item:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateX(4px);
+}
+
+.feature-item .n-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #93c5fd;
+}
+
+/* ========== 右侧表单区 ========== */
+.login-form-section {
+  padding: 40px 48px 56px 48px;
+  background: rgba(255, 255, 255, 0.98);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.form-wrapper {
+  width: 100%;
+  max-width: 320px;
+  padding-bottom: 8px;
+}
+
+.form-header {
+  margin-bottom: 36px;
+  text-align: center;
+}
+
+.login-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 197, 253, 0.08));
+  color: #3b82f6;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+.form-header h2 {
+  margin: 0 0 8px;
+  color: #1e293b;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.form-subtitle {
   margin: 0;
+  color: #94a3b8;
+  font-size: 14px;
 }
 
 /* 表单样式 */
@@ -204,52 +467,71 @@ const goToHome = () => {
 }
 
 .n-form-item {
-  margin-bottom: 20px !important;
+  margin-bottom: 18px !important;
+}
+
+.n-form-item:last-child {
+  margin-bottom: 0 !important;
 }
 
 :deep(.n-input) {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
   border-radius: 12px;
   transition: all 0.3s ease;
 }
 
 :deep(.n-input:hover) {
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: #cbd5e1;
 }
 
 :deep(.n-input--focus) {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 :deep(.n-input__prefix) {
-  color: rgba(255, 255, 255, 0.6);
+  color: #94a3b8;
 }
 
 :deep(.n-input__placeholder) {
-  color: rgba(255, 255, 255, 0.4);
+  color: #cbd5e1;
 }
 
 :deep(.n-input__input) {
-  color: #fff;
+  color: #1e293b;
+}
+
+/* 修复浏览器自动填充白底问题 */
+:deep(.n-input__input:-webkit-autofill),
+:deep(.n-input__input:-webkit-autofill:hover),
+:deep(.n-input__input:-webkit-autofill:focus) {
+  -webkit-text-fill-color: #1e293b;
+  -webkit-box-shadow: 0 0 0 1000px #f8fafc inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+:deep(.n-input--focus .n-input__input:-webkit-autofill) {
+  -webkit-box-shadow: 0 0 0 1000px rgba(59, 130, 246, 0.05) inset;
 }
 
 /* 登录按钮 */
 .submit-btn {
-  margin-top: 24px;
-  height: 50px;
-  font-size: 16px;
+  margin-top: 8px;
+  height: 46px;
+  font-size: 15px;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border: none;
   border-radius: 12px;
   transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
 }
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 14px 32px rgba(59, 130, 246, 0.35);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
 }
 
 .submit-btn:active:not(:disabled) {
@@ -259,34 +541,96 @@ const goToHome = () => {
 /* 底部链接 */
 .login-footer {
   margin-top: 24px;
+  text-align: center;
 }
 
 :deep(.n-button--text) {
-  color: rgba(255, 255, 255, 0.7);
+  color: #64748b;
   font-size: 14px;
 }
 
 :deep(.n-button--text:hover) {
-  color: #fff;
+  color: #3b82f6;
 }
 
-/* 响应式 */
-@media (max-width: 480px) {
+/* ========== 响应式 ========== */
+@media (max-width: 820px) {
   .login-page {
     padding: 16px;
   }
 
   .login-card {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+  }
+
+  .login-visual {
     padding: 36px 28px;
   }
 
-  .brand-title {
-    font-size: 28px;
+  .brand-animation {
+    width: 140px;
+    height: 140px;
+    margin-bottom: 18px;
   }
 
-  .logo-wrapper {
-    width: 60px;
-    height: 60px;
+  .brand-title {
+    font-size: 24px;
+  }
+
+  .brand-subtitle {
+    font-size: 12px;
+    margin-bottom: 20px;
+  }
+
+  .brand-features {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .feature-item {
+    flex: 1;
+    min-width: 90px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .login-form-section {
+    padding: 40px 32px;
+  }
+}
+
+@media (max-width: 520px) {
+  .login-visual {
+    padding: 28px 20px;
+  }
+
+  .brand-animation {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 14px;
+  }
+
+  .brand-title {
+    font-size: 20px;
+  }
+
+  .brand-features {
+    display: none;
+  }
+
+  .login-form-section {
+    padding: 32px 24px;
+  }
+
+  .form-header h2 {
+    font-size: 20px;
+  }
+
+  .form-wrapper {
+    max-width: 100%;
   }
 }
 </style>
