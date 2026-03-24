@@ -11,6 +11,7 @@ import com.example.bickdemo.entity.RentalStatus;
 import com.example.bickdemo.mapper.BicycleMapper;
 import com.example.bickdemo.mapper.RentalMapper;
 import com.example.bickdemo.mapper.UserMapper;
+import com.example.bickdemo.vo.RentalWithBicycleVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.servlet.http.HttpServletRequest;
@@ -170,23 +171,15 @@ public class RentalService {
 
     /**
      * 分页查询当前用户的租赁记录。
+     * 使用 JOIN 查询一次性获取租赁和车辆信息，解决 N+1 问题。
      */
     public Page<RentalResponse> getUserRentalsPage(Long userId, int page, int size) {
-        Page<Rental> rentalPage = new Page<>(page, size);
-        LambdaQueryWrapper<Rental> wrapper = new LambdaQueryWrapper<Rental>()
-                .eq(Rental::getUserId, userId)
-                .eq(Rental::getDeleted, 0)
-                .orderByDesc(Rental::getStartTime);
+        Page<RentalWithBicycleVO> voPage = rentalMapper.selectRentalsWithBicycleByUserId(
+                new Page<>(page, size), userId);
 
-        Page<Rental> pageResult = rentalMapper.selectPage(rentalPage, wrapper);
-
-        Page<RentalResponse> responsePage = new Page<>(page, size, pageResult.getTotal());
-        List<RentalResponse> responses = pageResult.getRecords().stream()
-                .map(rental -> {
-                    // DTO 中需要附带车辆名称、状态等展示信息，因此这里补查车辆。
-                    Bicycle bicycle = bicycleMapper.selectById(rental.getBicycleId());
-                    return convertToResponse(rental, bicycle);
-                })
+        Page<RentalResponse> responsePage = new Page<>(page, size, voPage.getTotal());
+        List<RentalResponse> responses = voPage.getRecords().stream()
+                .map(this::convertVoToResponse)
                 .collect(Collectors.toList());
         responsePage.setRecords(responses);
         return responsePage;
@@ -194,21 +187,15 @@ public class RentalService {
 
     /**
      * 分页查询全量租赁记录，供管理员后台使用。
+     * 使用 JOIN 查询一次性获取租赁和车辆信息，解决 N+1 问题。
      */
     public Page<RentalResponse> getAllRentalsPage(int page, int size) {
-        Page<Rental> rentalPage = new Page<>(page, size);
-        LambdaQueryWrapper<Rental> wrapper = new LambdaQueryWrapper<Rental>()
-                .eq(Rental::getDeleted, 0)
-                .orderByDesc(Rental::getStartTime);
+        Page<RentalWithBicycleVO> voPage = rentalMapper.selectAllRentalsWithBicycle(
+                new Page<>(page, size));
 
-        Page<Rental> pageResult = rentalMapper.selectPage(rentalPage, wrapper);
-
-        Page<RentalResponse> responsePage = new Page<>(page, size, pageResult.getTotal());
-        List<RentalResponse> responses = pageResult.getRecords().stream()
-                .map(rental -> {
-                    Bicycle bicycle = bicycleMapper.selectById(rental.getBicycleId());
-                    return convertToResponse(rental, bicycle);
-                })
+        Page<RentalResponse> responsePage = new Page<>(page, size, voPage.getTotal());
+        List<RentalResponse> responses = voPage.getRecords().stream()
+                .map(this::convertVoToResponse)
                 .collect(Collectors.toList());
         responsePage.setRecords(responses);
         return responsePage;
@@ -216,13 +203,12 @@ public class RentalService {
 
     /**
      * 查询当前用户全部租赁记录，不分页。
+     * 使用 JOIN 查询一次性获取租赁和车辆信息，解决 N+1 问题。
      */
     public List<RentalResponse> getUserRentals(Long userId) {
-        return rentalMapper.findByUserId(userId).stream()
-                .map(rental -> {
-                    Bicycle bicycle = bicycleMapper.selectById(rental.getBicycleId());
-                    return convertToResponse(rental, bicycle);
-                })
+        return rentalMapper.selectRentalsWithBicycleByUserId(new Page<>(1, Integer.MAX_VALUE), userId)
+                .getRecords().stream()
+                .map(this::convertVoToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -241,14 +227,12 @@ public class RentalService {
 
     /**
      * 获取所有租赁记录，不分页。
+     * 使用 JOIN 查询一次性获取租赁和车辆信息，解决 N+1 问题。
      */
     public List<RentalResponse> getAllRentals() {
-        return rentalMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Rental>()
-                .eq(Rental::getDeleted, 0)).stream()
-                .map(rental -> {
-                    Bicycle bicycle = bicycleMapper.selectById(rental.getBicycleId());
-                    return convertToResponse(rental, bicycle);
-                })
+        return rentalMapper.selectAllRentalsWithBicycle(new Page<>(1, Integer.MAX_VALUE))
+                .getRecords().stream()
+                .map(this::convertVoToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -386,6 +370,37 @@ public class RentalService {
         // ACTIVE 状态下返回动态金额，让前端无需额外轮询结算接口也能展示实时费用。
         response.setTotalPrice(calculateRunningTotalPrice(rental, bicycle));
         response.setCreatedAt(rental.getCreatedAt());
+        return response;
+    }
+
+    private RentalResponse convertVoToResponse(RentalWithBicycleVO vo) {
+        RentalResponse response = new RentalResponse();
+        response.setId(vo.getId());
+        response.setUserId(vo.getUserId());
+        response.setBicycleId(vo.getBicycleId());
+        response.setStartTime(vo.getStartTime());
+        response.setEndTime(vo.getEndTime());
+        response.setExpectedEndTime(vo.getExpectedEndTime());
+        response.setStatus(vo.getStatus());
+        response.setQuantity(vo.getQuantity() == null ? 1 : vo.getQuantity());
+        response.setTotalPrice(vo.getTotalPrice());
+        response.setCreatedAt(vo.getCreatedAt());
+
+        // 车辆信息
+        if (vo.getBicycleName() != null) {
+            response.setBicycleName(vo.getBicycleName());
+            response.setBicycleType(vo.getBicycleType());
+            response.setBicycleStatus(vo.getBicycleStatus());
+        } else {
+            response.setBicycleName("自行车已删除");
+            response.setBicycleType(null);
+            response.setBicycleStatus(null);
+        }
+
+        // 补查用户名
+        var user = userMapper.selectById(vo.getUserId());
+        response.setUsername(user != null ? user.getUsername() : "unknown");
+
         return response;
     }
 }

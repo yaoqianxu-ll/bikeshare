@@ -12,6 +12,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +36,7 @@ public class BicycleService {
 
     /**
      * 兼容旧状态枚举。
-     * 早期版本会把“被租出”直接写进车辆状态；现在系统改成“库存扣减 + 租赁记录”模型，
+     * 早期版本会把"被租出"直接写进车辆状态；现在系统改成"库存扣减 + 租赁记录"模型，
      * 因此历史上的 RENTED 在大部分查询场景里都视为 AVAILABLE，避免老数据影响展示。
      */
     private BicycleStatus normalizeStatus(BicycleStatus status) {
@@ -44,13 +46,13 @@ public class BicycleService {
 
     /**
      * 获取车辆列表，支持按类型和状态筛选。
-     * 当筛选“可用”状态时，除了状态本身，还会额外要求库存 quantity > 0。
+     * 当筛选"可用"状态时，除了状态本身，还会额外要求库存 quantity > 0。
      */
     public List<BicycleResponse> getBicycles(BicycleType type, BicycleStatus status) {
         LambdaQueryWrapper<Bicycle> wrapper = new LambdaQueryWrapper<Bicycle>()
                 .eq(Bicycle::getDeleted, 0)
                 .eq(type != null, Bicycle::getType, type)
-                // “可用”是业务态，不只看 status，还要看库存是否还剩余。
+                // "可用"是业务态，不只看 status，还要看库存是否还剩余。
                 .in(status == BicycleStatus.AVAILABLE, Bicycle::getStatus, BicycleStatus.AVAILABLE, BicycleStatus.RENTED)
                 .gt(status == BicycleStatus.AVAILABLE, Bicycle::getQuantity, 0)
                 .eq(status != null && status != BicycleStatus.AVAILABLE, Bicycle::getStatus, status);
@@ -61,7 +63,10 @@ public class BicycleService {
 
     /**
      * 分页获取车辆列表，供管理端表格使用。
+     * 使用缓存减少数据库压力，缓存 key 包含所有筛选参数。
      */
+    @Cacheable(cacheNames = CacheNames.BICYCLES_PAGE,
+               key = "'page:' + #page + ':size:' + #size + ':type:' + (type != null ? type.name() : 'all') + ':status:' + (status != null ? status.name() : 'all')")
     public Page<BicycleResponse> getBicyclesPage(BicycleType type, BicycleStatus status, int page, int size) {
         LambdaQueryWrapper<Bicycle> wrapper = new LambdaQueryWrapper<Bicycle>()
                 .eq(Bicycle::getDeleted, 0)
@@ -91,7 +96,9 @@ public class BicycleService {
     /**
      * 获取当前可租车辆。
      * 这里把 RENTED 也纳入兼容查询，但必须库存大于 0 才会真正展示给用户。
+     * 使用缓存提升用户端首页加载性能。
      */
+    @Cacheable(cacheNames = CacheNames.BICYCLES_AVAILABLE, unless = "#result.isEmpty()")
     public List<BicycleResponse> getAvailableBicycles() {
         log.debug("查询可用自行车");
         return bicycleMapper.selectList(new LambdaQueryWrapper<Bicycle>()
@@ -105,7 +112,9 @@ public class BicycleService {
 
     /**
      * 按主键获取车辆详情。
+     * 使用缓存提升详情接口响应速度。
      */
+    @Cacheable(cacheNames = CacheNames.BICYCLE_DETAIL, key = "#id", unless = "#result == null")
     public BicycleResponse getBicycleById(Long id) {
         log.debug("根据 ID 查询自行车：{}", id);
         Bicycle bicycle = bicycleMapper.selectById(id);
@@ -137,10 +146,10 @@ public class BicycleService {
 
     /**
      * 新增车辆。
-     * 创建后会清理统计缓存，因为车辆总量、可用量、类型分布都会受到影响。
+     * 创建后会清理统计缓存和列表缓存，因为车辆总量、可用量、类型分布都会受到影响。
      */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
+    @CacheEvict(cacheNames = {CacheNames.STATISTICS_OVERVIEW, CacheNames.BICYCLES_AVAILABLE, CacheNames.BICYCLES_PAGE}, allEntries = true)
     public BicycleResponse createBicycle(BicycleRequest request) {
         Bicycle bicycle = new Bicycle();
         bicycle.setName(request.getName());
@@ -162,9 +171,13 @@ public class BicycleService {
     /**
      * 更新车辆信息。
      * 只覆盖前端显式传入的字段，未传值的属性保持原状。
+     * 更新后会清理统计缓存、列表缓存和当前车辆详情缓存。
      */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
+    @Caching(evict = {
+        @CacheEvict(cacheNames = {CacheNames.STATISTICS_OVERVIEW, CacheNames.BICYCLES_AVAILABLE, CacheNames.BICYCLES_PAGE}, allEntries = true),
+        @CacheEvict(cacheNames = CacheNames.BICYCLE_DETAIL, key = "#id")
+    })
     public BicycleResponse updateBicycle(Long id, BicycleRequest request) {
         Bicycle bicycle = bicycleMapper.selectById(id);
         if (bicycle == null) {
@@ -208,9 +221,13 @@ public class BicycleService {
 
     /**
      * 删除车辆。
+     * 删除后会清理统计缓存、列表缓存和当前车辆详情缓存。
      */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
+    @Caching(evict = {
+        @CacheEvict(cacheNames = {CacheNames.STATISTICS_OVERVIEW, CacheNames.BICYCLES_AVAILABLE, CacheNames.BICYCLES_PAGE}, allEntries = true),
+        @CacheEvict(cacheNames = CacheNames.BICYCLE_DETAIL, key = "#id")
+    })
     public void deleteBicycle(Long id) {
         Bicycle bicycle = bicycleMapper.selectById(id);
         if (bicycle == null) {
@@ -220,10 +237,11 @@ public class BicycleService {
     }
 
     /**
-     * 单独更新车辆状态，常用于管理端快速切换“维修中/停用”等状态。
+     * 单独更新车辆状态，常用于管理端快速切换"维修中/停用"等状态。
+     * 更新后会清理统计缓存、列表缓存和当前车辆详情缓存。
      */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
+    @CacheEvict(cacheNames = {CacheNames.STATISTICS_OVERVIEW, CacheNames.BICYCLES_AVAILABLE, CacheNames.BICYCLES_PAGE, CacheNames.BICYCLE_DETAIL}, allEntries = true)
     public BicycleResponse updateBicycleStatus(Long id, BicycleStatus status) {
         Bicycle bicycle = bicycleMapper.selectById(id);
         if (bicycle == null) {
