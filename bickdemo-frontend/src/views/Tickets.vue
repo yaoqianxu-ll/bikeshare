@@ -152,7 +152,7 @@
         </div>
 
         <!-- 评价表单（仅已解决工单显示） -->
-        <div class="feedback-section" v-if="selectedTicket.status === 'RESOLVED'">
+        <div class="feedback-section" v-if="selectedTicket.status === 'RESOLVED' && !selectedTicket.rating">
           <h4>服务评价</h4>
           <div class="feedback-form">
             <div class="feedback-rating">
@@ -347,10 +347,11 @@ const submitFeedback = async () => {
   try {
     await submitTicketFeedback(selectedTicket.value.id, feedbackForm.value)
     message.success('评价提交成功')
-    feedbackDialogVisible.value = false
+    feedbackForm.value = { rating: 5, feedback: '' }
     await viewDetail(selectedTicket.value)
   } catch (error) {
     console.error(error)
+    message.error('评价提交失败，请重试')
   } finally {
     submittingFeedback.value = false
   }
