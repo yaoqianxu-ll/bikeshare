@@ -119,7 +119,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { Bicycle, DataAnalysis, Document, Monitor, Setting, Expand } from '@element-plus/icons-vue'
@@ -130,7 +130,21 @@ const authStore = useAuthStore()
 
 // Mobile responsive state
 const drawerVisible = ref(false)
-const isMobile = computed(() => window.innerWidth < 768)
+const windowWidth = ref(window.innerWidth)
+
+const isMobile = computed(() => windowWidth.value < 768)
+
+const updateWidth = () => {
+  windowWidth.value = window.innerWidth
+}
+
+onMounted(() => {
+  window.addEventListener('resize', updateWidth)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateWidth)
+})
 
 const toggleDrawer = () => {
   drawerVisible.value = !drawerVisible.value
