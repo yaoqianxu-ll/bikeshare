@@ -173,12 +173,13 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useMessage } from 'naive-ui'
 import { useUserStore } from '@/stores/user'
 import { login, loginByEmail, sendEmailCode, resetPasswordByEmail } from '@/api/auth'
-import { ElMessage } from 'element-plus'
 import { User, Lock, Right, Bicycle, CircleCheck, Star, Location, Message } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const message = useMessage()
 const userStore = useUserStore()
 const formRef = ref(null)
 const emailLoginFormRef = ref(null)
@@ -285,11 +286,11 @@ const handleLogin = async () => {
         const res = await login(form)
         persistRememberedLogin()
         userStore.setUser(res.data.token, res.data.username, res.data.role, res.data.userId)
-        ElMessage.success('登录成功')
+        message.success('登录成功')
         router.push('/')
       } catch (error) {
         console.error(error)
-        ElMessage.error(error?.response?.data?.message || error?.message || '用户名或密码错误')
+        message.error(error?.response?.data?.message || error?.message || '用户名或密码错误')
       } finally {
         loading.value = false
       }
@@ -307,10 +308,11 @@ const handleEmailLogin = async () => {
     try {
       const res = await loginByEmail(emailLoginForm)
       userStore.setUser(res.data.token, res.data.username, res.data.role, res.data.userId)
-      ElMessage.success('登录成功')
+      message.success('登录成功')
       router.push('/')
     } catch (error) {
       console.error(error)
+      message.error(error?.response?.data?.message || error?.message || '登录失败')
     } finally {
       emailLoading.value = false
     }
@@ -331,7 +333,7 @@ const startCountdown = () => {
 
 const handleSendResetCode = async () => {
   if (!resetForm.email) {
-    ElMessage.warning('请先输入邮箱')
+    message.warning('请先输入邮箱')
     return
   }
 
@@ -340,7 +342,7 @@ const handleSendResetCode = async () => {
       email: resetForm.email,
       type: 'RESET_PASSWORD'
     })
-    ElMessage.success('验证码已发送，请注意查收邮箱')
+    message.success('验证码已发送，请注意查收邮箱')
     startCountdown()
   } catch (error) {
     console.error(error)
@@ -356,13 +358,14 @@ const handleResetPassword = async () => {
     resetLoading.value = true
     try {
       await resetPasswordByEmail(resetForm)
-      ElMessage.success('密码已重置，请重新登录')
+      message.success('密码已重置，请重新登录')
       forgotDialogVisible.value = false
       resetForm.code = ''
       resetForm.newPassword = ''
       loginMode.value = 'email'
     } catch (error) {
       console.error(error)
+      message.error(error?.response?.data?.message || '重置失败')
     } finally {
       resetLoading.value = false
     }

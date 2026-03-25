@@ -194,11 +194,12 @@
 
 <script setup>
 import { ref, reactive, onMounted, onBeforeUnmount, computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { useMessage } from 'naive-ui'
 import { useUserStore } from '@/stores/user'
 import { getCurrentUser, updateUser, uploadAvatar, deleteAvatar, changePassword, sendEmailCode } from '@/api/auth'
 
 const userStore = useUserStore()
+const message = useMessage()
 const formRef = ref(null)
 const emailFormRef = ref(null)
 const passwordFormRef = ref(null)
@@ -405,11 +406,11 @@ const beforeAvatarUpload = (file) => {
   const isImage = file.type && file.type.startsWith('image/')
   const isLt5M = file.size / 1024 / 1024 < 5
   if (!isImage) {
-    ElMessage.error('只能上传图片文件')
+    message.error('只能上传图片文件')
     return false
   }
   if (!isLt5M) {
-    ElMessage.error('图片大小不能超过 5MB')
+    message.error('图片大小不能超过 5MB')
     return false
   }
   return true
@@ -420,7 +421,7 @@ const handleAvatarUpload = async (options) => {
     avatarUploading.value = true
     const res = await uploadAvatar(options.file)
     applyUserInfo(res.data)
-    ElMessage.success('头像已更新')
+    message.success('头像已更新')
   } catch (error) {
     console.error(error)
   } finally {
@@ -433,7 +434,7 @@ const handleAvatarDelete = async () => {
     avatarDeleting.value = true
     const res = await deleteAvatar()
     applyUserInfo(res.data)
-    ElMessage.success('头像已删除')
+    message.success('头像已删除')
   } catch (error) {
     console.error(error)
   } finally {
@@ -461,11 +462,11 @@ const handleSendEmailCode = async () => {
   const currentEmail = (userInfo.value?.email || '').trim().toLowerCase()
 
   if (!nextEmail) {
-    ElMessage.warning('请先输入新邮箱')
+    message.warning('请先输入新邮箱')
     return
   }
   if (nextEmail === currentEmail) {
-    ElMessage.info('请输入新的邮箱地址后再发送验证码')
+    message.info('请输入新的邮箱地址后再发送验证码')
     return
   }
 
@@ -477,7 +478,7 @@ const handleSendEmailCode = async () => {
     })
     emailForm.code = ''
     startCountdown()
-    ElMessage.success('验证码已发送，请查收新邮箱')
+    message.success('验证码已发送，请查收新邮箱')
   } catch (error) {
     console.error(error)
   } finally {
@@ -502,7 +503,7 @@ const handleProfileUpdate = async () => {
   const bioChanged = nextBio !== currentBio
 
   if (!usernameChanged && !bioChanged) {
-    ElMessage.info('资料没有变化')
+    message.info('资料没有变化')
     return
   }
 
@@ -523,7 +524,7 @@ const handleProfileUpdate = async () => {
       userInfo.value?.avatar || ''
     )
     await loadUserInfo()
-    ElMessage.success('资料已更新')
+    message.success('资料已更新')
   } catch (error) {
     console.error(error)
   } finally {
@@ -543,7 +544,7 @@ const handleEmailUpdate = async () => {
   const nextEmail = emailForm.email.trim().toLowerCase()
   const currentEmail = (userInfo.value?.email || '').trim().toLowerCase()
   if (nextEmail === currentEmail) {
-    ElMessage.info('请输入新的邮箱地址')
+    message.info('请输入新的邮箱地址')
     return
   }
 
@@ -563,7 +564,7 @@ const handleEmailUpdate = async () => {
     await loadUserInfo()
     clearCountdown()
     emailEditorVisible.value = false
-    ElMessage.success('邮箱已更新')
+    message.success('邮箱已更新')
   } catch (error) {
     console.error(error)
   } finally {
@@ -582,7 +583,7 @@ const resetPasswordForm = () => {
 const handleSendPasswordCode = async () => {
   const currentEmail = (userInfo.value?.email || '').trim().toLowerCase()
   if (!currentEmail) {
-    ElMessage.warning('当前账号尚未绑定邮箱，无法发送验证码')
+    message.warning('当前账号尚未绑定邮箱，无法发送验证码')
     return
   }
 
@@ -594,7 +595,7 @@ const handleSendPasswordCode = async () => {
     })
     passwordForm.code = ''
     startPasswordCountdown()
-    ElMessage.success('验证码已发送，请查收当前绑定邮箱')
+    message.success('验证码已发送，请查收当前绑定邮箱')
   } catch (error) {
     console.error(error)
   } finally {
@@ -612,7 +613,7 @@ const handlePasswordUpdate = async () => {
   }
 
   if (!(userInfo.value?.email || '').trim()) {
-    ElMessage.warning('当前账号尚未绑定邮箱，暂时无法通过邮箱验证码修改密码')
+    message.warning('当前账号尚未绑定邮箱，暂时无法通过邮箱验证码修改密码')
     return
   }
 
@@ -626,7 +627,7 @@ const handlePasswordUpdate = async () => {
     localStorage.removeItem(REMEMBER_KEY)
     clearPasswordCountdown()
     resetPasswordForm()
-    ElMessage.success('密码已更新')
+    message.success('密码已更新')
   } catch (error) {
     console.error(error)
   } finally {

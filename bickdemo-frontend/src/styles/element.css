@@ -152,19 +152,92 @@
   background-color: #f5f7fa;
 }
 
-/* 标签页 */
+/* 标签页美化 */
+.el-tabs {
+  --el-tabs-header-height: 44px;
+}
+
 .el-tabs__header {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid rgba(15, 23, 42, 0.08);
 }
 
 .el-tabs__item {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
-  transition: all 0.2s ease;
+  color: var(--bs-muted);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0 8px !important;
+  margin: 0 12px;
+  border-bottom: 2px solid transparent;
+  position: relative;
+}
+
+.el-tabs__item:hover {
+  color: var(--bs-ink);
 }
 
 .el-tabs__item.is-active {
+  color: var(--brand-primary);
   font-weight: 600;
+  border-bottom-color: var(--brand-primary);
+}
+
+/* 选中状态的小圆点装饰 */
+.el-tabs__item.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  box-shadow: 0 0 8px var(--brand-primary);
+}
+
+/* Tabs 内容区域 */
+.el-tabs__content {
+  overflow: visible;
+}
+
+.el-tab-pane {
+  animation: tabFadeIn 0.25s ease;
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 深色模式适配 */
+html.dark .el-tabs__header {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+html.dark .el-tabs__item {
+  color: #94a3b8;
+}
+
+html.dark .el-tabs__item:hover {
+  color: #e2e8f0;
+}
+
+html.dark .el-tabs__item.is-active {
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+}
+
+html.dark .el-tabs__item.is-active::after {
+  background: #60a5fa;
+  box-shadow: 0 0 8px #60a5fa;
 }
 
 /* 进度条 */

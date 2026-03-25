@@ -175,6 +175,47 @@ a:hover {
   --el-button-border-color: var(--color-error);
 }
 
+/* 按钮毛玻璃效果覆盖 */
+.el-button--primary:not(.is-plain) {
+  background: rgba(64, 158, 255, 0.85) !important;
+  border: 1px solid rgba(64, 158, 255, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.el-button--primary:not(.is-plain):hover {
+  background: rgba(64, 158, 255, 0.95) !important;
+}
+
+.el-button--success:not(.is-plain) {
+  background: rgba(16, 185, 129, 0.85) !important;
+  border: 1px solid rgba(16, 185, 129, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.el-button--success:not(.is-plain):hover {
+  background: rgba(16, 185, 129, 0.95) !important;
+}
+
+.el-button--danger:not(.is-plain) {
+  background: rgba(239, 68, 68, 0.85) !important;
+  border: 1px solid rgba(239, 68, 68, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.el-button--danger:not(.is-plain):hover {
+  background: rgba(239, 68, 68, 0.95) !important;
+}
+
+.el-button--warning:not(.is-plain) {
+  background: rgba(245, 158, 11, 0.85) !important;
+  border: 1px solid rgba(245, 158, 11, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.el-button--warning:not(.is-plain):hover {
+  background: rgba(245, 158, 11, 0.95) !important;
+}
+
 /* ========== 卡片优化 ========== */
 .el-card {
   border-radius: var(--radius-xl);
@@ -264,7 +305,7 @@ a:hover {
 }
 
 .el-tag--primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #409eff 0%, #337ecc 100%);
   color: #fff;
 }
 
@@ -318,18 +359,20 @@ a:hover {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
   border: 1px solid var(--neutral-200);
-  padding: 8px;
+  padding: 6px;
+  min-width: 120px;
 }
 
 .el-dropdown-menu__item {
-  border-radius: var(--radius-md);
-  padding: 10px 16px;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 2px 4px;
   transition: all var(--transition-fast) var(--easing-default);
 }
 
 .el-dropdown-menu__item:hover {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.08) 0%, rgba(247, 37, 133, 0.08) 100%);
-  color: var(--brand-primary);
+  background: rgba(var(--brand-primary-rgb), 0.08);
+  color: var(--bs-ink);
 }
 
 /* ========== 日期选择器 ========== */
@@ -392,43 +435,42 @@ a:hover {
   font-weight: 600;
 }
 
-/* ========== 消息提示 ========== */
-.el-message {
-  border-radius: var(--radius-full);
-  padding: 12px 20px;
-  box-shadow: var(--shadow-lg);
-  border: none;
-}
-
-.el-message--success {
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-}
-
-.el-message--warning {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-}
-
-.el-message--error {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-}
-
-.el-message--info {
-  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-}
-
 /* ========== 分页 ========== */
 .el-pagination .el-pager li {
   border-radius: var(--radius-md);
   transition: all var(--transition-fast) var(--easing-default);
+  min-width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  background: transparent !important;
 }
 
-.el-pagination .el-pager li.active {
-  background: var(--gradient-primary);
-  color: #fff;
+.el-pagination .el-pager li.active,
+.el-pagination .el-pager li.is-active {
+  background: rgba(var(--brand-primary-rgb), 0.1) !important;
+  color: var(--brand-primary) !important;
+  font-weight: 600;
 }
 
 .el-pagination .el-pager li:hover {
-  background: rgba(255, 107, 53, 0.1);
+  background: rgba(255, 107, 53, 0.1) !important;
+}
+
+/* 深色模式下的分页 */
+html.dark .el-pagination .btn-prev,
+html.dark .el-pagination .btn-next,
+html.dark .el-pagination .el-pager li {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: var(--bs-ink);
+}
+
+html.dark .el-pagination .el-pager li.active,
+html.dark .el-pagination .el-pager li.is-active {
+  background: rgba(var(--brand-primary-rgb), 0.2) !important;
+  color: #fff !important;
 }
 
 /* ========== 表单 ========== */
@@ -779,44 +821,45 @@ html.dark .el-loading-mask.is-fullscreen {
   backdrop-filter: blur(8px);
 }
 
-html.dark .el-message {
-  background: rgba(17, 25, 40, 0.92);
-  color: var(--bs-ink);
+/* 深色模式下按钮毛玻璃效果 */
+html.dark .el-button--primary:not(.is-plain) {
+  background: rgba(64, 158, 255, 0.85) !important;
+  border-color: rgba(64, 158, 255, 0.5) !important;
+  backdrop-filter: blur(8px);
 }
 
-html.dark .el-message-box {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%),
-    var(--bs-surface-solid);
-  border-color: rgba(255, 255, 255, 0.10);
-  box-shadow: 0 28px 60px rgba(2, 6, 23, 0.44);
+html.dark .el-button--primary:not(.is-plain):hover {
+  background: rgba(64, 158, 255, 0.95) !important;
 }
 
-html.dark .el-message-box__title,
-html.dark .el-message-box__headerbtn .el-message-box__close {
-  color: var(--bs-ink);
+html.dark .el-button--success:not(.is-plain) {
+  background: rgba(16, 185, 129, 0.85) !important;
+  border-color: rgba(16, 185, 129, 0.5) !important;
+  backdrop-filter: blur(8px);
 }
 
-html.dark .el-message-box__content,
-html.dark .el-message-box__message p {
-  color: #dbe6f3;
+html.dark .el-button--success:not(.is-plain):hover {
+  background: rgba(16, 185, 129, 0.95) !important;
 }
 
-html.dark .el-message-box__header,
-html.dark .el-message-box__btns {
-  border-color: rgba(255, 255, 255, 0.08);
+html.dark .el-button--danger:not(.is-plain) {
+  background: rgba(239, 68, 68, 0.85) !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  backdrop-filter: blur(8px);
 }
 
-html.dark .el-pagination .btn-prev,
-html.dark .el-pagination .btn-next,
-html.dark .el-pagination .el-pager li {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--bs-ink);
+html.dark .el-button--danger:not(.is-plain):hover {
+  background: rgba(239, 68, 68, 0.95) !important;
 }
 
-html.dark .el-pagination .el-pager li.active {
-  background: var(--el-color-primary);
-  color: #fff;
+html.dark .el-button--warning:not(.is-plain) {
+  background: rgba(245, 158, 11, 0.85) !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+  backdrop-filter: blur(8px);
+}
+
+html.dark .el-button--warning:not(.is-plain):hover {
+  background: rgba(245, 158, 11, 0.95) !important;
 }
 
 /* =====================================================
@@ -840,4 +883,31 @@ html.dark .el-pagination .el-pager li.active {
 [class*="card"]:hover [class*="img"],
 [class*="card"]:hover [class*="image"] {
   transform: none !important;
+}
+
+/* ========== 下拉菜单高度限制 ========== */
+.el-dropdown-menu {
+  max-height: 280px !important;
+  overflow-y: auto !important;
+}
+
+/* ========== 下拉框文字颜色统一 ========== */
+.el-dropdown-menu__item {
+  color: var(--bs-ink) !important;
+  background-color: transparent !important;
+}
+
+.el-dropdown-menu__item:hover {
+  color: var(--bs-ink) !important;
+  background-color: rgba(var(--brand-primary-rgb), 0.08) !important;
+}
+
+/* 深色模式下的下拉菜单项 */
+html.dark .el-dropdown-menu__item {
+  color: #e2e8f0 !important;
+}
+
+html.dark .el-dropdown-menu__item:hover {
+  color: #fff !important;
+  background-color: rgba(var(--brand-primary-rgb), 0.12) !important;
 }

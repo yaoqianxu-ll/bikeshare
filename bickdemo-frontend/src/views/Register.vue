@@ -134,11 +134,12 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { register, sendEmailCode } from '@/api/auth'
-import { ElMessage } from 'element-plus'
+import { useMessage } from 'naive-ui'
 import { User, Lock, Right, Bicycle, CircleCheck, Star, Message } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+const message = useMessage()
 const formRef = ref(null)
 const loading = ref(false)
 const countdown = ref(0)
@@ -223,7 +224,7 @@ const startCountdown = () => {
 
 const handleSendCode = async () => {
   if (!form.email) {
-    ElMessage.warning('请先输入邮箱')
+    message.warning('请先输入邮箱')
     return
   }
 
@@ -232,7 +233,7 @@ const handleSendCode = async () => {
       email: form.email,
       type: 'REGISTER'
     })
-    ElMessage.success('验证码已发送，请查收邮箱')
+    message.success('验证码已发送，请查收邮箱')
     startCountdown()
   } catch (error) {
     console.error(error)
@@ -253,7 +254,7 @@ const handleRegister = async () => {
           password: form.password
         })
         userStore.setUser(res.data.token, res.data.username, res.data.role, res.data.userId)
-        ElMessage.success('注册成功')
+        message.success('注册成功')
         router.push('/bicycles')
       } catch (error) {
         console.error(error)

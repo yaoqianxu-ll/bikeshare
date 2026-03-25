@@ -25,12 +25,32 @@
 
     <div class="page-toolbar">
       <div class="toolbar-left">
-        <el-select v-model="query.type" clearable placeholder="车辆类型" @change="handleFilter" >
-          <el-option v-for="item in typeOptions" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
-        <el-select v-model="query.status" clearable placeholder="车辆状态" @change="handleFilter" >
-          <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
+        <el-dropdown trigger="click" @command="handleTypeChange">
+          <el-button class="filter-btn" :type="query.type ? 'primary' : 'default'">
+            {{ query.type ? typeOptions.find(o => o.value === query.type)?.label : '车辆类型' }}
+            <el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item v-for="item in typeOptions" :key="item.value" :command="item.value">
+                {{ item.label }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <el-dropdown trigger="click" @command="handleStatusChange">
+          <el-button class="filter-btn" :type="query.status ? 'primary' : 'default'">
+            {{ query.status ? statusOptions.find(o => o.value === query.status)?.label : '车辆状态' }}
+            <el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item v-for="item in statusOptions" :key="item.value" :command="item.value">
+                {{ item.label }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </div>
 
@@ -181,6 +201,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { createBicycle, deleteBicycle, getBicyclesPage, updateBicycle } from '@/api/bicycle'
 import { uploadImage } from '@/api/file'
 import { chinaRegionOptions } from '@/data/chinaRegionOptions'
@@ -341,6 +362,16 @@ const handleFilter = () => {
   load()
 }
 
+const handleTypeChange = (command) => {
+  query.type = command
+  handleFilter()
+}
+
+const handleStatusChange = (command) => {
+  query.status = command
+  handleFilter()
+}
+
 const handleProvinceChange = () => {
   form.cityCode = ''
   form.districtCode = ''
@@ -435,6 +466,10 @@ onMounted(load)
 </script>
 
 <style scoped>
+.filter-btn {
+  min-width: 120px;
+}
+
 .region-toolbar {
   display: flex;
   flex-wrap: wrap;

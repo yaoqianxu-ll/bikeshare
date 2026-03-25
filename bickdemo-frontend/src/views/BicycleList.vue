@@ -235,7 +235,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { useMessage } from 'naive-ui'
 import {
   Bicycle,
   Location,
@@ -250,6 +250,7 @@ import { createRental, endRental, getMyActiveRentals } from '@/api/rental'
 import { getMarketplaceLocationHint } from '@/api/marketplace'
 
 const userStore = useUserStore()
+const message = useMessage()
 const bicycles = ref([])
 const filterType = ref('')
 const filterStatus = ref('')
@@ -555,7 +556,7 @@ const confirmRent = async () => {
       expectedEndTime: rentForm.expectedEndTime,
       quantity: rentForm.quantity
     })
-    ElMessage.success('租赁成功')
+    message.success('租赁成功')
     rentDialogVisible.value = false
     await loadBicycles()
   } catch (error) {
@@ -571,7 +572,7 @@ const confirmReturn = async () => {
   returning.value = true
   try {
     await endRental(currentRentalId.value)
-    ElMessage.success('归还成功')
+    message.success('归还成功')
     returnConfirmVisible.value = false
     // 重新加载数据，更新自行车状态
     await loadBicycles()

@@ -17,6 +17,7 @@ bickdemo-frontend/dist/
 # 日志
 *.log
 logs/
+docs
 
 bikeshare.online_nginx
 
@@ -25,15 +26,17 @@ bikeshare.online_nginx
 .env.local
 .env.*
 !.env.example
+.mcp.json
 
 # 系统文件
 .DS_Store
 Thumbs.db
 
+
 # Docker 数据卷（本地开发）
 mysql-data/
 jenkins-data/
 gitea-data/
-
+*.py
 # 临时参考目录
 _tmp_sidifensen_blog/

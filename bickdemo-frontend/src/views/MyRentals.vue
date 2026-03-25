@@ -124,8 +124,11 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { useMessage, useDialog } from 'naive-ui'
 import { getMyRentals, endRental, cancelRental } from '@/api/rental'
+
+const message = useMessage()
+const dialog = useDialog()
 
 const rentals = ref([])
 const filterStatus = ref('')
@@ -238,48 +241,48 @@ const isCancelDisabled = (startTime) => {
 }
 
 const handleEndRental = async (row) => {
-  try {
-    await ElMessageBox.confirm('确认结束租赁吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await endRental(row.id)
-    ElMessage.success('结束租赁成功')
-    // 重新加载列表
-    await loadRentals()
-  } catch (error) {
-    if (error === 'cancel') {
-      // 用户取消确认框，不做任何处理
-      return
-    }
-    // 错误消息由 axios 拦截器显示，失败时不重新加载
-  }
+  dialog.warning({
+    title: '提示',
+    content: '确认结束租赁吗？',
+    positiveText: '确定',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await endRental(row.id)
+        message.success('结束租赁成功')
+        await loadRentals()
+      } catch (error) {
+        console.error(error)
+      }
+    },
+    onNegativeClick: () => {},
+    onClose: () => {}
+  })
 }
 
 const handleCancelRental = async (row) => {
   if (isCancelDisabled(row.startTime)) {
-    ElMessage.warning('租赁超过 1 分钟，无法取消，请归还自行车')
+    message.warning('租赁超过 1 分钟，无法取消，请归还自行车')
     return
   }
 
-  try {
-    await ElMessageBox.confirm('确认取消租赁吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await cancelRental(row.id)
-    ElMessage.success('取消租赁成功')
-    // 重新加载列表
-    await loadRentals()
-  } catch (error) {
-    if (error === 'cancel') {
-      // 用户取消确认框，不做任何处理
-      return
-    }
-    // 错误消息由 axios 拦截器显示，失败时不重新加载
-  }
+  dialog.warning({
+    title: '提示',
+    content: '确认取消租赁吗？',
+    positiveText: '确定',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await cancelRental(row.id)
+        message.success('取消租赁成功')
+        await loadRentals()
+      } catch (error) {
+        console.error(error)
+      }
+    },
+    onNegativeClick: () => {},
+    onClose: () => {}
+  })
 }
 
 const viewDetail = (row) => {

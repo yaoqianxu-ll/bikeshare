@@ -21,12 +21,14 @@
               <el-icon><Search /></el-icon>
             </template>
           </el-input>
-          <el-select v-model="sortBy" class="sort-select" @change="handleSortChange">
-            <el-option label="最新发布" value="newest" />
-            <el-option label="最多浏览" value="mostViewed" />
-            <el-option label="最多点赞" value="mostLiked" />
-            <el-option label="最多评论" value="mostCommented" />
-          </el-select>
+          <el-dropdown trigger="click" @command="handleSortChange">
+            <el-button class="filter-btn">{{ sortOptions.find(o => o.value === sortBy)?.label || '排序方式' }}<el-icon class="el-icon--right"><arrow-down /></el-icon></el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item v-for="item in sortOptions" :key="item.value" :command="item.value">{{ item.label }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </div>
       
@@ -734,7 +736,7 @@
 <script setup>
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { useMessage, useDialog } from 'naive-ui'
 import { Picture, Refresh, Search, HotWater, Star, ChatDotRound, View, User, Top, ArrowDown, ArrowUp, Close } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import {
@@ -759,6 +761,8 @@ import { deleteImage, uploadImage } from '@/api/file'
 
 const router = useRouter()
 const userStore = useUserStore()
+const message = useMessage()
+const dialog = useDialog()
 
 const loading = ref(false)
 const publishLoading = ref(false)
@@ -791,6 +795,13 @@ const commentDraft = ref('')
 const replyTarget = ref(null)
 const authorProfile = ref(null)
 const commentInputRef = ref(null)
+
+const sortOptions = [
+  { label: '最新发布', value: 'newest' },
+  { label: '最多浏览', value: 'mostViewed' },
+  { label: '最多点赞', value: 'mostLiked' },
+  { label: '最多评论', value: 'mostCommented' }
+]
 
 const detailOpen = ref(false)
 const profileOpen = ref(false)
@@ -849,7 +860,8 @@ const selectCategory = (value) => {
   loadPosts(1)
 }
 
-const handleSortChange = () => {
+const handleSortChange = (command) => {
+  sortBy.value = command
   pagination.page = 1
   loadPosts(1)
 }
@@ -916,15 +928,15 @@ const openPost = async (postId) => {
 
 const submitPost = async () => {
   if (!canPublish.value) {
-    ElMessage.warning('请先登录后再发布帖子')
+    message.warning('请先登录后再发布帖子')
     return
   }
   if (!publishForm.title.trim() || !publishForm.content.trim()) {
-    ElMessage.warning('标题和内容都要填写')
+    message.warning('标题和内容都要填写')
     return
   }
   if (!publishForm.category) {
-    ElMessage.warning('请选择一个分类')
+    message.warning('请选择一个分类')
     return
   }
 
@@ -941,7 +953,7 @@ const submitPost = async () => {
     publishForm.content = ''
     publishForm.category = ''
     publishForm.imageUrls = []
-    ElMessage.success(
+    message.success(
       createdPost?.status === 'APPROVED'
         ? '体验已发布'
         : '体验已提交，等待管理员审核'
@@ -972,7 +984,7 @@ const submitComment = async () => {
 
   const content = commentDraft.value.trim()
   if (!content) {
-    ElMessage.warning('评论内容不能为空')
+    message.warning('评论内容不能为空')
     return
   }
 
@@ -988,7 +1000,7 @@ const submitComment = async () => {
     replyTarget.value = null
     const nextCommentCount = Number(selectedPost.value.commentCount || 0) + 1
     syncPostState(selectedPost.value.id, { commentCount: nextCommentCount })
-    ElMessage.success('评论已发送')
+    message.success('评论已发送')
   } catch (error) {
     console.error(error)
   } finally {
@@ -1016,7 +1028,7 @@ const handlePinPost = async (post) => {
   try {
     const res = await pinForumPost(post.id, !post.pinned)
     syncPostState(post.id, res.data)
-    ElMessage.success(post.pinned ? '已取消置顶' : '帖子已置顶')
+    message.success(post.pinned ? '已取消置顶' : '帖子已置顶')
     await loadPosts()
   } catch (error) {
     console.error(error)
@@ -1025,7 +1037,7 @@ const handlePinPost = async (post) => {
 
 const startReply = async (comment) => {
   if (comment?.mine) {
-    ElMessage.warning('不能回复自己的评论')
+    message.warning('不能回复自己的评论')
     return
   }
   replyTarget.value = {
@@ -1046,15 +1058,15 @@ const beforePostImageUpload = (file) => {
   const isLt10M = file.size / 1024 / 1024 < 10
 
   if (publishForm.imageUrls.length + imageUploadingCount.value >= 9) {
-    ElMessage.warning('最多只能上传 9 张图片')
+    message.warning('最多只能上传 9 张图片')
     return false
   }
   if (!isImage) {
-    ElMessage.error('只能上传图片文件')
+    message.error('只能上传图片文件')
     return false
   }
   if (!isLt10M) {
-    ElMessage.error('图片大小不能超过 10MB')
+    message.error('图片大小不能超过 10MB')
     return false
   }
   return true
@@ -1067,12 +1079,12 @@ const handlePostImageUpload = async (options) => {
     const res = await uploadImage(file)
     if (publishForm.imageUrls.length >= 9) {
       await deleteImage(res.data.url).catch(() => {})
-      ElMessage.warning('最多只能上传 9 张图片')
+      message.warning('最多只能上传 9 张图片')
       onError(new Error('图片数量超限'))
       return
     }
     publishForm.imageUrls = [...publishForm.imageUrls, res.data.url]
-    ElMessage.success('图片上传成功')
+    message.success('图片上传成功')
     onSuccess(res)
   } catch (error) {
     console.error(error)
@@ -1083,7 +1095,7 @@ const handlePostImageUpload = async (options) => {
 }
 
 const handleImageExceed = () => {
-  ElMessage.warning('最多只能上传 9 张图片')
+  message.warning('最多只能上传 9 张图片')
 }
 
 const removePostImageAt = async (index) => {
@@ -1150,62 +1162,54 @@ const handleReviewPost = async (post, approved) => {
     return
   }
   const actionText = approved ? '通过' : '驳回'
-  try {
-    await ElMessageBox.confirm(
-      `确认${actionText}《${post.title}》吗？`,
-      `${actionText}帖子`,
-      {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
-        type: approved ? 'success' : 'warning'
-      }
-    )
-  } catch {
-    return
-  }
 
-  try {
-    const res = approved
-      ? await approveForumPost(post.id)
-      : await rejectForumPost(post.id)
-    syncPostState(post.id, res.data)
-    await loadPendingPosts()
-    ElMessage.success(approved ? '帖子已通过审核' : '帖子已驳回')
-  } catch (error) {
-    console.error(error)
-  }
+  dialog.warning({
+    title: `${actionText}帖子`,
+    content: `确认${actionText}《${post.title}》吗？`,
+    positiveText: '确认',
+    negativeText: '取消',
+    type: approved ? 'success' : 'warning',
+    onPositiveClick: async () => {
+      try {
+        const res = approved
+          ? await approveForumPost(post.id)
+          : await rejectForumPost(post.id)
+        syncPostState(post.id, res.data)
+        await loadPendingPosts()
+        message.success(approved ? '帖子已通过审核' : '帖子已驳回')
+      } catch (error) {
+        console.error(error)
+      }
+    }
+  })
 }
 
 const handleDeletePost = async (post) => {
   if (!post?.canDelete) {
     return
   }
-  try {
-    await ElMessageBox.confirm(
-      `确认删除《${post.title}》吗？删除后将无法恢复。`,
-      '删除帖子',
-      {
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-  } catch {
-    return
-  }
 
-  try {
-    const existedInList = posts.value.some(item => item.id === post.id)
-    await deleteForumPost(post.id)
-    removePostState(post.id)
-    if (existedInList) {
-      total.value = Math.max(0, total.value - 1)
+  dialog.warning({
+    title: '删除帖子',
+    content: `确认删除《${post.title}》吗？删除后将无法恢复。`,
+    positiveText: '删除',
+    negativeText: '取消',
+    type: 'warning',
+    onPositiveClick: async () => {
+      try {
+        const existedInList = posts.value.some(item => item.id === post.id)
+        await deleteForumPost(post.id)
+        removePostState(post.id)
+        if (existedInList) {
+          total.value = Math.max(0, total.value - 1)
+        }
+        await loadPendingPosts()
+        message.success('帖子已删除')
+      } catch (error) {
+        console.error(error)
+      }
     }
-    await loadPendingPosts()
-    ElMessage.success('帖子已删除')
-  } catch (error) {
-    console.error(error)
-  }
+  })
 }
 
 const handleAddFriend = async () => {
@@ -1222,7 +1226,7 @@ const handleAddFriend = async () => {
       canAddFriend: false,
       relationStatus: 'REQUEST_SENT'
     }
-    ElMessage.success('好友申请已发送')
+    message.success('好友申请已发送')
   } catch (error) {
     console.error(error)
   } finally {
@@ -1291,7 +1295,7 @@ const ensureLoggedIn = (action) => {
   if (userStore.isLoggedIn) {
     return true
   }
-  ElMessage.warning(`请先登录后再${action}`)
+  message.warning(`请先登录后再${action}`)
   return false
 }
 
@@ -1299,7 +1303,7 @@ const ensurePostInteractive = (post, action) => {
   if (isPostApproved(post)) {
     return true
   }
-  ElMessage.warning(`帖子审核通过后才可以${action}`)
+  message.warning(`帖子审核通过后才可以${action}`)
   return false
 }
 
@@ -1560,6 +1564,24 @@ onMounted(() => {
 .sort-select :deep(.el-input__wrapper) {
   min-height: 40px;
   border-radius: 12px;
+}
+
+.filter-btn {
+  min-width: 100px;
+  color: #64748b;
+}
+
+.filter-btn:hover {
+  color: #0f172a;
+}
+
+:deep(.el-dropdown-menu__item) {
+  color: #64748b !important;
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  color: #0f172a !important;
+  background-color: #f1f5f9;
 }
 
 /* 分类筛选栏 */

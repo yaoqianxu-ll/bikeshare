@@ -527,8 +527,8 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, h } from 'vue'
+import { useMessage, useDialog } from 'naive-ui'
 import {
   ArrowLeft,
   Bell,
@@ -564,12 +564,16 @@ import {
 import { uploadImage } from '@/api/file'
 import { createChatSocket } from '@/utils/chatSocket'
 import { useRoute, useRouter } from 'vue-router'
+import { useContactsStore } from '@/stores/contacts'
 
 const MESSAGE_PAGE_SIZE = 24
 
 const userStore = useUserStore()
+const contactsStore = useContactsStore()
 const router = useRouter()
 const route = useRoute()
+const message = useMessage()
+const dialog = useDialog()
 
 // 搜索相关
 const searchKeyword = ref('')
@@ -748,7 +752,7 @@ const getInitial = (value) => {
 const buildAvatarStyle = (avatar) => {
   if (avatar) return {}
   return {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+    background: '#94a3b8'
   }
 }
 
@@ -857,9 +861,9 @@ const formatFriendSince = (value) => {
 const copyToClipboard = async (text) => {
   try {
     await navigator.clipboard.writeText(String(text))
-    ElMessage.success('已复制到剪贴板')
+    message.success('已复制到剪贴板')
   } catch (err) {
-    ElMessage.error('复制失败')
+    message.error('复制失败')
   }
 }
 
@@ -877,7 +881,7 @@ const handleCreateFriendRequestFromProfile = async () => {
 const handleAcceptFromProfile = async () => {
   if (!friendProfile.value?.pendingRequestId) return
   await acceptFriendRequest(friendProfile.value.pendingRequestId)
-  ElMessage.success('已同意好友申请')
+  message.success('已同意好友申请')
   await Promise.all([loadRequests(), loadContacts()])
   closeFriendProfile()
 }
@@ -909,6 +913,8 @@ const loadContacts = async ({ silent = false } = {}) => {
   try {
     const res = await getContacts()
     contacts.value = res.data || []
+    // 同步到 store（触发 Layout 中的徽章更新）
+    contacts.value.forEach(c => contactsStore.updateContact(c))
     if (activeContact.value) {
       const matched = contacts.value.find((item) => item.userId === activeContact.value.userId)
       if (matched) {
@@ -918,6 +924,7 @@ const loadContacts = async ({ silent = false } = {}) => {
   } catch (error) {
     console.error('加载联系人失败:', error)
     contacts.value = []
+    contactsStore.reset()
   } finally {
     if (!silent) contactsLoading.value = false
   }
@@ -1049,38 +1056,56 @@ const handleSearchItemClick = (user) => {
 // 好友申请处理
 const handleAcceptRequest = async (request) => {
   await acceptFriendRequest(request.id)
-  ElMessage.success('已同意好友申请')
+  message.success('已同意好友申请')
   await Promise.all([loadRequests(), loadContacts()])
 }
 
 const handleRejectRequest = async (request) => {
   await rejectFriendRequest(request.id)
-  ElMessage.success('已拒绝好友申请')
+  message.success('已拒绝好友申请')
   await Promise.all([loadRequests(), loadContacts()])
 }
 
 const handleCreateFriendRequest = async (user) => {
-  try {
-    const { value } = await ElMessageBox.prompt(
-      `给 ${user.username} 留一句打招呼的话`,
-      '发送好友申请',
-      {
-        confirmButtonText: '发送',
-        cancelButtonText: '取消',
-        inputPlaceholder: '比如：一起聊聊骑行路线吧'
+  return new Promise((resolve) => {
+    let inputValue = ''
+    dialog.warning({
+      title: '发送好友申请',
+      content: h('div', {}, [
+        h('p', { style: 'margin-bottom: 8px' }, `给 ${user.username} 留一句打招呼的话`),
+        h('input', {
+          type: 'text',
+          placeholder: '比如：一起聊聊骑行路线吧',
+          style: 'width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ddd; border-radius: 4px;',
+          onInput: (e) => { inputValue = e.target.value }
+        })
+      ]),
+      positiveText: '发送',
+      negativeText: '取消',
+      onPositiveClick: async () => {
+        try {
+          await createFriendRequest({
+            receiverId: user.id,
+            remark: inputValue || ''
+          })
+          message.success('好友申请已发送')
+          await Promise.all([loadRequests(), loadContacts()])
+          resolve()
+        } catch (error) {
+          if (error !== 'cancel' && error !== 'close') {
+            console.error(error)
+          }
+          resolve()
+        }
+      },
+      onNegativeClick: () => {
+        resolve()
+      },
+      onClose: () => {
+        resolve()
       }
-    )
-    await createFriendRequest({
-      receiverId: user.id,
-      remark: value || ''
     })
-    ElMessage.success('好友申请已发送')
-    await Promise.all([loadRequests(), loadContacts()])
-  } catch (error) {
-    if (error !== 'cancel' && error !== 'close') {
-      console.error(error)
-    }
-  }
+  })
 }
 
 // 消息发送
@@ -1153,7 +1178,7 @@ const toggleEmojiPicker = () => {
 
 const triggerImagePicker = () => {
   if (!activeContact.value) {
-    ElMessage.warning('请先选择一个聊天对象')
+    message.warning('请先选择一个聊天对象')
     return
   }
   imageInputRef.value?.click()
@@ -1171,7 +1196,7 @@ const handleImageSelected = async (event) => {
     await sendPayload({ type: 'IMAGE', mediaUrl: url })
   } catch (error) {
     console.error(error)
-    ElMessage.error('图片发送失败')
+    message.error('图片发送失败')
   } finally {
     imageUploading.value = false
     if (event?.target) event.target.value = ''
@@ -1224,6 +1249,11 @@ const clearUnreadState = (targetUserId) => {
   contacts.value = contacts.value.map((contact) =>
     contact.userId === targetUserId ? { ...contact, unreadCount: 0 } : contact
   )
+  // 同步到 store（清除 Layout 中的徽章计数）
+  const updated = contacts.value.find(c => c.userId === targetUserId)
+  if (updated) {
+    contactsStore.updateContact(updated)
+  }
 }
 
 const scrollToBottom = () => {
@@ -1281,29 +1311,31 @@ const handleSocketEvent = async (event) => {
       }
     } else {
       // 显示通知
-      ElMessage({
-        message: `${incomingMessage.senderUsername}: ${previewText}`,
-        type: 'info',
-        duration: 3000
-      })
+      message.info(`${incomingMessage.senderUsername}: ${previewText}`)
     }
-    
-    // 更新联系人列表
+
+    // 更新联系人列表和未读计数
+    // 注意：未读计数由 Layout.vue 的全局 WebSocket 统一处理，避免重复增加
+    // 此处只负责更新消息预览和时间，以及在当前会话时清除未读状态
     const contactIndex = contacts.value.findIndex((c) => c.userId === conversationUserId)
     if (contactIndex >= 0) {
       const isCurrent = activeContact.value?.userId === conversationUserId
-      contacts.value[contactIndex] = {
+      const updatedContact = {
         ...contacts.value[contactIndex],
-        unreadCount: isCurrent ? 0 : (contacts.value[contactIndex].unreadCount || 0) + 1,
         lastMessagePreview: previewText,
         lastMessageTime: now,
-        activityTime: now
+        activityTime: now,
+        // 只在当前会话时清除未读计数，否则保持原有值（由 Layout.vue 增加）
+        unreadCount: isCurrent ? 0 : contacts.value[contactIndex].unreadCount
       }
+      contacts.value.splice(contactIndex, 1, updatedContact)
       // 排序：最新消息在前
       contacts.value.sort((a, b) => new Date(b.activityTime) - new Date(a.activityTime))
+      // 同步到 store
+      contactsStore.updateContact(updatedContact)
     } else {
-      // 添加新联系人
-      contacts.value.unshift({
+      // 添加新联系人（陌生人）
+      const newContact = {
         userId: conversationUserId,
         username: incomingMessage.senderUsername,
         email: '',
@@ -1319,9 +1351,12 @@ const handleSocketEvent = async (event) => {
         activityTime: now,
         createdAt: null,
         updatedAt: null,
-        unreadCount: activeContact.value?.userId === conversationUserId ? 0 : 1,
+        // 未读计数由 Layout.vue 处理
+        unreadCount: 0,
         canChat: true
-      })
+      }
+      contacts.value.unshift(newContact)
+      contactsStore.updateContact(newContact)
     }
   }
   
@@ -2066,7 +2101,7 @@ onBeforeUnmount(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #94a3b8;
   color: #fff;
   font-weight: 600;
   font-size: 14px;

@@ -23,17 +23,27 @@
     <div class="page-toolbar">
       <div class="toolbar-left">
         <el-input v-model="query.username" clearable placeholder="访问用户" @keyup.enter="search" />
-        <el-select v-model="query.method" clearable placeholder="请求方式">
-          <el-option label="GET" value="GET" />
-          <el-option label="POST" value="POST" />
-          <el-option label="PUT" value="PUT" />
-          <el-option label="DELETE" value="DELETE" />
-        </el-select>
-        <el-select v-model="query.status" clearable placeholder="状态">
-          <el-option label="成功" value="SUCCESS" />
-          <el-option label="失败" value="FAIL" />
-          <el-option label="已拦截" value="BLOCKED" />
-        </el-select>
+        <el-dropdown trigger="click" @command="handleMethodChange">
+          <el-button class="filter-btn">{{ getMethodLabel(query.method) || '请求方式' }}<el-icon class="el-icon--right"><arrow-down /></el-icon></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="GET">GET</el-dropdown-item>
+              <el-dropdown-item command="POST">POST</el-dropdown-item>
+              <el-dropdown-item command="PUT">PUT</el-dropdown-item>
+              <el-dropdown-item command="DELETE">DELETE</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <el-dropdown trigger="click" @command="handleStatusChange">
+          <el-button class="filter-btn">{{ getStatusLabel(query.status) || '状态' }}<el-icon class="el-icon--right"><arrow-down /></el-icon></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="SUCCESS">成功</el-dropdown-item>
+              <el-dropdown-item command="FAIL">失败</el-dropdown-item>
+              <el-dropdown-item command="BLOCKED">已拦截</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-input v-model="query.ip" clearable placeholder="访问 IP" @keyup.enter="search" />
         <el-input v-model="query.requestUri" clearable placeholder="请求 URL" @keyup.enter="search" />
         <el-date-picker
@@ -92,6 +102,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { getVisitorLogs } from '@/api/system'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { formatDate, regionText, visitStatusText, visitStatusType } from '@/utils/format'
 
 const loading = ref(false)
@@ -147,5 +158,28 @@ const resetFilters = () => {
   load()
 }
 
+const getMethodLabel = (method) => ({ GET: 'GET', POST: 'POST', PUT: 'PUT', DELETE: 'DELETE' }[method] || '')
+const getStatusLabel = (status) => ({ SUCCESS: '成功', FAIL: '失败', BLOCKED: '已拦截' }[status] || '')
+
 onMounted(load)
 </script>
+
+<style scoped>
+.filter-btn {
+  min-width: 100px;
+  color: #64748b;
+}
+
+.filter-btn:hover {
+  color: #0f172a;
+}
+
+:deep(.el-dropdown-menu__item) {
+  color: #64748b !important;
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  color: #0f172a !important;
+  background-color: #f1f5f9;
+}
+</style>

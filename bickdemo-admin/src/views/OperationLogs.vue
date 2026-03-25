@@ -27,24 +27,44 @@
     <div class="page-toolbar">
       <div class="toolbar-left">
         <el-input v-model="query.username" clearable placeholder="操作人员" @keyup.enter="search" />
-        <el-select v-model="query.roleName" clearable placeholder="操作角色">
-          <el-option label="管理员" value="ADMIN" />
-          <el-option label="普通用户" value="USER" />
-        </el-select>
-        <el-select v-model="query.module" clearable placeholder="功能模块">
-          <el-option v-for="item in moduleOptions" :key="item" :label="item" :value="item" />
-        </el-select>
-        <el-select v-model="query.type" clearable placeholder="操作类型">
-          <el-option label="查询" value="查询" />
-          <el-option label="新增" value="新增" />
-          <el-option label="修改" value="修改" />
-          <el-option label="删除" value="删除" />
-          <el-option label="审核" value="审核" />
-        </el-select>
-        <el-select v-model="query.status" clearable placeholder="操作状态">
-          <el-option label="成功" value="SUCCESS" />
-          <el-option label="失败" value="FAIL" />
-        </el-select>
+        <el-dropdown trigger="click" @command="handleRoleChange">
+          <el-button class="filter-btn">{{ getRoleLabel(query.roleName) || '操作角色' }}<el-icon class="el-icon--right"><arrow-down /></el-icon></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="ADMIN">管理员</el-dropdown-item>
+              <el-dropdown-item command="USER">普通用户</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <el-dropdown trigger="click" @command="handleModuleChange">
+          <el-button class="filter-btn">{{ query.module || '功能模块' }}<el-icon class="el-icon--right"><arrow-down /></el-icon></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item v-for="item in moduleOptions" :key="item" :command="item">{{ item }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <el-dropdown trigger="click" @command="handleTypeChange">
+          <el-button class="filter-btn">{{ query.type || '操作类型' }}<el-icon class="el-icon--right"><arrow-down /></el-icon></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="查询">查询</el-dropdown-item>
+              <el-dropdown-item command="新增">新增</el-dropdown-item>
+              <el-dropdown-item command="修改">修改</el-dropdown-item>
+              <el-dropdown-item command="删除">删除</el-dropdown-item>
+              <el-dropdown-item command="审核">审核</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <el-dropdown trigger="click" @command="handleStatusChange">
+          <el-button class="filter-btn">{{ getStatusLabel(query.status) || '操作状态' }}<el-icon class="el-icon--right"><arrow-down /></el-icon></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="SUCCESS">成功</el-dropdown-item>
+              <el-dropdown-item command="FAIL">失败</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-input v-model="query.ip" clearable placeholder="操作 IP" @keyup.enter="search" />
         <el-input v-model="query.requestUri" clearable placeholder="请求 URL" @keyup.enter="search" />
         <el-date-picker
@@ -143,6 +163,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { batchDeleteOperationLogs, deleteOperationLog, getOperationLogs } from '@/api/system'
 import { formatDate, logStatusText, logStatusType, regionText, userRoleText } from '@/utils/format'
 
@@ -211,6 +232,26 @@ const resetFilters = () => {
   load()
 }
 
+const handleRoleChange = (command) => {
+  query.roleName = command
+  search()
+}
+
+const handleModuleChange = (command) => {
+  query.module = command
+  search()
+}
+
+const handleTypeChange = (command) => {
+  query.type = command
+  search()
+}
+
+const handleStatusChange = (command) => {
+  query.status = command
+  search()
+}
+
 const handleSelectionChange = (rows) => {
   selections.value = rows
 }
@@ -243,9 +284,21 @@ const batchRemove = async () => {
 }
 
 onMounted(load)
+
+const getRoleLabel = (role) => ({ ADMIN: '管理员', USER: '普通用户' }[role] || '')
+const getStatusLabel = (status) => ({ SUCCESS: '成功', FAIL: '失败' }[status] || '')
 </script>
 
 <style scoped>
+.filter-btn {
+  min-width: 100px;
+  color: #64748b;
+}
+
+.filter-btn:hover {
+  color: #0f172a;
+}
+
 .detail-stack {
   display: grid;
   gap: 12px;
@@ -289,5 +342,14 @@ onMounted(load)
 .detail-code {
   font-family: "Consolas", "Courier New", monospace;
   font-size: 13px;
+}
+
+:deep(.el-dropdown-menu__item) {
+  color: #64748b !important;
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  color: #0f172a !important;
+  background-color: #f1f5f9;
 }
 </style>

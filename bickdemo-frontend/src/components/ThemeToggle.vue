@@ -1,50 +1,17 @@
 <template>
   <div class="theme-toggle" :class="[ `theme-toggle--${variant}`, `theme-toggle--tone-${tone}` ]">
-    <el-dropdown placement="top-end" trigger="click" @command="handleCommand">
-      <button type="button" class="theme-toggle__button" :aria-label="themeLabel" :title="themeLabel">
-        <el-icon>
-          <component :is="currentIcon" />
-        </el-icon>
-      </button>
-
-      <template #dropdown>
-        <el-dropdown-menu class="theme-toggle__menu">
-          <el-dropdown-item command="system">
-            <div class="theme-toggle__option">
-              <div class="theme-toggle__option-main">
-                <el-icon><Monitor /></el-icon>
-                <span>跟随系统</span>
-              </div>
-              <el-tag v-if="themeStore.mode === 'system'" size="small" effect="plain" type="primary">当前</el-tag>
-            </div>
-          </el-dropdown-item>
-          <el-dropdown-item command="light">
-            <div class="theme-toggle__option">
-              <div class="theme-toggle__option-main">
-                <el-icon><Sunny /></el-icon>
-                <span>浅色模式</span>
-              </div>
-              <el-tag v-if="themeStore.mode === 'light'" size="small" effect="plain" type="primary">当前</el-tag>
-            </div>
-          </el-dropdown-item>
-          <el-dropdown-item command="dark">
-            <div class="theme-toggle__option">
-              <div class="theme-toggle__option-main">
-                <el-icon><MoonNight /></el-icon>
-                <span>黑夜模式</span>
-              </div>
-              <el-tag v-if="themeStore.mode === 'dark'" size="small" effect="plain" type="primary">当前</el-tag>
-            </div>
-          </el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
+    <button type="button" class="theme-toggle__button" :aria-label="themeLabel" :title="themeLabel" @click="toggleTheme">
+      <span class="theme-toggle__icon-wrapper">
+        <el-icon class="theme-icon-out"><Sunny /></el-icon>
+        <el-icon class="theme-icon-in"><MoonNight /></el-icon>
+      </span>
+    </button>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { MoonNight, Monitor, Sunny } from '@element-plus/icons-vue'
+import { MoonNight, Sunny } from '@element-plus/icons-vue'
 import { useThemeStore } from '@/stores/theme'
 
 defineProps({
@@ -60,16 +27,17 @@ defineProps({
 
 const themeStore = useThemeStore()
 
-const currentIcon = computed(() => (themeStore.isDark ? MoonNight : Sunny))
 const themeLabel = computed(() => {
-  if (themeStore.mode === 'system') {
-    return `主题：跟随系统（当前${themeStore.isDark ? '黑夜' : '浅色'}）`
-  }
   return `主题：${themeStore.isDark ? '黑夜模式' : '浅色模式'}`
 })
 
-const handleCommand = (command) => {
-  themeStore.setMode(command)
+const toggleTheme = () => {
+  // 在浅色和黑夜之间切换
+  if (themeStore.isDark) {
+    themeStore.setMode('light')
+  } else {
+    themeStore.setMode('dark')
+  }
 }
 </script>
 
@@ -103,7 +71,15 @@ const handleCommand = (command) => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+  padding: 0;
+  border: none;
+  outline: none;
+}
+
+.theme-toggle__button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.24);
 }
 
 .theme-toggle--tone-ghost .theme-toggle__button {
@@ -114,34 +90,54 @@ const handleCommand = (command) => {
   backdrop-filter: none;
 }
 
-.theme-toggle__button:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--el-color-primary) 35%, transparent);
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.24);
-}
-
 .theme-toggle--tone-ghost .theme-toggle__button:hover {
   border-color: rgba(255, 255, 255, 0.22);
   background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 10px 24px rgba(6, 18, 40, 0.08);
 }
 
-.theme-toggle__button .el-icon {
-  font-size: 20px;
-}
-
-.theme-toggle__option {
-  min-width: 170px;
+.theme-toggle__icon-wrapper {
+  position: relative;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: center;
 }
 
-.theme-toggle__option-main {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+.theme-toggle__icon-wrapper .el-icon {
+  position: absolute;
+  font-size: 20px;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+
+/* 浅色模式：显示太阳，月亮隐藏 */
+.theme-icon-out {
+  transform: rotate(0deg) scale(1);
+  opacity: 1;
+  color: #f59e0b;
+}
+
+.theme-icon-in {
+  transform: rotate(-90deg) scale(0.5);
+  opacity: 0;
+}
+
+/* 深色模式：显示月亮，太阳隐藏 */
+html.dark .theme-toggle__icon-wrapper .theme-icon-out {
+  transform: rotate(90deg) scale(0.5);
+  opacity: 0;
+}
+
+html.dark .theme-toggle__icon-wrapper .theme-icon-in {
+  transform: rotate(0deg) scale(1);
+  opacity: 1;
+  color: #a5b4fc;
+}
+
+/* 按钮点击时的缩放动画 */
+.theme-toggle__button:active {
+  transform: scale(0.92);
 }
 
 @media (max-width: 768px) {
@@ -154,6 +150,10 @@ const handleCommand = (command) => {
     width: 46px;
     height: 46px;
     border-radius: 14px;
+  }
+
+  .theme-toggle__icon-wrapper .el-icon {
+    font-size: 18px;
   }
 }
 </style>

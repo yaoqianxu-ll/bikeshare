@@ -7,17 +7,25 @@
     <div class="login-container">
       <!-- 左侧视觉区 -->
       <div class="login-visual">
+        <!-- 漂浮几何图形 -->
+        <div class="floating-shapes">
+          <div class="shape shape-circle circle-1"></div>
+          <div class="shape shape-circle circle-2"></div>
+        </div>
         <div class="visual-content">
           <!-- 自行车图标动画 -->
           <div class="bicycle-animation">
+            <div class="bicycle-glow"></div>
             <div class="bicycle-body">
-              <n-icon :component="BicycleIcon" size="120" color="rgba(255,255,255,0.9)" />
+              <n-icon :component="BicycleIcon" size="120" color="rgba(255,255,255,0.95)" />
             </div>
             <div class="wheel wheel-left"></div>
             <div class="wheel wheel-right"></div>
           </div>
-          <h1 class="brand-title">BikeShare</h1>
-          <p class="brand-subtitle">管理后台</p>
+          <h1 class="brand-title">
+            <span class="gradient-text">BikeShare</span>
+          </h1>
+          <p class="brand-subtitle">智能自行车租赁管理平台</p>
           <div class="brand-features">
             <div class="feature-item">
               <n-icon :component="DataIcon" size="18" />
@@ -39,10 +47,10 @@
       <div class="login-form-section">
         <div class="form-wrapper">
           <div class="form-header">
-            <div class="logo-small">
-              <n-icon :component="BicycleIcon" size="32" color="#3b82f6" />
+            <div class="logo-wrapper">
+              <n-icon :component="BicycleIcon" size="40" color="#60a5fa" />
             </div>
-            <h2>欢迎回来</h2>
+            <h2 class="welcome-title">欢迎回来</h2>
             <p class="form-subtitle">请登录您的管理员账户</p>
           </div>
 
@@ -183,7 +191,7 @@ const goToHome = () => {
   height: 100vh;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  background: linear-gradient(135deg, #0f0a1f 0%, #1a1535 40%, #251f4e 100%);
   display: flex;
 }
 
@@ -191,13 +199,13 @@ const goToHome = () => {
   width: 100%;
   height: 100%;
   display: grid;
-  grid-template-columns: 55% 1fr;
+  grid-template-columns: 50% 1fr;
 }
 
-/* ========== 左侧视觉区 - 全屏 ========== */
+/* ========== 左侧视觉区 ========== */
 .login-visual {
   height: 100%;
-  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -207,19 +215,60 @@ const goToHome = () => {
   padding: 80px 60px 40px;
 }
 
+/* 柔和的光晕背景 */
 .login-visual::before {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(400px 300px at 20% 10%, rgba(96, 165, 250, 0.25), transparent 60%),
-    radial-gradient(500px 400px at 80% 80%, rgba(139, 92, 246, 0.15), transparent 60%);
+    radial-gradient(500px 400px at 20% 10%, rgba(96, 165, 250, 0.2), transparent 60%),
+    radial-gradient(400px 300px at 80% 80%, rgba(168, 85, 247, 0.15), transparent 60%);
   pointer-events: none;
+}
+
+/* 漂浮圆形装饰 */
+.floating-shapes {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.shape {
+  position: absolute;
+  pointer-events: none;
+}
+
+.shape-circle {
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.08), transparent 70%);
+  animation: floatCircle 15s ease-in-out infinite;
+}
+
+.circle-1 {
+  top: 25%;
+  right: 25%;
+  width: 150px;
+  height: 150px;
+  animation-delay: 1s;
+}
+
+.circle-2 {
+  bottom: 35%;
+  left: 20%;
+  width: 100px;
+  height: 100px;
+  animation-delay: 3s;
+}
+
+@keyframes floatCircle {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(15px, -15px) scale(1.05); }
 }
 
 .visual-content {
   position: relative;
-  z-index: 1;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -237,7 +286,28 @@ const goToHome = () => {
   animation: float 3s ease-in-out infinite;
 }
 
+/* 柔和光晕背景 */
+.bicycle-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.25), transparent 70%);
+  border-radius: 50%;
+  animation: glow 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes glow {
+  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+}
+
 .bicycle-body {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -251,9 +321,9 @@ const goToHome = () => {
   bottom: 30px;
   width: 60px;
   height: 60px;
-  border: 6px solid rgba(255, 255, 255, 0.8);
+  border: 3px solid rgba(255, 255, 255, 0.6);
   border-radius: 50%;
-  animation: spin 2s linear infinite;
+  animation: spin 3s linear infinite;
 }
 
 .wheel-left {
@@ -274,33 +344,31 @@ const goToHome = () => {
   to { transform: rotate(360deg); }
 }
 
-.brand-animation {
-  width: 220px;
-  height: 220px;
-  margin-bottom: 24px;
-  filter: drop-shadow(0 15px 40px rgba(96, 165, 250, 0.3));
-}
-
 .brand-title {
-  color: #fff;
+  margin: 0 0 12px;
   font-size: 48px;
   font-weight: 700;
-  margin: 0 0 12px;
   letter-spacing: -1px;
-  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .brand-subtitle {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 16px;
-  margin: 0 0 40px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0 0 48px;
   font-weight: 400;
   letter-spacing: 2px;
 }
 
 .brand-features {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
   justify-content: center;
 }
@@ -308,29 +376,27 @@ const goToHome = () => {
 .feature-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 20px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  gap: 8px;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.95);
-  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
   font-weight: 500;
   transition: all 0.3s ease;
   cursor: default;
 }
 
 .feature-item:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-4px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
 }
 
 .feature-item .n-icon {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -340,7 +406,7 @@ const goToHome = () => {
 /* ========== 右侧表单区 ========== */
 .login-form-section {
   height: 100%;
-  background: #fff;
+  background: linear-gradient(135deg, rgba(15, 10, 31, 0.95) 0%, rgba(30, 27, 75, 0.9) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -349,38 +415,40 @@ const goToHome = () => {
 }
 
 .form-wrapper {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 400px;
 }
 
 .form-header {
-  margin-bottom: 48px;
+  margin-bottom: 40px;
   text-align: center;
 }
 
-.logo-small {
+.logo-wrapper {
   width: 64px;
   height: 64px;
   margin: 0 auto 20px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 197, 253, 0.08));
+  background: rgba(96, 165, 250, 0.1);
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(96, 165, 250, 0.15);
 }
 
 .form-header h2 {
-  margin: 0 0 12px;
-  color: #0f172a;
-  font-size: 28px;
-  font-weight: 700;
+  margin: 0 0 10px;
+  color: #fff;
+  font-size: 26px;
+  font-weight: 600;
 }
 
 .form-subtitle {
   margin: 0;
-  color: #64748b;
-  font-size: 15px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
 }
 
 /* 表单样式 */
@@ -389,7 +457,7 @@ const goToHome = () => {
 }
 
 .n-form-item {
-  margin-bottom: 24px !important;
+  margin-bottom: 20px !important;
 }
 
 .n-form-item:last-child {
@@ -397,110 +465,88 @@ const goToHome = () => {
 }
 
 :deep(.n-input) {
-  background: #ffffff;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 14px;
-  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  transition: all 0.2s ease;
 }
 
 :deep(.n-input:hover) {
-  border-color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 :deep(.n-input--focus) {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 :deep(.n-input__prefix) {
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.4);
 }
 
 :deep(.n-input__placeholder) {
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.35);
 }
 
 /* 确保输入文字清晰可见 */
 :deep(.n-input__input) {
-  color: #000000 !important;
+  color: #ffffff !important;
   font-size: 15px;
   background-color: transparent;
 }
 
-/* ========== 密码框显示/隐藏按钮样式 ========== */
-/* 隐藏 Naive UI 内置的密码切换图标 */
-:deep(.n-input__password-icon),
-:deep(.n-base-icon.n-input__icon.n-input--show-password-wrapper),
-:deep(.n-input .n-input__icon_el.n-input__icon--password) {
-  display: none !important;
-}
-
-/* 自定义 suffix 图标样式 */
-:deep(.n-input__suffix) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-right: 12px;
-}
-
-/* 密码切换图标 - 使用深色确保可见 */
+/* 密码切换图标 */
 .password-toggle-icon {
-  color: #000000 !important;
+  color: rgba(255, 255, 255, 0.5) !important;
   font-size: 20px !important;
   cursor: pointer;
   transition: color 0.2s ease;
-  opacity: 0.7;
 }
 
 .password-toggle-icon:hover {
-  color: #000000 !important;
-  opacity: 1;
+  color: #60a5fa !important;
 }
 
 :deep(.password-toggle-icon svg) {
-  fill: #000000 !important;
+  fill: rgba(255, 255, 255, 0.5) !important;
 }
 
-/* 修复浏览器自动填充白底问题 */
+.password-toggle-icon:hover svg {
+  fill: #60a5fa !important;
+}
+
+/* 修复浏览器自动填充 */
 :deep(.n-input__input:-webkit-autofill),
 :deep(.n-input__input:-webkit-autofill:hover),
 :deep(.n-input__input:-webkit-autofill:focus),
 :deep(.n-input__input:-webkit-autofill:active) {
-  -webkit-text-fill-color: #000000 !important;
-  -webkit-box-shadow: 0 0 0 50px #ffffff inset !important;
-  background-color: #ffffff !important;
-  box-shadow: 0 0 0 1px #e2e8f0, 0 0 0 50px #ffffff inset;
-  transition: background-color 999999s ease-in-out 0s;
-}
-
-/* 密码框特殊处理 */
-:deep(.n-input[type="password"] .n-input__input:-webkit-autofill) {
-  -webkit-text-fill-color: #000000 !important;
-  -webkit-box-shadow: 0 0 0 50px #ffffff inset !important;
-  background-color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 50px rgba(255, 255, 255, 0.05) inset !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 /* 登录按钮 */
 .submit-btn {
-  margin-top: 12px;
-  height: 52px;
+  margin-top: 8px;
+  height: 48px;
   font-size: 16px;
   font-weight: 600;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #60a5fa 0%, #8b5cf6 100%);
   border: none;
-  border-radius: 14px;
+  border-radius: 12px;
   transition: all 0.3s ease;
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 4px 16px rgba(96, 165, 250, 0.3);
 }
 
 .submit-btn:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 16px 40px rgba(59, 130, 246, 0.35);
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(96, 165, 250, 0.4);
+  background: linear-gradient(135deg, #3b82f6 0%, #a78bfa 100%);
 }
 
 .submit-btn:active:not(:disabled) {
-  transform: translateY(-1px);
+  transform: translateY(0);
 }
 
 /* 底部链接 */
@@ -510,12 +556,13 @@ const goToHome = () => {
 }
 
 :deep(.n-button--text) {
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 14px;
+  transition: color 0.2s ease;
 }
 
 :deep(.n-button--text:hover) {
-  color: #3b82f6;
+  color: #60a5fa;
 }
 
 /* ========== 响应式 ========== */
@@ -530,17 +577,22 @@ const goToHome = () => {
   }
 
   .brand-animation {
-    width: 180px;
-    height: 180px;
-    margin-bottom: 24px;
+    width: 160px;
+    height: 160px;
+    margin-bottom: 20px;
+  }
+
+  .bicycle-glow {
+    width: 120px;
+    height: 120px;
   }
 
   .brand-title {
-    font-size: 36px;
+    font-size: 40px;
   }
 
   .brand-subtitle {
-    font-size: 14px;
+    font-size: 13px;
     margin-bottom: 32px;
   }
 
@@ -567,16 +619,25 @@ const goToHome = () => {
   }
 
   .brand-animation {
-    width: 140px;
-    height: 140px;
+    width: 120px;
+    height: 120px;
     margin-bottom: 16px;
   }
 
+  .bicycle-glow {
+    width: 100px;
+    height: 100px;
+  }
+
   .brand-title {
-    font-size: 28px;
+    font-size: 32px;
   }
 
   .brand-features {
+    display: none;
+  }
+
+  .floating-shapes {
     display: none;
   }
 
@@ -588,14 +649,13 @@ const goToHome = () => {
     font-size: 24px;
   }
 
-  .logo-small {
+  .logo-wrapper {
     width: 56px;
     height: 56px;
-    margin-bottom: 16px;
   }
 
   .submit-btn {
-    height: 48px;
+    height: 46px;
   }
 }
 </style>

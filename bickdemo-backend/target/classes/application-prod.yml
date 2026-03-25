@@ -49,7 +49,7 @@ server:
 jwt:
   secret: ${JWT_SECRET:change-me-jwt-secret-with-at-least-32-bytes}
   previous-secrets: ${JWT_PREVIOUS_SECRETS:}
-  expiration: 86400000
+  expiration: 43200000
 
 # 缓存配置
 cache:
@@ -94,6 +94,6 @@ app:
       max-distance-km: ${APP_RENTAL_RANGE_MAX_DISTANCE_KM:10}
   security:
     ip-control:
-      guest-max-requests-per-minute: ${APP_SECURITY_IP_GUEST_MAX_REQUESTS_PER_MINUTE:120}
-      authenticated-max-requests-per-minute: ${APP_SECURITY_IP_AUTH_MAX_REQUESTS_PER_MINUTE:240}
+      guest-max-requests-per-minute: ${APP_SECURITY_IP_GUEST_MAX_REQUESTS_PER_MINUTE:60}
+      authenticated-max-requests-per-minute: ${APP_SECURITY_IP_AUTH_MAX_REQUESTS_PER_MINUTE:60}
       ban-duration-minutes: ${APP_SECURITY_IP_BAN_DURATION_MINUTES:15}

@@ -66,7 +66,7 @@ public class BicycleService {
      * 使用缓存减少数据库压力，缓存 key 包含所有筛选参数。
      */
     @Cacheable(cacheNames = CacheNames.BICYCLES_PAGE,
-               key = "'page:' + #page + ':size:' + #size + ':type:' + (type != null ? type.name() : 'all') + ':status:' + (status != null ? status.name() : 'all')")
+               key = "'page:' + #p2 + ':size:' + #p3 + ':type:' + (#p0 != null ? #p0.name() : 'all') + ':status:' + (#p1 != null ? #p1.name() : 'all')")
     public Page<BicycleResponse> getBicyclesPage(BicycleType type, BicycleStatus status, int page, int size) {
         LambdaQueryWrapper<Bicycle> wrapper = new LambdaQueryWrapper<Bicycle>()
                 .eq(Bicycle::getDeleted, 0)

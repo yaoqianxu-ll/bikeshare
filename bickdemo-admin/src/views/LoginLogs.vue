@@ -23,14 +23,24 @@
     <div class="page-toolbar">
       <div class="toolbar-left">
         <el-input v-model="query.username" clearable placeholder="用户名 / 邮箱" @keyup.enter="search" />
-        <el-select v-model="query.method" clearable placeholder="登录方式">
-          <el-option label="用户名登录" value="USERNAME" />
-          <el-option label="邮箱登录" value="EMAIL" />
-        </el-select>
-        <el-select v-model="query.status" clearable placeholder="状态">
-          <el-option label="成功" value="SUCCESS" />
-          <el-option label="失败" value="FAIL" />
-        </el-select>
+        <el-dropdown trigger="click" @command="handleMethodChange">
+          <el-button class="filter-btn">{{ getMethodLabel(query.method) || '登录方式' }}<el-icon class="el-icon--right"><arrow-down /></el-icon></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="USERNAME">用户名登录</el-dropdown-item>
+              <el-dropdown-item command="EMAIL">邮箱登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <el-dropdown trigger="click" @command="handleStatusChange">
+          <el-button class="filter-btn">{{ getStatusLabel(query.status) || '状态' }}<el-icon class="el-icon--right"><arrow-down /></el-icon></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="SUCCESS">成功</el-dropdown-item>
+              <el-dropdown-item command="FAIL">失败</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-input v-model="query.ip" clearable placeholder="登录 IP" @keyup.enter="search" />
         <el-date-picker
           v-model="query.range"
@@ -108,6 +118,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { getLoginLogs } from '@/api/system'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { formatDate, loginMethodText, logStatusText, logStatusType, regionText } from '@/utils/format'
 
 const loading = ref(false)
@@ -162,6 +173,19 @@ const resetFilters = () => {
   load()
 }
 
+const handleMethodChange = (command) => {
+  query.method = command
+  search()
+}
+
+const handleStatusChange = (command) => {
+  query.status = command
+  search()
+}
+
+const getMethodLabel = (method) => ({ USERNAME: '用户名登录', EMAIL: '邮箱登录' }[method] || '')
+const getStatusLabel = (status) => ({ SUCCESS: '成功', FAIL: '失败' }[status] || '')
+
 const showDetail = (row) => {
   detailRecord.value = row
   detailVisible.value = true
@@ -171,6 +195,15 @@ onMounted(load)
 </script>
 
 <style scoped>
+.filter-btn {
+  min-width: 100px;
+  color: #64748b;
+}
+
+.filter-btn:hover {
+  color: #0f172a;
+}
+
 .detail-stack {
   display: grid;
   gap: 12px;
@@ -209,5 +242,14 @@ onMounted(load)
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+:deep(.el-dropdown-menu__item) {
+  color: #64748b !important;
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  color: #0f172a !important;
+  background-color: #f1f5f9;
 }
 </style>

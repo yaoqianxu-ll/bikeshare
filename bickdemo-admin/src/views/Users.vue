@@ -27,14 +27,30 @@
     <div class="page-toolbar">
       <div class="toolbar-left">
         <el-input v-model="query.keyword" clearable placeholder="搜索用户名或邮箱" @keyup.enter="search" />
-        <el-select v-model="query.role" clearable placeholder="角色">
-          <el-option label="管理员" value="ADMIN" />
-          <el-option label="普通用户" value="USER" />
-        </el-select>
-        <el-select v-model="query.enabled" clearable placeholder="状态">
-          <el-option label="正常" :value="true" />
-          <el-option label="禁用" :value="false" />
-        </el-select>
+        <el-dropdown trigger="click" @command="handleRoleChange">
+          <el-button class="filter-btn">
+            {{ getRoleLabel(query.role) || '角色' }}
+            <el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="ADMIN">管理员</el-dropdown-item>
+              <el-dropdown-item command="USER">普通用户</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <el-dropdown trigger="click" @command="handleEnabledChange">
+          <el-button class="filter-btn">
+            {{ query.enabled === '' ? '状态' : (query.enabled ? '正常' : '禁用') }}
+            <el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item :command="true">正常</el-dropdown-item>
+              <el-dropdown-item :command="false">禁用</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
       <div class="table-actions">
         <el-button @click="resetFilters">重置</el-button>
@@ -151,6 +167,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { deleteUser, getUsers, updateUser } from '@/api/system'
 import { formatDate, regionText, userRoleText } from '@/utils/format'
 import { useAuthStore } from '@/stores/auth'
@@ -168,7 +185,7 @@ const query = reactive({
   size: 10,
   keyword: '',
   role: '',
-  enabled: ''
+  enabled: null
 })
 
 const form = reactive({
@@ -206,7 +223,7 @@ const load = async () => {
       size: query.size,
       keyword: query.keyword || undefined,
       role: query.role || undefined,
-      enabled: query.enabled === '' ? undefined : query.enabled
+      enabled: query.enabled === null ? undefined : query.enabled
     })
     records.value = res.data?.records || []
     total.value = Number(res.data?.total || 0)
@@ -224,8 +241,18 @@ const resetFilters = () => {
   query.page = 1
   query.keyword = ''
   query.role = ''
-  query.enabled = ''
+  query.enabled = null
   load()
+}
+
+const handleRoleChange = (command) => {
+  query.role = command
+  search()
+}
+
+const handleEnabledChange = (command) => {
+  query.enabled = command
+  search()
 }
 
 const openDialog = (row) => {
@@ -289,9 +316,20 @@ const remove = async (row) => {
 }
 
 onMounted(load)
+
+const getRoleLabel = (role) => ({ ADMIN: '管理员', USER: '普通用户' }[role] || '')
 </script>
 
 <style scoped>
+.filter-btn {
+  min-width: 100px;
+  color: #64748b;
+}
+
+.filter-btn:hover {
+  color: #0f172a;
+}
+
 .user-line {
   display: flex;
   align-items: center;

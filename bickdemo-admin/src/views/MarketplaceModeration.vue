@@ -34,17 +34,27 @@
           @keyup.enter="handleFilter"
           @clear="handleFilter"
         />
-        <el-select v-model="query.reviewStatus" clearable placeholder="审核状态" @change="handleFilter">
-          <el-option label="待审核" value="PENDING" />
-          <el-option label="已通过" value="APPROVED" />
-          <el-option label="已驳回" value="REJECTED" />
-        </el-select>
-        <el-select v-model="query.status" clearable placeholder="挂牌状态" @change="handleFilter">
-          <el-option label="可出租" value="AVAILABLE" />
-          <el-option label="待交付" value="RESERVED" />
-          <el-option label="租赁中" value="RENTED" />
-          <el-option label="已下架" value="OFFLINE" />
-        </el-select>
+        <el-dropdown trigger="click" @command="handleReviewStatusChange">
+          <el-button class="filter-btn">{{ getReviewStatusLabel(query.reviewStatus) || '审核状态' }}<el-icon class="el-icon--right"><arrow-down /></el-icon></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="PENDING">待审核</el-dropdown-item>
+              <el-dropdown-item command="APPROVED">已通过</el-dropdown-item>
+              <el-dropdown-item command="REJECTED">已驳回</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <el-dropdown trigger="click" @command="handleStatusChange">
+          <el-button class="filter-btn">{{ getListingStatusLabel(query.status) || '挂牌状态' }}<el-icon class="el-icon--right"><arrow-down /></el-icon></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="AVAILABLE">可出租</el-dropdown-item>
+              <el-dropdown-item command="RESERVED">待交付</el-dropdown-item>
+              <el-dropdown-item command="RENTED">租赁中</el-dropdown-item>
+              <el-dropdown-item command="OFFLINE">已下架</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
       <el-button plain @click="load">刷新列表</el-button>
     </div>
@@ -138,6 +148,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { approveMarketplaceListing, getMarketplaceListingsPage, rejectMarketplaceListing } from '@/api/marketplace'
 import { formatDate, money, typeText } from '@/utils/format'
 
@@ -145,7 +156,7 @@ const loading = ref(false)
 const loadError = ref('')
 const records = ref([])
 const total = ref(0)
-const query = reactive({ page: 1, size: 10, keyword: '', reviewStatus: '', status: '' })
+const query = reactive({ page: 1, size: 10, keyword: '', reviewStatus: null, status: null })
 
 const pendingCount = computed(() => records.value.filter((item) => item.reviewStatus === 'PENDING').length)
 
@@ -182,6 +193,16 @@ const handleFilter = () => {
   load()
 }
 
+const handleReviewStatusChange = (command) => {
+  query.reviewStatus = command
+  handleFilter()
+}
+
+const handleStatusChange = (command) => {
+  query.status = command
+  handleFilter()
+}
+
 const approve = async (row) => {
   await ElMessageBox.confirm(`确认通过“${row.name}”的挂牌审核吗？`, '审核确认', { type: 'warning' })
   await approveMarketplaceListing(row.id)
@@ -214,11 +235,32 @@ const reject = async (row) => {
 }
 
 onMounted(load)
+
+const getReviewStatusLabel = (status) => ({ PENDING: '待审核', APPROVED: '已通过', REJECTED: '已驳回' }[status] || '')
+const getListingStatusLabel = (status) => ({ AVAILABLE: '可出租', RESERVED: '待交付', RENTED: '租赁中', OFFLINE: '已下架' }[status] || '')
 </script>
 
 <style scoped>
 .keyword-input {
   width: 260px;
+}
+
+.filter-btn {
+  min-width: 100px;
+  color: #64748b;
+}
+
+.filter-btn:hover {
+  color: #0f172a;
+}
+
+:deep(.el-dropdown-menu__item) {
+  color: #64748b !important;
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  color: #0f172a !important;
+  background-color: #f1f5f9;
 }
 
 .listing-row {

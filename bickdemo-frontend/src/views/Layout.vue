@@ -5,7 +5,24 @@
       <el-icon><Picture /></el-icon>
     </div>
 
-    <!-- 背景图片选择器 -->
+    <!-- 消息通知卡片 -->
+    <transition name="toast-fade">
+      <div v-if="toastRef.visible" class="message-toast" @click="goToFriends">
+        <div class="toast-icon">
+          <el-icon><ChatDotRound /></el-icon>
+        </div>
+        <div class="toast-content">
+          <div class="toast-header">
+            <span class="toast-username">{{ toastRef.username }}</span>
+            <span class="toast-time">{{ toastRef.time }}</span>
+          </div>
+          <div class="toast-preview">{{ toastRef.preview }}</div>
+        </div>
+        <div class="toast-close" @click.stop="closeToast">
+          <el-icon><Close /></el-icon>
+        </div>
+      </div>
+    </transition>
     <el-drawer
       v-model="showBgSelector"
       title="选择背景图片"
@@ -131,6 +148,7 @@
           <router-link to="/friends" class="nav-link" v-if="userStore.isLoggedIn" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><ChatDotRound /></el-icon></span>
             <span>好友</span>
+            <el-badge v-if="contactsStore.totalUnreadCount > 0" :value="contactsStore.totalUnreadCount" :max="99" class="nav-badge" />
           </router-link>
           <a
             :href="openSourceProjectUrl"
@@ -170,7 +188,9 @@
               <template #dropdown>
                 <el-dropdown-menu>
                   <router-link to="/friends">
-                    <el-dropdown-item><el-icon><ChatDotRound /></el-icon> 好友与消息</el-dropdown-item>
+                    <el-dropdown-item>
+                      <el-icon><ChatDotRound /></el-icon> 好友与消息
+                    </el-dropdown-item>
                   </router-link>
                   <router-link to="/profile">
                     <el-dropdown-item><el-icon><User /></el-icon> 个人信息</el-dropdown-item>
@@ -216,29 +236,156 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation, StarFilled } from '@element-plus/icons-vue'
+import { useContactsStore } from '@/stores/contacts'
+import { useMessage, useDialog } from 'naive-ui'
+import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation, StarFilled, Close } from '@element-plus/icons-vue'
 import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
 import { getCurrentUser } from '@/api/auth'
+import { getContacts } from '@/api/social'
+import { createChatSocket } from '@/utils/chatSocket'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const contactsStore = useContactsStore()
+const message = useMessage()
+const dialog = useDialog()
 const navOpen = ref(false)
 const showBgSelector = ref(false)
 const selectedBgId = ref(null)
 const backgrounds = ref([])
 const uploading = ref(false)
 const isMobile = ref(false)
+const toastRef = ref({
+  visible: false,
+  username: '',
+  preview: '',
+  time: '',
+  senderId: null,
+  timeout: null
+})
 
-
+// WebSocket 连接
+let socketClient = null
 
 const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
 const openSourceProjectUrl = 'https://gitee.com/loopeasen/bikelease'
 const isHomePage = computed(() => route.name === 'Home')
 const dropdownTrigger = computed(() => (isMobile.value ? 'click' : 'hover'))
 const bgDrawerSize = computed(() => (isMobile.value ? '100%' : '400px'))
+
+// 加载联系人列表（获取未读消息数）
+const loadContacts = async () => {
+  if (!userStore.isLoggedIn) {
+    contactsStore.reset()
+    return
+  }
+  const res = await getContacts()
+  contactsStore.contacts = res.data || []
+}
+
+// WebSocket 消息处理
+const handleSocketEvent = (event) => {
+  if (!event?.eventType) return
+
+  if (event.eventType === 'CHAT_MESSAGE' && event.message) {
+    const msg = event.message
+    // 从 event 中获取发送者信息（后端返回的格式）
+    const senderName = event.senderUsername || msg.senderUsername || '某人'
+    const preview = msg.type === 'IMAGE' ? '[图片]' : (msg.content || '')
+
+    // 更新 contactsStore 中的未读计数（仅在非好友页面时）
+    const senderId = event.contactUserId || msg.senderId
+    if (senderId && route.name !== 'Friends') {
+      const contact = contactsStore.contacts.find(c => c.userId === senderId)
+      if (contact) {
+        contact.unreadCount = (contact.unreadCount || 0) + 1
+      } else {
+        contactsStore.updateContact({
+          userId: senderId,
+          username: senderName,
+          avatar: msg.senderAvatar,
+          unreadCount: 1,
+          lastMessagePreview: preview,
+          lastMessageTime: new Date().toISOString()
+        })
+      }
+      // 显示通知卡片
+      showToast(senderName, preview, senderId)
+    }
+  }
+
+  if (event.eventType === 'FRIEND_REQUEST_CREATED') {
+    if (route.name !== 'Friends') {
+      showToast('系统通知', '收到新的好友申请', null)
+    }
+  }
+}
+
+// 显示消息通知
+const showToast = (username, preview, senderId) => {
+  toastRef.value.visible = true
+  toastRef.value.username = username
+  toastRef.value.preview = preview
+  toastRef.value.senderId = senderId
+  toastRef.value.time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+
+  if (toastRef.value.timeout) {
+    clearTimeout(toastRef.value.timeout)
+  }
+
+  toastRef.value.timeout = setTimeout(() => {
+    closeToast()
+  }, 5000)
+}
+
+// 关闭通知
+const closeToast = () => {
+  toastRef.value.visible = false
+  if (toastRef.value.timeout) {
+    clearTimeout(toastRef.value.timeout)
+    toastRef.value.timeout = null
+  }
+}
+
+// 跳转到好友页面并打开指定会话
+const goToFriends = () => {
+  closeToast()
+  if (toastRef.value.senderId) {
+    router.push({ path: '/friends', query: { targetUserId: toastRef.value.senderId } })
+  } else {
+    router.push('/friends')
+  }
+}
+
+// 连接 WebSocket
+const connectSocket = () => {
+  if (!userStore.isLoggedIn || socketClient) return
+
+  socketClient = createChatSocket(userStore.token, {
+    onConnect: () => {
+      console.log('[Layout] WebSocket 已连接')
+    },
+    onEvent: (event) => {
+      handleSocketEvent(event)
+    },
+    onError: (error) => {
+      console.error('[Layout] WebSocket 错误:', error)
+    },
+    onDisconnect: () => {
+      socketClient = null
+    }
+  })
+}
+
+// 断开 WebSocket
+const disconnectSocket = () => {
+  if (socketClient) {
+    socketClient.disconnect()
+    socketClient = null
+  }
+}
 
 // 上传配置
 const uploadUrl = '/api/backgrounds/upload'
@@ -288,13 +435,13 @@ const selectBackground = async (id) => {
     selectedBgId.value = id
     if (userStore.isAdmin) {
       await setEnabledBackground(id, true)
-      ElMessage.success('背景已切换')
+      message.success('背景已切换')
       loadBackgrounds()
     } else {
       try {
         window?.localStorage?.setItem(LOCAL_BG_KEY, String(id))
       } catch (_) {}
-      ElMessage.success('背景已切换')
+      message.success('背景已切换')
     }
   } catch (error) {
     console.error(error)
@@ -304,16 +451,16 @@ const selectBackground = async (id) => {
 // 上传成功回调
 const handleUploadSuccess = async (response, file) => {
   if (response.code === 200 && response.data) {
-    ElMessage.success('上传成功')
+    message.success('上传成功')
     loadBackgrounds()
   } else {
-    ElMessage.error(response.message || '上传失败')
+    message.error(response.message || '上传失败')
   }
 }
 
 // 上传失败回调
 const handleUploadError = (error) => {
-  ElMessage.error('上传失败：' + (error.message || '请重试'))
+  message.error('上传失败：' + (error.message || '请重试'))
 }
 
 // 上传前验证
@@ -322,11 +469,11 @@ const beforeUpload = (file) => {
   const isLt5M = file.size / 1024 / 1024 < 5
 
   if (!isImage) {
-    ElMessage.error('只能上传图片文件！')
+    message.error('只能上传图片文件！')
     return false
   }
   if (!isLt5M) {
-    ElMessage.error('图片大小不能超过 5MB！')
+    message.error('图片大小不能超过 5MB！')
     return false
   }
   return true
@@ -334,20 +481,23 @@ const beforeUpload = (file) => {
 
 // 删除背景
 const deleteBg = async (id) => {
-  try {
-    await ElMessageBox.confirm('确认删除该背景图片吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await deleteBackground(id)
-    ElMessage.success('删除成功')
-    loadBackgrounds()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error(error)
-    }
-  }
+  dialog.warning({
+    title: '提示',
+    content: '确认删除该背景图片吗？',
+    positiveText: '确定',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await deleteBackground(id)
+        message.success('删除成功')
+        loadBackgrounds()
+      } catch (error) {
+        console.error(error)
+      }
+    },
+    onNegativeClick: () => {},
+    onClose: () => {}
+  })
 }
 
 // 计算背景样式
@@ -368,7 +518,7 @@ const containerStyle = computed(() => {
 
 const handleLogout = () => {
   userStore.logout()
-  ElMessage.success('已退出登录')
+  message.success('已退出登录')
   // Logout should land on a public page (not force re-login).
   router.push('/')
   closeNav()
@@ -397,19 +547,33 @@ onMounted(() => {
   syncViewport()
   window.addEventListener('resize', syncViewport)
   loadBackgrounds()
-  // Pull latest avatar from backend after refresh/login
   if (userStore.isLoggedIn) {
     getCurrentUser()
       .then(res => userStore.setAvatar(res?.data?.avatar || ''))
       .catch(() => {})
+    loadContacts()
+    connectSocket()
+  }
+})
+
+// 监听登录状态变化
+watch(() => userStore.isLoggedIn, (loggedIn) => {
+  if (loggedIn) {
+    loadContacts()
+    connectSocket()
+  } else {
+    contactsStore.reset()
+    disconnectSocket()
   }
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', syncViewport)
+  disconnectSocket()
+  if (toastRef.value.timeout) {
+    clearTimeout(toastRef.value.timeout)
+  }
 })
-
-
 
 watch(
   () => route.fullPath,
@@ -420,6 +584,131 @@ watch(
 </script>
 
 <style scoped>
+/* ========== 消息通知卡片 ========== */
+.message-toast {
+  position: fixed;
+  top: 90px;
+  right: 24px;
+  width: 360px;
+  background: var(--bs-surface-solid);
+  border-radius: 14px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--bs-stroke);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  z-index: 1001;
+  cursor: pointer;
+  animation: toast-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.message-toast:hover {
+  box-shadow: 0 14px 48px rgba(0, 0, 0, 0.18);
+  transform: translateY(-2px);
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(160px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.toast-fade-enter-active,
+.toast-fade-leave-active {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-fade-enter-from,
+.toast-fade-leave-to {
+  opacity: 0;
+  transform: translateX(160px) scale(0.95);
+}
+
+.toast-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.18), rgba(247, 37, 133, 0.14));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
+}
+
+.toast-icon .el-icon {
+  font-size: 22px;
+  color: var(--brand-primary);
+}
+
+.toast-content {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.toast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 12px;
+}
+
+.toast-username {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--bs-ink);
+  line-height: 1.3;
+}
+
+.toast-time {
+  font-size: 12px;
+  color: var(--bs-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.toast-preview {
+  font-size: 13px;
+  color: var(--bs-muted);
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.toast-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--bs-muted);
+  flex-shrink: 0;
+  margin-top: -2px;
+}
+
+.toast-close:hover {
+  background: var(--neutral-100);
+  color: var(--bs-ink);
+}
+
+.toast-close .el-icon {
+  font-size: 15px;
+}
+
 /* ========== 背景切换按钮 ========== */
 .bg-toggle {
   position: fixed;
@@ -784,6 +1073,17 @@ watch(
   overflow: hidden;
 }
 
+.nav-badge {
+  position: absolute;
+  top: 4px;
+  right: -4px;
+  transform: scale(0.85);
+}
+
+.dropdown-badge {
+  margin-left: 8px;
+}
+
 .nav-link::before {
   content: '';
   position: absolute;
@@ -1002,6 +1302,22 @@ watch(
   -webkit-appearance: none;
 }
 
+.mobile-account-link-logout:hover {
+  background: rgba(239, 68, 68, 0.14);
+  color: #991b1b;
+}
+
+/* 深色模式下的退出登录按钮 */
+html.dark .mobile-account-link-logout {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+
+html.dark .mobile-account-link-logout:hover {
+  background: rgba(239, 68, 68, 0.20);
+  color: #fecaca;
+}
+
 /* 按钮样式 */
 .auth-section {
   display: flex;
@@ -1069,10 +1385,22 @@ watch(
   transition: all 0.2s ease;
   border-radius: 8px;
   margin: 4px 8px;
+  color: var(--bs-ink);
 }
 
 :deep(.el-dropdown-menu__item:hover) {
   background: rgba(var(--brand-primary-rgb), 0.08);
+  color: var(--bs-ink);
+}
+
+/* 深色模式下的下拉菜单项 */
+:deep(html.dark .el-dropdown-menu__item) {
+  color: #e2e8f0;
+}
+
+:deep(html.dark .el-dropdown-menu__item:hover) {
+  background: rgba(var(--brand-primary-rgb), 0.12);
+  color: #fff;
 }
 
 :deep(.el-dropdown-menu__item a) {

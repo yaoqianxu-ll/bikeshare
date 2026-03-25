@@ -1093,4 +1093,173 @@ html.dark :deep(.el-button--text) {
 html.dark :deep(.el-button--text:hover) {
   color: #fb923c;
 }
+
+/* ========== 时间轴动画样式 ========== */
+.timeline {
+  margin-top: 14px;
+  padding-left: 4px;
+}
+
+.timeline :deep(.el-timeline-item) {
+  margin-bottom: 0;
+  padding-bottom: 16px;
+}
+
+.timeline :deep(.el-timeline-item__timestamp) {
+  color: var(--market-muted);
+  font-size: 12px;
+}
+
+.timeline-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.timeline-row span {
+  font-weight: 500;
+  color: var(--market-ink);
+}
+
+/* 时间轴节点 - 简洁圆点 */
+.timeline :deep(.el-timeline-item__node) {
+  background: #cbd5e1;
+  border: none !important;
+  width: 10px;
+  height: 10px;
+}
+
+.timeline :deep(.el-timeline-item__node.is-success),
+.timeline :deep(.el-timeline-item__node.is-warning) {
+  background: #3b82f6 !important;
+  animation: nodeActive 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes nodeActive {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.timeline :deep(.el-timeline-item__node.is-info) {
+  background: #cbd5e1;
+}
+
+.timeline :deep(.el-timeline-item__node.is-primary) {
+  background: #3b82f6;
+}
+
+.timeline :deep(.el-timeline-item__node.is-danger) {
+  background: #ef4444;
+}
+
+/* 时间轴内容区域 */
+.timeline :deep(.el-timeline-item__content) {
+  color: var(--market-ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* 时间轴项包装器 - 流动波浪动画 */
+.timeline :deep(.el-timeline-item__wrapper) {
+  padding: 12px 16px;
+  margin-left: 8px;
+  border-radius: 12px;
+  border-left: 3px solid transparent;
+  opacity: 0;
+  transform: translateY(-30px);
+  animation: waveFlow 0.8s ease-out forwards;
+}
+
+@keyframes waveFlow {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 每个时间轴项延迟流动 - 形成波浪效果 */
+.timeline :deep(.el-timeline-item:nth-child(1)) .el-timeline-item__wrapper { animation-delay: 0s; }
+.timeline :deep(.el-timeline-item:nth-child(2)) .el-timeline-item__wrapper { animation-delay: 0.15s; }
+.timeline :deep(.el-timeline-item:nth-child(3)) .el-timeline-item__wrapper { animation-delay: 0.3s; }
+.timeline :deep(.el-timeline-item:nth-child(4)) .el-timeline-item__wrapper { animation-delay: 0.45s; }
+.timeline :deep(.el-timeline-item:nth-child(5)) .el-timeline-item__wrapper { animation-delay: 0.6s; }
+.timeline :deep(.el-timeline-item:nth-child(6)) .el-timeline-item__wrapper { animation-delay: 0.75s; }
+
+/* 当前进行中步骤 */
+.timeline :deep(.el-timeline-item__wrapper:has(.is-warning)) {
+  border-left-color: #f59e0b;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.08), transparent);
+}
+
+/* 已完成步骤 */
+.timeline :deep(.el-timeline-item__wrapper:has(.is-success)) {
+  border-left-color: #10b981;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.06), transparent);
+}
+
+/* 连接线 */
+.timeline :deep(.el-timeline-item__tail) {
+  border-left: 2px solid rgba(59, 130, 246, 0.25);
+}
+
+.timeline :deep(.el-timeline-item__tail.is-hidden) {
+  border-left-color: transparent;
+}
+
+/* 深色模式时间轴节点 */
+html.dark .timeline :deep(.el-timeline-item__node) {
+  background: #475569;
+  border: none !important;
+  width: 10px;
+  height: 10px;
+}
+
+html.dark .timeline :deep(.el-timeline-item__node.is-success),
+html.dark .timeline :deep(.el-timeline-item__node.is-warning) {
+  background: #60a5fa !important;
+  animation: nodeActive 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+html.dark .timeline :deep(.el-timeline-item__node.is-info) {
+  background: #475569;
+}
+
+html.dark .timeline :deep(.el-timeline-item__node.is-primary) {
+  background: #60a5fa;
+}
+
+html.dark .timeline :deep(.el-timeline-item__node.is-danger) {
+  background: #f87171;
+}
+
+html.dark .timeline :deep(.el-timeline-item__content) {
+  color: #e2e8f0;
+}
+
+html.dark .timeline :deep(.el-timeline-item__wrapper:has(.is-warning)) {
+  border-left-color: #fcd34d;
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.1), transparent);
+}
+
+html.dark .timeline :deep(.el-timeline-item__wrapper:has(.is-success)) {
+  border-left-color: #6ee7b7;
+  background: linear-gradient(90deg, rgba(52, 211, 153, 0.08), transparent);
+}
 </style>
