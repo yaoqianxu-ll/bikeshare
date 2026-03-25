@@ -2,6 +2,7 @@ package com.example.bickdemo.dto;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -17,5 +18,6 @@ public class TicketFeedbackRequest {
     private Integer rating;
 
     /** 反馈内容 */
+    @Size(max = 1000, message = "反馈内容不能超过 1000 字符")
     private String feedback;
 }

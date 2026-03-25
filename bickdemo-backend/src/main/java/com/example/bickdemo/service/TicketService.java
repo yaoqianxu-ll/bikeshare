@@ -201,6 +201,9 @@ public class TicketService {
         if (ticket.getStatus() != TicketStatus.RESOLVED) {
             throw new RuntimeException("只能在工单已解决后提交反馈");
         }
+        if (ticket.getRating() != null) {
+            throw new RuntimeException("您已提交过反馈，无法重复提交");
+        }
 
         ticket.setRating(request.getRating());
         ticket.setFeedback(request.getFeedback());
