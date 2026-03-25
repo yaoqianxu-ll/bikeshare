@@ -113,8 +113,8 @@ public class TicketService {
         ticket.setTitle(request.getTitle());
         ticket.setContent(request.getContent());
         ticket.setType(request.getType());
-        ticket.setPriority(request.getPriority() != null ? request.getPriority() : TicketPriority.MEDIUM);
-        ticket.setStatus(TicketStatus.PENDING);
+        ticket.setPriority(request.getPriority() != null ? request.getPriority() : TicketPriority.NORMAL);
+        ticket.setStatus(TicketStatus.OPEN);
         ticket.setImages(serializeImages(request.getImages()));
         ticket.setUserId(userId);
 
@@ -175,8 +175,8 @@ public class TicketService {
 
         ticketMessageMapper.insert(message);
 
-        // 如果工单状态是 PENDING，改为 PROCESSING
-        if (ticket.getStatus() == TicketStatus.PENDING) {
+        // 如果工单状态是 OPEN，改为 PROCESSING
+        if (ticket.getStatus() == TicketStatus.OPEN) {
             ticket.setStatus(TicketStatus.PROCESSING);
             ticketMapper.updateById(ticket);
         }
@@ -249,7 +249,7 @@ public class TicketService {
         }
 
         ticket.setAssigneeId(assigneeId);
-        if (ticket.getStatus() == TicketStatus.PENDING) {
+        if (ticket.getStatus() == TicketStatus.OPEN) {
             ticket.setStatus(TicketStatus.ASSIGNED);
         }
         ticketMapper.updateById(ticket);
@@ -294,7 +294,7 @@ public class TicketService {
         // 更新工单的回复信息
         ticket.setReplyContent(request.getContent());
         ticket.setReplyTime(LocalDateTime.now());
-        ticket.setStatus(TicketStatus.REPLIED);
+        ticket.setStatus(TicketStatus.RESOLVED);
         ticketMapper.updateById(ticket);
 
         return convertToMessageResponse(message);
@@ -339,7 +339,7 @@ public class TicketService {
     @Cacheable(cacheNames = CacheNames.TICKETS_STATS, key = "'stats'")
     public TicketStatsResponse getStats() {
         TicketStatsResponse stats = new TicketStatsResponse();
-        stats.setPendingCount(ticketMapper.countByStatus(TicketStatus.PENDING));
+        stats.setPendingCount(ticketMapper.countByStatus(TicketStatus.OPEN));
         stats.setProcessingCount(ticketMapper.countByStatus(TicketStatus.PROCESSING));
         stats.setResolvedCount(ticketMapper.countResolved());
         stats.setClosedCount(ticketMapper.countClosed());

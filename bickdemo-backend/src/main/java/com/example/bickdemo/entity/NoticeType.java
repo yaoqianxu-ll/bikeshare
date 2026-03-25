@@ -5,9 +5,7 @@ package com.example.bickdemo.entity;
  * @author Administrator
  */
 public enum NoticeType {
-    SYSTEM,      // 系统公告
-    PROMOTION,   // 促销活动
-    ACTIVITY,    // 活动通知
-    MAINTENANCE, // 维护通知
-    IMPORTANT    // 重要通知
+    INFO,       // 信息公告
+    WARNING,    // 警告公告
+    IMPORTANT   // 重要公告
 }

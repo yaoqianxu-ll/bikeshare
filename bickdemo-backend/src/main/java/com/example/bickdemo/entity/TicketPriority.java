@@ -5,8 +5,8 @@ package com.example.bickdemo.entity;
  * @author Administrator
  */
 public enum TicketPriority {
-    LOW,       // 低
-    MEDIUM,    // 中
-    HIGH,      // 高
-    URGENT     // 紧急
+    LOW,    // 低
+    NORMAL, // 普通
+    HIGH,   // 高
+    URGENT  // 紧急
 }

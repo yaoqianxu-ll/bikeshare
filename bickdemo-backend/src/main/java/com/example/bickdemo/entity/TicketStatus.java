@@ -5,11 +5,9 @@ package com.example.bickdemo.entity;
  * @author Administrator
  */
 public enum TicketStatus {
-    PENDING,       // 待处理
-    ASSIGNED,       // 已分配
-    PROCESSING,     // 处理中
-    REPLIED,        // 已回复
-    RESOLVED,       // 已解决
-    CLOSED,         // 已关闭
-    REOPENED        // 已重新打开
+    OPEN,        // 待处理
+    ASSIGNED,    // 已分配
+    PROCESSING,  // 处理中
+    RESOLVED,    // 已解决
+    CLOSED       // 已关闭
 }
