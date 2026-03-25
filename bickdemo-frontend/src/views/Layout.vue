@@ -141,6 +141,14 @@
             <span class="nav-icon-bg"><el-icon><Document /></el-icon></span>
             <span>论坛</span>
           </router-link>
+          <router-link to="/activities" class="nav-link" @click="closeNav">
+            <span class="nav-icon-bg"><el-icon><Calendar /></el-icon></span>
+            <span>活动</span>
+          </router-link>
+          <router-link to="/notices" class="nav-link" @click="closeNav">
+            <span class="nav-icon-bg"><el-icon><Bell /></el-icon></span>
+            <span>公告</span>
+          </router-link>
           <router-link to="/my-rentals" class="nav-link" v-if="userStore.isLoggedIn" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><Document /></el-icon></span>
             <span>我的</span>
@@ -149,6 +157,10 @@
             <span class="nav-icon-bg"><el-icon><ChatDotRound /></el-icon></span>
             <span>好友</span>
             <el-badge v-if="contactsStore.totalUnreadCount > 0" :value="contactsStore.totalUnreadCount" :max="99" class="nav-badge" />
+          </router-link>
+          <router-link to="/tickets" class="nav-link" v-if="userStore.isLoggedIn" @click="closeNav">
+            <span class="nav-icon-bg"><el-icon><Ticket /></el-icon></span>
+            <span>工单</span>
           </router-link>
           <a
             :href="openSourceProjectUrl"
@@ -190,6 +202,11 @@
                   <router-link to="/friends">
                     <el-dropdown-item>
                       <el-icon><ChatDotRound /></el-icon> 好友与消息
+                    </el-dropdown-item>
+                  </router-link>
+                  <router-link to="/tickets">
+                    <el-dropdown-item>
+                      <el-icon><Ticket /></el-icon> 我的工单
                     </el-dropdown-item>
                   </router-link>
                   <router-link to="/profile">
@@ -238,7 +255,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useContactsStore } from '@/stores/contacts'
 import { useMessage, useDialog } from 'naive-ui'
-import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation, StarFilled, Close } from '@element-plus/icons-vue'
+import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation, StarFilled, Close, Calendar, Bell, Ticket } from '@element-plus/icons-vue'
 import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
 import { getCurrentUser } from '@/api/auth'
 import { getContacts } from '@/api/social'
