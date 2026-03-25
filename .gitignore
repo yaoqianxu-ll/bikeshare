@@ -40,3 +40,7 @@ gitea-data/
 *.py
 # 临时参考目录
 _tmp_sidifensen_blog/
+
+# Git worktrees
+.worktrees/
+worktrees/
