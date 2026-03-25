@@ -59,6 +59,11 @@ const routes = [
         component: () => import('@/views/Activities.vue')
       },
       {
+        path: '/notices',
+        name: 'NoticesManage',
+        component: () => import('@/views/Notices.vue')
+      },
+      {
         path: '/system',
         redirect: '/system/users'
       },

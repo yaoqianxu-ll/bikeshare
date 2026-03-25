@@ -122,7 +122,7 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { Bicycle, DataAnalysis, Document, Monitor, Setting, Expand } from '@element-plus/icons-vue'
+import { Bicycle, DataAnalysis, Document, Monitor, Setting, Expand, Bell, Calendar } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -178,6 +178,7 @@ const navGroups = [
       { path: '/bicycles', label: '车辆管理' },
       { path: '/marketplace', label: '车主发布车辆' },
       { path: '/rentals', label: '租赁订单' },
+      { path: '/activities', label: '骑行活动' },
       { path: '/tickets', label: '工单管理' },
       { path: '/backgrounds', label: '背景管理' }
     ]
@@ -187,7 +188,8 @@ const navGroups = [
     label: '内容管理',
     icon: Document,
     children: [
-      { path: '/forum', label: '论坛审核' }
+      { path: '/forum', label: '论坛审核' },
+      { path: '/notices', label: '系统公告' }
     ]
   },
   {
