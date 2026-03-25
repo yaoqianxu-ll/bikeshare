@@ -404,7 +404,7 @@ a {
 }
 
 .form-grid :is(.el-input, .el-input-number),
-.toolbar-left :is(.el-select, .el-input, .el-input-number) {
+.toolbar-left :is(.el-input, .el-input-number) {
   width: 100%;
 }
 
@@ -463,6 +463,22 @@ a {
 
 :deep(.el-input__inner) {
   line-height: normal;
+  color: #64748b !important;
+}
+
+:deep(.el-input__inner::placeholder) {
+  color: #94a3b8 !important;
+}
+
+/* el-avatar 头像样式 - 去除默认紫色背景 */
+:deep(.el-avatar) {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+}
+
+:deep(.el-avatar--string) {
+  background: #e2e8f0 !important;
+  color: #475569 !important;
 }
 
 :deep(.el-button) {
@@ -534,6 +550,28 @@ a {
   .pager {
     justify-content: center;
   }
+
+  /* 新增：表格容器横向滚动 */
+  .el-table {
+    overflow-x: auto;
+  }
+
+  .el-table__body-wrapper {
+    overflow-x: auto;
+  }
+
+  /* 新增：对话框移动端全屏 */
+  .el-dialog {
+    width: 95% !important;
+    max-width: 95%;
+    margin: 12px auto !important;
+  }
+
+  /* 新增：操作按钮移动端自适应 */
+  .table-actions .el-button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
 }
 
 /* Calm Hover Pass: remove lift/scale motion so cards stay steady on hover. */
@@ -568,4 +606,129 @@ a {
 .el-dropdown .el-tooltip__trigger,
 .el-dropdown [title] {
   pointer-events: auto;
+}
+
+/* ========== 下拉框文字颜色统一 - 参照 el-input 风格 ========== */
+/* el-select 下拉选项颜色 */
+.el-select-dropdown .el-select-dropdown__item {
+  color: #64748b !important;
+}
+
+.el-select-dropdown .el-select-dropdown__item:hover {
+  color: #475569 !important;
+}
+
+.el-select-dropdown .el-select-dropdown__item.is-disabled {
+  color: #94a3b8 !important;
+}
+
+/* el-select 选中后显示的文字颜色 */
+.el-select .el-input__inner,
+.el-select__wrapper .el-select__selection-text,
+.el-select__wrapper {
+  color: #64748b !important;
+}
+
+.el-select .el-input__inner::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* el-dropdown 下拉按钮文字颜色 */
+.el-dropdown .el-button,
+.el-dropdown .el-button span {
+  color: #64748b !important;
+}
+
+/* el-dropdown-menu 整体样式 */
+.el-dropdown-menu {
+  background-color: var(--bs-surface-solid, #ffffff) !important;
+  border: 1px solid var(--bs-stroke, rgba(15, 23, 42, 0.12)) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15) !important;
+  padding: 6px;
+  min-width: 120px;
+}
+
+.el-dropdown-menu .el-dropdown-menu__item {
+  padding: 6px 10px;
+  margin: 2px 4px;
+  color: #64748b !important;
+}
+
+.el-dropdown-menu .el-dropdown-menu__item:hover {
+  color: #475569 !important;
+  background-color: rgba(64, 158, 255, 0.08) !important;
+}
+
+.el-dropdown-menu .el-dropdown-menu__item.is-selected {
+  color: #475569 !important;
+  background-color: rgba(64, 158, 255, 0.08) !important;
+}
+
+.el-dropdown-menu .el-dropdown-menu__item.is-disabled {
+  color: #94a3b8 !important;
+  background-color: transparent !important;
+}
+
+/* 深色模式下的下拉菜单（用于管理端深色侧边栏） */
+.admin-layout .el-dropdown-menu,
+.sidebar .el-dropdown-menu {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border-color: rgba(148, 163, 184, 0.20) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+}
+
+.admin-layout .el-dropdown-menu .el-dropdown-menu__item,
+.sidebar .el-dropdown-menu .el-dropdown-menu__item {
+  color: #94a3b8 !important;
+}
+
+.admin-layout .el-dropdown-menu .el-dropdown-menu__item:hover,
+.sidebar .el-dropdown-menu .el-dropdown-menu__item:hover {
+  background-color: rgba(64, 158, 255, 0.15) !important;
+  color: #cbd5e1 !important;
+}
+
+.admin-layout .el-dropdown-menu .el-dropdown-menu__item.is-selected,
+.sidebar .el-dropdown-menu .el-dropdown-menu__item.is-selected {
+  color: #cbd5e1 !important;
+  background-color: rgba(64, 158, 255, 0.15) !important;
+}
+
+.admin-layout .el-dropdown-menu .el-dropdown-menu__item.is-disabled,
+.sidebar .el-dropdown-menu .el-dropdown-menu__item.is-disabled {
+  color: #64748b !important;
+}
+
+/* 深色模式下 el-select 和 el-dropdown 文字颜色统一 */
+html.dark :deep(.el-select .el-input__inner),
+html.dark :deep(.el-select__wrapper),
+html.dark :deep(.el-select__selection-text),
+html.dark :deep(.el-dropdown .el-button),
+html.dark :deep(.el-dropdown .el-button span) {
+  color: #94a3b8 !important;
+}
+
+html.dark :deep(.el-select .el-input__inner::placeholder) {
+  color: #64748b !important;
+}
+
+html.dark :deep(.el-select-dropdown .el-select-dropdown__item) {
+  color: #94a3b8 !important;
+}
+
+html.dark :deep(.el-select-dropdown .el-select-dropdown__item:hover) {
+  color: #cbd5e1 !important;
+}
+
+html.dark :deep(.el-select-dropdown .el-select-dropdown__item.is-disabled) {
+  color: #64748b !important;
+}
+
+/* 深色模式下 el-input 颜色 */
+html.dark :deep(.el-input__inner) {
+  color: #94a3b8 !important;
+}
+
+html.dark :deep(.el-input__inner::placeholder) {
+  color: #64748b !important;
 }
