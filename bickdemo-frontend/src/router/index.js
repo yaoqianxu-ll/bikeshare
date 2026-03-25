@@ -49,6 +49,33 @@ const routes = [
         name: 'Profile',
         component: () => import('@/views/Profile.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: '/activities',
+        name: 'Activities',
+        component: () => import('@/views/Activities.vue')
+      },
+      {
+        path: '/activities/:id',
+        name: 'ActivityDetail',
+        component: () => import('@/views/ActivityDetail.vue')
+      },
+      {
+        path: '/notices',
+        name: 'Notices',
+        component: () => import('@/views/Notices.vue')
+      },
+      {
+        path: '/tickets',
+        name: 'Tickets',
+        component: () => import('@/views/Tickets.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: '/tickets/create',
+        name: 'TicketCreate',
+        component: () => import('@/views/TicketCreate.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },
