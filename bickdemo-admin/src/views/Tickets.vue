@@ -239,21 +239,21 @@
               开始处理
             </el-button>
             <el-button
-              v-if="['ASSIGNED', 'PROCESSING', 'REPLIED'].includes(currentTicket.status)"
+              v-if="['OPEN', 'ASSIGNED', 'PROCESSING'].includes(currentTicket.status)"
               type="primary"
               @click="handleReply"
             >
               回复工单
             </el-button>
             <el-button
-              v-if="['PROCESSING', 'REPLIED'].includes(currentTicket.status)"
+              v-if="['PROCESSING'].includes(currentTicket.status)"
               type="success"
               @click="handleResolve"
             >
               标记已解决
             </el-button>
             <el-button
-              v-if="['RESOLVED', 'REOPENED'].includes(currentTicket.status)"
+              v-if="['RESOLVED'].includes(currentTicket.status)"
               type="info"
               @click="handleClose"
             >
@@ -355,24 +355,20 @@ const priorityOptions = [
 ]
 
 const statusOptions = [
-  { label: '待处理', value: 'PENDING' },
+  { label: '待处理', value: 'OPEN' },
   { label: '已分配', value: 'ASSIGNED' },
   { label: '处理中', value: 'PROCESSING' },
-  { label: '已回复', value: 'REPLIED' },
   { label: '已解决', value: 'RESOLVED' },
-  { label: '已关闭', value: 'CLOSED' },
-  { label: '已重新打开', value: 'REOPENED' }
+  { label: '已关闭', value: 'CLOSED' }
 ]
 
 const getTypeText = (type) => {
   const map = {
+    BUG: 'Bug反馈',
+    SUGGESTION: '功能建议',
     GENERAL: '一般咨询',
-    RENTAL: '租赁问题',
-    RETURN: '还车问题',
-    PAYMENT: '支付问题',
-    COMPLAINT: '投诉建议',
-    MAINTENANCE: '维修报障',
-    OTHER: '其他'
+    COMPLAINT: '投诉',
+    REFUND: '退款'
   }
   return map[type] || type || '--'
 }
@@ -380,7 +376,7 @@ const getTypeText = (type) => {
 const getPriorityText = (priority) => {
   const map = {
     LOW: '低',
-    MEDIUM: '中',
+    NORMAL: '普通',
     HIGH: '高',
     URGENT: '紧急'
   }
@@ -390,7 +386,7 @@ const getPriorityText = (priority) => {
 const getPriorityType = (priority) => {
   const map = {
     LOW: 'info',
-    MEDIUM: 'warning',
+    NORMAL: 'warning',
     HIGH: 'danger',
     URGENT: 'danger'
   }
@@ -399,26 +395,22 @@ const getPriorityType = (priority) => {
 
 const getStatusText = (status) => {
   const map = {
-    PENDING: '待处理',
+    OPEN: '待处理',
     ASSIGNED: '已分配',
     PROCESSING: '处理中',
-    REPLIED: '已回复',
     RESOLVED: '已解决',
-    CLOSED: '已关闭',
-    REOPENED: '已重新打开'
+    CLOSED: '已关闭'
   }
   return map[status] || status || '--'
 }
 
 const getStatusType = (status) => {
   const map = {
-    PENDING: 'warning',
+    OPEN: 'warning',
     ASSIGNED: 'primary',
     PROCESSING: 'primary',
-    REPLIED: 'success',
     RESOLVED: 'success',
-    CLOSED: 'info',
-    REOPENED: 'danger'
+    CLOSED: 'info'
   }
   return map[status] || 'info'
 }

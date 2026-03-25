@@ -294,7 +294,7 @@ public class TicketService {
         // 更新工单的回复信息
         ticket.setReplyContent(request.getContent());
         ticket.setReplyTime(LocalDateTime.now());
-        ticket.setStatus(TicketStatus.RESOLVED);
+        ticket.setStatus(TicketStatus.PROCESSING);
         ticketMapper.updateById(ticket);
 
         return convertToMessageResponse(message);
