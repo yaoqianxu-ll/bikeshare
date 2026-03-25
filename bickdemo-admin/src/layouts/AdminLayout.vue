@@ -232,7 +232,8 @@ const goWebsite = () => {
   padding: 18px 14px;
   background: #0f172a;
   box-shadow: inset -1px 0 0 rgba(148, 163, 184, 0.10);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -458,7 +459,8 @@ const goWebsite = () => {
   flex-direction: column;
   height: 100%;
   background: #0f172a;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .drawer-sidebar .brand {
