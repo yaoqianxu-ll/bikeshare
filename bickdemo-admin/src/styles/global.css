@@ -474,6 +474,7 @@ a {
 :deep(.el-avatar) {
   background: #f1f5f9 !important;
   color: #64748b !important;
+  flex-shrink: 0;
 }
 
 :deep(.el-avatar--string) {
