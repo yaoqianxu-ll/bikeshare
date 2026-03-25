@@ -39,6 +39,11 @@ const routes = [
         component: () => import('@/views/Rentals.vue')
       },
       {
+        path: '/tickets',
+        name: 'TicketsManage',
+        component: () => import('@/views/Tickets.vue')
+      },
+      {
         path: '/forum',
         name: 'ForumManage',
         component: () => import('@/views/ForumModeration.vue')

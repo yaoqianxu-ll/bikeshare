@@ -178,6 +178,7 @@ const navGroups = [
       { path: '/bicycles', label: '车辆管理' },
       { path: '/marketplace', label: '车主发布车辆' },
       { path: '/rentals', label: '租赁订单' },
+      { path: '/tickets', label: '工单管理' },
       { path: '/backgrounds', label: '背景管理' }
     ]
   },
