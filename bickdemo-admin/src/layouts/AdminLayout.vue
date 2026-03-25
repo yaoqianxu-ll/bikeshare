@@ -238,6 +238,28 @@ const goWebsite = () => {
   flex-direction: column;
 }
 
+/* ========== 自定义滚动条样式 ========== */
+.sidebar::-webkit-scrollbar,
+.drawer-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track,
+.drawer-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb,
+.drawer-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover,
+.drawer-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
 /* ========== 侧边栏品牌区 ========== */
 .brand {
   display: flex;
