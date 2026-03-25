@@ -27,17 +27,17 @@
         <el-form-item label="工单类型" prop="type">
           <el-select v-model="form.type" placeholder="请选择工单类型" style="width: 100%">
             <el-option label="Bug反馈" value="BUG" />
-            <el-option label="功能建议" value="FEATURE" />
-            <el-option label="咨询" value="CONSULT" />
+            <el-option label="功能建议" value="SUGGESTION" />
+            <el-option label="咨询" value="GENERAL" />
             <el-option label="投诉" value="COMPLAINT" />
-            <el-option label="其他" value="OTHER" />
+            <el-option label="退款" value="REFUND" />
           </el-select>
         </el-form-item>
 
         <el-form-item label="优先级" prop="priority">
           <el-select v-model="form.priority" placeholder="请选择优先级" style="width: 100%">
             <el-option label="低" value="LOW" />
-            <el-option label="中" value="MEDIUM" />
+            <el-option label="普通" value="NORMAL" />
             <el-option label="高" value="HIGH" />
             <el-option label="紧急" value="URGENT" />
           </el-select>

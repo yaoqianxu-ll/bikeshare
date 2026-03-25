@@ -215,10 +215,10 @@ const formatDateTime = (value) => {
 const getTypeText = (type) => {
   const texts = {
     BUG: 'Bug反馈',
-    FEATURE: '功能建议',
-    CONSULT: '咨询',
+    SUGGESTION: '功能建议',
+    GENERAL: '咨询',
     COMPLAINT: '投诉',
-    OTHER: '其他'
+    REFUND: '退款'
   }
   return texts[type] || type
 }
@@ -226,7 +226,7 @@ const getTypeText = (type) => {
 const getPriorityText = (priority) => {
   const texts = {
     LOW: '低',
-    MEDIUM: '中',
+    NORMAL: '普通',
     HIGH: '高',
     URGENT: '紧急'
   }
@@ -236,7 +236,7 @@ const getPriorityText = (priority) => {
 const getPriorityType = (priority) => {
   const types = {
     LOW: 'info',
-    MEDIUM: 'warning',
+    NORMAL: 'warning',
     HIGH: 'danger',
     URGENT: 'danger'
   }
@@ -245,22 +245,22 @@ const getPriorityType = (priority) => {
 
 const getStatusText = (status) => {
   const texts = {
-    PENDING: '待处理',
+    OPEN: '待处理',
+    ASSIGNED: '已分配',
     PROCESSING: '处理中',
     RESOLVED: '已解决',
-    CLOSED: '已关闭',
-    REJECTED: '已拒绝'
+    CLOSED: '已关闭'
   }
   return texts[status] || status
 }
 
 const getStatusType = (status) => {
   const types = {
-    PENDING: 'info',
+    OPEN: 'info',
+    ASSIGNED: 'warning',
     PROCESSING: 'warning',
     RESOLVED: 'success',
-    CLOSED: 'info',
-    REJECTED: 'danger'
+    CLOSED: 'info'
   }
   return types[status] || 'info'
 }
