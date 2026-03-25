@@ -142,8 +142,8 @@ const uploadFiles = async () => {
   for (const file of filesToUpload) {
     try {
       const res = await uploadImage(file.raw)
-      if (res.data) {
-        uploadedUrls.push(res.data)
+      if (res.data && res.data.url) {
+        uploadedUrls.push(res.data.url)
       }
     } catch (error) {
       console.error('图片上传失败:', error)
