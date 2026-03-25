@@ -221,6 +221,7 @@ const goWebsite = () => {
   background: linear-gradient(180deg, #f7fbff 0%, #eef4fb 100%);
 }
 
+/* ========== 侧边栏（桌面端） ========== */
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
@@ -233,6 +234,7 @@ const goWebsite = () => {
   flex-direction: column;
 }
 
+/* ========== 侧边栏品牌区 ========== */
 .brand {
   display: flex;
   gap: 12px;
@@ -259,46 +261,68 @@ const goWebsite = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   align-items: flex-start;
+  min-width: 0;
 }
 
 .brand-copy strong {
   color: #fff;
   font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand-dropdown {
+  width: 100%;
 }
 
 .brand-dropdown .user-menu-trigger {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
-  border-radius: 8px;
+  padding: 6px 10px;
+  border-radius: 12px;
   cursor: pointer;
-  background: transparent;
-  border: none;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(255, 255, 255, 0.10);
   transition: all 0.3s ease;
+  min-width: 0;
 }
 
 .brand-dropdown .user-menu-trigger:hover {
-  background: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(148, 163, 184, 0.35);
 }
 
 .brand-dropdown .user-meta {
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 
 .brand-dropdown .user-meta strong {
-  color: rgba(226, 232, 240, 0.80);
-  font-size: 12px;
+  color: #f1f5f9;
+  font-size: 13px;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+.brand-dropdown .user-menu-trigger .el-icon {
+  color: rgba(226, 232, 240, 0.70);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ========== 导航菜单 ========== */
 .nav-menu {
   margin-top: 10px;
   border: none;
   background: transparent;
+  flex: 1;
 }
 
 .nav-menu :deep(.el-menu) {
@@ -336,38 +360,7 @@ const goWebsite = () => {
   padding-left: 48px !important;
 }
 
-.brand-dropdown .user-menu-trigger {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 12px;
-  cursor: pointer;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(255, 255, 255, 0.10);
-  transition: all 0.3s ease;
-}
-
-.brand-dropdown .user-menu-trigger:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(148, 163, 184, 0.35);
-}
-
-.brand-dropdown .user-meta {
-  display: flex;
-  align-items: center;
-}
-
-.brand-dropdown .user-meta strong {
-  color: #f1f5f9;
-  font-size: 13px;
-}
-
-.brand-dropdown .user-menu-trigger .el-icon {
-  color: rgba(226, 232, 240, 0.70);
-  font-size: 14px;
-}
-
+/* ========== 主内容区 ========== */
 .main-shell {
   min-width: 0;
   margin-left: 224px;
@@ -412,19 +405,7 @@ const goWebsite = () => {
   text-decoration: none !important;
 }
 
-@media (max-width: 768px) {
-  .sidebar {
-    position: static;
-    width: auto;
-    padding: 14px;
-  }
-
-  .main-shell {
-    margin-left: 0;
-    padding: 14px;
-  }
-}
-
+/* ========== 移动端顶部工具栏 ========== */
 .mobile-header {
   display: none;
   position: fixed;
@@ -452,27 +433,60 @@ const goWebsite = () => {
   color: rgba(226, 232, 240, 0.80);
   cursor: pointer;
   padding: 6px;
+  flex-shrink: 0;
 }
 
 .mobile-header .hamburger:hover {
   color: #fff;
 }
 
-.drawer-sidebar {
-  padding: 14px;
-  height: 100%;
-  background: #0f172a;
-  overflow-y: auto;
+/* ========== 移动端抽屉 ========== */
+.mobile-drawer {
+  --el-drawer-bg-color: #0f172a !important;
 }
 
+.mobile-drawer :deep(.el-drawer__body) {
+  padding: 0;
+  overflow: hidden;
+}
+
+.drawer-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0f172a;
+  overflow: hidden;
+}
+
+.drawer-sidebar .brand {
+  flex-shrink: 0;
+  padding: 14px 12px 12px;
+}
+
+.drawer-sidebar .nav-menu {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.drawer-sidebar .nav-menu :deep(.el-menu-item) {
+  padding-left: 48px !important;
+}
+
+/* ========== 响应式断点 ========== */
 @media (max-width: 768px) {
   .mobile-header {
     display: flex;
   }
+
   .main-shell {
     margin-left: 0;
     margin-top: 56px;
     padding: 14px 12px;
+  }
+
+  .sidebar {
+    display: none;
   }
 }
 </style>
