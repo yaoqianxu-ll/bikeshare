@@ -54,6 +54,11 @@ const routes = [
         component: () => import('@/views/Backgrounds.vue')
       },
       {
+        path: '/activities',
+        name: 'ActivitiesManage',
+        component: () => import('@/views/Activities.vue')
+      },
+      {
         path: '/system',
         redirect: '/system/users'
       },
