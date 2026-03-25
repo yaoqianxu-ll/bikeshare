@@ -1,6 +1,7 @@
 package com.example.bickdemo.controller;
 
 import com.example.bickdemo.dto.ApiResponse;
+import com.example.bickdemo.dto.TicketFeedbackRequest;
 import com.example.bickdemo.dto.TicketMessageRequest;
 import com.example.bickdemo.dto.TicketMessageResponse;
 import com.example.bickdemo.dto.TicketRequest;
@@ -60,5 +61,16 @@ public class TicketController {
             @Valid @RequestBody TicketMessageRequest request) {
         TicketMessageResponse message = ticketService.addUserMessage(id, request);
         return ResponseEntity.ok(ApiResponse.success("消息发送成功", message));
+    }
+
+    /**
+     * 用户提交工单反馈（评分+评价）
+     */
+    @PostMapping("/{id}/feedback")
+    public ResponseEntity<ApiResponse<TicketResponse>> submitFeedback(
+            @PathVariable Long id,
+            @Valid @RequestBody TicketFeedbackRequest request) {
+        TicketResponse ticket = ticketService.submitFeedback(id, request);
+        return ResponseEntity.ok(ApiResponse.success("反馈已提交", ticket));
     }
 }

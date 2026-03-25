@@ -184,6 +184,30 @@ public class TicketService {
         return convertToMessageResponse(message);
     }
 
+    /**
+     * 用户提交工单反馈
+     */
+    @Transactional
+    @CacheEvict(cacheNames = {CacheNames.TICKETS_STATS, CacheNames.TICKETS_PAGE}, allEntries = true)
+    public TicketResponse submitFeedback(Long id, TicketFeedbackRequest request) {
+        Long userId = getCurrentUserId();
+        Ticket ticket = ticketMapper.selectById(id);
+        if (ticket == null) {
+            throw new RuntimeException("工单不存在：" + id);
+        }
+        if (!ticket.getUserId().equals(userId)) {
+            throw new RuntimeException("无权访问此工单");
+        }
+        if (ticket.getStatus() != TicketStatus.RESOLVED) {
+            throw new RuntimeException("只能在工单已解决后提交反馈");
+        }
+
+        ticket.setRating(request.getRating());
+        ticket.setFeedback(request.getFeedback());
+        ticketMapper.updateById(ticket);
+        return convertToResponse(ticket);
+    }
+
     // ==================== 管理员接口 ====================
 
     /**
