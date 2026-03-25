@@ -938,6 +938,7 @@ watch(
     0 4px 30px rgba(15, 23, 42, 0.12),
     0 0 0 1px var(--bs-stroke) inset;
   z-index: 1000;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .app-header.is-home-header {

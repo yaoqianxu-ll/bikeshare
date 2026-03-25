@@ -213,6 +213,7 @@ onBeforeUnmount(() => {
   padding: 0 18px 26px;
 }
 
+/* ========== Hero Section ========== */
 .hero-stage {
   position: relative;
   min-height: 100vh;
@@ -229,6 +230,7 @@ onBeforeUnmount(() => {
   isolation: isolate;
 }
 
+/* Ambient glow behind hero */
 .hero-stage::before {
   content: '';
   position: absolute;
@@ -237,6 +239,7 @@ onBeforeUnmount(() => {
   z-index: -2;
 }
 
+/* Bottom soft glow */
 .hero-stage::after {
   content: '';
   position: absolute;
@@ -256,6 +259,7 @@ onBeforeUnmount(() => {
   text-align: center;
 }
 
+/* ========== Hero Badge ========== */
 .hero-badge {
   display: inline-flex;
   align-items: center;
@@ -271,12 +275,25 @@ onBeforeUnmount(() => {
   letter-spacing: 0.04em;
   box-shadow: 0 8px 18px rgba(6, 18, 40, 0.06);
   backdrop-filter: blur(6px);
+  animation: badgeFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 .hero-badge .el-icon {
   font-size: 18px;
 }
 
+@keyframes badgeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ========== Hero Title ========== */
 .hero-title {
   margin: 28px 0 20px;
   color: #f8fbff;
@@ -286,6 +303,7 @@ onBeforeUnmount(() => {
   font-family: "MiSans", "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   font-weight: 800;
   text-shadow: 0 14px 28px rgba(6, 18, 40, 0.18);
+  animation: titleFadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
 }
 
 .hero-title span {
@@ -293,6 +311,18 @@ onBeforeUnmount(() => {
   color: rgba(215, 231, 255, 0.92);
 }
 
+@keyframes titleFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== Typewriter ========== */
 .typewriter-shell {
   display: inline-flex;
   align-items: center;
@@ -304,6 +334,18 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 18px rgba(6, 18, 40, 0.05);
   backdrop-filter: blur(6px);
+  animation: typewriterFadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
+}
+
+@keyframes typewriterFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .typewriter-text {
@@ -321,6 +363,12 @@ onBeforeUnmount(() => {
   animation: blink 1s steps(1) infinite;
 }
 
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* ========== Hero Description ========== */
 .hero-description {
   max-width: 740px;
   margin: 24px auto 0;
@@ -328,14 +376,39 @@ onBeforeUnmount(() => {
   font-size: 16px;
   line-height: 1.9;
   text-shadow: 0 4px 12px rgba(6, 18, 40, 0.18);
+  animation: descFadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s backwards;
 }
 
+@keyframes descFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== Hero Actions ========== */
 .hero-actions {
   margin-top: 28px;
   display: flex;
   justify-content: center;
   gap: 14px;
   flex-wrap: wrap;
+  animation: actionsFadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.4s backwards;
+}
+
+@keyframes actionsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .hero-btn {
@@ -350,17 +423,25 @@ onBeforeUnmount(() => {
   text-decoration: none;
   font-size: 15px;
   font-weight: 700;
-  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background-color 0.22s ease, opacity 0.22s ease;
 }
 
 .hero-btn:hover {
   transform: translateY(-2px);
 }
 
+.hero-btn:active {
+  transform: translateY(0);
+}
+
 .hero-btn-primary {
   color: #fff;
   background: linear-gradient(135deg, var(--el-color-primary) 0%, color-mix(in srgb, var(--el-color-primary) 70%, #0f2a5e) 100%);
-  box-shadow: 0 18px 38px rgba(16, 44, 94, 0.22);
+  box-shadow: 0 18px 38px rgba(16, 44, 94, 0.22), 0 0 0 0 rgba(255, 107, 53, 0);
+}
+
+.hero-btn-primary:hover {
+  box-shadow: 0 20px 40px rgba(16, 44, 94, 0.26), 0 0 24px rgba(255, 107, 53, 0.18);
 }
 
 .hero-btn-secondary {
@@ -371,11 +452,30 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(6px);
 }
 
+.hero-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 10px 22px rgba(11, 31, 68, 0.08);
+}
+
+/* ========== Hero Metrics ========== */
 .hero-metrics {
   margin-top: 32px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
+  animation: metricsFadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.5s backwards;
+}
+
+@keyframes metricsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .metric-card {
@@ -387,6 +487,13 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(4px);
   text-align: left;
+  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 12px 28px rgba(10, 35, 78, 0.08);
 }
 
 .metric-label {
@@ -409,6 +516,7 @@ onBeforeUnmount(() => {
   line-height: 1.6;
 }
 
+/* ========== Portal Grid ========== */
 .portal-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -416,6 +524,18 @@ onBeforeUnmount(() => {
   max-width: 1080px;
   width: 100%;
   margin: 0 auto;
+  animation: portalFadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.6s backwards;
+}
+
+@keyframes portalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .portal-card {
@@ -431,13 +551,18 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 18px rgba(10, 35, 78, 0.05);
   backdrop-filter: blur(4px);
-  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease, background-color 0.24s ease;
 }
 
 .portal-card:hover {
   transform: translateY(-3px);
   border-color: rgba(255, 255, 255, 0.14);
   box-shadow: 0 10px 22px rgba(10, 35, 78, 0.06);
+  background: rgba(6, 18, 40, 0.14);
+}
+
+.portal-card:active {
+  transform: translateY(-1px);
 }
 
 .portal-icon {
@@ -451,6 +576,12 @@ onBeforeUnmount(() => {
   justify-content: center;
   color: #f8fbff;
   font-size: 24px;
+  transition: transform 0.24s ease, background-color 0.24s ease;
+}
+
+.portal-card:hover .portal-icon {
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .portal-copy {
@@ -474,20 +605,15 @@ onBeforeUnmount(() => {
 .portal-arrow {
   color: rgba(248, 251, 255, 0.72);
   font-size: 20px;
+  transition: transform 0.24s ease, opacity 0.24s ease;
 }
 
-@keyframes blink {
-  0%,
-  49% {
-    opacity: 1;
-  }
-
-  50%,
-  100% {
-    opacity: 0;
-  }
+.portal-card:hover .portal-arrow {
+  transform: translateX(3px);
+  opacity: 1;
 }
 
+/* ========== Responsive ========== */
 @media (max-width: 1100px) {
   .hero-metrics,
   .portal-grid {
@@ -553,5 +679,15 @@ onBeforeUnmount(() => {
     display: none;
   }
 
+  /* Reduce motion on mobile for performance */
+  .hero-badge,
+  .hero-title,
+  .typewriter-shell,
+  .hero-description,
+  .hero-actions,
+  .hero-metrics,
+  .portal-grid {
+    animation: none;
+  }
 }
 </style>
