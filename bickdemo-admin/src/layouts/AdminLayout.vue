@@ -1,6 +1,15 @@
 <template>
   <div class="admin-layout">
-    <aside class="sidebar">
+    <!-- Mobile Header -->
+    <header v-if="isMobile" class="mobile-header">
+      <div class="mobile-brand">
+        <el-icon class="hamburger" @click="toggleDrawer"><Expand /></el-icon>
+        <strong>BikeShare</strong>
+      </div>
+    </header>
+
+    <!-- Desktop Sidebar -->
+    <aside v-if="!isMobile" class="sidebar">
       <div class="brand">
         <div class="brand-icon"><el-icon><Monitor /></el-icon></div>
         <div class="brand-copy">
@@ -55,18 +64,77 @@
         </div>
       </section>
     </div>
+
+    <!-- Mobile Drawer -->
+    <el-drawer
+      v-model="drawerVisible"
+      direction="ltr"
+      :size="260"
+      :with-header="false"
+      class="mobile-drawer"
+    >
+      <div class="drawer-sidebar">
+        <div class="brand">
+          <div class="brand-icon"><el-icon><Monitor /></el-icon></div>
+          <div class="brand-copy">
+            <strong>BikeShare</strong>
+            <el-dropdown trigger="hover" class="brand-dropdown">
+              <div class="user-menu-trigger">
+                <div class="user-meta"><strong>{{ authStore.username }}</strong></div>
+              </div>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="goWebsite">前台首页</el-dropdown-item>
+                  <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+        </div>
+        <el-menu
+          :default-active="activePath"
+          :default-openeds="openGroups"
+          router
+          unique-opened
+          class="nav-menu"
+        >
+          <el-sub-menu v-for="group in navGroups" :key="group.index" :index="group.index">
+            <template #title>
+              <el-icon><component :is="group.icon" /></el-icon>
+              <span>{{ group.label }}</span>
+            </template>
+            <el-menu-item
+              v-for="item in group.children"
+              :key="item.path"
+              :index="item.path"
+              @click="drawerVisible = false"
+            >
+              {{ item.label }}
+            </el-menu-item>
+          </el-sub-menu>
+        </el-menu>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { Bicycle, DataAnalysis, Document, Monitor, Setting } from '@element-plus/icons-vue'
+import { Bicycle, DataAnalysis, Document, Monitor, Setting, Expand } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+
+// Mobile responsive state
+const drawerVisible = ref(false)
+const isMobile = computed(() => window.innerWidth < 768)
+
+const toggleDrawer = () => {
+  drawerVisible.value = !drawerVisible.value
+}
 const defaultSiteUrl = (() => {
   if (typeof window === 'undefined') {
     return 'http://localhost:5173'
@@ -305,7 +373,32 @@ const goWebsite = () => {
   width: 100%;
 }
 
-@media (max-width: 960px) {
+/* 下拉菜单 */
+:deep(.el-dropdown-menu__item) {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  margin: 4px 8px;
+  color: #e2e8f0;
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  background: rgba(64, 158, 255, 0.12);
+  color: #fff;
+}
+
+:deep(.el-dropdown-menu__item a) {
+  text-decoration: none !important;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:deep(.el-dropdown-menu__item span) {
+  text-decoration: none !important;
+}
+
+@media (max-width: 768px) {
   .sidebar {
     position: static;
     width: auto;
@@ -315,6 +408,57 @@ const goWebsite = () => {
   .main-shell {
     margin-left: 0;
     padding: 14px;
+  }
+}
+
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: #0f172a;
+  z-index: 1000;
+  padding: 0 16px;
+  align-items: center;
+  box-shadow: 0 1px 0 rgba(148, 163, 184, 0.10);
+}
+
+.mobile-header .mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  font-size: 16px;
+}
+
+.mobile-header .hamburger {
+  font-size: 22px;
+  color: rgba(226, 232, 240, 0.80);
+  cursor: pointer;
+  padding: 6px;
+}
+
+.mobile-header .hamburger:hover {
+  color: #fff;
+}
+
+.drawer-sidebar {
+  padding: 14px;
+  height: 100%;
+  background: #0f172a;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .mobile-header {
+    display: flex;
+  }
+  .main-shell {
+    margin-left: 0;
+    margin-top: 56px;
+    padding: 14px 12px;
   }
 }
 </style>
