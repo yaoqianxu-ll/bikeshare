@@ -38,7 +38,7 @@
           </el-table-column>
           <el-table-column label="创建时间" width="170">
             <template #default="{ row }">
-              {{ formatDateTime(row.createTime) }}
+              {{ formatDateTime(row.createdAt) }}
             </template>
           </el-table-column>
           <el-table-column label="操作" width="130" fixed="right" align="center">
@@ -83,10 +83,17 @@
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="创建时间">
-            {{ formatDateTime(selectedTicket.createTime) }}
+            {{ formatDateTime(selectedTicket.createdAt) }}
           </el-descriptions-item>
           <el-descriptions-item label="更新时间">
-            {{ formatDateTime(selectedTicket.updateTime) }}
+            {{ formatDateTime(selectedTicket.updatedAt) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="用户评分">
+            <el-rate v-if="selectedTicket.rating" v-model="selectedTicket.rating" disabled text-color="#ff9900" />
+            <span v-else>-</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="用户评价" :span="2">
+            {{ selectedTicket.feedback || '-' }}
           </el-descriptions-item>
         </el-descriptions>
 
@@ -119,11 +126,11 @@
               v-for="msg in messages"
               :key="msg.id"
               class="message-item"
-              :class="{ 'message-admin': msg.senderRole === 'ADMIN' }"
+              :class="{ 'message-admin': msg.senderType === 'ADMIN' }"
             >
               <div class="message-header">
-                <span class="message-sender">{{ msg.senderRole === 'ADMIN' ? '管理员' : '我' }}</span>
-                <span class="message-time">{{ formatDateTime(msg.createTime) }}</span>
+                <span class="message-sender">{{ msg.senderType === 'ADMIN' ? '管理员' : '我' }}</span>
+                <span class="message-time">{{ formatDateTime(msg.createdAt) }}</span>
               </div>
               <div class="message-content" v-html="msg.content"></div>
             </div>
@@ -143,6 +150,27 @@
             发送回复
           </el-button>
         </div>
+
+        <!-- 评价表单（仅已解决工单显示） -->
+        <div class="feedback-section" v-if="selectedTicket.status === 'RESOLVED'">
+          <h4>服务评价</h4>
+          <div class="feedback-form">
+            <div class="feedback-rating">
+              <span class="feedback-label">评分：</span>
+              <el-rate v-model="feedbackForm.rating" allow-half />
+            </div>
+            <el-input
+              v-model="feedbackForm.feedback"
+              type="textarea"
+              :rows="3"
+              placeholder="请输入您的评价..."
+              class="feedback-textarea"
+            />
+            <el-button type="primary" @click="submitFeedback" :loading="submittingFeedback" style="margin-top: 12px">
+              提交评价
+            </el-button>
+          </div>
+        </div>
       </div>
       <template #footer>
         <el-button @click="detailDialogVisible = false">关闭</el-button>
@@ -156,7 +184,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { Plus } from '@element-plus/icons-vue'
-import { getTickets, getTicketById, sendTicketMessage } from '@/api/ticket'
+import { getTickets, getTicketById, sendTicketMessage, submitTicketFeedback } from '@/api/ticket'
 
 const router = useRouter()
 const message = useMessage()
@@ -168,6 +196,12 @@ const selectedTicket = ref(null)
 const messages = ref([])
 const replyContent = ref('')
 const sending = ref(false)
+const feedbackDialogVisible = ref(false)
+const feedbackForm = ref({
+  rating: 5,
+  feedback: ''
+})
+const submittingFeedback = ref(false)
 
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -301,6 +335,24 @@ const sendReply = async () => {
     console.error(error)
   } finally {
     sending.value = false
+  }
+}
+
+const submitFeedback = async () => {
+  if (!feedbackForm.value.rating) {
+    message.warning('请选择评分')
+    return
+  }
+  submittingFeedback.value = true
+  try {
+    await submitTicketFeedback(selectedTicket.value.id, feedbackForm.value)
+    message.success('评价提交成功')
+    feedbackDialogVisible.value = false
+    await viewDetail(selectedTicket.value)
+  } catch (error) {
+    console.error(error)
+  } finally {
+    submittingFeedback.value = false
   }
 }
 
@@ -467,6 +519,42 @@ onMounted(() => {
   margin-top: 20px;
   padding-top: 16px;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.feedback-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.feedback-section h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--bs-ink);
+  margin: 0 0 12px;
+}
+
+.feedback-form {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.12);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.feedback-rating {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.feedback-label {
+  font-weight: 600;
+  color: var(--bs-ink);
+  margin-right: 8px;
+}
+
+.feedback-textarea {
+  margin-top: 8px;
 }
 
 .ticket-content-section h4,
@@ -647,8 +735,22 @@ html.dark .message-sender {
 html.dark .ticket-content-section,
 html.dark .ticket-attachments,
 html.dark .ticket-messages,
-html.dark .reply-section {
+html.dark .reply-section,
+html.dark .feedback-section {
   border-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark .feedback-section h4 {
+  color: #f8fafc;
+}
+
+html.dark .feedback-form {
+  background: rgba(16, 185, 129, 0.10);
+  border-color: rgba(16, 185, 129, 0.20);
+}
+
+html.dark .feedback-label {
+  color: #ffffff;
 }
 
 html.dark .message-item {
@@ -715,4 +817,75 @@ html.dark :deep(.el-descriptions__cell) {
     margin: max(8vh, 24px) auto 0 !important;
   }
 }
+
+/* el-tag 样式 - 与 MyRentals 保持一致 */
+:deep(.el-tag) {
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-weight: 500;
+  font-size: 12px;
+  border: 1px solid;
+}
+
+:deep(.el-tag--info) {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4338ca;
+  border-color: rgba(99, 102, 241, 0.22);
+}
+
+:deep(.el-tag--warning) {
+  background: rgba(245, 158, 11, 0.14);
+  color: #92400e;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+}
+
+:deep(.el-tag--success) {
+  background: rgba(16, 185, 129, 0.14);
+  color: #065f46;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+}
+
+:deep(.el-tag--danger) {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.22);
+}
+
+:deep(.el-tag--primary) {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+}
+
+/* 深色模式 el-tag 样式 */
+html.dark :deep(.el-tag--info) {
+  background: rgba(99, 102, 241, 0.25);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+html.dark :deep(.el-tag--warning) {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+html.dark :deep(.el-tag--success) {
+  background: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+html.dark :deep(.el-tag--danger) {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+html.dark :deep(.el-tag--primary) {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
 </style>

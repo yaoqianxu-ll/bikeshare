@@ -30,3 +30,11 @@ export function sendTicketMessage(id, data) {
     data
   })
 }
+
+export function submitTicketFeedback(id, data) {
+  return request({
+    url: `/tickets/${id}/feedback`,
+    method: 'post',
+    data
+  })
+}
