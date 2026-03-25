@@ -336,6 +336,13 @@ const getRoleLabel = (role) => ({ ADMIN: '管理员', USER: '普通用户' }[rol
   gap: 12px;
 }
 
+.user-line :deep(.el-avatar),
+.user-line :deep(.el-avatar--string) {
+  flex-shrink: 0;
+  width: 42px !important;
+  height: 42px !important;
+}
+
 .user-line strong {
   display: block;
   color: #0f172a;
