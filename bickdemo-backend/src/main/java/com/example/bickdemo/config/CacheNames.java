@@ -15,6 +15,11 @@ public final class CacheNames {
     public static final String BICYCLES_PAGE = "bicycles:page";
     public static final String BICYCLE_DETAIL = "bicycle:detail";
 
+    // 公告缓存
+    public static final String NOTICES_PUBLISHED = "notices:published";
+    public static final String NOTICES_ALL = "notices:all";
+    public static final String NOTICE_DETAIL = "notice:detail";
+
     private CacheNames() {
     }
 }
