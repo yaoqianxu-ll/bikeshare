@@ -78,7 +78,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./ssl/bikeshare.online_nginx:/etc/nginx/ssl:ro
+      - ./ssl:/etc/nginx/ssl:ro
     restart: always
     networks:
       - bikeshare-network
@@ -96,7 +96,7 @@ services:
       - "3001:80"
       - "3002:443"
     volumes:
-      - ./ssl/bikeshare.online_nginx:/etc/nginx/ssl:ro
+      - ./ssl:/etc/nginx/ssl:ro
     restart: always
     networks:
       - bikeshare-network
