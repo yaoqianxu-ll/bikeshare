@@ -126,15 +126,6 @@
           </el-button>
         </div>
 
-        <!-- 报名信息 -->
-        <div class="signup-info" v-if="userStore.isLoggedIn && signupInfo">
-          <el-alert v-if="signupInfo.status === 'PENDING'" type="warning" :closable="false">
-            <template #title>
-              您的报名正在审核中
-            </template>
-          </el-alert>
-        </div>
-
         <!-- 留言记录 -->
         <div class="message-section" v-if="userStore.isLoggedIn && myMessages.length > 0">
           <h3>我的留言</h3>
@@ -255,6 +246,7 @@ const getStatusType = (activity) => {
   const date = new Date(activity.startTime)
   const now = new Date()
   if (date < now) return 'danger'
+  if (activity.signupClosed) return 'warning'
   if (activity.signupCount >= activity.maxParticipants) return 'warning'
   return 'success'
 }
