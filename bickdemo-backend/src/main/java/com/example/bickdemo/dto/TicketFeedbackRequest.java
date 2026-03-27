@@ -12,10 +12,10 @@ import lombok.Data;
 @Data
 public class TicketFeedbackRequest {
 
-    /** 评分（1-5星） */
+    /** 评分（0.5-5星，支持半星） */
     @Min(value = 1, message = "评分最小为 1")
     @Max(value = 5, message = "评分最大为 5")
-    private Integer rating;
+    private Double rating;
 
     /** 反馈内容 */
     @Size(max = 1000, message = "反馈内容不能超过 1000 字符")

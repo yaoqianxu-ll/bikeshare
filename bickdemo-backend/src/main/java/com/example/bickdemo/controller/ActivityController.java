@@ -1,5 +1,7 @@
 package com.example.bickdemo.controller;
 
+import com.example.bickdemo.dto.ActivityMessageRequest;
+import com.example.bickdemo.dto.ActivityMessageResponse;
 import com.example.bickdemo.dto.ActivityResponse;
 import com.example.bickdemo.dto.ApiResponse;
 import com.example.bickdemo.dto.SignupRequest;
@@ -49,5 +51,23 @@ public class ActivityController {
             @RequestBody(required = false) SignupRequest request) {
         SignupResponse signup = activityService.signupActivity(id, request);
         return ResponseEntity.ok(ApiResponse.success("报名成功", signup));
+    }
+
+    /**
+     * 发送消息给管理员
+     */
+    @PostMapping("/messages")
+    public ResponseEntity<ApiResponse<ActivityMessageResponse>> sendMessage(@RequestBody ActivityMessageRequest request) {
+        ActivityMessageResponse message = activityService.sendMessage(request);
+        return ResponseEntity.ok(ApiResponse.success("消息已发送", message));
+    }
+
+    /**
+     * 获取我的活动消息
+     */
+    @GetMapping("/messages/me")
+    public ResponseEntity<ApiResponse<List<ActivityMessageResponse>>> getMyMessages() {
+        List<ActivityMessageResponse> messages = activityService.getUserMessages();
+        return ResponseEntity.ok(ApiResponse.success(messages));
     }
 }

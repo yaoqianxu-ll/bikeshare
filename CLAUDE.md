@@ -288,3 +288,74 @@ location /api {
 |------|--------|------|
 | 管理员 | admin | admin123 |
 | 用户 | user | user123 |
+
+## 活动管理模块
+
+### 活动地点省市区选择器
+
+管理端活动表单中的活动地点使用省市区三级联动选择器：
+
+**前端实现：**
+- 使用 `element-china-area-data` npm 包
+- Element Plus `el-cascader` 组件
+- 数据源：`regionData`（包含真实行政区划代码）
+
+**后端存储：**
+- `location`: 路径文本，如 "北京市/市辖区/朝阳区"
+- `locationCode`: 区级代码，如 `110101`
+
+**数据库迁移：**
+```sql
+ALTER TABLE activities ADD COLUMN location_code VARCHAR(20) DEFAULT '' COMMENT '活动地点区级代码';
+```
+
+### 枚举值对照
+
+**难度等级 (ActivityDifficulty)：**
+| 前端值 | 说明 |
+|--------|------|
+| `EASY` | 简单 |
+| `MEDIUM` | 中等 |
+| `HARD` | 困难 |
+
+**活动状态 (ActivityStatus)：**
+| 前端值 | 说明 |
+|--------|------|
+| `DRAFT` | 草稿 |
+| `PUBLISHED` | 已发布 |
+| `COMPLETED` | 已完成 |
+| `CANCELLED` | 已取消 |
+
+## UI 设计规范
+
+### 玻璃模糊效果
+
+项目中多处使用玻璃态（glassmorphism）设计：
+
+```css
+backdrop-filter: blur(12px) saturate(180%);
+```
+
+**应用场景：**
+- 导航栏背景
+- Tag 标签
+- 按钮（如 ThemeToggle 主题切换按钮）
+- 卡片浮层
+
+### 响应式断点
+
+| 断点 | 效果 |
+|------|------|
+| ≤480px | 超小屏幕 |
+| ≤768px | 手机端 |
+| ≤1050px | 显示汉堡菜单，隐藏导航链接 |
+| ≤1300px | 导航文字隐藏，只显示图标 |
+| >1300px | 完整导航显示 |
+
+### ThemeToggle 组件
+
+主题切换按钮使用胶囊形状 + 玻璃模糊效果：
+- 圆角胶囊：`border-radius: 999px`
+- 背景：`color-mix(in srgb, var(--bs-surface-solid) 88%, transparent)`
+- 透明度：0.95（微弱透明）
+- 无悬停动画效果

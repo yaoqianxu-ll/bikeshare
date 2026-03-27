@@ -92,7 +92,7 @@
             </div>
             <div class="logo-text-section">
               <h1 class="logo">BikeShare</h1>
-              <span class="slogan">探索城市，从骑行开始</span>
+              <span class="slogan"></span>
             </div>
           </router-link>
         </div>
@@ -963,6 +963,7 @@ watch(
   display: flex;
   align-items: center;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .logo-wrapper {
@@ -970,6 +971,7 @@ watch(
   align-items: center;
   gap: 14px;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .logo-link {
@@ -1020,6 +1022,7 @@ watch(
   color: var(--bs-muted);
   margin-top: 2px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .app-header.is-home-header .logo,
@@ -1061,6 +1064,8 @@ watch(
 /* 导航链接 */
 .nav-links {
   display: flex;
+  flex-wrap: nowrap;
+  overflow: hidden;
   gap: 8px;
   background: var(--bs-surface);
   backdrop-filter: blur(16px) saturate(140%);
@@ -1078,6 +1083,7 @@ watch(
 
 .nav-link {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 8px;
   padding: 10px 18px;
@@ -1089,6 +1095,7 @@ watch(
   font-weight: 500;
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
 }
 
 .nav-badge {
@@ -1168,6 +1175,7 @@ watch(
 /* 头部操作区 */
 .header-actions {
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 16px;
 }
@@ -1188,6 +1196,7 @@ watch(
   font-size: 13px;
   font-weight: 700;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  white-space: nowrap;
 }
 
 .header-support-link:hover {
@@ -1247,6 +1256,7 @@ watch(
   color: var(--bs-ink);
   font-size: 14px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .mobile-account-head {
@@ -1510,19 +1520,61 @@ html.dark .mobile-account-link-logout:hover {
   display: none;
 }
 
-/* 响应式 */
-@media (max-width: 768px) {
-  .header-content {
-    padding: 0 16px;
-    gap: 12px;
+/* 大屏幕缩放适配 - 隐藏导航文字只显示图标 */
+@media (max-width: 1300px) {
+  .nav-link > span:last-child {
+    display: none;
+  }
+
+  .nav-links.active .nav-link > span:last-child {
+    display: inline;
+  }
+
+  .nav-link {
+    padding: 10px 14px;
   }
 
   .nav-links {
+    padding: 4px;
+  }
+
+  .logo-text-section {
+    display: flex;
+  }
+
+  .logo-text-section .slogan {
+    display: none;
+  }
+
+  .logo-icon-box {
+    width: 40px;
+    height: 40px;
+    display: flex;
+  }
+
+  .header-support-link span {
+    display: none;
+  }
+
+  .header-support-link {
+    padding: 0 12px;
+    min-height: 40px;
+  }
+}
+
+/* 响应式 - 1050px断点：显示汉堡菜单 */
+@media (max-width: 1050px) {
+  .header-content {
+    padding: 0 20px;
+    gap: 16px;
+  }
+
+  .nav-links {
+    display: flex !important;
     position: fixed;
     top: 72px;
     left: 12px;
     right: 12px;
-    bottom: auto;
     max-height: calc(100vh - 92px - env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--bs-surface-solid) 96%, transparent);
     backdrop-filter: blur(20px);
@@ -1545,6 +1597,42 @@ html.dark .mobile-account-link-logout:hover {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
+  }
+
+  .menu-toggle {
+    display: flex;
+  }
+
+  .header-actions {
+    gap: 12px;
+  }
+
+  .header-support-link span {
+    display: none;
+  }
+
+  .theme-toggle--inline .theme-toggle__button {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .slogan {
+    display: none;
+  }
+}
+
+/* 响应式 - 768px断点：移动端适配 */
+@media (max-width: 768px) {
+  .header-content {
+    padding: 0 16px;
+    gap: 12px;
+  }
+
+  .nav-links {
+    top: 64px;
+    left: 8px;
+    right: 8px;
   }
 
   .app-header.is-home-header .nav-links {

@@ -96,7 +96,7 @@ const routes = [
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/dashboard'
+    component: () => import('@/views/NotFound.vue')
   }
 ]
 

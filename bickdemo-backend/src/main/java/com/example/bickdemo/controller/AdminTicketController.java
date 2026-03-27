@@ -111,6 +111,16 @@ public class AdminTicketController {
     }
 
     /**
+     * 重新开启工单
+     */
+    @PutMapping("/{id}/reopen")
+    @AdminOperationLog(module = "工单管理", action = "重新开启工单", type = "修改")
+    public ResponseEntity<ApiResponse<TicketResponse>> reopenTicket(@PathVariable Long id) {
+        TicketResponse ticket = ticketService.reopenTicket(id);
+        return ResponseEntity.ok(ApiResponse.success("工单已重新开启", ticket));
+    }
+
+    /**
      * 获取工单统计
      */
     @GetMapping("/stats")

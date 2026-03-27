@@ -53,10 +53,39 @@ export function rejectSignup(activityId, signupId) {
   })
 }
 
+export function resetSignup(activityId, signupId) {
+  return request({
+    url: `/admin/activities/${activityId}/signups/${signupId}/reset`,
+    method: 'put'
+  })
+}
+
+export function cancelSignup(activityId, signupId) {
+  return request({
+    url: `/admin/activities/${activityId}/signups/${signupId}/cancel`,
+    method: 'put'
+  })
+}
+
 export function signinParticipant(activityId, signupId) {
   return request({
     url: `/admin/activities/${activityId}/signin`,
     method: 'post',
     params: { signupId }
+  })
+}
+
+export function getActivityMessages(activityId) {
+  return request({
+    url: `/admin/activities/${activityId}/messages`,
+    method: 'get'
+  })
+}
+
+export function replyMessage(messageId, reply) {
+  return request({
+    url: `/admin/activities/messages/${messageId}/reply`,
+    method: 'put',
+    data: { reply }
   })
 }

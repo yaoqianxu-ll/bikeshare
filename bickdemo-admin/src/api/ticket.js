@@ -52,9 +52,24 @@ export function closeTicket(id) {
   })
 }
 
+export function reopenTicket(id) {
+  return request({
+    url: `/admin/tickets/${id}/reopen`,
+    method: 'put'
+  })
+}
+
 export function getTicketStats() {
   return request({
     url: '/admin/tickets/stats',
     method: 'get'
+  })
+}
+
+export function getAdmins() {
+  return request({
+    url: '/admin/system/users',
+    method: 'get',
+    params: { role: 'ADMIN', page: 1, size: 100 }
   })
 }

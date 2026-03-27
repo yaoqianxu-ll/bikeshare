@@ -25,22 +25,22 @@
         </el-form-item>
 
         <el-form-item label="工单类型" prop="type">
-          <el-select v-model="form.type" placeholder="请选择工单类型" style="width: 100%">
-            <el-option label="Bug反馈" value="BUG" />
-            <el-option label="功能建议" value="SUGGESTION" />
-            <el-option label="咨询" value="GENERAL" />
-            <el-option label="投诉" value="COMPLAINT" />
-            <el-option label="退款" value="REFUND" />
-          </el-select>
+          <el-radio-group v-model="form.type" class="type-radio-group">
+            <el-radio value="BUG">Bug反馈</el-radio>
+            <el-radio value="SUGGESTION">功能建议</el-radio>
+            <el-radio value="GENERAL">咨询</el-radio>
+            <el-radio value="COMPLAINT">投诉</el-radio>
+            <el-radio value="REFUND">退款</el-radio>
+          </el-radio-group>
         </el-form-item>
 
         <el-form-item label="优先级" prop="priority">
-          <el-select v-model="form.priority" placeholder="请选择优先级" style="width: 100%">
-            <el-option label="低" value="LOW" />
-            <el-option label="普通" value="NORMAL" />
-            <el-option label="高" value="HIGH" />
-            <el-option label="紧急" value="URGENT" />
-          </el-select>
+          <el-radio-group v-model="form.priority" class="priority-radio-group">
+            <el-radio value="LOW">低</el-radio>
+            <el-radio value="NORMAL">普通</el-radio>
+            <el-radio value="HIGH">高</el-radio>
+            <el-radio value="URGENT">紧急</el-radio>
+          </el-radio-group>
         </el-form-item>
 
         <el-form-item label="工单内容" prop="content">
@@ -281,8 +281,37 @@ onMounted(() => {
   border-radius: 10px;
 }
 
-:deep(.el-select) {
-  width: 100%;
+/* Radio group styles */
+.type-radio-group,
+.priority-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+:deep(.el-radio) {
+  margin-right: 0;
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  padding: 8px 16px;
+  transition: all 0.2s;
+}
+
+:deep(.el-radio:hover) {
+  border-color: var(--brand-primary);
+}
+
+:deep(.el-radio.is-checked) {
+  border-color: var(--brand-primary);
+  background: rgba(255, 107, 53, 0.08);
+}
+
+:deep(.el-radio__label) {
+  color: var(--bs-ink);
+}
+
+:deep(.el-radio.is-checked .el-radio__label) {
+  color: var(--brand-primary);
 }
 
 /* Dark mode */

@@ -305,9 +305,23 @@ html.dark .el-tabs__item.is-active::after {
 /* 针对下拉选项的 tooltip */
 .el-select-dropdown__item {
   /* 防止选项文字滚动 */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  word-break: break-word;
+}
+
+/* el-select-dropdown 下拉面板宽度约束 */
+.el-select-dropdown {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* 确保下拉列表项容器也不溢出 */
+.el-select-dropdown__list {
+  max-width: 100% !important;
+  overflow: hidden !important;
 }
 
 /* 禁用 el-dropdown 的 title tooltip */

@@ -44,6 +44,9 @@ public class ActivityResponse {
     /** 集合地点 */
     private String location;
 
+    /** 地点区级代码 */
+    private String locationCode;
+
     /** 难度等级 */
     private ActivityDifficulty difficulty;
 
@@ -64,6 +67,12 @@ public class ActivityResponse {
     /** 当前报名人数 */
     private Integer signupCount;
 
+    /** 当前用户的报名信息 */
+    private SignupResponse userSignup;
+
+    /** 是否已删除 */
+    private Integer deleted;
+
     /**
      * 从实体转换为响应 DTO
      */
@@ -78,11 +87,13 @@ public class ActivityResponse {
         response.setEndTime(activity.getEndTime());
         response.setMaxParticipants(activity.getMaxParticipants());
         response.setLocation(activity.getLocation());
+        response.setLocationCode(activity.getLocationCode());
         response.setDifficulty(activity.getDifficulty());
         response.setStatus(activity.getStatus());
         response.setOrganizerId(activity.getOrganizerId());
         response.setCreatedAt(activity.getCreatedAt());
         response.setUpdatedAt(activity.getUpdatedAt());
+        response.setDeleted(activity.getDeleted());
         return response;
     }
 }

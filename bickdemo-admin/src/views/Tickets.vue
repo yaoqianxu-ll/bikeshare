@@ -156,12 +156,12 @@
           <el-descriptions-item label="工单编号">{{ currentTicket.ticketNo }}</el-descriptions-item>
           <el-descriptions-item label="工单类型">{{ getTypeText(currentTicket.type) }}</el-descriptions-item>
           <el-descriptions-item label="优先级">
-            <el-tag :type="getPriorityType(currentTicket.priority)" size="small">
+            <el-tag :type="getPriorityType(currentTicket.priority)" size="small" effect="plain">
               {{ getPriorityText(currentTicket.priority) }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="状态">
-            <el-tag :type="getStatusType(currentTicket.status)" size="small">
+            <el-tag :type="getStatusType(currentTicket.status)" size="small" effect="light">
               {{ getStatusText(currentTicket.status) }}
             </el-tag>
           </el-descriptions-item>
@@ -169,6 +169,12 @@
           <el-descriptions-item label="处理人">{{ currentTicket.assigneeName || '未分配' }}</el-descriptions-item>
           <el-descriptions-item label="创建时间">{{ formatDate(currentTicket.createdAt) }}</el-descriptions-item>
           <el-descriptions-item label="更新时间">{{ formatDate(currentTicket.updatedAt) }}</el-descriptions-item>
+          <el-descriptions-item v-if="currentTicket.rating" label="用户评分">
+            <span class="rating-stars">{{ '★'.repeat(Math.floor(currentTicket.rating)) }}{{ currentTicket.rating % 1 >= 0.5 ? '⯪' : '' }}{{ '☆'.repeat(5 - Math.ceil(currentTicket.rating)) }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="currentTicket.feedback" label="用户反馈" :span="2">
+            {{ currentTicket.feedback }}
+          </el-descriptions-item>
         </el-descriptions>
 
         <div class="ticket-content">
@@ -225,14 +231,14 @@
           <h4>快捷操作</h4>
           <div class="action-buttons">
             <el-button
-              v-if="currentTicket.status === 'PENDING'"
+              v-if="['OPEN', 'ASSIGNED', 'PROCESSING'].includes(currentTicket.status)"
               type="primary"
               @click="handleAssign"
             >
               分配工单
             </el-button>
             <el-button
-              v-if="['PENDING', 'ASSIGNED'].includes(currentTicket.status)"
+              v-if="['OPEN', 'ASSIGNED'].includes(currentTicket.status)"
               type="warning"
               @click="handleProcess"
             >
@@ -259,6 +265,13 @@
             >
               关闭工单
             </el-button>
+            <el-button
+              v-if="['CLOSED'].includes(currentTicket.status)"
+              type="warning"
+              @click="handleReopen"
+            >
+              重新开启
+            </el-button>
           </div>
         </div>
       </div>
@@ -284,6 +297,30 @@
         <el-button type="primary" :loading="actionLoading" @click="submitReply">发送回复</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="assignVisible" title="分配工单" width="500px" destroy-on-close>
+      <el-form label-width="80px">
+        <el-form-item label="处理人">
+          <div class="admin-list">
+            <el-radio-group v-model="selectedAdminId">
+              <el-radio
+                v-for="admin in admins"
+                :key="admin.id"
+                :value="admin.id"
+                border
+                class="admin-radio"
+              >
+                {{ admin.username }}
+              </el-radio>
+            </el-radio-group>
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="assignVisible = false">取消</el-button>
+        <el-button type="primary" :loading="actionLoading" @click="submitAssign">确认分配</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -299,7 +336,9 @@ import {
   replyTicket,
   resolveTicket,
   closeTicket,
-  getTicketStats
+  reopenTicket,
+  getTicketStats,
+  getAdmins
 } from '@/api/ticket'
 import { formatDate } from '@/utils/format'
 
@@ -307,10 +346,13 @@ const loading = ref(false)
 const actionLoading = ref(false)
 const detailVisible = ref(false)
 const replyVisible = ref(false)
+const assignVisible = ref(false)
 const records = ref([])
 const total = ref(0)
 const currentTicket = ref(null)
 const replyFormRef = ref()
+const admins = ref([])
+const selectedAdminId = ref(null)
 
 const query = reactive({
   page: 1,
@@ -338,18 +380,16 @@ const replyRules = {
 }
 
 const typeOptions = [
+  { label: 'Bug反馈', value: 'BUG' },
+  { label: '功能建议', value: 'SUGGESTION' },
   { label: '一般咨询', value: 'GENERAL' },
-  { label: '租赁问题', value: 'RENTAL' },
-  { label: '还车问题', value: 'RETURN' },
-  { label: '支付问题', value: 'PAYMENT' },
-  { label: '投诉建议', value: 'COMPLAINT' },
-  { label: '维修报障', value: 'MAINTENANCE' },
-  { label: '其他', value: 'OTHER' }
+  { label: '投诉', value: 'COMPLAINT' },
+  { label: '退款', value: 'REFUND' }
 ]
 
 const priorityOptions = [
   { label: '低', value: 'LOW' },
-  { label: '中', value: 'MEDIUM' },
+  { label: '普通', value: 'NORMAL' },
   { label: '高', value: 'HIGH' },
   { label: '紧急', value: 'URGENT' }
 ]
@@ -393,6 +433,16 @@ const getPriorityType = (priority) => {
   return map[priority] || 'info'
 }
 
+const getPriorityClass = (priority) => {
+  const map = {
+    LOW: 'priority-low',
+    NORMAL: 'priority-normal',
+    HIGH: 'priority-high',
+    URGENT: 'priority-urgent'
+  }
+  return map[priority] || 'priority-low'
+}
+
 const getStatusText = (status) => {
   const map = {
     OPEN: '待处理',
@@ -415,6 +465,17 @@ const getStatusType = (status) => {
   return map[status] || 'info'
 }
 
+const getStatusClass = (status) => {
+  const map = {
+    OPEN: 'status-open',
+    ASSIGNED: 'status-assigned',
+    PROCESSING: 'status-processing',
+    RESOLVED: 'status-resolved',
+    CLOSED: 'status-closed'
+  }
+  return map[status] || 'status-open'
+}
+
 const loadStats = async () => {
   try {
     const res = await getTicketStats()
@@ -427,14 +488,16 @@ const loadStats = async () => {
 const load = async () => {
   loading.value = true
   try {
-    const res = await getTicketsPage({
+    const params = {
       page: query.page,
-      size: query.size,
-      keyword: query.keyword || undefined,
-      type: query.type || undefined,
-      priority: query.priority || undefined,
-      status: query.status || undefined
-    })
+      size: query.size
+    }
+    if (query.keyword) params.keyword = query.keyword
+    if (query.type) params.type = query.type
+    if (query.priority) params.priority = query.priority
+    if (query.status) params.status = query.status
+
+    const res = await getTicketsPage(params)
     records.value = res.data?.records || []
     total.value = Number(res.data?.total || 0)
   } finally {
@@ -462,6 +525,15 @@ const handleStatusChange = (command) => {
   handleFilter()
 }
 
+const loadAdmins = async () => {
+  try {
+    const res = await getAdmins()
+    admins.value = res.data?.records || []
+  } catch (error) {
+    console.error('Failed to load admins:', error)
+  }
+}
+
 const openDetail = async (row) => {
   try {
     const res = await getTicketById(row.id)
@@ -473,9 +545,20 @@ const openDetail = async (row) => {
 }
 
 const handleAssign = async () => {
+  selectedAdminId.value = currentTicket.value.assigneeId || null
+  await loadAdmins()
+  assignVisible.value = true
+}
+
+const submitAssign = async () => {
+  if (!selectedAdminId.value) {
+    ElMessage.warning('请选择处理人')
+    return
+  }
   try {
-    await assignTicket(currentTicket.value.id, '1')
+    await assignTicket(currentTicket.value.id, String(selectedAdminId.value))
     ElMessage.success('工单已分配')
+    assignVisible.value = false
     await refreshCurrentTicket()
   } catch (error) {
     console.error('Failed to assign ticket:', error)
@@ -532,6 +615,16 @@ const handleClose = async () => {
   }
 }
 
+const handleReopen = async () => {
+  try {
+    await reopenTicket(currentTicket.value.id)
+    ElMessage.success('工单已重新开启')
+    await refreshCurrentTicket()
+  } catch (error) {
+    console.error('Failed to reopen ticket:', error)
+  }
+}
+
 const refreshCurrentTicket = async () => {
   try {
     const res = await getTicketById(currentTicket.value.id)
@@ -546,6 +639,7 @@ const refreshCurrentTicket = async () => {
 onMounted(() => {
   load()
   loadStats()
+  loadAdmins()
 })
 </script>
 
@@ -577,7 +671,53 @@ onMounted(() => {
 .ticket-meta {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+
+/* el-tag 样式 - 与 MyRentals 保持一致 */
+:deep(.el-tag) {
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-weight: 500;
+  font-size: 12px;
+  border: 1px solid;
+}
+
+:deep(.el-tag--info) {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4338ca;
+  border-color: rgba(99, 102, 241, 0.22);
+}
+
+:deep(.el-tag--warning) {
+  background: rgba(245, 158, 11, 0.14);
+  color: #92400e;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+}
+
+:deep(.el-tag--success) {
+  background: rgba(16, 185, 129, 0.14);
+  color: #065f46;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+}
+
+:deep(.el-tag--danger) {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.22);
+}
+
+:deep(.el-tag--primary) {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+}
+
+/* 评分星星 */
+.rating-stars {
+  color: #f59e0b;
+  font-size: 16px;
+  letter-spacing: 2px;
 }
 
 .ticket-no {
@@ -721,5 +861,46 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.admin-list {
+  width: 100%;
+}
+
+.admin-radio {
+  margin-bottom: 8px;
+  margin-right: 0;
+  width: 100%;
+}
+
+/* 深色模式 el-tag 样式 */
+html.dark :deep(.el-tag--info) {
+  background: rgba(99, 102, 241, 0.25);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+html.dark :deep(.el-tag--warning) {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+html.dark :deep(.el-tag--success) {
+  background: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+html.dark :deep(.el-tag--danger) {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+html.dark :deep(.el-tag--primary) {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.4);
 }
 </style>

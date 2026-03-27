@@ -455,6 +455,9 @@ a {
 :deep(.el-select__wrapper),
 :deep(.el-input-number) {
   border-radius: 14px;
+  transition: none !important;
+  --el-transition-duration: 0s !important;
+}
   box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06) inset;
   background: rgba(255, 255, 255, 0.86);
   padding-top: 0;
@@ -604,6 +607,60 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  -webkit-transition: none !important;
+  -webkit-animation: none !important;
+  -webkit-transform: none !important;
+}
+
+/* 禁止 el-select 所有抖动动画 */
+.el-select-dropdown,
+.el-select-dropdown__popper,
+.el-select-dropdown__list,
+.el-select-dropdown__item,
+.el-select-dropdown__wrap,
+.el-select-dropdown__empty,
+.el-scrollbar__wrap,
+.el-select-dropdown__content {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  -webkit-transition: none !important;
+  -webkit-animation: none !important;
+  -webkit-transform: none !important;
+}
+
+.el-tooltip__popper,
+.el-popper.is-light,
+.el-popper.is-dark,
+.el-popper {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  -webkit-transition: none !important;
+  -webkit-animation: none !important;
+  -webkit-transform: none !important;
+}
+
+/* 禁用所有下拉弹层的过渡动画 */
+[class*="el-select-dropdown"],
+[class*="el-popper"] {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+/* Vue transition 禁用 */
+.el-select-dropdown-enter-active,
+.el-select-dropdown-leave-active,
+.el-select-dropdown-enter-from,
+.el-select-dropdown-enter-to,
+.el-select-dropdown-leave-from,
+.el-select-dropdown-leave-to {
+  transition: none !important;
+  animation: none !important;
 }
 
 .el-dropdown .el-tooltip__trigger,

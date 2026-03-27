@@ -26,6 +26,9 @@ public class SignupResponse {
     /** 用户名 */
     private String username;
 
+    /** 用户邮箱 */
+    private String email;
+
     /** 用户头像 */
     private String avatar;
 

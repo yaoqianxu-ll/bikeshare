@@ -53,6 +53,10 @@ public class Activity {
     @TableField("location")
     private String location;
 
+    /** 地点区级代码 */
+    @TableField("location_code")
+    private String locationCode;
+
     /** 难度等级 */
     @TableField(value = "difficulty", typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)
     private ActivityDifficulty difficulty;

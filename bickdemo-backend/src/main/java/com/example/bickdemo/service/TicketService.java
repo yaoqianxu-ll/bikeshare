@@ -361,6 +361,23 @@ public class TicketService {
     }
 
     /**
+     * 重新开启已关闭的工单
+     */
+    @Transactional
+    @CacheEvict(cacheNames = {CacheNames.TICKETS_STATS, CacheNames.TICKETS_PAGE}, allEntries = true)
+    public TicketResponse reopenTicket(Long id) {
+        Ticket ticket = ticketMapper.selectById(id);
+        if (ticket == null) {
+            throw new RuntimeException("工单不存在：" + id);
+        }
+
+        ticket.setStatus(TicketStatus.OPEN);
+        ticket.setResolvedTime(null);
+        ticketMapper.updateById(ticket);
+        return convertToResponse(ticket);
+    }
+
+    /**
      * 管理员获取工单统计
      */
     @Cacheable(cacheNames = CacheNames.TICKETS_STATS, key = "'stats'")

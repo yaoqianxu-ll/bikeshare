@@ -2,16 +2,20 @@ package com.example.bickdemo.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.bickdemo.config.CacheNames;
+import com.example.bickdemo.dto.ActivityMessageRequest;
+import com.example.bickdemo.dto.ActivityMessageResponse;
 import com.example.bickdemo.dto.ActivityRequest;
 import com.example.bickdemo.dto.ActivityResponse;
 import com.example.bickdemo.dto.SignupRequest;
 import com.example.bickdemo.dto.SignupResponse;
 import com.example.bickdemo.entity.Activity;
+import com.example.bickdemo.entity.ActivityMessage;
 import com.example.bickdemo.entity.ActivitySignup;
 import com.example.bickdemo.entity.ActivityStatus;
 import com.example.bickdemo.entity.SignupStatus;
 import com.example.bickdemo.entity.User;
 import com.example.bickdemo.mapper.ActivityMapper;
+import com.example.bickdemo.mapper.ActivityMessageMapper;
 import com.example.bickdemo.mapper.ActivitySignupMapper;
 import com.example.bickdemo.mapper.UserMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -25,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,6 +44,7 @@ public class ActivityService {
 
     private final ActivityMapper activityMapper;
     private final ActivitySignupMapper signupMapper;
+    private final ActivityMessageMapper messageMapper;
     private final UserMapper userMapper;
 
     /**
@@ -57,7 +63,7 @@ public class ActivityService {
      * 分页获取活动列表（管理端使用）
      */
     @Cacheable(cacheNames = CacheNames.ACTIVITIES_PAGE,
-               key = "'page:' + #p1 + ':size:' + #p2 + ':status:' + (#p0 != null ? #p0.name() : 'all')")
+            key = "'page:' + #p1 + ':size:' + #p2 + ':status:' + (#p0 != null ? #p0.name() : 'all')")
     public Page<ActivityResponse> getActivitiesPage(ActivityStatus status, int page, int size) {
         LambdaQueryWrapper<Activity> wrapper = new LambdaQueryWrapper<Activity>()
                 .eq(Activity::getDeleted, 0)
@@ -74,6 +80,26 @@ public class ActivityService {
     }
 
     /**
+     * 分页获取活动列表（包含已删除的，用于管理端）
+     */
+    public Page<ActivityResponse> getActivitiesPageIncludeDeleted(ActivityStatus status, int page, int size) {
+        // 使用原生SQL查询，绕过 @TableLogic 的自动 deleted=0 过滤
+        List<Activity> activities = activityMapper.findAllIncludeDeleted(status != null ? status.name() : null);
+
+        // 手动分页
+        int start = (page - 1) * size;
+        int end = Math.min(start + size, activities.size());
+        List<Activity> pagedActivities = start < activities.size() ? activities.subList(start, end) : Collections.emptyList();
+
+        Page<ActivityResponse> result = new Page<>(page, size);
+        result.setTotal(activities.size());
+        result.setRecords(pagedActivities.stream()
+                .map(this::convertToResponseWithCount)
+                .collect(Collectors.toList()));
+        return result;
+    }
+
+    /**
      * 根据 ID 获取活动详情
      */
     @Cacheable(cacheNames = CacheNames.ACTIVITY_DETAIL, key = "#id", unless = "#result == null")
@@ -83,7 +109,26 @@ public class ActivityService {
         if (activity == null) {
             throw new RuntimeException("活动不存在：" + id);
         }
-        return convertToResponseWithCount(activity);
+        ActivityResponse response = convertToResponseWithCount(activity);
+
+        // 如果用户已登录，查询用户的报名状态
+        try {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            if (username != null && !"anonymousUser".equals(username)) {
+                User user = userMapper.findByUsername(username);
+                if (user != null) {
+                    ActivitySignup signup = signupMapper.findByActivityAndUser(id, user.getId());
+                    if (signup != null) {
+                        response.setUserSignup(convertSignupToResponse(signup));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // 用户未登录或其他异常，忽略
+            log.debug("获取用户报名状态失败：{}", e.getMessage());
+        }
+
+        return response;
     }
 
     /**
@@ -101,9 +146,11 @@ public class ActivityService {
         activity.setEndTime(request.getEndTime());
         activity.setMaxParticipants(request.getMaxParticipants() != null ? request.getMaxParticipants() : 0);
         activity.setLocation(request.getLocation());
+        activity.setLocationCode(request.getLocationCode());
         activity.setDifficulty(request.getDifficulty() != null ? request.getDifficulty() : com.example.bickdemo.entity.ActivityDifficulty.MEDIUM);
         activity.setStatus(request.getStatus() != null ? request.getStatus() : ActivityStatus.DRAFT);
-        activity.setOrganizerId(request.getOrganizerId());
+        // 如果没有传组织者ID，设置默认值（管理端创建的活动组织者ID为1）
+        activity.setOrganizerId(request.getOrganizerId() != null ? request.getOrganizerId() : 1L);
 
         activityMapper.insert(activity);
         return convertToResponseWithCount(activity);
@@ -114,8 +161,8 @@ public class ActivityService {
      */
     @Transactional
     @Caching(evict = {
-        @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE}, allEntries = true),
-        @CacheEvict(cacheNames = CacheNames.ACTIVITY_DETAIL, key = "#id")
+            @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE}, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.ACTIVITY_DETAIL, key = "#id")
     })
     public ActivityResponse updateActivity(Long id, ActivityRequest request) {
         Activity activity = activityMapper.selectById(id);
@@ -147,6 +194,9 @@ public class ActivityService {
         if (request.getLocation() != null) {
             activity.setLocation(request.getLocation());
         }
+        if (request.getLocationCode() != null) {
+            activity.setLocationCode(request.getLocationCode());
+        }
         if (request.getDifficulty() != null) {
             activity.setDifficulty(request.getDifficulty());
         }
@@ -163,8 +213,8 @@ public class ActivityService {
      */
     @Transactional
     @Caching(evict = {
-        @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE}, allEntries = true),
-        @CacheEvict(cacheNames = CacheNames.ACTIVITY_DETAIL, key = "#id")
+            @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE}, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.ACTIVITY_DETAIL, key = "#id")
     })
     public void deleteActivity(Long id) {
         Activity activity = activityMapper.selectById(id);
@@ -211,9 +261,16 @@ public class ActivityService {
             throw new RuntimeException("活动已开始或已结束");
         }
 
-        // 检查是否已报名
-        if (signupMapper.existsByActivityAndUser(activityId, user.getId()) > 0) {
-            throw new RuntimeException("您已报名该活动");
+        // 检查是否已有报名记录
+        ActivitySignup existingSignup = signupMapper.findByActivityAndUser(activityId, user.getId());
+        if (existingSignup != null) {
+            if (existingSignup.getStatus() == SignupStatus.REJECTED) {
+                throw new RuntimeException("您的报名已被拒绝，请联系管理员");
+            }
+            if (existingSignup.getStatus() != SignupStatus.CANCELLED) {
+                throw new RuntimeException("您已报名该活动");
+            }
+            // CANCELLED 状态可以重新报名
         }
 
         // 检查是否满员
@@ -225,7 +282,15 @@ public class ActivityService {
             }
         }
 
-        // 创建报名记录
+        // 如果已有取消的报名记录，更新状态为待审核
+        if (existingSignup != null && existingSignup.getStatus() == SignupStatus.CANCELLED) {
+            existingSignup.setStatus(SignupStatus.PENDING);
+            existingSignup.setRemark(request != null ? request.getRemark() : null);
+            signupMapper.updateById(existingSignup);
+            return convertSignupToResponse(existingSignup);
+        }
+
+        // 创建新报名记录
         ActivitySignup signup = new ActivitySignup();
         signup.setActivityId(activityId);
         signup.setUserId(user.getId());
@@ -282,6 +347,38 @@ public class ActivityService {
     }
 
     /**
+     * 重新审核（将拒绝的报名恢复为待审核）
+     */
+    @Transactional
+    @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE, CacheNames.ACTIVITY_DETAIL}, allEntries = true)
+    public SignupResponse resetSignup(Long activityId, Long signupId) {
+        ActivitySignup signup = signupMapper.selectById(signupId);
+        if (signup == null || !signup.getActivityId().equals(activityId)) {
+            throw new RuntimeException("报名记录不存在");
+        }
+
+        signup.setStatus(SignupStatus.PENDING);
+        signupMapper.updateById(signup);
+        return convertSignupToResponse(signup);
+    }
+
+    /**
+     * 取消报名
+     */
+    @Transactional
+    @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE, CacheNames.ACTIVITY_DETAIL}, allEntries = true)
+    public SignupResponse cancelSignup(Long activityId, Long signupId) {
+        ActivitySignup signup = signupMapper.selectById(signupId);
+        if (signup == null || !signup.getActivityId().equals(activityId)) {
+            throw new RuntimeException("报名记录不存在");
+        }
+
+        signup.setStatus(SignupStatus.CANCELLED);
+        signupMapper.updateById(signup);
+        return convertSignupToResponse(signup);
+    }
+
+    /**
      * 签到
      */
     @Transactional
@@ -319,12 +416,110 @@ public class ActivityService {
      */
     private SignupResponse convertSignupToResponse(ActivitySignup signup) {
         SignupResponse response = SignupResponse.fromEntity(signup);
-        // 设置用户名和头像
+        // 设置用户名、邮箱和头像
         User user = userMapper.selectById(signup.getUserId());
         if (user != null) {
             response.setUsername(user.getUsername());
+            response.setEmail(user.getEmail());
             response.setAvatar(user.getAvatar());
         }
         return response;
+    }
+
+    /**
+     * 发送消息给管理员
+     */
+    @Transactional
+    public ActivityMessageResponse sendMessage(ActivityMessageRequest request) {
+        // 获取当前登录用户
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userMapper.findByUsername(username);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        // 检查活动是否存在
+        Activity activity = activityMapper.selectById(request.getActivityId());
+        if (activity == null) {
+            throw new RuntimeException("活动不存在");
+        }
+
+        // 创建消息
+        ActivityMessage message = new ActivityMessage();
+        message.setActivityId(request.getActivityId());
+        message.setUserId(user.getId());
+        message.setContent(request.getContent());
+        message.setStatus("UNREAD");
+
+        messageMapper.insert(message);
+
+        ActivityMessageResponse response = ActivityMessageResponse.fromEntity(message);
+        response.setUsername(username);
+        response.setActivityTitle(activity.getTitle());
+        return response;
+    }
+
+    /**
+     * 获取活动的所有消息
+     */
+    public List<ActivityMessageResponse> getActivityMessages(Long activityId) {
+        List<ActivityMessage> messages = messageMapper.findByActivityId(activityId);
+        return messages.stream().map(message -> {
+            ActivityMessageResponse response = ActivityMessageResponse.fromEntity(message);
+            User user = userMapper.selectById(message.getUserId());
+            if (user != null) {
+                response.setUsername(user.getUsername());
+            }
+            Activity activity = activityMapper.selectById(message.getActivityId());
+            if (activity != null) {
+                response.setActivityTitle(activity.getTitle());
+            }
+            return response;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 管理员回复消息
+     */
+    @Transactional
+    public ActivityMessageResponse replyMessage(Long messageId, String reply) {
+        ActivityMessage message = messageMapper.selectById(messageId);
+        if (message == null) {
+            throw new RuntimeException("消息不存在");
+        }
+
+        message.setReply(reply);
+        message.setRepliedAt(LocalDateTime.now());
+        message.setStatus("READ");
+        messageMapper.updateById(message);
+
+        ActivityMessageResponse response = ActivityMessageResponse.fromEntity(message);
+        User user = userMapper.selectById(message.getUserId());
+        if (user != null) {
+            response.setUsername(user.getUsername());
+        }
+        return response;
+    }
+
+    /**
+     * 获取用户的活动消息
+     */
+    public List<ActivityMessageResponse> getUserMessages() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userMapper.findByUsername(username);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        List<ActivityMessage> messages = messageMapper.findByUserId(user.getId());
+        return messages.stream().map(message -> {
+            ActivityMessageResponse response = ActivityMessageResponse.fromEntity(message);
+            response.setUsername(username);
+            Activity activity = activityMapper.selectById(message.getActivityId());
+            if (activity != null) {
+                response.setActivityTitle(activity.getTitle());
+            }
+            return response;
+        }).collect(Collectors.toList());
     }
 }

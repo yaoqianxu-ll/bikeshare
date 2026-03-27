@@ -58,42 +58,49 @@ const toggleTheme = () => {
   z-index: 2;
 }
 
+.theme-toggle--floating {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1200;
+}
+
 .theme-toggle__button {
-  width: 50px;
-  height: 50px;
-  border: 1px solid var(--bs-stroke);
-  border-radius: 16px;
-  background: var(--bs-surface);
+  width: auto;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bs-surface-solid) 88%, transparent);
+  backdrop-filter: blur(12px) saturate(135%);
   color: var(--bs-ink);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
-  backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(12px) saturate(135%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
-  padding: 0;
-  border: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+  border: 1px solid var(--bs-stroke);
   outline: none;
+  opacity: 0.95;
 }
 
 .theme-toggle__button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.24);
+  transform: none;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--bs-surface-solid) 92%, transparent);
 }
 
 .theme-toggle--tone-ghost .theme-toggle__button {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px) saturate(135%);
   color: #f8fbff;
   border-color: rgba(255, 255, 255, 0.14);
   box-shadow: none;
-  backdrop-filter: none;
+  opacity: 0.7;
 }
 
 .theme-toggle--tone-ghost .theme-toggle__button:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: 0 10px 24px rgba(6, 18, 40, 0.08);
 }
 
 .theme-toggle__icon-wrapper {
@@ -141,15 +148,15 @@ html.dark .theme-toggle__icon-wrapper .theme-icon-in {
 }
 
 @media (max-width: 768px) {
-  .theme-toggle {
+  .theme-toggle--floating {
     right: 16px;
     bottom: 16px;
   }
 
-  .theme-toggle__button {
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
+  .theme-toggle--inline .theme-toggle__button {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
   }
 
   .theme-toggle__icon-wrapper .el-icon {

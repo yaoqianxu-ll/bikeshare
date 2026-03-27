@@ -66,7 +66,7 @@
     </el-card>
 
     <!-- 详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" title="工单详情" width="700px" class="detail-dialog">
+    <el-dialog v-model="detailDialogVisible" title="工单详情" width="700px" class="detail-dialog" @close="onDetailDialogClose">
       <div v-if="selectedTicket" class="ticket-detail">
         <el-descriptions :column="2" border class="detail-descriptions">
           <el-descriptions-item label="工单号">{{ selectedTicket.id }}</el-descriptions-item>
@@ -89,7 +89,7 @@
             {{ formatDateTime(selectedTicket.updatedAt) }}
           </el-descriptions-item>
           <el-descriptions-item label="用户评分">
-            <el-rate v-if="selectedTicket.rating" v-model="selectedTicket.rating" disabled text-color="#ff9900" />
+            <el-rate v-if="selectedTicket.rating" :model-value="Number(selectedTicket.rating)" disabled allow-half show-text text-color="#ff9900" />
             <span v-else>-</span>
           </el-descriptions-item>
           <el-descriptions-item label="用户评价" :span="2">
@@ -355,6 +355,10 @@ const submitFeedback = async () => {
   } finally {
     submittingFeedback.value = false
   }
+}
+
+const onDetailDialogClose = () => {
+  loadTickets()
 }
 
 const goToCreate = () => {

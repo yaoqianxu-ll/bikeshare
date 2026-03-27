@@ -37,7 +37,7 @@ public class AdminActivityController {
             @RequestParam(required = false) ActivityStatus status,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Page<ActivityResponse> activities = activityService.getActivitiesPage(status, page, size);
+        Page<ActivityResponse> activities = activityService.getActivitiesPageIncludeDeleted(status, page, size);
         return ResponseEntity.ok(ApiResponse.success(activities));
     }
 
@@ -108,6 +108,30 @@ public class AdminActivityController {
     }
 
     /**
+     * 重新审核（将拒绝的报名恢复为待审核）
+     */
+    @PutMapping("/{id}/signups/{signupId}/reset")
+    @AdminOperationLog(module = "活动管理", action = "重新审核报名")
+    public ResponseEntity<ApiResponse<SignupResponse>> resetSignup(
+            @PathVariable Long id,
+            @PathVariable Long signupId) {
+        SignupResponse signup = activityService.resetSignup(id, signupId);
+        return ResponseEntity.ok(ApiResponse.success("已重新提交审核", signup));
+    }
+
+    /**
+     * 取消报名
+     */
+    @PutMapping("/{id}/signups/{signupId}/cancel")
+    @AdminOperationLog(module = "活动管理", action = "取消报名")
+    public ResponseEntity<ApiResponse<SignupResponse>> cancelSignup(
+            @PathVariable Long id,
+            @PathVariable Long signupId) {
+        SignupResponse signup = activityService.cancelSignup(id, signupId);
+        return ResponseEntity.ok(ApiResponse.success("已取消报名", signup));
+    }
+
+    /**
      * 签到
      */
     @PostMapping("/{id}/signin")
@@ -117,5 +141,28 @@ public class AdminActivityController {
             @RequestParam Long signupId) {
         SignupResponse signup = activityService.signin(id, signupId);
         return ResponseEntity.ok(ApiResponse.success("签到成功", signup));
+    }
+
+    /**
+     * 获取活动的消息列表
+     */
+    @GetMapping("/{id}/messages")
+    @AdminOperationLog(module = "活动管理", action = "获取活动消息列表", type = "查询")
+    public ResponseEntity<ApiResponse<List<com.example.bickdemo.dto.ActivityMessageResponse>>> getActivityMessages(@PathVariable Long id) {
+        List<com.example.bickdemo.dto.ActivityMessageResponse> messages = activityService.getActivityMessages(id);
+        return ResponseEntity.ok(ApiResponse.success(messages));
+    }
+
+    /**
+     * 回复用户消息
+     */
+    @PutMapping("/messages/{messageId}/reply")
+    @AdminOperationLog(module = "活动管理", action = "回复用户消息")
+    public ResponseEntity<ApiResponse<com.example.bickdemo.dto.ActivityMessageResponse>> replyMessage(
+            @PathVariable Long messageId,
+            @RequestBody java.util.Map<String, String> body) {
+        String reply = body.get("reply");
+        com.example.bickdemo.dto.ActivityMessageResponse message = activityService.replyMessage(messageId, reply);
+        return ResponseEntity.ok(ApiResponse.success("回复成功", message));
     }
 }

@@ -19,51 +19,59 @@
         <el-card shadow="never">
           <div class="toolbar">
             <el-space wrap class="region-toolbar">
-              <el-select v-model="discoverFilters.type" clearable placeholder="车型筛选" style="width: 160px">
-                <el-option label="山地车" value="MOUNTAIN" />
-                <el-option label="公路车" value="ROAD" />
-                <el-option label="城市车" value="CITY" />
-                <el-option label="电动车" value="ELECTRIC" />
-                <el-option label="双人车" value="TANDEM" />
-              </el-select>
-              <el-select v-model="discoverFilters.radiusKm" style="width: 140px">
-                <el-option :value="3" label="3 公里" />
-                <el-option :value="5" label="5 公里" />
-                <el-option :value="8" label="8 公里" />
-                <el-option :value="10" label="10 公里" />
-              </el-select>
-              <el-select
-                v-model="discoverRegion.provinceCode"
-                clearable
-                filterable
-                placeholder="选择省份"
-                style="width: 160px"
-                @change="handleDiscoverProvinceChange"
-              >
-                <el-option v-for="province in provinceOptions" :key="province.value" :label="province.label" :value="province.value" />
-              </el-select>
-              <el-select
-                v-model="discoverRegion.cityCode"
-                clearable
-                filterable
-                placeholder="选择城市"
-                style="width: 170px"
-                :disabled="!discoverRegion.provinceCode"
-                @change="handleDiscoverCityChange"
-              >
-                <el-option v-for="city in discoverCityOptions" :key="city.value" :label="city.label" :value="city.value" />
-              </el-select>
-              <el-select
-                v-model="discoverRegion.districtCode"
-                clearable
-                filterable
-                placeholder="选择区/县"
-                style="width: 180px"
-                :disabled="!discoverRegion.cityCode"
-                @change="handleDiscoverDistrictChange"
-              >
-                <el-option v-for="district in discoverDistrictOptions" :key="district.value" :label="district.label" :value="district.value" />
-              </el-select>
+              <el-dropdown trigger="click" @command="(val) => discoverFilters.type = val">
+                <el-button>
+                  {{ discoverFilters.type ? typeOptions.find(o => o.value === discoverFilters.type)?.label : '车型筛选' }}
+                  <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="">全部车型</el-dropdown-item>
+                    <el-dropdown-item v-for="item in typeOptions" :key="item.value" :command="item.value">{{ item.label }}</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+              <el-dropdown trigger="click" @command="(val) => discoverFilters.radiusKm = val">
+                <el-button>
+                  {{ discoverFilters.radiusKm ? discoverFilters.radiusKm + ' 公里' : '距离范围' }}
+                  <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item :command="3">3 公里</el-dropdown-item>
+                    <el-dropdown-item :command="5">5 公里</el-dropdown-item>
+                    <el-dropdown-item :command="8">8 公里</el-dropdown-item>
+                    <el-dropdown-item :command="10">10 公里</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+              <div class="custom-select" ref="discoverProvinceRef">
+                <el-button @click.stop="toggleDiscoverDropdown('province')" :disabled="discoverLoading" :class="{ 'selected': discoverRegion.provinceCode }">
+                  {{ discoverRegion.provinceCode ? provinceOptions.find(o => o.value === discoverRegion.provinceCode)?.label : '选择省份' }}
+                  <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <div v-show="discoverDropdownVisible.province" class="custom-select-dropdown">
+                  <div v-for="p in provinceOptions" :key="p.value" class="custom-select-item" @click="selectDiscoverProvince(p.value)">{{ p.label }}</div>
+                </div>
+              </div>
+              <div class="custom-select" ref="discoverCityRef">
+                <el-button @click.stop="toggleDiscoverDropdown('city')" :disabled="!discoverRegion.provinceCode || discoverLoading" :class="{ 'selected': discoverRegion.cityCode }">
+                  {{ discoverRegion.cityCode ? discoverCityOptions.find(o => o.value === discoverRegion.cityCode)?.label : '选择城市' }}
+                  <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <div v-show="discoverDropdownVisible.city" class="custom-select-dropdown">
+                  <div v-for="c in discoverCityOptions" :key="c.value" class="custom-select-item" @click="selectDiscoverCity(c.value)">{{ c.label }}</div>
+                </div>
+              </div>
+              <div class="custom-select" ref="discoverDistrictRef">
+                <el-button @click.stop="toggleDiscoverDropdown('district')" :disabled="!discoverRegion.cityCode || discoverLoading" :class="{ 'selected': discoverRegion.districtCode }">
+                  {{ discoverRegion.districtCode ? discoverDistrictOptions.find(o => o.value === discoverRegion.districtCode)?.label : '选择区/县' }}
+                  <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <div v-show="discoverDropdownVisible.district" class="custom-select-dropdown">
+                  <div v-for="d in discoverDistrictOptions" :key="d.value" class="custom-select-item" @click="selectDiscoverDistrict(d.value)">{{ d.label }}</div>
+                </div>
+              </div>
               <el-button type="primary" plain @click="applyDiscoverRegion" :loading="locating" :disabled="!discoverRegion.districtCode">按所选地区推荐</el-button>
               <el-button plain @click="loadDiscover" :loading="discoverLoading">刷新推荐</el-button>
               <el-button plain @click="resetDiscoverRegion" :disabled="!hasDiscoverRegion">清空地区</el-button>
@@ -253,41 +261,48 @@
     <el-dialog v-model="listingDialogVisible" :title="editingListingId ? '编辑出租车辆' : '发布出租车辆'" width="640px">
       <el-form ref="listingFormRef" :model="listingForm" :rules="listingRules" label-width="96px">
         <el-form-item label="车辆名称" prop="name"><el-input v-model="listingForm.name" /></el-form-item>
-        <el-form-item label="车辆类型" prop="type"><el-select v-model="listingForm.type"><el-option label="山地车" value="MOUNTAIN" /><el-option label="公路车" value="ROAD" /><el-option label="城市车" value="CITY" /><el-option label="电动车" value="ELECTRIC" /><el-option label="双人车" value="TANDEM" /></el-select></el-form-item>
+        <el-form-item label="车辆类型" prop="type">
+          <el-dropdown trigger="click" @command="(val) => listingForm.type = val">
+            <el-button>
+              {{ listingForm.type ? typeOptions.find(o => o.value === listingForm.type)?.label : '请选择车型' }}
+              <el-icon class="el-icon--right"><arrow-down /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item v-for="item in typeOptions" :key="item.value" :command="item.value">{{ item.label }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </el-form-item>
         <el-form-item label="交付地区" prop="districtCode">
           <el-space wrap class="region-toolbar region-toolbar--form">
-            <el-select
-              v-model="listingForm.provinceCode"
-              clearable
-              filterable
-              placeholder="选择省份"
-              style="width: 150px"
-              @change="handleListingProvinceChange"
-            >
-              <el-option v-for="province in provinceOptions" :key="province.value" :label="province.label" :value="province.value" />
-            </el-select>
-            <el-select
-              v-model="listingForm.cityCode"
-              clearable
-              filterable
-              placeholder="选择城市"
-              style="width: 160px"
-              :disabled="!listingForm.provinceCode"
-              @change="handleListingCityChange"
-            >
-              <el-option v-for="city in listingCityOptions" :key="city.value" :label="city.label" :value="city.value" />
-            </el-select>
-            <el-select
-              v-model="listingForm.districtCode"
-              clearable
-              filterable
-              placeholder="选择区/县"
-              style="width: 170px"
-              :disabled="!listingForm.cityCode"
-              @change="handleListingDistrictChange"
-            >
-              <el-option v-for="district in listingDistrictOptions" :key="district.value" :label="district.label" :value="district.value" />
-            </el-select>
+            <div class="custom-select" ref="listingProvinceRef">
+              <el-button @click.stop="toggleListingDropdown('province')" :class="{ 'selected': listingForm.provinceCode }">
+                {{ listingForm.provinceCode ? provinceOptions.find(o => o.value === listingForm.provinceCode)?.label : '选择省份' }}
+                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <div v-show="listingDropdownVisible.province" class="custom-select-dropdown">
+                <div v-for="p in provinceOptions" :key="p.value" class="custom-select-item" @click="selectListingProvince(p.value)">{{ p.label }}</div>
+              </div>
+            </div>
+            <div class="custom-select" ref="listingCityRef">
+              <el-button @click.stop="toggleListingDropdown('city')" :disabled="!listingForm.provinceCode" :class="{ 'selected': listingForm.cityCode }">
+                {{ listingForm.cityCode ? listingCityOptions.find(o => o.value === listingForm.cityCode)?.label : '选择城市' }}
+                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <div v-show="listingDropdownVisible.city" class="custom-select-dropdown">
+                <div v-for="c in listingCityOptions" :key="c.value" class="custom-select-item" @click="selectListingCity(c.value)">{{ c.label }}</div>
+              </div>
+            </div>
+            <div class="custom-select" ref="listingDistrictRef">
+              <el-button @click.stop="toggleListingDropdown('district')" :disabled="!listingForm.cityCode" :class="{ 'selected': listingForm.districtCode }">
+                {{ listingForm.districtCode ? listingDistrictOptions.find(o => o.value === listingForm.districtCode)?.label : '选择区/县' }}
+                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <div v-show="listingDropdownVisible.district" class="custom-select-dropdown">
+                <div v-for="d in listingDistrictOptions" :key="d.value" class="custom-select-item" @click="selectListingDistrict(d.value)">{{ d.label }}</div>
+              </div>
+            </div>
           </el-space>
         </el-form-item>
         <el-form-item v-if="listingRegionWarning" label="地点提示">
@@ -332,9 +347,10 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, watch, computed } from 'vue'
+import { onMounted, onUnmounted, nextTick, reactive, ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElIcon } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { consultMarketplaceListing, createMarketplaceApplication, createMarketplaceListing, getMarketplaceDiscover, getMarketplaceLocationHint, getMarketplaceOwnerApplications, getMarketplaceRenterApplications, getMyMarketplaceListings, updateMarketplaceApplicationStatus, updateMarketplaceListing } from '@/api/marketplace'
 import { uploadImage } from '@/api/file'
@@ -366,9 +382,24 @@ const coords = reactive({ latitude: null, longitude: null })
 const discoverFilters = reactive({ type: '', radiusKm: 8 })
 const discoverRegion = reactive({ provinceCode: '', cityCode: '', districtCode: '' })
 const listingForm = reactive({ name: '', type: 'CITY', provinceCode: '', cityCode: '', districtCode: '', location: '', latitude: null, longitude: null, pricePerHour: 12, deposit: 0, deliveryMode: 'OWNER_MEETUP', availabilityRange: [], imageUrl: '', description: '', status: 'AVAILABLE' })
+const listingDropdownVisible = reactive({ province: false, city: false, district: false })
+const discoverDropdownVisible = reactive({ province: false, city: false, district: false })
+const listingProvinceRef = ref(null)
+const listingCityRef = ref(null)
+const listingDistrictRef = ref(null)
+const discoverProvinceRef = ref(null)
+const discoverCityRef = ref(null)
+const discoverDistrictRef = ref(null)
 const applicationForm = reactive({ requestedRange: [], meetupLocation: '', meetupTime: null, renterMessage: '' })
 const listingRules = { name: [{ required: true, message: '请输入车辆名称', trigger: 'blur' }], type: [{ required: true, message: '请选择车辆类型', trigger: 'change' }], districtCode: [{ required: true, message: '请选择完整的省/市/区', trigger: 'change' }], availabilityRange: [{ type: 'array', required: true, message: '请选择可租时间段', trigger: 'change' }] }
 const applicationRules = { requestedRange: [{ type: 'array', required: true, message: '请选择租用时间', trigger: 'change' }], meetupLocation: [{ required: true, message: '请输入建议交付地点', trigger: 'blur' }] }
+const typeOptions = [
+  { label: '山地车', value: 'MOUNTAIN' },
+  { label: '公路车', value: 'ROAD' },
+  { label: '城市车', value: 'CITY' },
+  { label: '电动车', value: 'ELECTRIC' },
+  { label: '双人车', value: 'TANDEM' }
+]
 const provinceOptions = chinaRegionOptions
 const hasDiscoverRegion = computed(() => Boolean(discoverRegion.provinceCode || discoverRegion.cityCode || discoverRegion.districtCode))
 const discoverCityOptions = computed(() => getCityOptions(discoverRegion.provinceCode))
@@ -653,6 +684,128 @@ const resetDiscoverRegion = async () => {
   activeDiscoverSourceText.value = ''
   await loadDiscover()
 }
+const toggleListingDropdown = (key) => {
+  if (key === 'province') {
+    if (listingDropdownVisible.province) {
+      listingDropdownVisible.province = false
+    } else {
+      listingDropdownVisible.province = false
+      listingDropdownVisible.city = false
+      listingDropdownVisible.district = false
+      listingDropdownVisible.province = true
+    }
+  } else if (key === 'city') {
+    if (listingDropdownVisible.city) {
+      listingDropdownVisible.city = false
+    } else {
+      listingDropdownVisible.province = false
+      listingDropdownVisible.city = false
+      listingDropdownVisible.district = false
+      if (listingForm.provinceCode) {
+        listingDropdownVisible.city = true
+      }
+    }
+  } else if (key === 'district') {
+    if (listingDropdownVisible.district) {
+      listingDropdownVisible.district = false
+    } else {
+      listingDropdownVisible.province = false
+      listingDropdownVisible.city = false
+      listingDropdownVisible.district = false
+      if (listingForm.cityCode) {
+        listingDropdownVisible.district = true
+      }
+    }
+  }
+}
+const closeAllListingDropdowns = (e) => {
+  if (!listingProvinceRef.value?.contains(e?.target) && !listingCityRef.value?.contains(e?.target) && !listingDistrictRef.value?.contains(e?.target)) {
+    listingDropdownVisible.province = false
+    listingDropdownVisible.city = false
+    listingDropdownVisible.district = false
+  }
+}
+const selectListingProvince = (val) => {
+  listingForm.provinceCode = val
+  listingForm.cityCode = ''
+  listingForm.districtCode = ''
+  listingForm.location = ''
+  listingForm.latitude = null
+  listingForm.longitude = null
+  listingDropdownVisible.province = false
+}
+const selectListingCity = (val) => {
+  listingForm.cityCode = val
+  listingForm.districtCode = ''
+  listingForm.location = ''
+  listingForm.latitude = null
+  listingForm.longitude = null
+  listingDropdownVisible.city = false
+}
+const selectListingDistrict = (val) => {
+  listingForm.districtCode = val
+  listingDropdownVisible.district = false
+  syncListingRegionSelection()
+}
+const toggleDiscoverDropdown = (key) => {
+  if (key === 'province') {
+    if (discoverDropdownVisible.province) {
+      discoverDropdownVisible.province = false
+    } else {
+      discoverDropdownVisible.province = false
+      discoverDropdownVisible.city = false
+      discoverDropdownVisible.district = false
+      if (!discoverLoading.value) {
+        discoverDropdownVisible.province = true
+      }
+    }
+  } else if (key === 'city') {
+    if (discoverDropdownVisible.city) {
+      discoverDropdownVisible.city = false
+    } else {
+      discoverDropdownVisible.province = false
+      discoverDropdownVisible.city = false
+      discoverDropdownVisible.district = false
+      if (discoverRegion.provinceCode && !discoverLoading.value) {
+        discoverDropdownVisible.city = true
+      }
+    }
+  } else if (key === 'district') {
+    if (discoverDropdownVisible.district) {
+      discoverDropdownVisible.district = false
+    } else {
+      discoverDropdownVisible.province = false
+      discoverDropdownVisible.city = false
+      discoverDropdownVisible.district = false
+      if (discoverRegion.cityCode && !discoverLoading.value) {
+        discoverDropdownVisible.district = true
+      }
+    }
+  }
+}
+const closeAllDiscoverDropdowns = (e) => {
+  if (!discoverProvinceRef.value?.contains(e?.target) && !discoverCityRef.value?.contains(e?.target) && !discoverDistrictRef.value?.contains(e?.target)) {
+    discoverDropdownVisible.province = false
+    discoverDropdownVisible.city = false
+    discoverDropdownVisible.district = false
+  }
+}
+const selectDiscoverProvince = (val) => {
+  discoverRegion.provinceCode = val
+  discoverRegion.cityCode = ''
+  discoverRegion.districtCode = ''
+  discoverDropdownVisible.province = false
+}
+const selectDiscoverCity = (val) => {
+  discoverRegion.cityCode = val
+  discoverRegion.districtCode = ''
+  discoverDropdownVisible.city = false
+}
+const selectDiscoverDistrict = (val) => {
+  discoverRegion.districtCode = val
+  discoverDropdownVisible.district = false
+  handleFilter()
+}
 const handleListingProvinceChange = () => {
   listingForm.cityCode = ''
   listingForm.districtCode = ''
@@ -700,7 +853,16 @@ const updateOwnerApplication = async (application, status) => { await ElMessageB
 const updateRenterApplication = async (application, status) => { await ElMessageBox.confirm(`确认执行“${getApplicationStatusLabel(status)}”吗？`, '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }); await updateMarketplaceApplicationStatus(application.id, { status }); ElMessage.success('申请状态已更新'); await Promise.all([loadPrivateData(), loadDiscover()]) }
 const toggleListingStatus = async (listing) => { const nextStatus = listing.status === 'OFFLINE' ? 'AVAILABLE' : 'OFFLINE'; const res = await updateMarketplaceListing(listing.id, { name: listing.name, type: listing.type, location: listing.location, latitude: Number(listing.latitude), longitude: Number(listing.longitude), pricePerHour: Number(listing.pricePerHour), deposit: Number(listing.deposit || 0), deliveryMode: listing.deliveryMode, availableFrom: formatForSubmit(listing.availableFrom), availableTo: formatForSubmit(listing.availableTo), imageUrl: listing.imageUrl || null, description: listing.description || null, status: nextStatus }); ElMessage.success(res.message || (nextStatus === 'OFFLINE' ? '挂牌已下架' : '挂牌已重新上架')); await Promise.all([loadPrivateData(), loadDiscover()]) }
 
-onMounted(async () => { await initializeDiscoverBySilentLocation(); await loadPrivateData() })
+onMounted(async () => {
+  await initializeDiscoverBySilentLocation()
+  await loadPrivateData()
+  document.addEventListener('click', closeAllListingDropdowns)
+  document.addEventListener('click', closeAllDiscoverDropdowns)
+})
+onUnmounted(() => {
+  document.removeEventListener('click', closeAllListingDropdowns)
+  document.removeEventListener('click', closeAllDiscoverDropdowns)
+})
 watch(() => userStore.isLoggedIn, (loggedIn) => { if (loggedIn) { loadPrivateData().catch((error) => console.error(error)); return } myListings.value = []; ownerApplications.value = []; renterApplications.value = [] })
 </script>
 
@@ -773,6 +935,37 @@ watch(() => userStore.isLoggedIn, (loggedIn) => { if (loggedIn) { loadPrivateDat
 
 .region-toolbar--form {
   width: 100%;
+}
+
+.custom-select {
+  position: relative;
+  overflow: visible;
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 9999;
+  min-width: 160px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 4px;
+  transform: none;
+}
+
+.custom-select-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.custom-select-item:hover {
+  background: #f5f7fa;
 }
 
 .card-col {
@@ -902,6 +1095,84 @@ watch(() => userStore.isLoggedIn, (loggedIn) => { if (loggedIn) { loadPrivateDat
   .card-header {
     flex-direction: column;
   }
+
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-actions .el-button {
+    width: 100%;
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+    align-items: center;
+    position: relative;
+  }
+
+  .region-toolbar {
+    flex-wrap: nowrap !important;
+    justify-content: flex-start;
+    min-width: max-content;
+    padding-bottom: 4px;
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+  }
+
+  .custom-select {
+    position: relative;
+    overflow: visible;
+    z-index: 10;
+  }
+
+  .custom-select-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 9999;
+    min-width: 160px;
+    max-height: 240px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #e4e4e7;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    margin-top: 4px;
+  }
+
+  .toolbar-text {
+    white-space: nowrap;
+  }
+
+  .el-tabs__content {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overflow-y: visible;
+  }
+
+  .el-tab-pane > .el-card {
+    overflow: visible;
+  }
+
+  .el-tab-pane {
+    overflow: visible;
+  }
+
+  .el-tab-pane {
+    min-width: 100%;
+  }
+
+  .marketplace-page {
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
 }
 
 /* ========== 黑夜模式 ========== */
@@ -1010,33 +1281,38 @@ html.dark :deep(.el-select .el-input__wrapper) {
 }
 
 html.dark :deep(.el-tag--info) {
-  background: rgba(148, 163, 184, 0.20);
+  background: rgba(148, 163, 184, 0.25);
   color: #cbd5e1;
-  border: 1px solid rgba(148, 163, 184, 0.30);
+  border: 1px solid rgba(148, 163, 184, 0.40);
+  backdrop-filter: blur(12px) saturate(180%);
 }
 
 html.dark :deep(.el-tag--success) {
-  background: rgba(34, 197, 94, 0.20);
+  background: rgba(34, 197, 94, 0.25);
   color: #86efac;
-  border: 1px solid rgba(74, 222, 128, 0.30);
+  border: 1px solid rgba(74, 222, 128, 0.40);
+  backdrop-filter: blur(12px) saturate(180%);
 }
 
 html.dark :deep(.el-tag--warning) {
-  background: rgba(245, 158, 11, 0.20);
+  background: rgba(245, 158, 11, 0.25);
   color: #fcd34d;
-  border: 1px solid rgba(251, 191, 36, 0.30);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  backdrop-filter: blur(12px) saturate(180%);
 }
 
 html.dark :deep(.el-tag--primary) {
-  background: rgba(255, 107, 53, 0.20);
+  background: rgba(255, 107, 53, 0.25);
   color: #fdba74;
-  border: 1px solid rgba(255, 107, 53, 0.30);
+  border: 1px solid rgba(255, 107, 53, 0.40);
+  backdrop-filter: blur(12px) saturate(180%);
 }
 
 html.dark :deep(.el-tag--danger) {
-  background: rgba(239, 68, 68, 0.20);
+  background: rgba(239, 68, 68, 0.25);
   color: #fca5a5;
-  border: 1px solid rgba(248, 113, 113, 0.30);
+  border: 1px solid rgba(248, 113, 113, 0.40);
+  backdrop-filter: blur(12px) saturate(180%);
 }
 
 html.dark :deep(.el-button--primary) {
@@ -1261,5 +1537,37 @@ html.dark .timeline :deep(.el-timeline-item__wrapper:has(.is-warning)) {
 html.dark .timeline :deep(.el-timeline-item__wrapper:has(.is-success)) {
   border-left-color: #6ee7b7;
   background: linear-gradient(90deg, rgba(52, 211, 153, 0.08), transparent);
+}
+
+/* 黑夜模式下拉框样式 */
+html.dark .custom-select-dropdown {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .custom-select-item {
+  color: #e2e8f0;
+}
+
+html.dark .custom-select-item:hover {
+  background: rgba(64, 158, 255, 0.15);
+  color: #ffffff;
+}
+
+html.dark .custom-select .el-button {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+}
+
+html.dark .custom-select .el-button:hover {
+  background: rgba(51, 65, 85, 0.9);
+  border-color: rgba(64, 158, 255, 0.5);
+}
+
+html.dark .custom-select .el-button.selected {
+  border-color: rgba(64, 158, 255, 0.6);
+  color: #60a5fa;
 }
 </style>

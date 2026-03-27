@@ -69,9 +69,9 @@ public class Ticket {
     @TableField("resolved_time")
     private LocalDateTime resolvedTime;
 
-    /** 用户评分 */
+    /** 用户评分（支持半星） */
     @TableField("rating")
-    private Integer rating;
+    private Double rating;
 
     /** 用户反馈 */
     @TableField("feedback")

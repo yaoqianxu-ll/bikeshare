@@ -22,3 +22,18 @@ export function signupForActivity(id, data) {
     data
   })
 }
+
+export function sendActivityMessage(data) {
+  return request({
+    url: '/activities/messages',
+    method: 'post',
+    data
+  })
+}
+
+export function getMyActivityMessages() {
+  return request({
+    url: '/activities/messages/me',
+    method: 'get'
+  })
+}

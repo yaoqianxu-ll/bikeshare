@@ -135,9 +135,22 @@
         <el-row :gutter="14">
           <el-col :span="12">
             <el-form-item label="公告类型" prop="type">
-              <el-select v-model="form.type" class="full-width">
-                <el-option v-for="item in typeOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
+              <el-dropdown trigger="click" @command="(val) => form.type = val">
+                <el-button class="type-dropdown-btn">
+                  {{ form.type ? typeOptions.find(o => o.value === form.type)?.label : '请选择类型' }}
+                  <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item v-for="item in typeOptions" :key="item.value" :command="item.value">
+                      <span class="type-option">
+                        <span class="type-dot" :class="'dot-' + item.value"></span>
+                        {{ item.label }}
+                      </span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -420,4 +433,76 @@ onMounted(load)
   border-radius: 8px;
   object-fit: cover;
 }
+
+.type-radio-group :deep(.el-radio-button__inner) {
+  padding: 8px 12px;
+}
+
+.type-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.type-chip {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #f5f7fa;
+  color: #606266;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid #dcdfe6;
+  transition: all 0.2s;
+}
+
+.type-chip:hover {
+  background: #ecf5ff;
+  border-color: #409eff;
+  color: #409eff;
+}
+
+.type-chip.active {
+  background: #409eff;
+  border-color: #409eff;
+  color: #fff;
+}
+
+html.dark .type-chip {
+  background: #1f1f1f;
+  border-color: #434343;
+  color: #c0c4cc;
+}
+
+html.dark .type-chip:hover {
+  background: #1a4a7a;
+  border-color: #409eff;
+  color: #409eff;
+}
+
+html.dark .type-chip.active {
+  background: #409eff;
+  border-color: #409eff;
+  color: #fff;
+}
+
+.type-dropdown-btn {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.type-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.type-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot-INFO { background: #409eff; }
+.dot-WARNING { background: #e6a23c; }
+.dot-IMPORTANT { background: #f56c6c; }
 </style>

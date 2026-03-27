@@ -41,9 +41,9 @@
           <div class="activity-card-content">
             <h3 class="activity-title">{{ activity.title }}</h3>
             <div class="activity-meta">
-              <div class="meta-item" v-if="activity.activityDate">
+              <div class="meta-item" v-if="activity.startTime">
                 <el-icon><Calendar /></el-icon>
-                <span>{{ formatDate(activity.activityDate) }}</span>
+                <span>{{ formatDate(activity.startTime) }}</span>
               </div>
               <div class="meta-item" v-if="activity.location">
                 <el-icon><Location /></el-icon>
@@ -136,8 +136,9 @@ const formatDate = (date) => {
 }
 
 const getStatusType = (activity) => {
-  if (!activity.published) return 'info'
-  const date = new Date(activity.activityDate)
+  if (!activity.status || activity.status === 'DRAFT') return 'info'
+  if (activity.status === 'CANCELLED') return 'danger'
+  const date = new Date(activity.startTime)
   const now = new Date()
   if (date < now) return 'danger'
   if (activity.signupCount >= activity.maxParticipants) return 'warning'
@@ -145,8 +146,9 @@ const getStatusType = (activity) => {
 }
 
 const getStatusText = (activity) => {
-  if (!activity.published) return '未发布'
-  const date = new Date(activity.activityDate)
+  if (!activity.status || activity.status === 'DRAFT') return '未发布'
+  if (activity.status === 'CANCELLED') return '已取消'
+  const date = new Date(activity.startTime)
   const now = new Date()
   if (date < now) return '已结束'
   if (activity.signupCount >= activity.maxParticipants) return '已满员'
@@ -156,9 +158,8 @@ const getStatusText = (activity) => {
 const getDifficultyText = (difficulty) => {
   const texts = {
     EASY: '简单',
-    MODERATE: '中等',
-    HARD: '困难',
-    EXTREME: '极限'
+    MEDIUM: '中等',
+    HARD: '困难'
   }
   return texts[difficulty] || difficulty
 }
@@ -316,7 +317,17 @@ onMounted(() => {
   z-index: 1;
 }
 
-.status-badge,
+.status-badge {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: none;
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
 .type-badge {
   font-size: 12px;
   padding: 5px 12px;
@@ -324,9 +335,6 @@ onMounted(() => {
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   border: none;
-}
-
-.type-badge {
   background: rgba(255, 255, 255, 0.95);
   color: #1a1a2e;
 }
@@ -513,6 +521,11 @@ html.dark :deep(.el-pagination li.is-active) {
 html.dark :deep(.el-card__header) {
   background: rgba(15, 23, 42, 0.95);
   border-bottom-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark .status-badge {
+  background: rgba(16, 185, 129, 0.25) !important;
+  color: #6ee7b7 !important;
 }
 
 @media (max-width: 768px) {

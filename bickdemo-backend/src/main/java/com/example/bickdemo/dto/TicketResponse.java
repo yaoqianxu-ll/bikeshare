@@ -63,8 +63,8 @@ public class TicketResponse {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
     private LocalDateTime resolvedTime;
 
-    /** 用户评分 */
-    private Integer rating;
+    /** 用户评分（支持半星） */
+    private Double rating;
 
     /** 用户反馈 */
     private String feedback;

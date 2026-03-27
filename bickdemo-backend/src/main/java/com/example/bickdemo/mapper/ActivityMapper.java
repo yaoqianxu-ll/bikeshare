@@ -33,4 +33,16 @@ public interface ActivityMapper extends BaseMapper<Activity> {
      */
     @Select("SELECT COUNT(*) FROM activity_signups WHERE activity_id = #{activityId} AND deleted = 0 AND status != 'CANCELLED'")
     int countSignups(@Param("activityId") Long activityId);
+
+    /**
+     * 分页查询所有活动（包含已删除的）
+     */
+    @Select("<script>" +
+            "SELECT * FROM activities " +
+            "<where>" +
+            "<if test='status != null'> AND status = #{status} </if>" +
+            "</where>" +
+            "ORDER BY id DESC" +
+            "</script>")
+    List<Activity> findAllIncludeDeleted(@Param("status") String status);
 }

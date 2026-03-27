@@ -45,4 +45,10 @@ public interface ActivitySignupMapper extends BaseMapper<ActivitySignup> {
      */
     @Select("SELECT COUNT(*) FROM activity_signups WHERE activity_id = #{activityId} AND status = 'SIGNED' AND deleted = 0")
     int countSigned(@Param("activityId") Long activityId);
+
+    /**
+     * 根据活动 ID 和用户 ID 查询报名记录（包含已删除的，用于重新报名）
+     */
+    @Select("SELECT * FROM activity_signups WHERE activity_id = #{activityId} AND user_id = #{userId} ORDER BY created_at DESC LIMIT 1")
+    ActivitySignup findByActivityAndUser(@Param("activityId") Long activityId, @Param("userId") Long userId);
 }

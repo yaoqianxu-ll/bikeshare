@@ -1393,10 +1393,18 @@ onMounted(() => {
     margin: 16px;
     border-radius: 16px;
     padding: 20px 16px;
+    opacity: 1;
   }
 
   .bike-section {
     padding: 16px 12px 40px;
+    overflow: visible;
+  }
+
+  .bike-explore {
+    overflow-x: hidden;
+    overflow-y: visible;
+    min-height: auto;
   }
 
   .bike-grid {
@@ -1443,6 +1451,7 @@ onMounted(() => {
   .bike-card,
   .filter-section {
     animation: none;
+    opacity: 1;
   }
 
   .confirm-icon {

@@ -17,7 +17,10 @@
           class="notice-item"
           @click="viewDetail(notice)"
         >
-          <div class="notice-icon" :class="getTypeClass(notice.type)">
+          <div class="notice-cover" v-if="notice.coverImage">
+            <el-image :src="notice.coverImage" fit="cover" class="cover-img" />
+          </div>
+          <div class="notice-icon" :class="getTypeClass(notice.type)" v-else>
             <el-icon><Bell /></el-icon>
           </div>
           <div class="notice-content">
@@ -65,6 +68,7 @@
           </el-tag>
           <span class="detail-time">{{ formatDateTime(selectedNotice.publishTime || selectedNotice.createTime) }}</span>
         </div>
+        <el-image v-if="selectedNotice.coverImage" :src="selectedNotice.coverImage" fit="cover" class="detail-cover" />
         <el-divider />
         <div class="detail-content" v-html="selectedNotice.content"></div>
       </div>
@@ -253,6 +257,20 @@ onMounted(() => {
   animation: fadeIn 0.4s ease forwards;
 }
 
+.notice-cover {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .notice-item:nth-child(1) { animation-delay: 0.05s; }
 .notice-item:nth-child(2) { animation-delay: 0.1s; }
 .notice-item:nth-child(3) { animation-delay: 0.15s; }
@@ -423,6 +441,14 @@ onMounted(() => {
   font-size: 14px;
 }
 
+.detail-cover {
+  width: 100%;
+  max-height: 300px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  object-fit: cover;
+}
+
 /* Dialog */
 :deep(.el-dialog) {
   border-radius: 20px;
@@ -467,6 +493,10 @@ html.dark .meta {
 
 html.dark .notice-item {
   border-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark .notice-cover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 html.dark .notice-item:hover {

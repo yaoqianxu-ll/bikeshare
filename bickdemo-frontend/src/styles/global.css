@@ -301,27 +301,38 @@ a:hover {
   font-weight: 600;
   font-size: 12px;
   padding: 4px 12px;
-  border: none;
+  border: 1px solid;
+  backdrop-filter: blur(12px) saturate(180%);
 }
 
 .el-tag--primary {
-  background: linear-gradient(135deg, #409eff 0%, #337ecc 100%);
-  color: #fff;
+  background: rgba(64, 158, 255, 0.25);
+  color: #409eff;
+  border-color: rgba(64, 158, 255, 0.40);
 }
 
 .el-tag--success {
-  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-  color: #fff;
+  background: rgba(16, 185, 129, 0.25);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.40);
 }
 
 .el-tag--warning {
-  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-  color: #fff;
+  background: rgba(245, 158, 11, 0.25);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.40);
 }
 
 .el-tag--danger {
-  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
-  color: #fff;
+  background: rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.40);
+}
+
+.el-tag--info {
+  background: rgba(144, 147, 153, 0.25);
+  color: #909399;
+  border-color: rgba(144, 147, 153, 0.40);
 }
 
 /* ========== 对话框优化 ========== */
@@ -889,6 +900,46 @@ html.dark .el-button--warning:not(.is-plain):hover {
 .el-dropdown-menu {
   max-height: 280px !important;
   overflow-y: auto !important;
+}
+
+/* ========== el-select 下拉框文字溢出修复 ========== */
+.el-select-dropdown {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+.el-select-dropdown__list {
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.el-select-dropdown__item {
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+.el-select-dropdown__item span {
+  display: block !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  word-break: break-word !important;
+}
+
+/* 深色模式下 el-select 下拉框 */
+html.dark .el-select-dropdown,
+html.dark .el-select-dropdown__list {
+  max-width: 100% !important;
+}
+
+html.dark .el-select-dropdown__item,
+html.dark .el-select-dropdown__item span {
+  max-width: 100% !important;
 }
 
 /* ========== 下拉框文字颜色统一 ========== */

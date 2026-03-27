@@ -34,10 +34,10 @@
         <div class="info-section">
           <el-descriptions :column="1" border class="detail-descriptions">
             <el-descriptions-item label="活动日期">
-              {{ formatDateTime(activity.activityDate) }}
+              {{ formatDateTime(activity.startTime) }}
             </el-descriptions-item>
             <el-descriptions-item label="报名截止">
-              {{ formatDateTime(activity.signupDeadline) }}
+              -
             </el-descriptions-item>
             <el-descriptions-item label="活动地点">
               <el-icon><Location /></el-icon>
@@ -64,7 +64,7 @@
         <!-- 报名按钮 -->
         <div class="action-section">
           <el-button
-            v-if="userStore.isLoggedIn && canSignup"
+            v-if="userStore.isLoggedIn && canSignup && !hasSignedUp"
             type="primary"
             size="large"
             class="signup-btn"
@@ -74,12 +74,39 @@
             立即报名
           </el-button>
           <el-button
-            v-else-if="userStore.isLoggedIn && hasSignedUp"
-            type="success"
+            v-else-if="userStore.isLoggedIn && hasSignedUp && signupInfo?.status === 'PENDING'"
+            type="info"
             size="large"
             disabled
           >
-            已报名
+            报名正在审核中
+          </el-button>
+          <el-button
+            v-else-if="userStore.isLoggedIn && hasSignedUp && signupInfo?.status === 'REJECTED'"
+            type="info"
+            size="large"
+            @click="showContactDialog = true"
+          >
+            拒绝报名，请联系管理员
+          </el-button>
+          <el-button
+            v-else-if="userStore.isLoggedIn && hasSignedUp && signupInfo?.status === 'CANCELLED'"
+            type="primary"
+            size="large"
+            class="signup-btn"
+            @click="handleSignup"
+            :loading="signing"
+          >
+            已被取消，请重新报名
+          </el-button>
+          <el-button
+            v-else-if="userStore.isLoggedIn && hasSignedUp && signupInfo?.status === 'APPROVED'"
+            type="success"
+            size="large"
+            disabled
+            style="width: 100%;"
+          >
+            您已通过审核，报名成功
           </el-button>
           <el-button
             v-else-if="!userStore.isLoggedIn"
@@ -101,17 +128,59 @@
 
         <!-- 报名信息 -->
         <div class="signup-info" v-if="userStore.isLoggedIn && signupInfo">
-          <el-alert type="success" :closable="false">
+          <el-alert v-if="signupInfo.status === 'PENDING'" type="warning" :closable="false">
             <template #title>
-              您已报名此活动
+              您的报名正在审核中
             </template>
-            报名时间：{{ formatDateTime(signupInfo.signupTime) }}
           </el-alert>
+        </div>
+
+        <!-- 留言记录 -->
+        <div class="message-section" v-if="userStore.isLoggedIn && myMessages.length > 0">
+          <h3>我的留言</h3>
+          <div
+            v-for="msg in myMessages"
+            :key="msg.id"
+            class="message-item"
+          >
+            <div class="message-bubble">
+              <div class="message-content">{{ msg.content }}</div>
+              <div class="message-time">{{ formatTime(msg.createdAt) }}</div>
+            </div>
+            <div v-if="msg.reply" class="reply-bubble">
+              <div class="reply-label">管理员回复</div>
+              <div class="reply-content">{{ msg.reply }}</div>
+              <div class="reply-time">{{ formatTime(msg.repliedAt) }}</div>
+            </div>
+          </div>
         </div>
       </div>
 
       <el-empty v-else description="活动不存在" />
     </el-card>
+
+    <!-- 联系管理员对话框 -->
+    <el-dialog v-model="showContactDialog" title="联系管理员" width="500px" destroy-on-close>
+      <el-form :model="contactForm" label-width="80px">
+        <el-form-item label="活动">
+          {{ activity?.title }}
+        </el-form-item>
+        <el-form-item label="您的留言">
+          <el-input
+            v-model="contactForm.content"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入您想对管理员说的话..."
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showContactDialog = false">取消</el-button>
+        <el-button type="primary" :loading="sending" @click="handleSendMessage">发送</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -121,7 +190,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { ArrowLeft, Calendar, Location } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { getActivityById, signupForActivity } from '@/api/activity'
+import { getActivityById, signupForActivity, sendActivityMessage, getMyActivityMessages } from '@/api/activity'
 
 const router = useRouter()
 const route = useRoute()
@@ -132,13 +201,20 @@ const activity = ref(null)
 const loading = ref(false)
 const signing = ref(false)
 const signupInfo = ref(null)
+const showContactDialog = ref(false)
+const sending = ref(false)
+const contactForm = ref({
+  content: ''
+})
+const myMessages = ref([])
 
 const activityId = computed(() => route.params.id)
 
 const canSignup = computed(() => {
-  if (!activity.value?.published) return false
+  if (!activity.value?.status || activity.value.status === 'DRAFT') return false
+  if (activity.value.status === 'CANCELLED' || activity.value.status === 'COMPLETED') return false
   const now = new Date()
-  if (activity.value.signupDeadline && new Date(activity.value.signupDeadline) < now) return false
+  if (activity.value.startTime && new Date(activity.value.startTime) < now) return false
   if (activity.value.maxParticipants && activity.value.signupCount >= activity.value.maxParticipants) return false
   return !hasSignedUp.value
 })
@@ -166,9 +242,16 @@ const formatMoney = (value) => {
   return `¥${num.toFixed(2)}`
 }
 
+const formatTime = (value) => {
+  if (!value) return '-'
+  const str = String(value)
+  return str.replace('T', ' ').substring(0, 19)
+}
+
 const getStatusType = (activity) => {
-  if (!activity.published) return 'info'
-  const date = new Date(activity.activityDate)
+  if (!activity.status || activity.status === 'DRAFT') return 'info'
+  if (activity.status === 'CANCELLED') return 'danger'
+  const date = new Date(activity.startTime)
   const now = new Date()
   if (date < now) return 'danger'
   if (activity.signupCount >= activity.maxParticipants) return 'warning'
@@ -176,8 +259,9 @@ const getStatusType = (activity) => {
 }
 
 const getStatusText = (activity) => {
-  if (!activity.published) return '未发布'
-  const date = new Date(activity.activityDate)
+  if (!activity.status || activity.status === 'DRAFT') return '未发布'
+  if (activity.status === 'CANCELLED') return '已取消'
+  const date = new Date(activity.startTime)
   const now = new Date()
   if (date < now) return '已结束'
   if (activity.signupCount >= activity.maxParticipants) return '已满员'
@@ -220,10 +304,16 @@ const handleSignup = async () => {
 
   signing.value = true
   try {
-    await signupForActivity(activityId.value, {})
+    const res = await signupForActivity(activityId.value, {})
+    // 保存报名信息
+    if (res.data) {
+      signupInfo.value = res.data
+    }
     message.success('报名成功')
     await loadActivity()
   } catch (error) {
+    // 如果是已存在报名记录，直接刷新数据
+    await loadActivity()
     console.error(error)
   } finally {
     signing.value = false
@@ -238,8 +328,43 @@ const goToLogin = () => {
   router.push('/login')
 }
 
+const handleSendMessage = async () => {
+  if (!contactForm.value.content.trim()) {
+    message.warning('请输入留言内容')
+    return
+  }
+  sending.value = true
+  try {
+    await sendActivityMessage({
+      activityId: activityId.value,
+      content: contactForm.value.content
+    })
+    message.success('留言已发送')
+    showContactDialog.value = false
+    contactForm.value.content = ''
+    loadMessages()
+  } catch (error) {
+    console.error(error)
+  } finally {
+    sending.value = false
+  }
+}
+
+const loadMessages = async () => {
+  try {
+    const res = await getMyActivityMessages()
+    // 过滤出当前活动的留言
+    myMessages.value = (res.data || []).filter(m => m.activityId === Number(activityId.value))
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 onMounted(() => {
   loadActivity()
+  if (userStore.isLoggedIn) {
+    loadMessages()
+  }
 })
 </script>
 
@@ -325,6 +450,13 @@ onMounted(() => {
   left: 16px;
   display: flex;
   gap: 10px;
+}
+
+.cover-badges .el-tag {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+  border: none;
+  font-weight: 600;
 }
 
 .info-section {
@@ -423,6 +555,13 @@ html.dark .cover-placeholder {
   color: #475569;
 }
 
+html.dark .cover-badges .el-tag {
+  background: rgba(16, 185, 129, 0.25) !important;
+  color: #6ee7b7 !important;
+  border: none;
+  font-weight: 600;
+}
+
 html.dark .description-section h3 {
   color: #f8fafc;
 }
@@ -450,6 +589,93 @@ html.dark :deep(.el-descriptions__content) {
 
 html.dark :deep(.el-descriptions__cell) {
   border-color: rgba(148, 163, 184, 0.20);
+}
+
+/* 留言区域 */
+.message-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--bs-stroke);
+}
+
+.message-section h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: var(--bs-ink);
+}
+
+.message-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.message-bubble {
+  background: rgba(var(--brand-primary-rgb), 0.08);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
+  border-radius: 12px;
+  padding: 12px 16px;
+  max-width: 85%;
+}
+
+.message-content {
+  color: var(--bs-ink);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.message-time {
+  font-size: 12px;
+  color: var(--bs-muted);
+  margin-top: 6px;
+}
+
+.reply-bubble {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.20);
+  border-radius: 12px;
+  padding: 12px 16px;
+  max-width: 85%;
+  margin-left: 24px;
+}
+
+.reply-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #059669;
+  margin-bottom: 6px;
+}
+
+.reply-content {
+  color: var(--bs-ink);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.reply-time {
+  font-size: 12px;
+  color: var(--bs-muted);
+  margin-top: 6px;
+}
+
+/* 深色模式留言 */
+html.dark .message-bubble {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html.dark .reply-bubble {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+html.dark .reply-label {
+  color: #6ee7b7;
+}
+
+html.dark .message-section h3 {
+  color: #f8fafc;
 }
 
 @media (max-width: 768px) {

@@ -42,6 +42,9 @@ public class ActivityRequest {
     /** 集合地点 */
     private String location;
 
+    /** 地点区级代码 */
+    private String locationCode;
+
     /** 难度等级 */
     private ActivityDifficulty difficulty;
 

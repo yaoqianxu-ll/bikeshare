@@ -1431,6 +1431,12 @@ onMounted(() => {
   animation-delay: 0.05s;
 }
 
+.forum-page .feed-header .el-tag {
+  background: rgba(var(--brand-primary-rgb), 0.10);
+  color: var(--brand-primary);
+  border-color: rgba(var(--brand-primary-rgb), 0.25);
+}
+
 .forum-page .feed-header,
 .forum-page .forum-hero {
   animation: cardSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
