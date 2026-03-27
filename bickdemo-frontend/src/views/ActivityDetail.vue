@@ -85,7 +85,7 @@
             v-else-if="userStore.isLoggedIn && hasSignedUp && signupInfo?.status === 'REJECTED'"
             type="info"
             size="large"
-            @click="contactAdmin"
+            @click="showContactDialog = true"
           >
             拒绝报名，请联系管理员
           </el-button>
@@ -213,6 +213,7 @@ const activityId = computed(() => route.params.id)
 const canSignup = computed(() => {
   if (!activity.value?.status || activity.value.status === 'DRAFT') return false
   if (activity.value.status === 'CANCELLED' || activity.value.status === 'COMPLETED') return false
+  if (activity.value.signupClosed) return false
   const now = new Date()
   if (activity.value.startTime && new Date(activity.value.startTime) < now) return false
   if (activity.value.maxParticipants && activity.value.signupCount >= activity.value.maxParticipants) return false
@@ -264,6 +265,7 @@ const getStatusText = (activity) => {
   const date = new Date(activity.startTime)
   const now = new Date()
   if (date < now) return '已结束'
+  if (activity.signupClosed) return '报名已截止'
   if (activity.signupCount >= activity.maxParticipants) return '已满员'
   return '报名中'
 }
@@ -326,11 +328,6 @@ const goBack = () => {
 
 const goToLogin = () => {
   router.push('/login')
-}
-
-const contactAdmin = () => {
-  // 跳转到管理端活动页面，用户可在报名管理中联系管理员
-  window.open('http://localhost:5174/admin/activities', '_blank')
 }
 
 const handleSendMessage = async () => {
