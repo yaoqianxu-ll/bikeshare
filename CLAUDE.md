@@ -224,6 +224,11 @@ spring:
 mysql -u root -p bickdemo < sql/init.sql
 ```
 
+**重要规则：**
+- SQL 迁移文件只保留在 `sql/bickdemo.sql` 中
+- 除 `bickdemo.sql` 外的其他 SQL 文件不提交到 Git
+- 新增表或字段时，需要同步更新 `bickdemo.sql`
+
 ### 数据库迁移 (常见字段补充)
 
 如果遇到表结构缺失，可执行以下 SQL 补充：

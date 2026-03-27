@@ -44,3 +44,7 @@ _tmp_sidifensen_blog/
 # Git worktrees
 .worktrees/
 worktrees/
+
+# SQL 迁移文件（只保留 bickdemo.sql）
+sql/*.sql
+!sql/bickdemo.sql
