@@ -85,7 +85,7 @@
             v-else-if="userStore.isLoggedIn && hasSignedUp && signupInfo?.status === 'REJECTED'"
             type="info"
             size="large"
-            @click="showContactDialog = true"
+            @click="contactAdmin"
           >
             拒绝报名，请联系管理员
           </el-button>
@@ -326,6 +326,11 @@ const goBack = () => {
 
 const goToLogin = () => {
   router.push('/login')
+}
+
+const contactAdmin = () => {
+  // 跳转到管理端活动页面，用户可在报名管理中联系管理员
+  window.open('http://localhost:5174/admin/activities', '_blank')
 }
 
 const handleSendMessage = async () => {

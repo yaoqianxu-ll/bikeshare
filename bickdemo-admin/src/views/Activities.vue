@@ -297,7 +297,7 @@
                 <span v-else class="text-muted">-</span>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="200" align="center">
+            <el-table-column label="操作" width="260" align="center">
               <template #default="{ row }">
                 <div class="table-actions">
                   <el-button
