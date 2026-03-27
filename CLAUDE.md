@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-自行车租赁系统 (BikeShare) - 基于 **Spring Boot 3.2.0 + Vue 3.4.0** 的全栈应用
+自行车租赁系统 (BikeShare) - 基于 **Spring Boot 3.2.0 + Vue 3.4.0** 的全栈应用，涵盖自行车租赁、社区论坛、二手市场、社交聊天、活动管理等功能。
 
 ## 技术栈
 
 **后端:**
 - Spring Boot 3.2.0, Spring Security 6.x, JWT
 - MyBatis-Plus 3.5.5, MySQL 8.0, HikariCP
-- MinIO (对象存储)
+- MinIO (对象存储), Redis (缓存), RabbitMQ (消息队列)
+- WebSocket (实时聊天), Caffeine (本地缓存)
 
 **前端:**
 - Vue 3.4.0, Vite 5.0.8
@@ -25,13 +26,13 @@ bickdemo/
 ├── bickdemo-backend/          # Spring Boot 后端
 │   ├── src/main/java/.../
 │   │   ├── annotation/        # 自定义注解 (如权限控制)
-│   │   ├── aspect/            # AOP 切面 (如 IP 限流)
-│   │   ├── component/         # 初始化组件
-│   │   ├── config/            # 安全/JWT/MinIO 配置
-│   │   ├── controller/        # REST API
+│   │   ├── aspect/            # AOP 切面 (IP 限流、操作日志)
+│   │   ├── component/         # 初始化组件 (MinIO、数据初始化)
+│   │   ├── config/            # 安全/JWT/MinIO/RabbitMQ/WebSocket 配置
+│   │   ├── controller/        # REST API (按模块分组)
 │   │   ├── dto/               # 数据传输对象
-│   │   ├── entity/            # JPA 实体
-│   │   ├── exception/         # 异常处理
+│   │   ├── entity/            # MyBatis-Plus 实体 (支持逻辑删除)
+│   │   ├── exception/         # 全局异常处理
 │   │   ├── mapper/            # MyBatis Mapper
 │   │   ├── service/           # 业务逻辑
 │   │   └── util/              # 工具类 (JwtUtil, RedisUtil, MinioUtil)
@@ -42,32 +43,26 @@ bickdemo/
 │   ├── Dockerfile
 │   └── pom.xml
 ├── bickdemo-frontend/         # Vue 3 用户端前端
-│   ├── src/
-│   │   ├── api/               # API 封装
-│   │   ├── components/        # 公共组件
-│   │   ├── router/            # 路由配置
-│   │   ├── stores/            # Pinia 状态管理
-│   │   └── views/             # 页面组件
-│   ├── nginx.conf
-│   ├── Dockerfile
-│   └── package.json
 ├── bickdemo-admin/            # Vue 3 管理端前端
-│   ├── src/
-│   │   ├── api/
-│   │   ├── layouts/           # 布局组件
-│   │   ├── router/
-│   │   ├── stores/
-│   │   └── views/             # 管理页面
-│   ├── nginx.conf
-│   └── package.json
-├── script/
-│   ├── dev/                   # 开发环境脚本
-│   └── prod/                  # 生产环境脚本
-│       ├── docker-compose.yml
-│       └── deploy/            # 部署脚本
+├── script/                    # 部署脚本
 └── sql/
     └── init.sql               # 数据库初始化脚本
 ```
+
+**后端 Controller 模块分组：**
+| 模块 | Controller | 说明 |
+|------|-----------|------|
+| 认证 | `AuthController` | 登录/注册/邮箱验证/密码重置 |
+| 自行车 | `BicycleController` | 自行车 CRUD |
+| 租赁 | `RentalController` | 租赁订单/计费 |
+| 论坛 | `ForumController` | 帖子/评论/点赞 |
+| 市场 | `MarketplaceController` | 二手物品交易 |
+| 社交 | `SocialController` | 好友/聊天/好友请求 |
+| 公告 | `NoticeController` | 系统公告 |
+| 工单 | `TicketController` | 用户反馈 |
+| 活动 | `ActivityController` | 骑行活动 |
+| 管理后台 | `Admin*Controller` | 各模块管理端 API |
+| 系统 | `AdminSystemController` | 系统日志/黑名单/统计 |
 
 ## 常用命令
 
@@ -172,12 +167,30 @@ Controller → Service → Mapper
 
 | 路由 | 说明 |
 |------|------|
-| `/api/auth` | 认证相关 (登录/注册/找回密码) |
+| `/api/auth` | 认证相关 (登录/注册/邮箱验证/密码重置) |
 | `/api/bicycles` | 自行车相关 |
 | `/api/rentals` | 租赁订单相关 |
 | `/api/statistics` | 统计数据 |
 | `/api/files` | 文件上传 |
 | `/api/backgrounds` | 背景图管理 |
+| `/api/forum` | 社区帖子/评论/ Reactions |
+| `/api/marketplace` | 二手交易市场 |
+| `/api/social` | 好友/聊天/好友请求 |
+| `/api/notice` | 系统公告 |
+| `/api/ticket` | 工单/反馈 |
+| `/api/activity` | 骑行活动 |
+| `/api/ws` | WebSocket 实时聊天 |
+
+**管理端 API (`/api/admin/*`)：**
+| 路由 | 说明 |
+|------|------|
+| `/api/admin/users` | 用户管理 |
+| `/api/admin/system` | 系统日志/黑名单/IP 封禁 |
+| `/api/admin/marketplace` | 市场审核 |
+| `/api/admin/forum` | 论坛管理 |
+| `/api/admin/notice` | 公告管理 |
+| `/api/admin/ticket` | 工单管理 |
+| `/api/admin/activity` | 活动管理 |
 
 ### 认证流程
 
@@ -186,6 +199,35 @@ Controller → Service → Mapper
 3. 请求拦截器自动添加 `Authorization: Bearer {token}`
 4. 后端 `JwtAuthenticationFilter` 验证 Token
 5. Spring Security 基于角色授权 (USER/ADMIN)
+6. 支持邮箱验证码登录 (`/api/auth/email-login`)
+7. 支持邮箱验证码重置密码 (`/api/auth/reset-password`)
+8. 登录日志记录 (`LoginLog` entity)
+
+### 实时通信
+
+**WebSocket (`/api/ws`)：**
+- 基于 STOMP 协议的 WebSocket 端点
+- 用于实时聊天 (`SocialService` 发布聊天消息事件)
+- 聊天消息通过 RabbitMQ 异步处理
+
+**RabbitMQ 消息队列：**
+- `social.events` 队列：处理聊天消息、好友请求等社交事件
+- `RentalLocationGuardService`：监听租赁位置相关事件
+
+### 缓存策略
+
+- **Redis**：全局缓存 (`spring.cache.type=redis`)
+- **Caffeine**：本地缓存（如热点数据）
+- `JwtService`：Token 黑名单/有效期管理
+- `IpBlacklistService`：IP 黑名单封禁
+
+### IP 限流
+
+- 基于 AOP (`AdminOperationLogAspect`)
+- 未登录用户：60 次/分钟
+- 已登录用户：60 次/分钟
+- 封禁时长：15 分钟 (可配置)
+- 封禁记录：`IpBlacklist` entity，`VisitLog` 记录访问日志
 
 ### API 请求封装
 
@@ -204,6 +246,13 @@ Controller → Service → Mapper
 }
 ```
 
+### 逻辑删除
+
+所有实体支持逻辑删除（`deleted` 字段）：
+- 删除时设置 `deleted = 1`
+- 查询时自动过滤 `deleted = 0`
+- MyBatis-Plus 配置：`logic-delete-field: deleted`
+
 ## 数据库配置
 
 ```yaml
@@ -213,7 +262,21 @@ spring:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:bickdemo}
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:change-me-db-password}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 ```
+
+### 应用特定配置 (`app.*`)
+
+| 配置 | 说明 |
+|------|------|
+| `app.mail.code-expire-minutes` | 邮箱验证码过期时间 (默认 10 分钟) |
+| `app.gaode.map.api.key` | 高德地图 API Key (用于经纬度反查地区) |
+| `app.redis.key-prefix` | Redis key 前缀 |
+| `app.rental.range-check.*` | 租赁距离校验 (最大距离 10km) |
+| `app.security.ip-control.*` | IP 限流配置 |
 
 ### 数据库迁移
 
@@ -225,9 +288,8 @@ mysql -u root -p bickdemo < sql/init.sql
 ```
 
 **重要规则：**
-- SQL 迁移文件只保留在 `sql/bickdemo.sql` 中
-- 除 `bickdemo.sql` 外的其他 SQL 文件不提交到 Git
-- 新增表或字段时，需要同步更新 `bickdemo.sql`
+- SQL 迁移文件统一管理在 `sql/init.sql`
+- 新增表或字段时，需要同步更新 `sql/init.sql`
 
 ### 数据库迁移 (常见字段补充)
 
@@ -249,7 +311,8 @@ ALTER TABLE rentals ADD COLUMN quantity INT NOT NULL DEFAULT 1 COMMENT '租赁�
 |------|--------|------|------|
 | MySQL | bickdemo-mysql | 3306 | 数据库 |
 | Backend | bickdemo-app | 8080 | Spring Boot |
-| Frontend | bickdemo-frontend | 80 | Nginx |
+| Frontend | bickdemo-frontend | 80 | Nginx (用户端) |
+| Admin | bickdemo-admin | 5174 | Nginx (管理端) |
 
 ### 环境变量
 
@@ -309,6 +372,12 @@ location /api {
 - `location`: 路径文本，如 "北京市/市辖区/朝阳区"
 - `locationCode`: 区级代码，如 `110101`
 
+### 活动报名截止
+
+- `Activity` 实体包含 `signupDeadline` 字段
+- 报名截止后，用户无法再报名参加活动
+- `ActivitySignup` 实体记录报名信息，包含 `SignupStatus` (PENDING/CONFIRMED/CANCELLED)
+
 **数据库迁移：**
 ```sql
 ALTER TABLE activities ADD COLUMN location_code VARCHAR(20) DEFAULT '' COMMENT '活动地点区级代码';
@@ -330,6 +399,43 @@ ALTER TABLE activities ADD COLUMN location_code VARCHAR(20) DEFAULT '' COMMENT '
 | `PUBLISHED` | 已发布 |
 | `COMPLETED` | 已完成 |
 | `CANCELLED` | 已取消 |
+
+## 社区论坛模块 (Forum)
+
+**实体：** `ForumPost`, `ForumPostComment`, `ForumPostReaction`, `ForumPostImage`
+
+**功能：**
+- 发帖/删帖/查看帖子列表
+- 评论/回复评论
+- 点赞/点踩 reactions
+- 多图上传
+
+**枚举值：**
+- `ForumPostStatus`: PUBLISHED, DELETED
+- `ForumReactionType`: LIKE, DISLIKE
+
+## 二手市场模块 (Marketplace)
+
+**实体：** `MarketplaceListing`, `MarketplaceApplication`
+
+**功能：**
+- 发布闲置物品 (`MarketplaceDeliveryMode`: 自提/快递/面交)
+- 物品审核 (`MarketplaceReviewStatus`: PENDING/APPROVED/REJECTED)
+- 申请购买/联系卖家
+
+**枚举值：**
+- `MarketplaceListingStatus`: AVAILABLE, SOLD, DELETED
+- `MarketplaceApplicationStatus`: PENDING, ACCEPTED, REJECTED, CANCELLED
+
+## 社交模块 (Social)
+
+**实体：** `Friendship`, `FriendRequest`, `ChatMessage`
+
+**功能：**
+- 好友请求/接受/拒绝
+- 好友列表管理
+- 实时聊天 (WebSocket + RabbitMQ)
+- `ChatMessageType`: TEXT, IMAGE, SYSTEM
 
 ## UI 设计规范
 

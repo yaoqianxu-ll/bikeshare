@@ -33,11 +33,11 @@
         <!-- 基本信息 -->
         <div class="info-section">
           <el-descriptions :column="1" border class="detail-descriptions">
-            <el-descriptions-item label="活动日期">
+            <el-descriptions-item label="活动开始时间">
               {{ formatDateTime(activity.startTime) }}
             </el-descriptions-item>
             <el-descriptions-item label="报名截止">
-              -
+              {{ formatDateTime(activity.signupDeadline) || '-' }}
             </el-descriptions-item>
             <el-descriptions-item label="活动地点">
               <el-icon><Location /></el-icon>
@@ -207,6 +207,9 @@ const canSignup = computed(() => {
   if (activity.value.signupClosed) return false
   const now = new Date()
   if (activity.value.startTime && new Date(activity.value.startTime) < now) return false
+  // 检查报名时间段
+  if (activity.value.signupOpenTime && new Date(activity.value.signupOpenTime) > now) return false
+  if (activity.value.signupDeadline && new Date(activity.value.signupDeadline) < now) return false
   if (activity.value.maxParticipants && activity.value.signupCount >= activity.value.maxParticipants) return false
   return !hasSignedUp.value
 })
@@ -243,10 +246,16 @@ const formatTime = (value) => {
 const getStatusType = (activity) => {
   if (!activity.status || activity.status === 'DRAFT') return 'info'
   if (activity.status === 'CANCELLED') return 'danger'
-  const date = new Date(activity.startTime)
   const now = new Date()
-  if (date < now) return 'danger'
+  const startTime = new Date(activity.startTime)
+  const endTime = new Date(activity.endTime)
+  // 活动已结束
+  if (endTime < now) return 'danger'
+  // 活动进行中
+  if (startTime <= now && now <= endTime) return 'success'
   if (activity.signupClosed) return 'warning'
+  // 报名未开始
+  if (activity.signupOpenTime && new Date(activity.signupOpenTime) > now) return 'info'
   if (activity.signupCount >= activity.maxParticipants) return 'warning'
   return 'success'
 }
@@ -254,10 +263,16 @@ const getStatusType = (activity) => {
 const getStatusText = (activity) => {
   if (!activity.status || activity.status === 'DRAFT') return '未发布'
   if (activity.status === 'CANCELLED') return '已取消'
-  const date = new Date(activity.startTime)
   const now = new Date()
-  if (date < now) return '已结束'
+  const startTime = new Date(activity.startTime)
+  const endTime = new Date(activity.endTime)
+  // 活动已结束
+  if (endTime < now) return '活动已结束'
+  // 活动进行中
+  if (startTime <= now && now <= endTime) return '活动进行中'
   if (activity.signupClosed) return '报名已截止'
+  // 报名未开始
+  if (activity.signupOpenTime && new Date(activity.signupOpenTime) > now) return '报名未开始'
   if (activity.signupCount >= activity.maxParticipants) return '已满员'
   return '报名中'
 }

@@ -73,6 +73,14 @@ public class Activity {
     @TableField("signup_closed")
     private Boolean signupClosed;
 
+    /** 报名开启时间 */
+    @TableField("signup_open_time")
+    private LocalDateTime signupOpenTime;
+
+    /** 报名截止时间 */
+    @TableField("signup_deadline")
+    private LocalDateTime signupDeadline;
+
     /** 创建时间 */
     @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

@@ -6,6 +6,7 @@ import com.example.bickdemo.dto.ActivityMessageRequest;
 import com.example.bickdemo.dto.ActivityMessageResponse;
 import com.example.bickdemo.dto.ActivityRequest;
 import com.example.bickdemo.dto.ActivityResponse;
+import com.example.bickdemo.dto.ActivityStatusUpdateRequest;
 import com.example.bickdemo.dto.SignupRequest;
 import com.example.bickdemo.dto.SignupResponse;
 import com.example.bickdemo.entity.Activity;
@@ -151,6 +152,9 @@ public class ActivityService {
         activity.setStatus(request.getStatus() != null ? request.getStatus() : ActivityStatus.DRAFT);
         // 如果没有传组织者ID，设置默认值（管理端创建的活动组织者ID为1）
         activity.setOrganizerId(request.getOrganizerId() != null ? request.getOrganizerId() : 1L);
+        activity.setSignupClosed(request.getSignupClosed() != null ? request.getSignupClosed() : false);
+        activity.setSignupOpenTime(request.getSignupOpenTime());
+        activity.setSignupDeadline(request.getSignupDeadline());
 
         activityMapper.insert(activity);
         return convertToResponseWithCount(activity);
@@ -205,6 +209,12 @@ public class ActivityService {
         }
         if (request.getSignupClosed() != null) {
             activity.setSignupClosed(request.getSignupClosed());
+        }
+        if (request.getSignupOpenTime() != null) {
+            activity.setSignupOpenTime(request.getSignupOpenTime());
+        }
+        if (request.getSignupDeadline() != null) {
+            activity.setSignupDeadline(request.getSignupDeadline());
         }
 
         activityMapper.updateById(activity);
@@ -426,6 +436,7 @@ public class ActivityService {
         }
 
         activity.setSignupClosed(true);
+        activity.setSignupDeadline(LocalDateTime.now());
         activityMapper.updateById(activity);
         return convertToResponseWithCount(activity);
     }
@@ -442,6 +453,31 @@ public class ActivityService {
         }
 
         activity.setSignupClosed(false);
+        activity.setSignupOpenTime(LocalDateTime.now());
+        activity.setSignupDeadline(null);
+        activityMapper.updateById(activity);
+        return convertToResponseWithCount(activity);
+    }
+
+    /**
+     * 更新活动状态（支持部分字段）
+     */
+    @Transactional
+    @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE, CacheNames.ACTIVITY_DETAIL}, allEntries = true)
+    public ActivityResponse updateActivityStatus(Long id, ActivityStatusUpdateRequest request) {
+        Activity activity = activityMapper.selectById(id);
+        if (activity == null) {
+            throw new RuntimeException("活动不存在");
+        }
+        if (request.getStatus() != null) {
+            activity.setStatus(ActivityStatus.valueOf(request.getStatus()));
+        }
+        if (request.getStartTime() != null) {
+            activity.setStartTime(request.getStartTime());
+        }
+        if (request.getEndTime() != null) {
+            activity.setEndTime(request.getEndTime());
+        }
         activityMapper.updateById(activity);
         return convertToResponseWithCount(activity);
     }

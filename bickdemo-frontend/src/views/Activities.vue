@@ -49,6 +49,10 @@
                 <el-icon><Location /></el-icon>
                 <span>{{ activity.location }}</span>
               </div>
+              <div class="meta-item" v-if="activity.signupDeadline">
+                <el-icon><Clock /></el-icon>
+                <span>报名截止 {{ formatDateTime(activity.signupDeadline) }}</span>
+              </div>
             </div>
             <div class="activity-stats">
               <div class="stat-item">
@@ -89,7 +93,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
-import { Calendar, Location } from '@element-plus/icons-vue'
+import { Calendar, Location, Clock } from '@element-plus/icons-vue'
 import { getActivities } from '@/api/activity'
 
 const router = useRouter()
@@ -135,12 +139,26 @@ const formatDate = (date) => {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 }
 
+const formatDateTime = (date) => {
+  if (!date) return '-'
+  const d = new Date(date)
+  const pad2 = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+}
+
 const getStatusType = (activity) => {
   if (!activity.status || activity.status === 'DRAFT') return 'info'
   if (activity.status === 'CANCELLED') return 'danger'
-  const date = new Date(activity.startTime)
   const now = new Date()
-  if (date < now) return 'danger'
+  const startTime = new Date(activity.startTime)
+  const endTime = new Date(activity.endTime)
+  // 活动已结束
+  if (endTime < now) return 'danger'
+  // 活动进行中
+  if (startTime <= now && now <= endTime) return 'success'
+  if (activity.signupClosed) return 'warning'
+  // 报名未开始
+  if (activity.signupOpenTime && new Date(activity.signupOpenTime) > now) return 'info'
   if (activity.signupCount >= activity.maxParticipants) return 'warning'
   return 'success'
 }
@@ -148,10 +166,16 @@ const getStatusType = (activity) => {
 const getStatusText = (activity) => {
   if (!activity.status || activity.status === 'DRAFT') return '未发布'
   if (activity.status === 'CANCELLED') return '已取消'
-  const date = new Date(activity.startTime)
   const now = new Date()
-  if (date < now) return '已结束'
+  const startTime = new Date(activity.startTime)
+  const endTime = new Date(activity.endTime)
+  // 活动已结束
+  if (endTime < now) return '活动已结束'
+  // 活动进行中
+  if (startTime <= now && now <= endTime) return '活动进行中'
   if (activity.signupClosed) return '报名已截止'
+  // 报名未开始
+  if (activity.signupOpenTime && new Date(activity.signupOpenTime) > now) return '报名未开始'
   if (activity.signupCount >= activity.maxParticipants) return '已满员'
   return '报名中'
 }

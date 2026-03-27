@@ -103,3 +103,11 @@ export function reopenSignup(id) {
     method: 'put'
   })
 }
+
+export function updateActivityStatus(id, data) {
+  return request({
+    url: `/admin/activities/${id}/status`,
+    method: 'put',
+    data
+  })
+}

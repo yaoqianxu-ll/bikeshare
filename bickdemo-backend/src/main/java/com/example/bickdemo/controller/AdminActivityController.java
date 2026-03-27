@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.bickdemo.annotation.AdminOperationLog;
 import com.example.bickdemo.dto.ActivityRequest;
 import com.example.bickdemo.dto.ActivityResponse;
+import com.example.bickdemo.dto.ActivityStatusUpdateRequest;
 import com.example.bickdemo.dto.ApiResponse;
 import com.example.bickdemo.dto.SignupResponse;
 import com.example.bickdemo.entity.ActivityStatus;
@@ -171,6 +172,18 @@ public class AdminActivityController {
     public ResponseEntity<ApiResponse<List<com.example.bickdemo.dto.ActivityMessageResponse>>> getActivityMessages(@PathVariable Long id) {
         List<com.example.bickdemo.dto.ActivityMessageResponse> messages = activityService.getActivityMessages(id);
         return ResponseEntity.ok(ApiResponse.success(messages));
+    }
+
+    /**
+     * 更新活动状态（支持部分字段更新）
+     */
+    @PutMapping("/{id}/status")
+    @AdminOperationLog(module = "活动管理", action = "更新活动状态")
+    public ResponseEntity<ApiResponse<ActivityResponse>> updateActivityStatus(
+            @PathVariable Long id,
+            @RequestBody ActivityStatusUpdateRequest request) {
+        ActivityResponse activity = activityService.updateActivityStatus(id, request);
+        return ResponseEntity.ok(ApiResponse.success("更新成功", activity));
     }
 
     /**

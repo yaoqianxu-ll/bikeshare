@@ -119,8 +119,10 @@
               <el-button size="small" :type="row.signupClosed ? 'success' : 'warning'" plain :disabled="!!row.deleted" @click="toggleSignupClosed(row)">
                 {{ row.signupClosed ? '开启报名' : '停止报名' }}
               </el-button>
+              <el-button size="small" :type="row.status === 'PUBLISHED' ? 'warning' : 'success'" plain :disabled="!!row.deleted || (!row.signupClosed && row.status !== 'PUBLISHED')" @click="toggleActivityStatus(row)">
+                {{ row.status === 'PUBLISHED' ? '结束活动' : '开启活动' }}
+              </el-button>
               <el-button size="small" type="info" plain :disabled="!!row.deleted" @click="openSignupDialog(row)">报名管理</el-button>
-              <el-button size="small" type="danger" plain :disabled="!!row.deleted" @click="remove(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -231,6 +233,32 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <el-row :gutter="14">
+          <el-col :span="12">
+            <el-form-item label="报名开启时间" prop="signupOpenTime">
+              <el-date-picker
+                v-model="form.signupOpenTime"
+                type="datetime"
+                class="full-width"
+                placeholder="留空则立即开启"
+                format="YYYY-MM-DD HH:mm"
+                value-format="YYYY-MM-DD HH:mm:ss"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="报名截止时间" prop="signupDeadline">
+              <el-date-picker
+                v-model="form.signupDeadline"
+                type="datetime"
+                class="full-width"
+                placeholder="留空则不限制"
+                format="YYYY-MM-DD HH:mm"
+                value-format="YYYY-MM-DD HH:mm:ss"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="封面图片">
           <div class="upload-line">
             <el-upload :show-file-list="false" :http-request="handleImageUpload" accept="image/*">
@@ -244,8 +272,13 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="submit">保存</el-button>
+        <div class="dialog-footer">
+          <el-button v-if="form.id" type="danger" plain @click="removeFromDialog">删除</el-button>
+          <div class="footer-right">
+            <el-button @click="dialogVisible = false">取消</el-button>
+            <el-button type="primary" :loading="saving" @click="submit">保存</el-button>
+          </div>
+        </div>
       </template>
     </el-dialog>
 
@@ -446,7 +479,8 @@ import {
   getActivityMessages,
   replyMessage,
   closeSignup,
-  reopenSignup
+  reopenSignup,
+  updateActivityStatus
 } from '@/api/activity'
 import { uploadImage } from '@/api/file'
 
@@ -493,7 +527,9 @@ const form = reactive({
   location: '',
   locationCode: '',
   difficulty: 'MEDIUM',
-  status: 'DRAFT'
+  status: 'DRAFT',
+  signupOpenTime: '',
+  signupDeadline: ''
 })
 
 const statusOptions = [
@@ -617,6 +653,8 @@ const resetForm = () => {
   form.locationCode = ''
   form.difficulty = 'MEDIUM'
   form.status = 'DRAFT'
+  form.signupOpenTime = ''
+  form.signupDeadline = ''
 }
 
 const load = async () => {
@@ -678,7 +716,9 @@ const openDialog = (row) => {
       location: row.location || '',
       locationCode: row.locationCode || '',
       difficulty: row.difficulty || 'MEDIUM',
-      status: row.status || 'DRAFT'
+      status: row.status || 'DRAFT',
+      signupOpenTime: row.signupOpenTime || '',
+      signupDeadline: row.signupDeadline || ''
     })
   }
   dialogVisible.value = true
@@ -795,6 +835,18 @@ const remove = async (row) => {
   }
 }
 
+const removeFromDialog = async () => {
+  try {
+    await ElMessageBox.confirm(`确认删除活动"${form.title}"吗？`, '删除确认', { type: 'warning' })
+    await deleteActivity(form.id)
+    ElMessage.success('活动已删除')
+    dialogVisible.value = false
+    await load()
+  } catch (error) {
+    if (error !== 'cancel') throw error
+  }
+}
+
 const toggleSignupClosed = async (row) => {
   try {
     if (row.signupClosed) {
@@ -803,6 +855,28 @@ const toggleSignupClosed = async (row) => {
     } else {
       await closeSignup(row.id)
       ElMessage.success('已停止报名')
+    }
+    await load()
+  } catch (error) {
+    // Error handled by interceptor
+  }
+}
+
+const toggleActivityStatus = async (row) => {
+  try {
+    const now = new Date()
+    const pad2 = (n) => String(n).padStart(2, '0')
+    const formatNow = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())} ${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`
+    if (row.status === 'PUBLISHED') {
+      await updateActivityStatus(row.id, { status: 'COMPLETED', endTime: formatNow })
+      ElMessage.success('活动已结束')
+    } else {
+      if (!row.signupClosed) {
+        ElMessage.warning('请先停止报名后再开启活动')
+        return
+      }
+      await updateActivityStatus(row.id, { status: 'PUBLISHED', startTime: formatNow })
+      ElMessage.success('活动已开启')
     }
     await load()
   } catch (error) {
@@ -1091,5 +1165,17 @@ onMounted(load)
 .table-actions .el-button {
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.footer-right {
+  display: flex;
+  gap: 8px;
 }
 </style>

@@ -56,4 +56,10 @@ public class ActivityRequest {
 
     /** 报名是否已截止 */
     private Boolean signupClosed;
+
+    /** 报名开启时间 */
+    private LocalDateTime signupOpenTime;
+
+    /** 报名截止时间 */
+    private LocalDateTime signupDeadline;
 }
