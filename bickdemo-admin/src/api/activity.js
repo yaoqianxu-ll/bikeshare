@@ -89,3 +89,17 @@ export function replyMessage(messageId, reply) {
     data: { reply }
   })
 }
+
+export function closeSignup(id) {
+  return request({
+    url: `/admin/activities/${id}/close-signup`,
+    method: 'put'
+  })
+}
+
+export function reopenSignup(id) {
+  return request({
+    url: `/admin/activities/${id}/reopen-signup`,
+    method: 'put'
+  })
+}

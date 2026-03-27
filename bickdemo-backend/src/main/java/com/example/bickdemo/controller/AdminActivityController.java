@@ -144,6 +144,26 @@ public class AdminActivityController {
     }
 
     /**
+     * 关闭报名
+     */
+    @PutMapping("/{id}/close-signup")
+    @AdminOperationLog(module = "活动管理", action = "关闭活动报名")
+    public ResponseEntity<ApiResponse<ActivityResponse>> closeSignup(@PathVariable Long id) {
+        ActivityResponse activity = activityService.closeSignup(id);
+        return ResponseEntity.ok(ApiResponse.success("已关闭报名", activity));
+    }
+
+    /**
+     * 重新开放报名
+     */
+    @PutMapping("/{id}/reopen-signup")
+    @AdminOperationLog(module = "活动管理", action = "重新开放活动报名")
+    public ResponseEntity<ApiResponse<ActivityResponse>> reopenSignup(@PathVariable Long id) {
+        ActivityResponse activity = activityService.reopenSignup(id);
+        return ResponseEntity.ok(ApiResponse.success("已重新开放报名", activity));
+    }
+
+    /**
      * 获取活动的消息列表
      */
     @GetMapping("/{id}/messages")

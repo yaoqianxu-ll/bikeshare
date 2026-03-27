@@ -69,6 +69,10 @@ public class Activity {
     @TableField("organizer_id")
     private Long organizerId;
 
+    /** 报名是否已截止（true-已截止，false-可报名） */
+    @TableField("signup_closed")
+    private Boolean signupClosed;
+
     /** 创建时间 */
     @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

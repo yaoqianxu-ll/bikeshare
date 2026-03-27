@@ -203,6 +203,9 @@ public class ActivityService {
         if (request.getStatus() != null) {
             activity.setStatus(request.getStatus());
         }
+        if (request.getSignupClosed() != null) {
+            activity.setSignupClosed(request.getSignupClosed());
+        }
 
         activityMapper.updateById(activity);
         return convertToResponseWithCount(activity);
@@ -256,6 +259,9 @@ public class ActivityService {
         // 检查活动是否可报名
         if (activity.getStatus() != ActivityStatus.PUBLISHED) {
             throw new RuntimeException("活动未发布或已结束");
+        }
+        if (Boolean.TRUE.equals(activity.getSignupClosed())) {
+            throw new RuntimeException("报名已截止");
         }
         if (activity.getStartTime().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("活动已开始或已结束");
@@ -389,6 +395,15 @@ public class ActivityService {
             throw new RuntimeException("报名记录不存在");
         }
 
+        Activity activity = activityMapper.selectById(activityId);
+        if (activity == null) {
+            throw new RuntimeException("活动不存在");
+        }
+
+        if (!Boolean.TRUE.equals(activity.getSignupClosed())) {
+            throw new RuntimeException("请先停止报名再进行签到");
+        }
+
         if (signup.getStatus() != SignupStatus.APPROVED) {
             throw new RuntimeException("只有已通过审批的报名才能签到");
         }
@@ -397,6 +412,38 @@ public class ActivityService {
         signup.setSignedAt(LocalDateTime.now());
         signupMapper.updateById(signup);
         return convertSignupToResponse(signup);
+    }
+
+    /**
+     * 关闭报名
+     */
+    @Transactional
+    @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE, CacheNames.ACTIVITY_DETAIL}, allEntries = true)
+    public ActivityResponse closeSignup(Long activityId) {
+        Activity activity = activityMapper.selectById(activityId);
+        if (activity == null) {
+            throw new RuntimeException("活动不存在");
+        }
+
+        activity.setSignupClosed(true);
+        activityMapper.updateById(activity);
+        return convertToResponseWithCount(activity);
+    }
+
+    /**
+     * 重新开放报名
+     */
+    @Transactional
+    @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE, CacheNames.ACTIVITY_DETAIL}, allEntries = true)
+    public ActivityResponse reopenSignup(Long activityId) {
+        Activity activity = activityMapper.selectById(activityId);
+        if (activity == null) {
+            throw new RuntimeException("活动不存在");
+        }
+
+        activity.setSignupClosed(false);
+        activityMapper.updateById(activity);
+        return convertToResponseWithCount(activity);
     }
 
     /**

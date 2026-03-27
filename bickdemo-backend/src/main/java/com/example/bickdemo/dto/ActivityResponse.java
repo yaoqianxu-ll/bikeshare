@@ -56,6 +56,9 @@ public class ActivityResponse {
     /** 组织者 ID */
     private Long organizerId;
 
+    /** 报名是否已截止 */
+    private Boolean signupClosed;
+
     /** 创建时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
     private LocalDateTime createdAt;
@@ -91,6 +94,7 @@ public class ActivityResponse {
         response.setDifficulty(activity.getDifficulty());
         response.setStatus(activity.getStatus());
         response.setOrganizerId(activity.getOrganizerId());
+        response.setSignupClosed(activity.getSignupClosed());
         response.setCreatedAt(activity.getCreatedAt());
         response.setUpdatedAt(activity.getUpdatedAt());
         response.setDeleted(activity.getDeleted());

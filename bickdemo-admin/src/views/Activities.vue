@@ -112,11 +112,14 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="260" align="center">
+        <el-table-column label="操作" width="320" align="center">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button size="small" type="primary" plain :disabled="!!row.deleted" @click="openDialog(row)">编辑</el-button>
-              <el-button size="small" type="warning" plain :disabled="!!row.deleted" @click="openSignupDialog(row)">报名管理</el-button>
+              <el-button size="small" :type="row.signupClosed ? 'success' : 'warning'" plain :disabled="!!row.deleted" @click="toggleSignupClosed(row)">
+                {{ row.signupClosed ? '开启报名' : '停止报名' }}
+              </el-button>
+              <el-button size="small" type="info" plain :disabled="!!row.deleted" @click="openSignupDialog(row)">报名管理</el-button>
               <el-button size="small" type="danger" plain :disabled="!!row.deleted" @click="remove(row)">删除</el-button>
             </div>
           </template>
@@ -441,7 +444,9 @@ import {
   cancelSignup,
   signinParticipant,
   getActivityMessages,
-  replyMessage
+  replyMessage,
+  closeSignup,
+  reopenSignup
 } from '@/api/activity'
 import { uploadImage } from '@/api/file'
 
@@ -787,6 +792,21 @@ const remove = async (row) => {
     await load()
   } catch (error) {
     if (error !== 'cancel') throw error
+  }
+}
+
+const toggleSignupClosed = async (row) => {
+  try {
+    if (row.signupClosed) {
+      await reopenSignup(row.id)
+      ElMessage.success('已开启报名')
+    } else {
+      await closeSignup(row.id)
+      ElMessage.success('已停止报名')
+    }
+    await load()
+  } catch (error) {
+    // Error handled by interceptor
   }
 }
 

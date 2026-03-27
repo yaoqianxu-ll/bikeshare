@@ -151,6 +151,7 @@ const getStatusText = (activity) => {
   const date = new Date(activity.startTime)
   const now = new Date()
   if (date < now) return '已结束'
+  if (activity.signupClosed) return '报名已截止'
   if (activity.signupCount >= activity.maxParticipants) return '已满员'
   return '报名中'
 }

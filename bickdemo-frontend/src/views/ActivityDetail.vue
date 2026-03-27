@@ -122,7 +122,7 @@
             size="large"
             disabled
           >
-            暂不可报名
+            已签到
           </el-button>
         </div>
 

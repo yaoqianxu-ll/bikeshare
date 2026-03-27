@@ -53,4 +53,7 @@ public class ActivityRequest {
 
     /** 组织者 ID */
     private Long organizerId;
+
+    /** 报名是否已截止 */
+    private Boolean signupClosed;
 }
