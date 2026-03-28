@@ -156,11 +156,13 @@ pipeline {
                 sh '''
                     set +e
 
+                    # Docker Compose 管理的容器
                     CONTAINERS="${COMPOSE_PROJECT_NAME}-frontend-1 ${COMPOSE_PROJECT_NAME}-admin-1 ${COMPOSE_PROJECT_NAME}-app-1 ${COMPOSE_PROJECT_NAME}-mysql-1"
 
+                    echo "=== 停止 Docker Compose 容器 ==="
                     echo "目标容器：${CONTAINERS}"
                     for container in ${CONTAINERS}; do
-                        if docker ps -a --format '{{.Names}}' | grep -Fxq "${container}"; then
+                        if docker ps -a --format "{{.Names}}" | grep -Fxq "${container}"; then
                             echo "停止容器：${container}"
                             docker stop "${container}" || true
                         else
@@ -168,8 +170,21 @@ pipeline {
                         fi
                     done
 
+                    # 独立的中间件容器
+                    echo ""
+                    echo "=== 停止独立中间件容器 ==="
+                    for container in redis minio-server rabbitmq; do
+                        if docker ps -a --format "{{.Names}}" | grep -Fxq "${container}"; then
+                            echo "停止容器：${container}"
+                            docker stop "${container}" || true
+                        else
+                            echo "容器不存在，跳过：${container}"
+                        fi
+                    done
+
+                    echo ""
                     echo "当前相关容器状态："
-                    docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep "${COMPOSE_PROJECT_NAME}" || true
+                    docker ps -a --format "table {{.Names}}\t{{.Status}}" | grep -E "${COMPOSE_PROJECT_NAME}|redis|minio|rabbitmq" || true
                 '''
             }
         }
@@ -268,6 +283,31 @@ pipeline {
                     echo "查看最近日志..."
                     docker-compose logs --tail=50
                 """
+            }
+        }
+
+        stage('Start Middleware Containers') {
+            steps {
+                echo '🔧 启动中间件容器...'
+                sh '''
+                    echo "=== 启动独立中间件容器 ==="
+                    for container in redis minio-server rabbitmq; do
+                        if docker ps -a --format "{{.Names}}" | grep -Fxq "${container}"; then
+                            echo "启动容器：${container}"
+                            docker start "${container}" || true
+                        else
+                            echo "容器不存在，跳过：${container}"
+                        fi
+                    done
+
+                    echo ""
+                    echo "等待中间件就绪..."
+                    sleep 5
+
+                    echo ""
+                    echo "中间件容器状态："
+                    docker ps --format "table {{.Names}}\t{{.Status}}" | grep -E "redis|minio|rabbitmq" || true
+                '''
             }
         }
 
