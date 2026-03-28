@@ -53,6 +53,7 @@
                       placeholder="请输入用户名"
                       size="large"
                     />
+                    <span class="password-toggle-placeholder"></span>
                   </div>
                 </el-form-item>
 
@@ -61,12 +62,13 @@
                     <el-icon class="input-icon"><Lock /></el-icon>
                     <el-input
                       v-model="form.password"
-                      type="password"
+                      :type="showPassword ? 'text' : 'password'"
                       placeholder="请输入密码"
                       size="large"
-                      show-password
-                      @keyup.enter="handleLogin"
                     />
+                    <el-icon class="password-toggle" @click="showPassword = !showPassword">
+                      <View v-if="showPassword" /><Hide v-else />
+                    </el-icon>
                   </div>
                 </el-form-item>
 
@@ -99,6 +101,7 @@
                       placeholder="请输入邮箱"
                       size="large"
                     />
+                    <span class="password-toggle-placeholder"></span>
                   </div>
                 </el-form-item>
 
@@ -107,12 +110,14 @@
                     <el-icon class="input-icon"><Lock /></el-icon>
                     <el-input
                       v-model="emailLoginForm.password"
-                      type="password"
+                      :type="showPassword ? 'text' : 'password'"
                       placeholder="请输入密码"
                       size="large"
-                      show-password
                       @keyup.enter="handleEmailLogin"
                     />
+                    <el-icon class="password-toggle" @click="showPassword = !showPassword">
+                      <View v-if="showPassword" /><Hide v-else />
+                    </el-icon>
                   </div>
                 </el-form-item>
 
@@ -175,13 +180,13 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage } from 'naive-ui'
+import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { login, loginByEmail, sendEmailCode, resetPasswordByEmail } from '@/api/auth'
-import { User, Lock, Right, Bicycle, CircleCheck, Star, Location, Message } from '@element-plus/icons-vue'
+import { User, Lock, Right, Bicycle, CircleCheck, Star, Location, Message, View, Hide } from '@element-plus/icons-vue'
 
 const router = useRouter()
-const message = useMessage()
+const message = ElMessage
 const userStore = useUserStore()
 const formRef = ref(null)
 const emailLoginFormRef = ref(null)
@@ -190,6 +195,7 @@ const loading = ref(false)
 const emailLoading = ref(false)
 const resetLoading = ref(false)
 const rememberPassword = ref(false)
+const showPassword = ref(false)
 const REMEMBER_KEY = 'bickdemo:rememberLogin'
 const loginMode = ref('account')
 const forgotDialogVisible = ref(false)
@@ -614,11 +620,13 @@ onMounted(() => {
   align-items: center;
   justify-content: flex-start;
   margin: -6px 0 18px;
+  min-height: 32px;
 }
 
 .login-options-between {
   justify-content: space-between;
   gap: 16px;
+  min-height: 32px;
 }
 
 .login-options :deep(.el-checkbox__label) {
@@ -656,32 +664,58 @@ onMounted(() => {
 .input-wrapper {
   display: flex;
   align-items: center;
-  background: #f8f9fa;
-  border-radius: 14px;
-  padding: 4px 4px 4px 16px;
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
-  height: 54px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0 16px;
+  border: 1.5px solid #e2e8f0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 52px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .input-wrapper:hover {
-  background: #f1f3f4;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 .input-wrapper:focus-within {
-  background: #fff;
-  border-color: rgba(255, 107, 53, 0.55);
-  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.10);
+  border-color: var(--brand-primary);
 }
 
 .input-icon {
-  font-size: 20px;
-  color: #6c757d;
+  font-size: 18px;
+  color: #94a3b8;
   margin-right: 12px;
+  transition: color 0.3s ease;
+}
+
+.password-toggle {
+  font-size: 16px;
+  color: #94a3b8;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: color 0.3s ease;
+  width: 20px;
+  text-align: center;
+}
+
+.password-toggle-placeholder {
+  width: 20px;
+  margin-left: 8px;
+}
+
+.password-toggle:hover {
+  color: var(--brand-primary);
+}
+
+.input-wrapper:focus-within .input-icon {
+  color: var(--brand-primary);
 }
 
 :deep(.el-input__wrapper) {
   flex: 1;
+  min-width: 0;
   box-shadow: none !important;
   background: transparent;
 }
@@ -904,21 +938,33 @@ html.dark :deep(.el-form-item__label) {
 }
 
 html.dark .input-wrapper {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(148, 163, 184, 0.2);
 }
 
 html.dark .input-wrapper:hover {
-  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(148, 163, 184, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 html.dark .input-wrapper:focus-within {
-  background: rgba(30, 41, 59, 0.70);
-  border-color: rgba(255, 107, 53, 0.55);
-  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.15);
+  border-color: var(--brand-primary);
 }
 
 html.dark .input-icon {
-  color: #cbd5e1;
+  color: #64748b;
+}
+
+html.dark .input-wrapper:focus-within .input-icon {
+  color: var(--brand-primary);
+}
+
+html.dark .password-toggle {
+  color: #64748b;
+}
+
+html.dark .password-toggle:hover {
+  color: var(--brand-primary);
 }
 
 html.dark :deep(.el-input__inner) {
