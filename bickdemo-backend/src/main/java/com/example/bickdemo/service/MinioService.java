@@ -11,9 +11,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * MinIO 对象存储服务。
@@ -48,12 +50,14 @@ public class MinioService {
 
     /**
      * 上传图片到 MinIO。
+     * 按日期分目录存储，文件命名为：userId-时间戳.jpg
      * 上传前会做文件类型和大小校验，上传成功后返回可直接访问的 URL。
      *
-     * @param file 图片文件
+     * @param file   图片文件
+     * @param userId 用户ID
      * @return 图片访问 URL
      */
-    public String uploadImage(MultipartFile file) {
+    public String uploadImage(MultipartFile file, Long userId) {
         try {
             // 先校验 MIME 类型，避免把非图片文件当成资源存入对象存储。
             validateImageType(file);
@@ -63,28 +67,40 @@ public class MinioService {
                 throw new RuntimeException("图片大小不能超过 5MB");
             }
 
-            // 用 UUID 生成对象名，避免原始文件名冲突。
-            String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String filename = UUID.randomUUID().toString() + extension;
+            // 按日期分目录：2026-03-28/
+            String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            // 文件名：userId-时间戳.jpg
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
+            String extension = getExtension(file.getOriginalFilename());
+            String filename = userId + "-" + timestamp + extension;
+
+            // 完整对象路径：日期目录/文件名
+            String objectName = datePath + "/" + filename;
 
             // 文件流直接写入 MinIO，不在本地磁盘落临时副本。
             minioClient.putObject(PutObjectArgs.builder()
                     .bucket(bucketName)
-                    .object(filename)
+                    .object(objectName)
                     .stream(file.getInputStream(), file.getSize(), -1)
                     .contentType(file.getContentType())
                     .build());
 
             // 返回完整访问 URL，前端后续可以直接把这个地址写入业务表字段。
-            return getImageUrl(filename);
+            return getImageUrl(objectName);
         } catch (Exception e) {
             log.error("上传图片失败", e);
             throw new RuntimeException("上传图片失败：" + e.getMessage());
         }
+    }
+
+    /**
+     * 上传图片到 MinIO（兼容旧调用）。
+     *
+     * @param file 图片文件
+     * @return 图片访问 URL
+     */
+    public String uploadImage(MultipartFile file) {
+        return uploadImage(file, 0L);
     }
 
     /**
@@ -154,5 +170,18 @@ public class MinioService {
         if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
             throw new RuntimeException("不支持的图片类型，允许的类型：JPEG, JPG, PNG, GIF, WEBP");
         }
+    }
+
+    /**
+     * 获取文件扩展名。
+     *
+     * @param filename 原文件名
+     * @return 扩展名（含点号），如 .jpg
+     */
+    private String getExtension(String filename) {
+        if (filename != null && filename.contains(".")) {
+            return filename.substring(filename.lastIndexOf(".")).toLowerCase();
+        }
+        return ".jpg";
     }
 }
