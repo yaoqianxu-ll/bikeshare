@@ -79,17 +79,24 @@
             <div v-show="showComposer && userStore.isLoggedIn" class="composer-form-wrapper">
               <div class="composer-form">
               <div class="composer-row">
-                <el-select v-model="publishForm.category" placeholder="选择分类" class="category-select">
-                  <el-option
-                    v-for="cat in categories.filter(c => c.value)"
-                    :key="cat.value"
-                    :label="cat.label"
-                    :value="cat.value"
-                  >
-                    <el-icon v-if="cat.icon"><component :is="cat.icon" /></el-icon>
-                    <span>{{ cat.label }}</span>
-                  </el-option>
-                </el-select>
+                <el-dropdown trigger="click" @command="(cmd) => publishForm.category = cmd" class="category-select">
+                  <el-button>
+                    {{ categories.find(c => c.value === publishForm.category)?.label || '选择分类' }}
+                    <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item
+                        v-for="cat in categories.filter(c => c.value)"
+                        :key="cat.value"
+                        :command="cat.value"
+                      >
+                        <el-icon v-if="cat.icon"><component :is="cat.icon" /></el-icon>
+                        <span>{{ cat.label }}</span>
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
                 <el-input
                   v-model="publishForm.title"
                   placeholder="标题（简述你的体验）"
@@ -1714,6 +1721,11 @@ onMounted(() => {
 .category-select {
   width: 140px;
   flex-shrink: 0;
+}
+
+.category-select .el-button {
+  width: 100%;
+  justify-content: center;
 }
 
 .composer-title {

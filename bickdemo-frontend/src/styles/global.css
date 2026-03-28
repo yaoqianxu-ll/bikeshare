@@ -903,43 +903,14 @@ html.dark .el-button--warning:not(.is-plain):hover {
 }
 
 /* ========== el-select 下拉框文字溢出修复 ========== */
-.el-select-dropdown {
-  max-width: 100% !important;
-  overflow-x: hidden !important;
-}
-
-.el-select-dropdown__list {
-  max-width: 100% !important;
-  overflow: hidden !important;
-}
-
 .el-select-dropdown__item {
-  max-width: 100% !important;
-  overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
-  word-break: break-word !important;
-  overflow-wrap: break-word !important;
 }
 
 .el-select-dropdown__item span {
-  display: block !important;
-  max-width: 100% !important;
-  overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
-  word-break: break-word !important;
-}
-
-/* 深色模式下 el-select 下拉框 */
-html.dark .el-select-dropdown,
-html.dark .el-select-dropdown__list {
-  max-width: 100% !important;
-}
-
-html.dark .el-select-dropdown__item,
-html.dark .el-select-dropdown__item span {
-  max-width: 100% !important;
 }
 
 /* ========== 下拉框文字颜色统一 ========== */

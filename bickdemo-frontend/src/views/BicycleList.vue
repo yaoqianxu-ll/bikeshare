@@ -189,12 +189,6 @@
       :show-close="false"
       destroy-on-close
     >
-      <template #header="{ close, titleId, titleClass }">
-        <div class="dialog-header">
-          <h2 :id="titleId" :class="titleClass"></h2>
-          <el-button :icon="Close" circle @click="detailDialogVisible = false" />
-        </div>
-      </template>
       <div v-if="selectedBicycle" class="detail-content">
         <div class="detail-image-section">
           <img
@@ -208,6 +202,7 @@
           </div>
         </div>
         <div class="detail-info-section">
+          <el-button :icon="Close" circle @click="detailDialogVisible = false" class="detail-close-btn" />
           <div class="detail-header">
             <h3 class="detail-bike-name">{{ selectedBicycle.name }}</h3>
             <div class="detail-price">¥{{ selectedBicycle.pricePerHour }}<span>/小时</span></div>
@@ -216,17 +211,55 @@
             <el-tag>{{ getTypeText(selectedBicycle.type) }}</el-tag>
             <el-tag :type="getStatusType(selectedBicycle)">{{ getStatusText(selectedBicycle) }}</el-tag>
           </div>
-          <!-- Vertical: label on top, content below (avoids narrow 2-column squeeze that makes CJK wrap per character) -->
-          <el-descriptions :column="1" direction="vertical" border class="detail-descriptions">
-            <el-descriptions-item label="可租数量">
-              {{ selectedBicycle.quantity ?? 0 }}
-            </el-descriptions-item>
-            <el-descriptions-item label="位置">
-              <el-icon><Location /></el-icon>
-              {{ selectedBicycle.location || '暂无' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="描述">{{ selectedBicycle.description || '暂无描述' }}</el-descriptions-item>
-          </el-descriptions>
+
+          <div class="detail-info-grid">
+            <div class="info-item" v-if="selectedBicycle.quantity != null">
+              <div class="info-icon-wrapper">
+                <el-icon><Box /></el-icon>
+              </div>
+              <div class="info-content">
+                <span class="info-label">可租数量</span>
+                <span class="info-value">{{ selectedBicycle.quantity }} 辆</span>
+              </div>
+            </div>
+
+            <div class="info-item" v-if="selectedBicycle.location">
+              <div class="info-icon-wrapper">
+                <el-icon><Location /></el-icon>
+              </div>
+              <div class="info-content">
+                <span class="info-label">停放位置</span>
+                <span class="info-value">{{ selectedBicycle.location }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-desc-section" v-if="selectedBicycle.description">
+            <h4 class="desc-title">车辆描述</h4>
+            <p class="desc-text">{{ selectedBicycle.description }}</p>
+          </div>
+
+          <div class="detail-actions">
+            <el-button
+              v-if="userStore.isLoggedIn && isBikeRentable(selectedBicycle)"
+              type="primary"
+              size="large"
+              class="detail-rent-btn"
+              @click="goToRent(selectedBicycle)"
+            >
+              <el-icon><Bicycle /></el-icon>
+              立即租用
+            </el-button>
+            <el-button
+              v-if="userStore.isLoggedIn && isBikeSoldOut(selectedBicycle)"
+              type="warning"
+              size="large"
+              disabled
+              class="detail-rent-btn"
+            >
+              已租罄
+            </el-button>
+          </div>
         </div>
       </div>
     </el-dialog>
@@ -242,7 +275,8 @@ import {
   Filter,
   Right,
   Check,
-  Close
+  Close,
+  Box
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getBicycles } from '@/api/bicycle'
@@ -538,6 +572,11 @@ const handleRent = (bike) => {
 const viewDetail = (bike) => {
   selectedBicycle.value = bike
   detailDialogVisible.value = true
+}
+
+const goToRent = (bike) => {
+  detailDialogVisible.value = false
+  handleRent(bike)
 }
 
 const handleReturn = (bike) => {
@@ -1179,9 +1218,18 @@ onMounted(() => {
 }
 
 /* Detail Dialog */
+.detail-dialog.el-dialog {
+  padding-top: 0 !important;
+}
+
 .detail-dialog :deep(.el-dialog__header) {
-  padding: 0;
-  border-bottom: none;
+  display: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.detail-dialog :deep(.el-dialog__headerbtn) {
+  display: none !important;
 }
 
 .detail-dialog :deep(.el-dialog__body) {
@@ -1194,17 +1242,28 @@ onMounted(() => {
   border-top: none;
 }
 
-.dialog-header {
+.detail-info-section {
+  padding: 28px;
+  background: #fff;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(255, 255, 255, 0.85);
+  flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
 }
 
-.dialog-header h2 {
-  margin: 0;
+.detail-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+.detail-close-btn:hover {
+  background: #fff !important;
+  transform: scale(1.05);
 }
 
 .detail-content {
@@ -1265,14 +1324,6 @@ onMounted(() => {
   opacity: 0.3;
 }
 
-.detail-info-section {
-  padding: 28px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
 .detail-header {
   display: flex;
   justify-content: space-between;
@@ -1327,34 +1378,113 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.detail-descriptions {
-  margin-top: 16px;
+.detail-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.detail-descriptions :deep(.el-descriptions__label) {
-  font-weight: 600;
-  width: auto;
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f4 100%);
+  border-radius: 14px;
+  transition: all 0.3s ease;
+}
+
+.info-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.info-icon-wrapper {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, var(--brand-primary) 0%, #ff8c5a 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(255, 107, 53, 0.3);
+}
+
+.info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.info-label {
+  font-size: 12px;
   color: #6c757d;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.detail-descriptions :deep(.el-descriptions__table),
-.detail-descriptions :deep(.el-descriptions__body),
-.detail-descriptions :deep(.el-descriptions__cell) {
-  background: transparent;
-}
-
-.detail-descriptions :deep(.el-descriptions__label.el-descriptions__cell.is-bordered-label) {
-  background: rgba(248, 250, 252, 0.96);
-  color: #475569;
-}
-
-.detail-descriptions :deep(.el-descriptions__content.el-descriptions__cell.is-bordered-content) {
-  background: rgba(255, 255, 255, 0.98);
+.info-value {
+  font-size: 15px;
   color: #1a1a2e;
-  font-weight: 500;
-  white-space: normal;
-  word-break: break-word;
-  line-height: 1.5;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: inherit;
+}
+
+.detail-desc-section {
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.04) 0%, rgba(255, 140, 90, 0.02) 100%);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 107, 53, 0.12);
+  margin-bottom: 24px;
+}
+
+.desc-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-primary);
+  margin: 0 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.desc-text {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.detail-actions {
+  margin-top: auto;
+}
+
+.detail-rent-btn {
+  width: 100%;
+  height: 52px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--brand-primary) 0%, #ff8c5a 100%);
+  border: none;
+  box-shadow: 0 10px 30px rgba(255, 107, 53, 0.35);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.detail-rent-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(255, 107, 53, 0.45);
 }
 
 /* Responsive */
@@ -1439,9 +1569,6 @@ onMounted(() => {
     margin: max(6vh, 24px) auto 0 !important;
   }
 
-  .modern-dialog :deep(.el-dialog__body),
-  .modern-dialog :deep(.el-dialog__header),
-  .modern-dialog :deep(.el-dialog__footer),
   .detail-dialog :deep(.el-dialog__body) {
     padding-left: 16px;
     padding-right: 16px;
@@ -1609,9 +1736,14 @@ html.dark .detail-dialog :deep(.el-dialog__body) {
   background: rgba(15, 23, 42, 0.98);
 }
 
-html.dark .detail-dialog .dialog-header {
-  background: rgba(15, 23, 42, 0.95);
-  border-bottom-color: rgba(148, 163, 184, 0.20);
+html.dark .detail-dialog .detail-close-btn {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border-color: rgba(148, 163, 184, 0.3) !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark .detail-dialog .detail-close-btn:hover {
+  background: rgba(30, 41, 59, 1) !important;
 }
 
 html.dark .detail-dialog .detail-content {
@@ -1646,6 +1778,35 @@ html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__label.el-d
 html.dark .detail-dialog .detail-descriptions :deep(.el-descriptions__content.el-descriptions__cell.is-bordered-content) {
   background: rgba(30, 41, 59, 0.50);
   color: #ffffff;
+}
+
+html.dark .detail-dialog .info-item {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.80) 0%, rgba(15, 23, 42, 0.90) 100%);
+}
+
+html.dark .detail-dialog .info-content .info-label {
+  color: #94a3b8;
+}
+
+html.dark .detail-dialog .info-content .info-value {
+  color: #f1f5f9;
+}
+
+html.dark .detail-dialog .detail-desc-section {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.08) 0%, rgba(255, 140, 90, 0.04) 100%);
+  border-color: rgba(255, 107, 53, 0.20);
+}
+
+html.dark .detail-dialog .desc-title {
+  color: #fdba74;
+}
+
+html.dark .detail-dialog .desc-text {
+  color: #cbd5e1;
+}
+
+html.dark .detail-dialog .detail-rent-btn {
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c5a 100%);
 }
 
 html.dark .detail-dialog .detail-tags .el-tag {

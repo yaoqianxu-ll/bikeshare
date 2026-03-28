@@ -140,10 +140,18 @@
         <el-row :gutter="14">
           <el-col :span="12">
             <el-form-item label="角色" prop="role">
-              <el-select v-model="form.role" class="full-width" :disabled="form.username === authStore.username">
-                <el-option label="管理员" value="ADMIN" />
-                <el-option label="普通用户" value="USER" />
-              </el-select>
+              <el-dropdown trigger="click" class="full-width" :disabled="form.username === authStore.username" @command="(cmd) => form.role = cmd">
+                <el-button class="full-width" :disabled="form.username === authStore.username">
+                  {{ form.role === 'ADMIN' ? '管理员' : '普通用户' }}
+                  <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="ADMIN">管理员</el-dropdown-item>
+                    <el-dropdown-item command="USER">普通用户</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </el-form-item>
           </el-col>
           <el-col :span="12">

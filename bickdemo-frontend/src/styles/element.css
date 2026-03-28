@@ -284,48 +284,19 @@ html.dark .el-tabs__item.is-active::after {
   background: #a8a8a8;
 }
 
-/* ========== 禁用 el-select 的 title tooltip 文字滚动问题 ========== */
-/* Element Plus 默认会给 select input 添加 title 属性，鼠标悬停时显示浏览器默认 tooltip */
-/* 这会导致文字往下滚动的视觉效果，以下 CSS 禁用该行为 */
-.el-select .el-input__inner,
-.el-select .el-select__wrapper {
-  /* 禁用 title tooltip 但保持点击功能 */
-  pointer-events: auto;
+/* ========== 禁用 el-select 文字自动滚动/飘移问题 ========== */
+
+/* 方案：hover 时禁用所有动画 */
+.el-select__wrapper:hover,
+.el-select__wrapper:hover * {
+  transform: none !important;
+  animation: none !important;
+  transition: none !important;
 }
 
-/* 禁用 el-select 内部的 title 属性产生的 tooltip */
-.el-select__selection .el-select__selection-text,
-.el-select .el-input__inner {
-  /* 防止文字滚动动画 */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* 针对下拉选项的 tooltip */
-.el-select-dropdown__item {
-  /* 防止选项文字滚动 */
-  max-width: 100% !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-  word-break: break-word;
-}
-
-/* el-select-dropdown 下拉面板宽度约束 */
-.el-select-dropdown {
-  max-width: 100% !important;
-  overflow-x: hidden !important;
-}
-
-/* 确保下拉列表项容器也不溢出 */
-.el-select-dropdown__list {
-  max-width: 100% !important;
-  overflow: hidden !important;
-}
-
-/* 禁用 el-dropdown 的 title tooltip */
-.el-dropdown .el-tooltip__trigger,
-.el-dropdown [title] {
-  pointer-events: auto;
+/* 确保文字始终可见 */
+.el-select__selection-text,
+.el-select__placeholder {
+  display: inline-block !important;
+  visibility: visible !important;
 }

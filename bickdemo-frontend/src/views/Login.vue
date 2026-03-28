@@ -64,6 +64,7 @@
                       type="password"
                       placeholder="请输入密码"
                       size="large"
+                      show-password
                       @keyup.enter="handleLogin"
                     />
                   </div>
@@ -109,6 +110,7 @@
                       type="password"
                       placeholder="请输入密码"
                       size="large"
+                      show-password
                       @keyup.enter="handleEmailLogin"
                     />
                   </div>
@@ -659,6 +661,7 @@ onMounted(() => {
   padding: 4px 4px 4px 16px;
   border: 2px solid transparent;
   transition: all 0.3s ease;
+  height: 54px;
 }
 
 .input-wrapper:hover {

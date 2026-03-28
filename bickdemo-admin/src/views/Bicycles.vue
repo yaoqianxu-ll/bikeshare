@@ -5,7 +5,7 @@
         <div class="hero-copy">
           <span class="hero-tag">Inventory</span>
           <h2>车辆管理</h2>
-          <p>集中处理车辆资料、价格、状态和库存，适合日常维护与运营调整。</p>
+          <p>集中处理车辆资料、价格、状态和库存，适合日常维护与运营调整</p>
         </div>
         <div class="hero-actions">
           <el-button type="primary" @click="openDialog()">新增车辆</el-button>
@@ -108,16 +108,36 @@
         <el-row :gutter="14">
           <el-col :span="12">
             <el-form-item label="车辆类型" prop="type">
-              <el-select v-model="form.type" class="full-width">
-                <el-option v-for="item in typeOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
+              <el-dropdown trigger="click" class="full-width" @command="(cmd) => form.type = cmd">
+                <el-button class="full-width" type="default">
+                  {{ typeOptions.find(o => o.value === form.type)?.label || '请选择车辆类型' }}
+                  <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item v-for="item in typeOptions" :key="item.value" :command="item.value">
+                      {{ item.label }}
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="车辆状态" prop="status">
-              <el-select v-model="form.status" class="full-width">
-                <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
+              <el-dropdown trigger="click" class="full-width" @command="(cmd) => form.status = cmd">
+                <el-button class="full-width" type="default">
+                  {{ statusOptions.find(o => o.value === form.status)?.label || '请选择车辆状态' }}
+                  <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item v-for="item in statusOptions" :key="item.value" :command="item.value">
+                      {{ item.label }}
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </el-form-item>
           </el-col>
         </el-row>
@@ -135,38 +155,45 @@
         </el-row>
         <el-form-item label="停放地区" prop="districtCode">
           <div class="region-toolbar">
-            <el-select
-              v-model="form.provinceCode"
-              clearable
-              filterable
-              placeholder="选择省份"
-              class="region-select"
-              @change="handleProvinceChange"
-            >
-              <el-option v-for="item in provinceOptions" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-            <el-select
-              v-model="form.cityCode"
-              clearable
-              filterable
-              placeholder="选择城市"
-              class="region-select"
-              :disabled="!form.provinceCode"
-              @change="handleCityChange"
-            >
-              <el-option v-for="item in cityOptions" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-            <el-select
-              v-model="form.districtCode"
-              clearable
-              filterable
-              placeholder="选择区/县"
-              class="region-select"
-              :disabled="!form.cityCode"
-              @change="handleDistrictChange"
-            >
-              <el-option v-for="item in districtOptions" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
+            <el-dropdown trigger="click" class="region-select" @command="(cmd) => { form.provinceCode = cmd; handleProvinceChange() }" popper-class="province-dropdown">
+              <el-button class="region-select" type="default" :disabled="false">
+                {{ form.provinceCode ? provinceOptions.find(o => o.value === form.provinceCode)?.label : '选择省份' }}
+                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu class="scrollable-dropdown" style="max-height: 320px; overflow-y: auto;">
+                  <el-dropdown-item v-for="item in provinceOptions" :key="item.value" :command="item.value">
+                    {{ item.label }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <el-dropdown trigger="click" class="region-select" :disabled="!form.provinceCode" @command="(cmd) => { form.cityCode = cmd; handleCityChange() }">
+              <el-button class="region-select" type="default" :disabled="!form.provinceCode">
+                {{ form.cityCode ? cityOptions.find(o => o.value === form.cityCode)?.label : '选择城市' }}
+                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu style="max-height: 320px; overflow-y: auto;">
+                  <el-dropdown-item v-for="item in cityOptions" :key="item.value" :command="item.value">
+                    {{ item.label }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <el-dropdown trigger="click" class="region-select" :disabled="!form.cityCode" @command="(cmd) => { form.districtCode = cmd; handleDistrictChange() }">
+              <el-button class="region-select" type="default" :disabled="!form.cityCode">
+                {{ form.districtCode ? districtOptions.find(o => o.value === form.districtCode)?.label : '选择区/县' }}
+                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu style="max-height: 320px; overflow-y: auto;">
+                  <el-dropdown-item v-for="item in districtOptions" :key="item.value" :command="item.value">
+                    {{ item.label }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </el-form-item>
         <el-form-item v-if="regionWarning" label="地点提示">
@@ -278,7 +305,7 @@ const getRegionLabelText = (provinceCode, cityCode, districtCode) => {
   const district = getDistrictNode(provinceCode, cityCode, districtCode)
   return joinRegionLabels([province?.label, city?.label, district?.label])
 }
-const normalizeRegionText = (value) => String(value || '').replace(/[\s,，/、.\-]/g, '')
+const normalizeRegionText = (value) => String(value || '').replace(/[\s,??\-]/g, '')
 const findRegionSelectionByLocation = (location) => {
   const normalized = normalizeRegionText(location)
   if (!normalized) return null
@@ -313,7 +340,7 @@ const syncRegionSelection = () => {
 
 const getBicycleStatusText = (row) => {
   const displayStatus = getBicycleDisplayStatus(row)
-  if (displayStatus === 'SOLD_OUT') return '已租罄'
+  if (displayStatus === 'SOLD_OUT') return '已租出'
   return bicycleStatusText(displayStatus)
 }
 
@@ -409,7 +436,7 @@ const openDialog = (row) => {
       Object.assign(form, matchedRegion)
       syncRegionSelection()
     } else if (row.location) {
-      regionWarning.value = '这辆旧车辆的地点不是标准省/市/区格式，请重新选择完整地区后再保存。'
+      regionWarning.value = '这辆旧车辆的地点不是标准省市区格式，请重新选择完整地区后再保存！'
     }
   }
   dialogVisible.value = true
@@ -465,7 +492,7 @@ const remove = async (row) => {
 onMounted(load)
 </script>
 
-<style scoped>
+<style>
 .filter-btn {
   min-width: 120px;
 }
@@ -502,5 +529,78 @@ onMounted(load)
 .location-sub {
   color: #6b7280;
   font-size: 13px;
+}
+
+/* 可滚动的下拉菜单样式 */
+.scrollable-dropdown {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* 自定义滚动条 */
+:deep(.scrollable-dropdown::-webkit-scrollbar) {
+  width: 6px;
+}
+</style>\n<style>
+.filter-btn {
+  min-width: 120px;
+}
+
+.region-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+}
+
+.region-select {
+  width: 168px;
+}
+
+.region-alert,
+.location-panel {
+  width: 100%;
+}
+
+.location-panel {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(245, 247, 250, 0.96);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.location-primary {
+  margin-bottom: 6px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.location-sub {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* 省份下拉菜单滚动 */
+.scrollable-dropdown {
+  max-height: 320px !important;
+  overflow-y: auto !important;
+}
+
+.scrollable-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-dropdown::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.scrollable-dropdown::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.scrollable-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 </style>
