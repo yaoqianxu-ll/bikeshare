@@ -142,10 +142,28 @@ public class AuthService {
     }
 
     /**
+     * 测试账户硬编码
+     */
+    private static final String TEST_USERNAME = "test";
+    private static final String TEST_PASSWORD = "123456";
+
+    /**
      * 用户名密码登录。
      * 认证成功后记录登录日志，再构造前端需要的 token + 用户基础信息响应。
      */
     public AuthResponse login(LoginRequest request, HttpServletRequest servletRequest) {
+        // 硬编码测试账户 - 只读管理员
+        if (TEST_USERNAME.equals(request.getUsername()) && TEST_PASSWORD.equals(request.getPassword())) {
+            User testUser = new User();
+            testUser.setId(-1L);
+            testUser.setUsername(TEST_USERNAME);
+            testUser.setRole(UserRole.ADMIN);
+            testUser.setEnabled(true);
+            // 测试用户拥有额外的VIEWER权限，用于后端判断是否为测试账户
+            systemLogService.recordLoginSuccess(testUser, "USERNAME", servletRequest, "测试账户登录成功");
+            return buildAuthResponseForViewer(testUser);
+        }
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -440,6 +458,14 @@ public class AuthService {
     private AuthResponse buildAuthResponse(User user) {
         // 统一封装登录/注册/更新资料后的返回结构，保证前端字段来源一致。
         String jwtToken = jwtService.generateToken(user);
-        return new AuthResponse(jwtToken, user.getUsername(), user.getRole().name(), user.getId());
+        return new AuthResponse(jwtToken, user.getUsername(), user.getRole().name(), user.getId(), false);
+    }
+
+    /**
+     * 为只读测试账户构建响应
+     */
+    private AuthResponse buildAuthResponseForViewer(User user) {
+        String jwtToken = jwtService.generateTokenForViewer(user);
+        return new AuthResponse(jwtToken, user.getUsername(), user.getRole().name(), user.getId(), true);
     }
 }

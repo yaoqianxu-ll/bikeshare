@@ -74,6 +74,15 @@ public class JwtService {
     }
 
     /**
+     * 为只读测试账户生成JWT Token，包含viewer标记
+     */
+    public String generateTokenForViewer(UserDetails userDetails) {
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("viewer", true);
+        return buildToken(extraClaims, userDetails, jwtExpiration);
+    }
+
+    /**
      * 构建 JWT。
      * subject 固定写用户名，签名算法使用 HS256，过期时间由配置项控制。
      */

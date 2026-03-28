@@ -21,4 +21,6 @@ public class AuthResponse {
     private String role;
     /** 用户 ID */
     private Long userId;
+    /** 是否为只读测试账户 */
+    private boolean viewer;
 }

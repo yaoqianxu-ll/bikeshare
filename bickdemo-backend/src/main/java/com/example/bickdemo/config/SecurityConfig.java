@@ -47,6 +47,7 @@ public class SecurityConfig {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationConfiguration authenticationConfiguration;
     private final IpAccessControlFilter ipAccessControlFilter;
+    private final ReadOnlyAdminFilter readOnlyAdminFilter;
 
     @Autowired
     @Lazy
@@ -55,11 +56,13 @@ public class SecurityConfig {
     public SecurityConfig(JwtService jwtService,
                           PasswordEncoder passwordEncoder,
                           AuthenticationConfiguration authenticationConfiguration,
-                          IpAccessControlFilter ipAccessControlFilter) {
+                          IpAccessControlFilter ipAccessControlFilter,
+                          ReadOnlyAdminFilter readOnlyAdminFilter) {
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.authenticationConfiguration = authenticationConfiguration;
         this.ipAccessControlFilter = ipAccessControlFilter;
+        this.readOnlyAdminFilter = readOnlyAdminFilter;
     }
 
     /**
@@ -141,6 +144,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(ipAccessControlFilter, JwtAuthenticationFilter.class)
+                .addFilterAfter(readOnlyAdminFilter, IpAccessControlFilter.class)
                 // 配置认证入口点，确保未认证请求返回 401 JSON 响应
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {

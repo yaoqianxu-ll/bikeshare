@@ -22,7 +22,6 @@
             </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="goWebsite">前台首页</el-dropdown-item>
                 <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -84,7 +83,6 @@
               </div>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item @click="goWebsite">前台首页</el-dropdown-item>
                   <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -149,17 +147,6 @@ onUnmounted(() => {
 const toggleDrawer = () => {
   drawerVisible.value = !drawerVisible.value
 }
-const defaultSiteUrl = (() => {
-  if (typeof window === 'undefined') {
-    return 'http://localhost:5173'
-  }
-  const { protocol, hostname } = window.location
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return `${protocol}//${hostname}:5173`
-  }
-  return `${protocol}//${hostname}`
-})()
-const siteUrl = import.meta.env.VITE_SITE_URL || defaultSiteUrl
 
 const navGroups = [
   {
@@ -211,10 +198,6 @@ const openGroups = ['overview-group', 'business-group', 'content-group', 'system
 const logout = () => {
   authStore.logout()
   router.push('/login')
-}
-
-const goWebsite = () => {
-  window.location.href = siteUrl
 }
 </script>
 

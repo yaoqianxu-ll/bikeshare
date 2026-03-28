@@ -62,6 +62,19 @@ public class DataInitializer implements CommandLineRunner {
             log.info("测试用户账号创建成功：user / user123");
         }
 
+        // 创建只读测试账户
+        if (!userMapper.existsByUsername("test")) {
+            User test = new User();
+            test.setUsername("test");
+            test.setPassword(passwordEncoder.encode("123456"));
+            test.setEmail("test@test.com");
+            test.setBio("只读测试账户");
+            test.setRole(UserRole.ADMIN);
+            test.setEnabled(true);
+            userMapper.insert(test);
+            log.info("只读测试账户创建成功：test / 123456");
+        }
+
         // 初始化默认背景图片
         initBackgroundImages();
     }

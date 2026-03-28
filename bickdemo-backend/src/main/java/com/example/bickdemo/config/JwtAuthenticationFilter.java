@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 /**
  * JWT 认证过滤器。
@@ -60,7 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             username = jwtService.extractUsername(jwt);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // 只有当前上下文还没有认证主体时才尝试填充，避免覆盖已建立的认证信息。
+                // 普通用户走数据库查询
                 UserDetails userDetails;
                 try {
                     userDetails = this.userDetailsService.loadUserByUsername(username);
@@ -72,15 +74,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
 
                 if (userDetails != null && jwtService.isTokenValid(jwt, userDetails)) {
-                    var authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-                    authToken.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request)
-                    );
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    // 检查是否为测试账户（viewer标记）
+                    Boolean isViewer = jwtService.extractClaim(jwt, claims -> claims.get("viewer", Boolean.class));
+                    if (Boolean.TRUE.equals(isViewer) && "test".equals(username)) {
+                        // 测试账户：添加VIEWER权限用于后端区分，ADMIN权限用于通过Security检查
+                        ArrayList<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                        for (var auth : userDetails.getAuthorities()) {
+                            authorities.add(new SimpleGrantedAuthority(auth.getAuthority()));
+                        }
+                        authorities.add(new SimpleGrantedAuthority("ROLE_VIEWER"));
+                        var authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                authorities
+                        );
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    } else {
+                        var authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+                        authToken.setDetails(
+                                new WebAuthenticationDetailsSource().buildDetails(request)
+                        );
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
                 } else {
                     // Token 无效（过期或被篡改），记录日志后放过，让 Security 拦截器返回 401
                     log.debug("Invalid JWT token for user: {}", username);
