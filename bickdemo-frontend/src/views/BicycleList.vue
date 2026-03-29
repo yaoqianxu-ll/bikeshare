@@ -115,6 +115,18 @@
     <!-- Empty State -->
     <el-empty v-if="bicycles.length === 0" description="暂无可用自行车" :image-size="200" />
 
+    <!-- 分页 -->
+    <div class="pagination-wrap" v-if="total > pageSize">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        background
+        layout="prev, pager, next, total"
+        :total="total"
+        @current-change="handlePageChange"
+      />
+    </div>
+
     <!-- 租赁对话框 -->
     <el-dialog v-model="rentDialogVisible" title="租赁自行车" width="420px" class="modern-dialog">
       <div v-if="selectedBicycle" class="rent-dialog-content">
@@ -279,7 +291,7 @@ import {
   Box
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { getBicycles } from '@/api/bicycle'
+import { getBicyclesPage } from '@/api/bicycle'
 import { createRental, endRental, getMyActiveRentals } from '@/api/rental'
 import { getMarketplaceLocationHint } from '@/api/marketplace'
 
@@ -297,6 +309,11 @@ const returning = ref(false)
 const currentRentalId = ref(null)
 const userLocation = ref(null) // { latitude, longitude, locationText }
 const SERVICE_RANGE_KM = 10 // 服务半径（公里）
+
+// 分页
+const currentPage = ref(1)
+const pageSize = ref(12)
+const total = ref(0)
 
 const bikeTypes = [
   { value: 'MOUNTAIN', label: '山地车' },
@@ -330,18 +347,24 @@ const rentForm = reactive({
   quantity: 1
 })
 
-const loadBicycles = async () => {
+const loadBicycles = async (page = currentPage.value) => {
   try {
-    const params = {}
+    const params = {
+      page,
+      size: pageSize.value
+    }
     if (filterType.value) params.type = filterType.value
     if (filterStatus.value) params.status = filterStatus.value
 
-    const res = await getBicycles(params)
-    bicycles.value = (res.data || []).filter(b => {
+    const res = await getBicyclesPage(params)
+    const records = res.data.records || []
+    bicycles.value = records.filter(b => {
       // When user explicitly filters "可租赁", only show in-stock items.
       if (filterStatus.value === 'AVAILABLE') return (b?.quantity ?? 0) > 0
       return true
     })
+    total.value = Number(res.data.total || 0)
+    currentPage.value = Number(res.data.current || page)
 
     // 应用排序：可租赁 > 维修中 > 不可用 > 已租出
     sortBicycles()
@@ -354,14 +377,21 @@ const loadBicycles = async () => {
   }
 }
 
+const handlePageChange = (page) => {
+  currentPage.value = page
+  loadBicycles(page)
+}
+
 const toggleFilter = (type) => {
   filterType.value = filterType.value === type ? '' : type
-  loadBicycles()
+  currentPage.value = 1
+  loadBicycles(1)
 }
 
 const toggleAvailable = () => {
   filterStatus.value = filterStatus.value === 'AVAILABLE' ? '' : 'AVAILABLE'
-  loadBicycles()
+  currentPage.value = 1
+  loadBicycles(1)
 }
 
 const sortBicycles = () => {
@@ -1811,5 +1841,25 @@ html.dark .detail-dialog .detail-rent-btn {
 
 html.dark .detail-dialog .detail-tags .el-tag {
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 分页 */
+.pagination-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0 40px;
+}
+
+.pagination-wrap :deep(.el-pagination) {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 16px;
+  padding: 8px 16px;
+}
+
+html.dark .pagination-wrap :deep(.el-pagination) {
+  background: rgba(15, 23, 42, 0.88);
+  border-color: rgba(148, 163, 184, 0.20);
 }
 </style>

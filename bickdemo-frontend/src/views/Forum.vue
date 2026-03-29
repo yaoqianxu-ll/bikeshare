@@ -575,7 +575,7 @@
                 <h3>评论区</h3>
                 <p>用户之间可以直接在这里继续交流。</p>
               </div>
-              <el-tag effect="plain">{{ detailComments.length }} 条评论</el-tag>
+              <el-tag effect="plain">{{ commentTotal }} 条评论</el-tag>
             </div>
 
             <div v-if="selectedPost.status !== 'APPROVED'" class="comment-login-tip">
@@ -639,6 +639,12 @@
                   <span class="reply-pill">回复 {{ comment.replyToUsername }}</span>
                 </div>
                 <p class="comment-content">{{ comment.content }}</p>
+              </div>
+
+              <div class="comment-load-more" v-if="hasMoreComments">
+                <el-button text @click="loadMoreComments" :loading="commentLoading">
+                  加载更多评论 ({{ commentTotal - detailComments.length }} 条剩余)
+                </el-button>
               </div>
             </div>
             <el-empty v-else description="还没有评论，来留下第一条互动吧。" />
@@ -801,6 +807,9 @@ const detailComments = ref([])
 const commentDraft = ref('')
 const replyTarget = ref(null)
 const authorProfile = ref(null)
+const commentPage = ref(1)
+const commentTotal = ref(0)
+const commentSize = ref(10)
 const commentInputRef = ref(null)
 
 const sortOptions = [
@@ -832,6 +841,8 @@ const publishForm = reactive({
 })
 
 const canPublish = computed(() => userStore.isLoggedIn)
+
+const hasMoreComments = computed(() => detailComments.value.length < commentTotal.value)
 
 const loadPosts = async (page = pagination.page) => {
   loading.value = true
@@ -918,10 +929,12 @@ const loadPendingPosts = async () => {
 const openPost = async (postId) => {
   detailOpen.value = true
   detailLoading.value = true
+  commentPage.value = 1
   try {
-    const res = await getForumPostDetail(postId)
+    const res = await getForumPostDetail(postId, { commentPage: 1, commentSize: 10 })
     selectedPost.value = res.data.post
     detailComments.value = res.data.comments || []
+    commentTotal.value = Number(res.data.commentTotal || 0)
     commentDraft.value = ''
     replyTarget.value = null
     syncPostState(res.data.post.id, res.data.post)
@@ -997,17 +1010,37 @@ const submitComment = async () => {
 
   commentLoading.value = true
   try {
-    const res = await createForumComment(selectedPost.value.id, {
+    await createForumComment(selectedPost.value.id, {
       content,
       parentCommentId: replyTarget.value?.id || null,
       replyToUserId: replyTarget.value?.authorId || null
     })
-    detailComments.value = [...detailComments.value, res.data]
+    // 重新加载第一页评论
+    const res = await getForumPostDetail(selectedPost.value.id, { commentPage: 1, commentSize: commentSize.value })
+    detailComments.value = res.data.comments || []
+    commentTotal.value = Number(res.data.commentTotal || 0)
+    commentPage.value = 1
     commentDraft.value = ''
     replyTarget.value = null
     const nextCommentCount = Number(selectedPost.value.commentCount || 0) + 1
     syncPostState(selectedPost.value.id, { commentCount: nextCommentCount })
     message.success('评论已发送')
+  } catch (error) {
+    console.error(error)
+  } finally {
+    commentLoading.value = false
+  }
+}
+
+const loadMoreComments = async () => {
+  if (!selectedPost.value || !hasMoreComments.value) return
+  commentLoading.value = true
+  try {
+    const nextPage = commentPage.value + 1
+    const res = await getForumPostDetail(selectedPost.value.id, { commentPage: nextPage, commentSize: commentSize.value })
+    detailComments.value = [...detailComments.value, ...(res.data.comments || [])]
+    commentTotal.value = Number(res.data.commentTotal || 0)
+    commentPage.value = nextPage
   } catch (error) {
     console.error(error)
   } finally {
@@ -2707,6 +2740,11 @@ onMounted(() => {
   margin-top: 20px;
   display: grid;
   gap: 16px;
+}
+
+.comment-load-more {
+  margin-top: 16px;
+  text-align: center;
 }
 
 .comment-item {

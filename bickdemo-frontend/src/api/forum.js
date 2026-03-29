@@ -31,10 +31,11 @@ export function getForumCategories() {
   })
 }
 
-export function getForumPostDetail(postId) {
+export function getForumPostDetail(postId, params) {
   return request({
     url: `/forum/posts/${postId}`,
-    method: 'get'
+    method: 'get',
+    params
   })
 }
 

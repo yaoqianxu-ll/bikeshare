@@ -91,7 +91,7 @@ public interface RentalMapper extends BaseMapper<Rental> {
     @Select("SELECT r.*, b.name as bicycle_name, b.type as bicycle_type, " +
             "b.status as bicycle_status, b.image_url as bicycle_image_url, " +
             "b.description as bicycle_description, b.location as bicycle_location, " +
-            "b.latitude as bicycle_latitude, b.longitude as bicycle_longitude " +
+            "b.latitude as bicycle_latitude, b.longitude as bicycle_longitude, b.price_per_hour as bicycle_price_per_hour " +
             "FROM rentals r LEFT JOIN bicycles b ON r.bicycle_id = b.id " +
             "WHERE r.user_id = #{userId} AND r.deleted = 0 " +
             "ORDER BY r.start_time DESC")
@@ -103,7 +103,7 @@ public interface RentalMapper extends BaseMapper<Rental> {
     @Select("SELECT r.*, b.name as bicycle_name, b.type as bicycle_type, " +
             "b.status as bicycle_status, b.image_url as bicycle_image_url, " +
             "b.description as bicycle_description, b.location as bicycle_location, " +
-            "b.latitude as bicycle_latitude, b.longitude as bicycle_longitude " +
+            "b.latitude as bicycle_latitude, b.longitude as bicycle_longitude, b.price_per_hour as bicycle_price_per_hour " +
             "FROM rentals r LEFT JOIN bicycles b ON r.bicycle_id = b.id " +
             "WHERE r.deleted = 0 " +
             "ORDER BY r.start_time DESC")

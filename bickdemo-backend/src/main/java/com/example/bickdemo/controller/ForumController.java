@@ -136,6 +136,8 @@ public class ForumController {
     @GetMapping("/posts/{postId}")
     public ResponseEntity<ApiResponse<ForumPostDetailResponse>> getPostDetail(
             @PathVariable Long postId,
+            @RequestParam(defaultValue = "1") Integer commentPage,
+            @RequestParam(defaultValue = "10") Integer commentSize,
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest request
     ) {
@@ -143,7 +145,9 @@ public class ForumController {
             ForumPostDetailResponse response = forumService.getPostDetail(
                     postId,
                     userDetails == null ? null : userDetails.getUsername(),
-                    request
+                    request,
+                    commentPage,
+                    commentSize
             );
             return ResponseEntity.ok(ApiResponse.success(response));
         } catch (RuntimeException ex) {

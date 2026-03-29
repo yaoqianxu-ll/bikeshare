@@ -13,4 +13,7 @@ public class ForumPostDetailResponse {
 
     private ForumPostResponse post;
     private List<ForumPostCommentResponse> comments;
+    private Long commentTotal;
+    private Integer commentPage;
+    private Integer commentSize;
 }

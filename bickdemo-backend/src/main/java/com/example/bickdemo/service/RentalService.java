@@ -383,7 +383,21 @@ public class RentalService {
         response.setExpectedEndTime(vo.getExpectedEndTime());
         response.setStatus(vo.getStatus());
         response.setQuantity(vo.getQuantity() == null ? 1 : vo.getQuantity());
-        response.setTotalPrice(vo.getTotalPrice());
+        // ACTIVE 状态下动态计算实时费用
+        if (vo.getStatus() == RentalStatus.ACTIVE) {
+            int qty = vo.getQuantity() == null ? 1 : vo.getQuantity();
+            LocalDateTime now = LocalDateTime.now();
+            long minutesElapsed = java.time.Duration.between(vo.getStartTime(), now).toMinutes();
+            if (minutesElapsed < FREE_CANCEL_MINUTES) {
+                response.setTotalPrice(0.0);
+            } else {
+                double hours = calculateBillableHours(vo.getStartTime(), now);
+                double raw = hours * (vo.getBicyclePricePerHour() != null ? vo.getBicyclePricePerHour() : 0) * qty;
+                response.setTotalPrice(BigDecimal.valueOf(raw).setScale(2, RoundingMode.HALF_UP).doubleValue());
+            }
+        } else {
+            response.setTotalPrice(vo.getTotalPrice());
+        }
         response.setCreatedAt(vo.getCreatedAt());
 
         // 车辆信息

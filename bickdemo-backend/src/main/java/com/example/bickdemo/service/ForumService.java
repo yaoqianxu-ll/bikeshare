@@ -152,7 +152,8 @@ public class ForumService {
      * 待审核帖子只有作者本人和管理员可见。
      */
     @Transactional
-    public ForumPostDetailResponse getPostDetail(Long postId, String currentUsername, HttpServletRequest request) {
+    public ForumPostDetailResponse getPostDetail(Long postId, String currentUsername, HttpServletRequest request,
+                                                Integer commentPage, Integer commentSize) {
         User currentUser = resolveCurrentUser(currentUsername);
         ForumPost post = requireAccessiblePost(postId, currentUser);
         if (post.getStatus() == ForumPostStatus.APPROVED) {
@@ -161,10 +162,16 @@ public class ForumService {
             post = requireAccessiblePost(postId, currentUser);
         }
 
-        List<ForumPostComment> comments = forumPostCommentMapper.selectList(new LambdaQueryWrapper<ForumPostComment>()
+        int page = commentPage != null ? commentPage : 1;
+        int size = commentSize != null ? commentSize : 10;
+        Page<ForumPostComment> commentPageObj = new Page<>(page, size);
+        LambdaQueryWrapper<ForumPostComment> commentWrapper = new LambdaQueryWrapper<ForumPostComment>()
                 .eq(ForumPostComment::getPostId, postId)
                 .orderByAsc(ForumPostComment::getCreatedAt)
-                .orderByAsc(ForumPostComment::getId));
+                .orderByAsc(ForumPostComment::getId);
+        Page<ForumPostComment> commentResult = forumPostCommentMapper.selectPage(commentPageObj, commentWrapper);
+        List<ForumPostComment> comments = commentResult.getRecords();
+        long commentTotal = commentResult.getTotal();
 
         Set<Long> userIds = new LinkedHashSet<>();
         userIds.add(post.getUserId());
@@ -193,7 +200,7 @@ public class ForumService {
                 ))
                 .toList();
 
-        return new ForumPostDetailResponse(postResponse, commentResponses);
+        return new ForumPostDetailResponse(postResponse, commentResponses, commentTotal, page, size);
     }
 
     /**

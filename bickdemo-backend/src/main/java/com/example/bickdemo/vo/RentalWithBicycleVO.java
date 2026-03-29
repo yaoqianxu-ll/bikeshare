@@ -35,4 +35,5 @@ public class RentalWithBicycleVO {
     private String bicycleLocation;
     private Double bicycleLatitude;
     private Double bicycleLongitude;
+    private Double bicyclePricePerHour;
 }
