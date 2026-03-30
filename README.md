@@ -31,7 +31,7 @@
 
 **📦 Gitee 仓库**: [https://gitee.com/loopeasen/bikelease](https://gitee.com/loopeasen/bikelease) <br>
 
-**🐙 GitHub 仓库**: [https://github.com/loopeasen/bikelease](https://github.com/loopeasen/bikelease)
+**🐙 GitHub 仓库**: [https://github.com/yaoqianxu-ll/bikeshare](https://github.com/yaoqianxu-ll/bikeshare)
 
 </div>
 
