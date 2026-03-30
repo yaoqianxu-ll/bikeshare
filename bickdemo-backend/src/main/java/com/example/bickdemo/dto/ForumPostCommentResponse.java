@@ -22,5 +22,6 @@ public class ForumPostCommentResponse {
     private String replyToUsername;
     private String content;
     private boolean mine;
+    private String reviewStatus;
     private LocalDateTime createdAt;
 }

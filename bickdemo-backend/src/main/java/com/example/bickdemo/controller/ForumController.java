@@ -209,6 +209,59 @@ public class ForumController {
     }
 
     /**
+     * 获取待审核评论列表，仅管理员使用。
+     */
+    @GetMapping("/comments/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "论坛审核", action = "获取待审核评论列表", type = "查询")
+    public ResponseEntity<ApiResponse<java.util.List<ForumPostCommentResponse>>> getPendingComments(
+            @RequestParam(defaultValue = "20") Integer limit,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        try {
+            return ResponseEntity.ok(ApiResponse.success(forumService.getPendingComments(userDetails.getUsername(), limit)));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
+        }
+    }
+
+    /**
+     * 审核通过评论。
+     */
+    @PostMapping("/comments/{commentId}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "论坛审核", action = "通过评论审核")
+    public ResponseEntity<ApiResponse<ForumPostCommentResponse>> approveComment(
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        try {
+            ForumPostCommentResponse response = forumService.approveComment(userDetails.getUsername(), commentId);
+            return ResponseEntity.ok(ApiResponse.success("评论已通过审核", response));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
+        }
+    }
+
+    /**
+     * 驳回评论。
+     */
+    @PostMapping("/comments/{commentId}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "论坛审核", action = "驳回评论审核")
+    public ResponseEntity<ApiResponse<ForumPostCommentResponse>> rejectComment(
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        try {
+            ForumPostCommentResponse response = forumService.rejectComment(userDetails.getUsername(), commentId);
+            return ResponseEntity.ok(ApiResponse.success("评论已驳回", response));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
+        }
+    }
+
+    /**
      * 发布评论或回复。
      */
     @PostMapping("/posts/{postId}/comments")

@@ -167,6 +167,8 @@ public class ForumService {
         Page<ForumPostComment> commentPageObj = new Page<>(page, size);
         LambdaQueryWrapper<ForumPostComment> commentWrapper = new LambdaQueryWrapper<ForumPostComment>()
                 .eq(ForumPostComment::getPostId, postId)
+                // 普通用户只看已通过审核的评论，管理员看所有评论
+                .and(!isAdmin(currentUser), wrapper -> wrapper.eq(ForumPostComment::getReviewStatus, ForumPostStatus.APPROVED.name()))
                 .orderByAsc(ForumPostComment::getCreatedAt)
                 .orderByAsc(ForumPostComment::getId);
         Page<ForumPostComment> commentResult = forumPostCommentMapper.selectPage(commentPageObj, commentWrapper);
@@ -263,6 +265,77 @@ public class ForumService {
                         postImagesMap.get(post.getId())
                 ))
                 .toList();
+    }
+
+    /**
+     * 获取待审核评论列表，仅管理员使用。
+     */
+    public List<ForumPostCommentResponse> getPendingComments(String currentUsername, Integer limit) {
+        User currentUser = requireUser(currentUsername);
+        ensureAdmin(currentUser);
+
+        int resolvedLimit = limit == null ? DEFAULT_PENDING_LIMIT : Math.max(1, Math.min(limit, MAX_PENDING_LIMIT));
+        LambdaQueryWrapper<ForumPostComment> wrapper = new LambdaQueryWrapper<ForumPostComment>()
+                .eq(ForumPostComment::getDeleted, 0)
+                .eq(ForumPostComment::getReviewStatus, ForumPostStatus.PENDING.name())
+                .orderByAsc(ForumPostComment::getCreatedAt)
+                .last("LIMIT " + resolvedLimit);
+
+        List<ForumPostComment> comments = forumPostCommentMapper.selectList(wrapper);
+
+        Set<Long> userIds = new LinkedHashSet<>();
+        comments.forEach(c -> {
+            userIds.add(c.getUserId());
+            if (c.getReplyToUserId() != null) userIds.add(c.getReplyToUserId());
+        });
+        Map<Long, User> userMap = loadUsers(userIds);
+
+        return comments.stream()
+                .map(comment -> toCommentResponse(
+                        comment,
+                        userMap.get(comment.getUserId()),
+                        userMap.get(comment.getReplyToUserId()),
+                        currentUser
+                ))
+                .toList();
+    }
+
+    /**
+     * 审核通过评论。
+     */
+    public ForumPostCommentResponse approveComment(String currentUsername, Long commentId) {
+        User currentUser = requireUser(currentUsername);
+        ensureAdmin(currentUser);
+
+        ForumPostComment comment = forumPostCommentMapper.selectById(commentId);
+        if (comment == null || comment.getDeleted() == 1) {
+            throw new RuntimeException("评论不存在");
+        }
+        comment.setReviewStatus(ForumPostStatus.APPROVED.name());
+        forumPostCommentMapper.updateById(comment);
+
+        User author = userMapper.selectById(comment.getUserId());
+        User replyToUser = comment.getReplyToUserId() == null ? null : userMapper.selectById(comment.getReplyToUserId());
+        return toCommentResponse(comment, author, replyToUser, currentUser);
+    }
+
+    /**
+     * 驳回评论。
+     */
+    public ForumPostCommentResponse rejectComment(String currentUsername, Long commentId) {
+        User currentUser = requireUser(currentUsername);
+        ensureAdmin(currentUser);
+
+        ForumPostComment comment = forumPostCommentMapper.selectById(commentId);
+        if (comment == null || comment.getDeleted() == 1) {
+            throw new RuntimeException("评论不存在");
+        }
+        comment.setReviewStatus(ForumPostStatus.REJECTED.name());
+        forumPostCommentMapper.updateById(comment);
+
+        User author = userMapper.selectById(comment.getUserId());
+        User replyToUser = comment.getReplyToUserId() == null ? null : userMapper.selectById(comment.getReplyToUserId());
+        return toCommentResponse(comment, author, replyToUser, currentUser);
     }
 
     /**
@@ -391,6 +464,8 @@ public class ForumService {
         // replyToUserId 最终由父评论决定，避免前端随意伪造回复对象。
         comment.setReplyToUserId(resolveReplyToUserId(parentComment, request.getReplyToUserId()));
         comment.setContent(request.getContent().trim());
+        // 管理员评论直接通过审核，普通用户评论需要审核。
+        comment.setReviewStatus(isAdmin(currentUser) ? ForumPostStatus.APPROVED.name() : ForumPostStatus.PENDING.name());
         forumPostCommentMapper.insert(comment);
         forumPostMapper.updateCommentCount(postId, 1L);
 
@@ -648,6 +723,7 @@ public class ForumService {
                 replyToUser == null ? null : replyToUser.getUsername(),
                 comment.getContent(),
                 currentUser != null && Objects.equals(currentUser.getId(), comment.getUserId()),
+                comment.getReviewStatus(),
                 comment.getCreatedAt()
         );
     }

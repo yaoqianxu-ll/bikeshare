@@ -44,3 +44,25 @@ export function pinForumPost(id, pinned) {
     params: { pinned }
   })
 }
+
+export function getPendingForumComments(params = {}) {
+  return request({
+    url: '/forum/comments/pending',
+    method: 'get',
+    params
+  })
+}
+
+export function approveForumComment(id) {
+  return request({
+    url: `/forum/comments/${id}/approve`,
+    method: 'post'
+  })
+}
+
+export function rejectForumComment(id) {
+  return request({
+    url: `/forum/comments/${id}/reject`,
+    method: 'post'
+  })
+}

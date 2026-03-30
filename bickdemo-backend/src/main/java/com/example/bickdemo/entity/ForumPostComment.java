@@ -44,4 +44,11 @@ public class ForumPostComment {
 
     @TableLogic
     private Integer deleted;
+
+    /**
+     * 审核状态：PENDING-待审核，APPROVED-已通过，REJECTED-已驳回。
+     * 管理员发布的评论直接为 APPROVED，普通用户评论默认为 PENDING。
+     */
+    @TableField("review_status")
+    private String reviewStatus;
 }
