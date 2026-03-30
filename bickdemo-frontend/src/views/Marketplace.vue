@@ -115,6 +115,31 @@
               </el-card>
             </el-col>
           </el-row>
+
+          <div class="pagination-wrapper" v-if="discoverTotal > discoverPageSize">
+            <span class="pagination-total">共 {{ discoverTotal }} 条</span>
+            <el-dropdown trigger="click" @command="(size) => { discoverPageSize = size; loadDiscover() }">
+              <span class="pagination-size-trigger">
+                {{ discoverPageSize }} 条/页
+                <el-icon><ArrowDown /></el-icon>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item :command="8" :class="{ active: discoverPageSize === 8 }">8 条/页</el-dropdown-item>
+                  <el-dropdown-item :command="12" :class="{ active: discoverPageSize === 12 }">12 条/页</el-dropdown-item>
+                  <el-dropdown-item :command="16" :class="{ active: discoverPageSize === 16 }">16 条/页</el-dropdown-item>
+                  <el-dropdown-item :command="20" :class="{ active: discoverPageSize === 20 }">20 条/页</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <el-pagination
+              v-model:current-page="discoverPage"
+              v-model:page-size="discoverPageSize"
+              :total="discoverTotal"
+              layout="prev, pager, next"
+              @current-change="loadDiscover"
+            />
+          </div>
         </el-card>
       </el-tab-pane>
 
@@ -174,41 +199,87 @@
 
             <div class="sub-title">车主收到的申请</div>
             <el-empty v-if="!marketLoading && !ownerApplications.length" description="暂时还没有申请" />
-            <div v-else class="stack" v-loading="marketLoading">
-              <el-card v-for="app in ownerApplications" :key="app.id" shadow="never">
-                <div class="card-header">
-                  <div>
-                    <strong>{{ app.listingTitle }}</strong>
-                    <div class="muted">申请人：{{ app.renterUsername }} · {{ formatDateRange(app.requestedStartTime, app.requestedEndTime) }}</div>
+            <div v-else v-loading="marketLoading">
+              <div
+                v-for="app in ownerApplications"
+                :key="app.id"
+                class="app-card"
+                :class="{ expanded: expandedAppId === app.id }"
+                @click="expandedAppId = expandedAppId === app.id ? null : app.id"
+              >
+                <div class="app-card-main">
+                  <el-avatar :size="40" class="app-avatar">{{ app.renterUsername?.charAt(0).toUpperCase() }}</el-avatar>
+                  <div class="app-card-content">
+                    <div class="app-card-title">{{ app.listingTitle }}</div>
+                    <div class="app-card-meta">{{ app.renterUsername }} · {{ formatDateRange(app.requestedStartTime, app.requestedEndTime) }}</div>
                   </div>
-                  <el-space wrap>
-                    <el-tag :type="getApplicationStatusType(app.status)">{{ getApplicationStatusLabel(app.status) }}</el-tag>
-                    <el-button text @click="consultPeer(app.renterId, app.listingTitle)">发消息</el-button>
-                  </el-space>
+                  <div class="app-card-status">
+                    <el-tag :type="getApplicationStatusType(app.status)" size="small">{{ getApplicationStatusLabel(app.status) }}</el-tag>
+                    <el-icon class="app-card-arrow"><ArrowDown /></el-icon>
+                  </div>
                 </div>
-                <p class="muted">{{ app.renterMessage || '租客还没有留下说明。' }}</p>
-                <div class="meta-list">
-                  <div>交付地点：{{ app.meetupLocation || '待确认' }}</div>
-                  <div v-if="app.meetupTime">交付时间：{{ formatDateTime(app.meetupTime) }}</div>
-                </div>
-                <el-space wrap>
-                  <el-button v-if="app.status === 'PENDING_OWNER_CONFIRMATION'" plain @click="updateOwnerApplication(app, 'NEGOTIATING')">沟通中</el-button>
-                  <el-button v-if="['PENDING_OWNER_CONFIRMATION', 'NEGOTIATING'].includes(app.status)" type="primary" @click="updateOwnerApplication(app, 'CONFIRMED')">确认出租</el-button>
-                  <el-button v-if="['CONFIRMED', 'MEETUP_PENDING'].includes(app.status)" type="success" @click="updateOwnerApplication(app, 'IN_USE')">已交付</el-button>
-                  <el-button v-if="app.status === 'IN_USE'" plain @click="updateOwnerApplication(app, 'RETURN_PENDING')">待归还</el-button>
-                  <el-button v-if="app.status === 'RETURN_PENDING'" type="success" @click="updateOwnerApplication(app, 'COMPLETED')">完成归还</el-button>
-                  <el-button v-if="['PENDING_OWNER_CONFIRMATION', 'NEGOTIATING', 'CONFIRMED', 'MEETUP_PENDING'].includes(app.status)" type="danger" plain @click="updateOwnerApplication(app, 'REJECTED')">拒绝/结束</el-button>
-                </el-space>
-                <el-timeline class="timeline">
-                  <el-timeline-item v-for="node in app.timeline" :key="`${app.id}-${node.title}`" :type="getTimelineType(node.state)" :timestamp="formatDateTime(node.eventTime)">
-                    <div class="timeline-row">
-                      <span>{{ node.title }}</span>
-                      <el-tag size="small" effect="plain">{{ node.state }}</el-tag>
+                <el-collapse-transition>
+                  <div v-if="expandedAppId === app.id" class="app-card-detail">
+                    <div class="app-detail-section">
+                      <div class="app-detail-label">租客说明</div>
+                      <div class="app-detail-value">{{ app.renterMessage || '租客还没有留下说明。' }}</div>
                     </div>
-                    <div class="muted">{{ node.description }}</div>
-                  </el-timeline-item>
-                </el-timeline>
-              </el-card>
+                    <div class="app-detail-row">
+                      <div class="app-detail-section">
+                        <div class="app-detail-label">交付地点</div>
+                        <div class="app-detail-value">{{ app.meetupLocation || '待确认' }}</div>
+                      </div>
+                      <div class="app-detail-section" v-if="app.meetupTime">
+                        <div class="app-detail-label">交付时间</div>
+                        <div class="app-detail-value">{{ formatDateTime(app.meetupTime) }}</div>
+                      </div>
+                    </div>
+                    <div class="app-actions">
+                      <el-button size="small" @click.stop="consultPeer(app.renterId, app.listingTitle)">发消息</el-button>
+                      <el-button v-if="app.status === 'PENDING_OWNER_CONFIRMATION'" size="small" plain @click.stop="updateOwnerApplication(app, 'NEGOTIATING')">沟通中</el-button>
+                      <el-button v-if="['PENDING_OWNER_CONFIRMATION', 'NEGOTIATING'].includes(app.status)" size="small" type="primary" @click.stop="updateOwnerApplication(app, 'CONFIRMED')">确认出租</el-button>
+                      <el-button v-if="['CONFIRMED', 'MEETUP_PENDING'].includes(app.status)" size="small" type="success" @click.stop="updateOwnerApplication(app, 'IN_USE')">已交付</el-button>
+                      <el-button v-if="app.status === 'IN_USE'" size="small" plain @click.stop="updateOwnerApplication(app, 'RETURN_PENDING')">待归还</el-button>
+                      <el-button v-if="app.status === 'RETURN_PENDING'" size="small" type="success" @click.stop="updateOwnerApplication(app, 'COMPLETED')">完成归还</el-button>
+                      <el-button v-if="['PENDING_OWNER_CONFIRMATION', 'NEGOTIATING', 'CONFIRMED', 'MEETUP_PENDING'].includes(app.status)" size="small" type="danger" plain @click.stop="updateOwnerApplication(app, 'REJECTED')">拒绝</el-button>
+                    </div>
+                    <el-divider v-if="app.timeline?.length" />
+                    <el-timeline v-if="app.timeline?.length" class="timeline">
+                      <el-timeline-item v-for="node in app.timeline" :key="`${app.id}-${node.title}`" :type="getTimelineType(node.state)" :timestamp="formatDateTime(node.eventTime)">
+                        <div class="timeline-row">
+                          <span>{{ node.title }}</span>
+                          <el-tag size="small" effect="plain">{{ node.state }}</el-tag>
+                        </div>
+                        <div class="muted">{{ node.description }}</div>
+                      </el-timeline-item>
+                    </el-timeline>
+                  </div>
+                </el-collapse-transition>
+              </div>
+            </div>
+
+            <div class="pagination-wrapper" v-if="ownerAppTotal > ownerAppPageSize">
+              <span class="pagination-total">共 {{ ownerAppTotal }} 条</span>
+              <el-dropdown trigger="click" @command="(size) => { ownerAppPageSize = size; ownerAppPage = 1; loadPrivateData() }">
+                <span class="pagination-size-trigger">
+                  {{ ownerAppPageSize }} 条/页
+                  <el-icon><ArrowDown /></el-icon>
+                </span>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item :command="10" :class="{ active: ownerAppPageSize === 10 }">10 条/页</el-dropdown-item>
+                    <el-dropdown-item :command="20" :class="{ active: ownerAppPageSize === 20 }">20 条/页</el-dropdown-item>
+                    <el-dropdown-item :command="50" :class="{ active: ownerAppPageSize === 50 }">50 条/页</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+              <el-pagination
+                v-model:current-page="ownerAppPage"
+                v-model:page-size="ownerAppPageSize"
+                :total="ownerAppTotal"
+                layout="prev, pager, next"
+                @current-change="loadPrivateData"
+              />
             </div>
           </template>
         </el-card>
@@ -371,12 +442,19 @@ const activeDiscoverRegionText = ref('')
 const activeDiscoverSourceText = ref('')
 const listingRegionWarning = ref('')
 const selectedDiscoverItem = ref(null)
+const expandedAppId = ref(null)
 const listingFormRef = ref(null)
 const applicationFormRef = ref(null)
 const listingImageInputRef = ref(null)
 const discoverItems = ref([])
+const discoverTotal = ref(0)
+const discoverPage = ref(1)
+const discoverPageSize = ref(12)
 const myListings = ref([])
 const ownerApplications = ref([])
+const ownerAppTotal = ref(0)
+const ownerAppPage = ref(1)
+const ownerAppPageSize = ref(10)
 const renterApplications = ref([])
 const coords = reactive({ latitude: null, longitude: null })
 const discoverFilters = reactive({ type: '', radiusKm: 8 })
@@ -591,8 +669,8 @@ const syncListingRegionSelection = () => {
   listingRegionWarning.value = ''
 }
 
-const loadDiscover = async () => { discoverLoading.value = true; try { const params = { radiusKm: discoverFilters.radiusKm, type: discoverFilters.type || undefined }; if (coords.latitude !== null && coords.longitude !== null) { params.latitude = coords.latitude; params.longitude = coords.longitude } const res = await getMarketplaceDiscover(params); discoverItems.value = res.data || [] } finally { discoverLoading.value = false } }
-const loadPrivateData = async () => { if (!userStore.isLoggedIn) return; marketLoading.value = true; try { const [listingRes, ownerRes, renterRes] = await Promise.all([getMyMarketplaceListings(), getMarketplaceOwnerApplications(), getMarketplaceRenterApplications()]); myListings.value = listingRes.data || []; ownerApplications.value = ownerRes.data || []; renterApplications.value = renterRes.data || [] } finally { marketLoading.value = false } }
+const loadDiscover = async () => { discoverLoading.value = true; try { const params = { radiusKm: discoverFilters.radiusKm, type: discoverFilters.type || undefined, page: discoverPage.value, size: discoverPageSize.value }; if (coords.latitude !== null && coords.longitude !== null) { params.latitude = coords.latitude; params.longitude = coords.longitude } const res = await getMarketplaceDiscover(params); discoverItems.value = res.data.content || []; discoverTotal.value = res.data.totalElements || 0 } finally { discoverLoading.value = false } }
+const loadPrivateData = async () => { if (!userStore.isLoggedIn) return; marketLoading.value = true; try { const [listingRes, ownerRes, renterRes] = await Promise.all([getMyMarketplaceListings(), getMarketplaceOwnerApplications({ page: ownerAppPage.value, size: ownerAppPageSize.value }), getMarketplaceRenterApplications()]); myListings.value = listingRes.data || []; ownerApplications.value = ownerRes.data.content || []; ownerAppTotal.value = ownerRes.data.totalElements || 0; renterApplications.value = renterRes.data || [] } finally { marketLoading.value = false } }
 const initializeDiscoverBySilentLocation = async () => {
   locating.value = true
   try {
@@ -668,6 +746,7 @@ const applyDiscoverRegion = async () => {
     coords.longitude = district.longitude
     activeDiscoverRegionText.value = regionText
     activeDiscoverSourceText.value = '手动选择'
+    discoverPage.value = 1
     await loadDiscover()
     ElMessage.success(`已经按 ${regionText} 刷新附近可租资源`)
   } finally {
@@ -682,6 +761,7 @@ const resetDiscoverRegion = async () => {
   coords.longitude = null
   activeDiscoverRegionText.value = ''
   activeDiscoverSourceText.value = ''
+  discoverPage.value = 1
   await loadDiscover()
 }
 const toggleListingDropdown = (key) => {
@@ -848,7 +928,8 @@ const submitListing = async () => { if (!listingFormRef.value) return; await lis
 const openApplicationDialog = (item) => { if (!ensureLoggedIn()) return; selectedDiscoverItem.value = item; Object.assign(applicationForm, { requestedRange: [], meetupLocation: item.location || '', meetupTime: null, renterMessage: '' }); applicationDialogVisible.value = true }
 const submitApplication = async () => { if (!applicationFormRef.value || !selectedDiscoverItem.value) return; await applicationFormRef.value.validate(); applicationSubmitting.value = true; try { await createMarketplaceApplication(selectedDiscoverItem.value.listingId, { requestedStartTime: formatForSubmit(applicationForm.requestedRange?.[0]), requestedEndTime: formatForSubmit(applicationForm.requestedRange?.[1]), meetupLocation: applicationForm.meetupLocation, meetupTime: formatForSubmit(applicationForm.meetupTime), renterMessage: applicationForm.renterMessage || null }); applicationDialogVisible.value = false; activeTab.value = 'applications'; ElMessage.success('租用申请已提交'); await Promise.all([loadPrivateData(), loadDiscover()]) } finally { applicationSubmitting.value = false } }
 const consultOwner = async (item) => { if (!ensureLoggedIn()) return; try { const res = await consultMarketplaceListing(item.listingId); router.push({ path: '/friends', query: { targetUserId: String(res.data.ownerId), prefill: res.data.suggestedMessage } }) } catch (error) { console.error(error) } }
-const consultPeer = (userId, listingTitle) => { if (!ensureLoggedIn()) return; router.push({ path: '/friends', query: { targetUserId: String(userId), prefill: `你好，想继续沟通一下“${listingTitle}”的交付细节。` } }); ElMessage.success('已为你打开聊天窗口') }
+
+const consultPeer = (userId, listingTitle) => { if (!ensureLoggedIn()) return; router.push({ path: '/friends', query: { targetUserId: String(userId), prefill: `你好，想继续沟通一下”${listingTitle}”的交付细节。` } }); ElMessage.success('已为你打开聊天窗口') }
 const updateOwnerApplication = async (application, status) => { await ElMessageBox.confirm(`确认把申请更新为“${getApplicationStatusLabel(status)}”吗？`, '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }); await updateMarketplaceApplicationStatus(application.id, { status }); ElMessage.success('申请状态已更新'); await Promise.all([loadPrivateData(), loadDiscover()]) }
 const updateRenterApplication = async (application, status) => { await ElMessageBox.confirm(`确认执行“${getApplicationStatusLabel(status)}”吗？`, '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }); await updateMarketplaceApplicationStatus(application.id, { status }); ElMessage.success('申请状态已更新'); await Promise.all([loadPrivateData(), loadDiscover()]) }
 const toggleListingStatus = async (listing) => { const nextStatus = listing.status === 'OFFLINE' ? 'AVAILABLE' : 'OFFLINE'; const res = await updateMarketplaceListing(listing.id, { name: listing.name, type: listing.type, location: listing.location, latitude: Number(listing.latitude), longitude: Number(listing.longitude), pricePerHour: Number(listing.pricePerHour), deposit: Number(listing.deposit || 0), deliveryMode: listing.deliveryMode, availableFrom: formatForSubmit(listing.availableFrom), availableTo: formatForSubmit(listing.availableTo), imageUrl: listing.imageUrl || null, description: listing.description || null, status: nextStatus }); ElMessage.success(res.message || (nextStatus === 'OFFLINE' ? '挂牌已下架' : '挂牌已重新上架')); await Promise.all([loadPrivateData(), loadDiscover()]) }
@@ -1370,7 +1451,122 @@ html.dark :deep(.el-button--text:hover) {
   color: #fb923c;
 }
 
-/* ========== 时间轴动画样式 ========== */
+html.dark .application-card {
+  background: rgba(30, 41, 59, 0.60);
+  border-color: rgba(148, 163, 184, 0.20);
+}
+
+html.dark .application-card:hover {
+  border-color: rgba(var(--brand-primary-rgb), 0.4);
+}
+
+html.dark .app-card-detail {
+  border-top-color: rgba(148, 163, 184, 0.20);
+}
+
+/* 简洁版申请卡片 */
+.app-card {
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-stroke);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.app-card:hover {
+  border-color: rgba(var(--brand-primary-rgb), 0.3);
+}
+
+.app-card.expanded {
+  border-color: var(--brand-primary);
+}
+
+.app-card-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.app-avatar {
+  background: var(--brand-primary);
+  color: #fff;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.app-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--bs-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-card-meta {
+  font-size: 12px;
+  color: var(--bs-muted);
+  margin-top: 2px;
+}
+
+.app-card-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.app-card-arrow {
+  color: var(--bs-muted);
+  transition: transform 0.2s;
+}
+
+.app-card.expanded .app-card-arrow {
+  transform: rotate(180deg);
+}
+
+.app-card-detail {
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--bs-stroke);
+  margin-top: 0;
+}
+
+.app-detail-section {
+  margin-top: 12px;
+}
+
+.app-detail-row {
+  display: flex;
+  gap: 24px;
+}
+
+.app-detail-label {
+  font-size: 12px;
+  color: var(--bs-muted);
+  margin-bottom: 2px;
+}
+
+.app-detail-value {
+  font-size: 14px;
+  color: var(--bs-ink);
+}
+
+.app-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* 申请卡片样式 */
 .timeline {
   margin-top: 14px;
   padding-left: 4px;
@@ -1569,5 +1765,52 @@ html.dark .custom-select .el-button:hover {
 html.dark .custom-select .el-button.selected {
   border-color: rgba(64, 158, 255, 0.6);
   color: #60a5fa;
+}
+
+/* 分页样式 */
+.pagination-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.pagination-total {
+  font-size: 14px;
+  color: var(--bs-muted);
+}
+
+.pagination-size-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  font-size: 14px;
+  color: var(--bs-ink);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-size-trigger:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+html.dark .pagination-size-trigger {
+  background: rgba(30, 41, 59, 0.60);
+  border-color: rgba(148, 163, 184, 0.20);
+  color: #e2e8f0;
+}
+
+html.dark .pagination-size-trigger:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .pagination-total {
+  color: #94a3b8;
 }
 </style>
