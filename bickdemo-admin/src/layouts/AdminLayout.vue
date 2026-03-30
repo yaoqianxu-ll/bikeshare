@@ -176,6 +176,7 @@ const navGroups = [
     icon: Document,
     children: [
       { path: '/forum', label: '论坛审核' },
+      { path: '/forum/comments', label: '评论审核' },
       { path: '/notices', label: '系统公告' }
     ]
   },

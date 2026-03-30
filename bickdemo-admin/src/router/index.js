@@ -49,6 +49,11 @@ const routes = [
         component: () => import('@/views/ForumModeration.vue')
       },
       {
+        path: '/forum/comments',
+        name: 'ForumCommentManage',
+        component: () => import('@/views/CommentModeration.vue')
+      },
+      {
         path: '/backgrounds',
         name: 'BackgroundsManage',
         component: () => import('@/views/Backgrounds.vue')
