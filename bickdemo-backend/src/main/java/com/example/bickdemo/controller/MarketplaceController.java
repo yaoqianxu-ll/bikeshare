@@ -28,6 +28,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+
 /**
  * 附近可租与个人出租市场接口。
  */
@@ -39,11 +41,13 @@ public class MarketplaceController {
     private final MarketplaceService marketplaceService;
 
     @GetMapping("/discover")
-    public ResponseEntity<ApiResponse<List<MarketplaceDiscoverResponse>>> discover(
+    public ResponseEntity<ApiResponse<Page<MarketplaceDiscoverResponse>>> discover(
             @RequestParam(required = false) Double latitude,
             @RequestParam(required = false) Double longitude,
             @RequestParam(required = false) Double radiusKm,
             @RequestParam(required = false) BicycleType type,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "12") int size,
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(ApiResponse.success(
                 marketplaceService.discover(
@@ -51,7 +55,9 @@ public class MarketplaceController {
                         latitude,
                         longitude,
                         radiusKm,
-                        type
+                        type,
+                        page,
+                        size
                 )
         ));
     }

@@ -123,13 +123,17 @@ public class MarketplaceService {
      * @param longitude 用户所在经度（可为空）
      * @param radiusKm 搜索半径（公里，可为空）
      * @param type 自行车类型过滤（可为空）
-     * @return 附近可租车辆列表
+     * @param page 页码（从1开始）
+     * @param size 每页大小
+     * @return 附近可租车辆分页结果
      */
-    public List<MarketplaceDiscoverResponse> discover(String currentUsername,
+    public Page<MarketplaceDiscoverResponse> discover(String currentUsername,
                                                       Double latitude,
                                                       Double longitude,
                                                       Double radiusKm,
-                                                      BicycleType type) {
+                                                      BicycleType type,
+                                                      int page,
+                                                      int size) {
         // 判断是否启用附近模式（需要同时提供经纬度）
         boolean nearbyMode = latitude != null && longitude != null;
         // 计算有效半径：如果未指定或无效，则使用默认值；否则取用户指定值和最大值的较小值
@@ -239,7 +243,20 @@ public class MarketplaceService {
             // 非附近模式：只按创建时间倒序
             comparator = Comparator.comparing(MarketplaceDiscoverResponse::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder()));
         }
-        return results.stream().sorted(comparator).toList(); // 返回排序后的结果
+        List<MarketplaceDiscoverResponse> sortedList = results.stream().sorted(comparator).toList();
+
+        // ========== 分页 ==========
+        Page<MarketplaceDiscoverResponse> pageResult = new Page<>(page, size);
+        pageResult.setTotal(sortedList.size());
+
+        int fromIndex = (page - 1) * size;
+        int toIndex = Math.min(fromIndex + size, sortedList.size());
+        if (fromIndex >= sortedList.size()) {
+            pageResult.setRecords(List.of());
+        } else {
+            pageResult.setRecords(sortedList.subList(fromIndex, toIndex));
+        }
+        return pageResult;
     }
 
     /**

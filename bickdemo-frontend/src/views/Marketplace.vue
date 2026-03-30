@@ -135,8 +135,9 @@
             <el-pagination
               v-model:current-page="discoverPage"
               v-model:page-size="discoverPageSize"
+              background
               :total="discoverTotal"
-              layout="prev, pager, next"
+              layout="prev, pager, next, total"
               @current-change="loadDiscover"
             />
           </div>
@@ -669,7 +670,7 @@ const syncListingRegionSelection = () => {
   listingRegionWarning.value = ''
 }
 
-const loadDiscover = async () => { discoverLoading.value = true; try { const params = { radiusKm: discoverFilters.radiusKm, type: discoverFilters.type || undefined, page: discoverPage.value, size: discoverPageSize.value }; if (coords.latitude !== null && coords.longitude !== null) { params.latitude = coords.latitude; params.longitude = coords.longitude } const res = await getMarketplaceDiscover(params); discoverItems.value = res.data.content || []; discoverTotal.value = res.data.totalElements || 0 } finally { discoverLoading.value = false } }
+const loadDiscover = async () => { discoverLoading.value = true; try { const params = { radiusKm: discoverFilters.radiusKm, type: discoverFilters.type || undefined, page: discoverPage.value, size: discoverPageSize.value }; if (coords.latitude !== null && coords.longitude !== null) { params.latitude = coords.latitude; params.longitude = coords.longitude } const res = await getMarketplaceDiscover(params); discoverItems.value = Array.isArray(res.data) ? res.data : (res.data.records || []); discoverTotal.value = Array.isArray(res.data) ? res.data.length : (res.data.total || 0) } finally { discoverLoading.value = false } }
 const loadPrivateData = async () => { if (!userStore.isLoggedIn) return; marketLoading.value = true; try { const [listingRes, ownerRes, renterRes] = await Promise.all([getMyMarketplaceListings(), getMarketplaceOwnerApplications({ page: ownerAppPage.value, size: ownerAppPageSize.value }), getMarketplaceRenterApplications()]); myListings.value = listingRes.data || []; ownerApplications.value = ownerRes.data.content || []; ownerAppTotal.value = ownerRes.data.totalElements || 0; renterApplications.value = renterRes.data || [] } finally { marketLoading.value = false } }
 const initializeDiscoverBySilentLocation = async () => {
   locating.value = true
