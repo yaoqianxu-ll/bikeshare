@@ -29,7 +29,9 @@
 
 **🔧 后台管理**: [https://admin.bikeshare.online](https://admin.bikeshare.online) <br>
 
-**📦 Gitee 仓库**: [https://gitee.com/loopeasen/bikelease](https://gitee.com/loopeasen/bikelease)
+**📦 Gitee 仓库**: [https://gitee.com/loopeasen/bikelease](https://gitee.com/loopeasen/bikelease) <br>
+
+**🐙 GitHub 仓库**: [https://github.com/loopeasen/bikelease](https://github.com/loopeasen/bikelease)
 
 </div>
 
