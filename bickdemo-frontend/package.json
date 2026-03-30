@@ -9,12 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@antv/g2": "^5.4.8",
+    "@antv/g2plot": "^2.4.35",
     "@element-plus/icons-vue": "^2.3.1",
     "@stomp/stompjs": "^7.2.0",
     "axios": "^1.6.2",
     "browser-image-compression": "^2.0.2",
     "echarts": "^6.0.0",
     "element-plus": "^2.5.0",
+    "highcharts": "^12.5.0",
     "naive-ui": "^2.44.1",
     "pinia": "^2.1.7",
     "sockjs-client": "^1.6.1",

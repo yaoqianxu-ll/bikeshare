@@ -628,11 +628,9 @@
                     v-if="!comment.mine"
                     class="reply-action"
                     size="small"
-                    text
-                    type="primary"
                     @click="startReply(comment)"
                   >
-                    回复
+                    <el-icon><Comment /></el-icon> 回复
                   </el-button>
                 </div>
                 <div v-if="comment.replyToUsername" class="reply-meta">
@@ -641,10 +639,27 @@
                 <p class="comment-content">{{ comment.content }}</p>
               </div>
 
-              <div class="comment-load-more" v-if="hasMoreComments">
-                <el-button text @click="loadMoreComments" :loading="commentLoading">
-                  加载更多评论 ({{ commentTotal - detailComments.length }} 条剩余)
-                </el-button>
+              <div class="comment-pagination">
+                <el-pagination
+                  v-model:current-page="commentPage"
+                  v-model:page-size="commentSize"
+                  :total="commentTotal"
+                  layout="total, prev, pager, next"
+                  :small="true"
+                  @current-change="loadComments"
+                />
+                <el-dropdown trigger="click" @command="handleCommentSizeChange">
+                  <span class="comment-size-trigger">
+                    {{ commentSize }}条/页<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                  </span>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item :command="5">5条/页</el-dropdown-item>
+                      <el-dropdown-item :command="10">10条/页</el-dropdown-item>
+                      <el-dropdown-item :command="20">20条/页</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
               </div>
             </div>
             <el-empty v-else description="还没有评论，来留下第一条互动吧。" />
@@ -750,7 +765,7 @@
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage, useDialog } from 'naive-ui'
-import { Picture, Refresh, Search, HotWater, Star, ChatDotRound, View, User, Top, ArrowDown, ArrowUp, Close } from '@element-plus/icons-vue'
+import { Picture, Refresh, Search, HotWater, Star, ChatDotRound, View, User, Top, ArrowDown, ArrowUp, Close, Comment } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import {
   approveForumPost,
@@ -931,7 +946,7 @@ const openPost = async (postId) => {
   detailLoading.value = true
   commentPage.value = 1
   try {
-    const res = await getForumPostDetail(postId, { commentPage: 1, commentSize: 10 })
+    const res = await getForumPostDetail(postId, { commentPage: 1, commentSize: commentSize.value })
     selectedPost.value = res.data.post
     detailComments.value = res.data.comments || []
     commentTotal.value = Number(res.data.commentTotal || 0)
@@ -1015,16 +1030,10 @@ const submitComment = async () => {
       parentCommentId: replyTarget.value?.id || null,
       replyToUserId: replyTarget.value?.authorId || null
     })
-    // 重新加载第一页评论
-    const res = await getForumPostDetail(selectedPost.value.id, { commentPage: 1, commentSize: commentSize.value })
-    detailComments.value = res.data.comments || []
-    commentTotal.value = Number(res.data.commentTotal || 0)
-    commentPage.value = 1
+    // 评论提交后显示审核提示，不刷新列表
+    message.info('评论已提交，待管理员审核通过后可见')
     commentDraft.value = ''
     replyTarget.value = null
-    const nextCommentCount = Number(selectedPost.value.commentCount || 0) + 1
-    syncPostState(selectedPost.value.id, { commentCount: nextCommentCount })
-    message.success('评论已发送')
   } catch (error) {
     console.error(error)
   } finally {
@@ -1032,20 +1041,24 @@ const submitComment = async () => {
   }
 }
 
-const loadMoreComments = async () => {
-  if (!selectedPost.value || !hasMoreComments.value) return
+const loadComments = async () => {
+  if (!selectedPost.value) return
   commentLoading.value = true
   try {
-    const nextPage = commentPage.value + 1
-    const res = await getForumPostDetail(selectedPost.value.id, { commentPage: nextPage, commentSize: commentSize.value })
-    detailComments.value = [...detailComments.value, ...(res.data.comments || [])]
+    const res = await getForumPostDetail(selectedPost.value.id, { commentPage: commentPage.value, commentSize: commentSize.value })
+    detailComments.value = res.data.comments || []
     commentTotal.value = Number(res.data.commentTotal || 0)
-    commentPage.value = nextPage
   } catch (error) {
     console.error(error)
   } finally {
     commentLoading.value = false
   }
+}
+
+const handleCommentSizeChange = (val) => {
+  commentSize.value = val
+  commentPage.value = 1
+  loadComments()
 }
 
 const handleCommentKeydown = (event) => {
@@ -2742,9 +2755,53 @@ onMounted(() => {
   gap: 16px;
 }
 
-.comment-load-more {
+.comment-pagination {
   margin-top: 16px;
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 14px;
+  border: 1px solid var(--bs-stroke);
+}
+
+.comment-size-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(var(--brand-primary-rgb), 0.08);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+  color: var(--brand-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.comment-size-trigger:hover {
+  background: rgba(var(--brand-primary-rgb), 0.14);
+}
+
+:deep(.comment-pagination .el-pagination) {
+  margin: 0;
+}
+
+:deep(.comment-pagination .el-pagination button) {
+  border-radius: 6px;
+}
+
+:deep(.comment-pagination .el-pagination .btn-prev),
+:deep(.comment-pagination .el-pagination .btn-next) {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+:deep(.comment-pagination .el-pagination li) {
+  border-radius: 6px;
 }
 
 .comment-item {
@@ -2785,9 +2842,23 @@ onMounted(() => {
 
 .reply-action {
   border-radius: 12px;
-  padding: 6px 10px;
-  background: rgba(var(--brand-primary-rgb), 0.08);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+  padding: 6px 12px;
+  background: var(--brand-primary);
+  color: #fff;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reply-action:hover {
+  background: var(--brand-primary-light);
+}
+
+.reply-action .el-icon {
+  font-size: 14px;
 }
 
 .reply-meta {
@@ -3444,8 +3515,26 @@ html.dark .reply-pill {
 }
 
 html.dark .reply-action {
-  background: rgba(var(--brand-primary-rgb), 0.12);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.20);
+  background: var(--brand-primary);
+  color: #fff;
+}
+
+html.dark .reply-action:hover {
+  background: var(--brand-primary-light);
+}
+
+html.dark .comment-pagination {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html.dark .comment-size-trigger {
+  background: rgba(var(--brand-primary-rgb), 0.20);
+  border-color: rgba(var(--brand-primary-rgb), 0.30);
+  color: var(--el-color-primary);
+}
+
+html.dark .comment-size-trigger:hover {
+  background: rgba(var(--brand-primary-rgb), 0.30);
 }
 
 /* 详情抽屉 */

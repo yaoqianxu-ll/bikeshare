@@ -50,12 +50,23 @@
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
-          :page-sizes="[10, 15, 20, 30]"
           :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadNotices"
+          layout="total, prev, pager, next"
           @current-change="loadNotices"
         />
+        <el-dropdown trigger="click" @command="handleSizeChange">
+          <span class="page-size-trigger">
+            {{ pageSize }}条/页<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item :command="10">10条/页</el-dropdown-item>
+              <el-dropdown-item :command="15">15条/页</el-dropdown-item>
+              <el-dropdown-item :command="20">20条/页</el-dropdown-item>
+              <el-dropdown-item :command="30">30条/页</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </el-card>
 
@@ -82,7 +93,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bell, ArrowRight } from '@element-plus/icons-vue'
+import { Bell, ArrowRight, ArrowDown } from '@element-plus/icons-vue'
 import { getNotices } from '@/api/notice'
 
 const notices = ref([])
@@ -97,6 +108,12 @@ const totalText = computed(() => {
   const n = Number(total.value)
   return Number.isFinite(n) ? `共 ${n} 条公告` : ''
 })
+
+const handleSizeChange = (val) => {
+  pageSize.value = val
+  currentPage.value = 1
+  loadNotices()
+}
 
 const loadNotices = async () => {
   loading.value = true
@@ -387,8 +404,30 @@ onMounted(() => {
 .pagination-wrapper {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
   padding: 20px 24px;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.page-size-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: var(--bs-ink);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-size-trigger:hover {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(var(--brand-primary-rgb), 0.45);
 }
 
 :deep(.el-pagination button) {

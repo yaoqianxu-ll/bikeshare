@@ -96,7 +96,7 @@
               <span class="card-title"><el-icon><PieChart /></el-icon> 自行车类型分布</span>
             </div>
           </template>
-          <div ref="pieChart" class="pie-chart"></div>
+          <div id="pie-chart" class="pie-chart"></div>
         </el-card>
       </el-col>
 
@@ -107,7 +107,7 @@
               <span class="card-title"><el-icon><TrendCharts /></el-icon> 类型数量对比</span>
             </div>
           </template>
-          <div ref="barChart" class="bar-chart"></div>
+          <div id="bar-chart" class="bar-chart"></div>
         </el-card>
       </el-col>
     </el-row>
@@ -207,7 +207,7 @@ import {
   TrendCharts, DataLine, PieChart, DataAnalysis,
   OfficeBuilding, Service, User, Refresh
 } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
+import Highcharts from 'highcharts'
 
 const TYPE_COLOR_MAP = {
   MOUNTAIN: '#409EFF',
@@ -231,8 +231,8 @@ const statistics = reactive({
 })
 
 const popularBicycles = ref([])
-const pieChart = ref(null)
-const barChart = ref(null)
+const pieChartRef = ref(null)
+const barChartRef = ref(null)
 let pieInstance = null
 let barInstance = null
 
@@ -329,170 +329,93 @@ const getTypeText = (type) => {
 const getTypeColor = (type) => TYPE_COLOR_MAP[type] || '#909399'
 
 const initPieChart = () => {
-  if (!pieChart.value) return
-  if (pieInstance) pieInstance.dispose()
+  const container = document.getElementById('pie-chart')
+  if (!container) return
+  if (pieInstance) pieInstance.destroy()
 
-  pieInstance = echarts.init(pieChart.value, null, { useDirtyRect: true })
+  const data = orderedTypeStats.value.map(stat => ({
+    name: getTypeText(stat.type),
+    y: stat.count,
+    color: getTypeColor(stat.type)
+  }))
 
-  const getCssVar = (name, fallback) => {
-    if (typeof window === 'undefined') return fallback
-    const value = getComputedStyle(document.documentElement).getPropertyValue(name)
-    return (value || '').trim() || fallback
-  }
-
-  const brand = getCssVar('--brand-primary', '#ff6b35')
-  const ink = getCssVar('--bs-ink', '#0f172a')
-  const muted = getCssVar('--bs-muted', '#64748b')
-  const stroke = 'rgba(15, 23, 42, 0.10)'
-
-  const option = {
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: 'rgba(15, 23, 42, 0.92)',
-      borderColor: stroke,
-      borderWidth: 1,
-      textStyle: { color: '#fff', fontSize: 12 },
-      padding: [10, 12],
-      formatter: params => `${params.name}<br/>${params.value} (${params.percent}%)`
+  pieInstance = Highcharts.chart(container, {
+    chart: { type: 'pie', height: 280, backgroundColor: 'transparent' },
+    title: { text: null },
+    tooltip: { enabled: true, formatter: function() { return `<b>${this.point.name}</b>: ${this.y} 辆` } },
+    plotOptions: {
+      pie: {
+        innerSize: '60%',
+        borderWidth: 2,
+        borderColor: '#fff',
+        dataLabels: { enabled: false },
+        showInLegend: true,
+        size: '85%'
+      }
     },
     legend: {
-      orient: 'horizontal',
-      bottom: '0',
-      left: 'center',
-      itemWidth: 14,
-      itemHeight: 14,
-      textStyle: {
-        color: muted
-      }
+      align: 'center',
+      verticalAlign: 'bottom',
+      layout: 'horizontal',
+      itemStyle: { color: '#64748b', fontSize: '12px' },
+      symbolRadius: 4,
+      symbolHeight: 12,
+      symbolWidth: 12
     },
-    color: orderedTypeStats.value.map(stat => getTypeColor(stat.type)),
-    series: [
-      {
-        name: '自行车类型',
-        type: 'pie',
-        radius: ['45%', '70%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: 'rgba(255, 255, 255, 0.9)',
-          borderWidth: 1
-        },
-        label: {
-          show: false,
-          position: 'center'
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: 18,
-            fontWeight: 800,
-            color: ink
-          }
-        },
-        labelLine: {
-          show: false
-        },
-        data: orderedTypeStats.value.map(stat => ({
-          name: getTypeText(stat.type),
-          value: stat.count,
-          itemStyle: {
-            color: getTypeColor(stat.type)
-          }
-        }))
-      }
-    ],
-    animationDuration: 400,
-    animationEasing: 'cubicOut'
-  }
-
-  pieInstance.setOption(option)
+    series: [{ name: '车辆', data }],
+    credits: { enabled: false }
+  })
 }
 
 const initBarChart = () => {
-  if (!barChart.value) return
-  if (barInstance) barInstance.dispose()
+  const container = document.getElementById('bar-chart')
+  if (!container) return
+  if (barInstance) barInstance.destroy()
 
-  barInstance = echarts.init(barChart.value, null, { useDirtyRect: true })
+  const data = orderedTypeStats.value.map(stat => ({
+    name: getTypeText(stat.type),
+    y: stat.count,
+    color: getTypeColor(stat.type)
+  }))
 
-  const getCssVar = (name, fallback) => {
-    if (typeof window === 'undefined') return fallback
-    const value = getComputedStyle(document.documentElement).getPropertyValue(name)
-    return (value || '').trim() || fallback
-  }
-
-  const brand = getCssVar('--brand-primary', '#ff6b35')
-  const muted = getCssVar('--bs-muted', '#64748b')
-
-  const option = {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
-      },
-      backgroundColor: 'rgba(15, 23, 42, 0.92)',
-      borderColor: 'rgba(15, 23, 42, 0.10)',
-      borderWidth: 1,
-      textStyle: { color: '#fff', fontSize: 12 },
-      padding: [10, 12]
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      top: '10%',
-      containLabel: true
+  barInstance = Highcharts.chart(container, {
+    chart: { type: 'column', height: 280, backgroundColor: 'transparent' },
+    title: { text: null },
+    tooltip: { enabled: true, formatter: function() { return `<b>${this.point.name}</b>: ${this.y} 辆` } },
+    plotOptions: {
+      column: {
+        borderRadius: [0, 6, 6, 0],
+        borderWidth: 0,
+        dataLabels: {
+          enabled: true,
+          inside: false,
+          style: { color: '#64748b', fontSize: '12px', fontWeight: '600' },
+          formatter: function() { return this.y; }
+        }
+      }
     },
     xAxis: {
-      type: 'category',
-      data: orderedTypeStats.value.map(stat => getTypeText(stat.type)),
-      axisLabel: {
-        color: muted,
-        fontSize: 12
-      },
-      axisLine: {
-        lineStyle: {
-          color: 'rgba(15, 23, 42, 0.10)'
-        }
-      },
-      axisTick: { show: false }
+      categories: orderedTypeStats.value.map(stat => getTypeText(stat.type)),
+      labels: { style: { color: '#64748b', fontSize: '12px', fontWeight: '600' } },
+      lineColor: 'rgba(15, 23, 42, 0.08)',
+      tickColor: 'transparent'
     },
     yAxis: {
-      type: 'value',
-      axisLabel: {
-        color: muted
-      },
-      splitLine: {
-        lineStyle: {
-          color: 'rgba(15, 23, 42, 0.08)'
-        }
-      },
-      axisLine: { show: false },
-      axisTick: { show: false }
+      labels: { style: { color: '#94a3b8', fontSize: '11px' } },
+      gridLineColor: 'rgba(15, 23, 42, 0.06)',
+      title: { text: null }
     },
-    series: [
-      {
-        name: '数量',
-        type: 'bar',
-        barWidth: '50%',
-        itemStyle: {
-          borderRadius: [10, 10, 0, 0],
-          color: params => getTypeColor(orderedTypeStats.value[params.dataIndex]?.type)
-        },
-        data: orderedTypeStats.value.map(stat => stat.count)
-      }
-    ],
-    animationDuration: 450,
-    animationEasing: 'cubicOut'
-  }
-
-  barInstance.setOption(option)
+    legend: { enabled: false },
+    series: [{ name: '数量', data }],
+    credits: { enabled: false }
+  })
 }
 
 onMounted(() => {
   loadStatistics()
   window.addEventListener('resize', () => {
-    pieInstance?.resize()
-    barInstance?.resize()
+    pieInstance?.reflow()
+    barInstance?.reflow()
   })
 })
 </script>
@@ -692,8 +615,8 @@ onMounted(() => {
 
 .pie-chart,
 .bar-chart {
-  height: 320px;
   width: 100%;
+  height: 300px;
 }
 
 /* 表格容器 */

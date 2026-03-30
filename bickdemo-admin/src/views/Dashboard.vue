@@ -153,7 +153,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import * as echarts from 'echarts'
+import Highcharts from 'highcharts'
 import { ArrowRight, Collection, DataAnalysis, Histogram, Refresh, User, WarningFilled, Document } from '@element-plus/icons-vue'
 import { getPendingForumPosts } from '@/api/forum'
 import { getAllRentals, getStatistics } from '@/api/rental'
@@ -169,7 +169,6 @@ const trendSource = ref([])
 const pendingPosts = ref([])
 const trendRange = ref(7)
 const trendChartRef = ref(null)
-
 let trendChart = null
 
 const overviewCards = computed(() => [
@@ -273,42 +272,29 @@ const buildTrendSource = (records, days) => {
 
 const renderTrendChart = async () => {
   await nextTick()
-  if (!trendChartRef.value) return
+  const container = trendChartRef.value
+  if (!container) return
   const { labels, values } = buildTrendSource(trendSource.value, trendRange.value)
 
-  trendChart?.dispose()
-  trendChart = echarts.init(trendChartRef.value)
-  trendChart.setOption({
-    tooltip: { trigger: 'axis' },
-    grid: { top: 20, left: 18, right: 18, bottom: 20, containLabel: true },
-    xAxis: {
-      type: 'category',
-      data: labels,
-      axisLabel: { color: '#64748b' },
-      axisLine: { lineStyle: { color: 'rgba(15, 23, 42, 0.10)' } }
-    },
-    yAxis: {
-      type: 'value',
-      minInterval: 1,
-      axisLabel: { color: '#64748b' },
-      splitLine: { lineStyle: { color: 'rgba(15, 23, 42, 0.08)' } }
-    },
-    series: [
-      {
-        data: values,
-        type: 'line',
-        smooth: true,
-        symbolSize: 7,
-        lineStyle: { width: 3, color: '#2563eb' },
-        itemStyle: { color: '#2563eb' },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(37, 99, 235, 0.18)' },
-            { offset: 1, color: 'rgba(37, 99, 235, 0.03)' }
-          ])
-        }
+  if (trendChart) trendChart.destroy()
+
+  trendChart = Highcharts.chart(trendChartRef.value, {
+    chart: { type: 'areaspline', height: 320, backgroundColor: 'transparent', style: { fontFamily: 'inherit' } },
+    title: { text: null },
+    xAxis: { categories: labels, labels: { style: { color: '#94a3b8', fontSize: '11px' } }, lineColor: 'rgba(15, 23, 42, 0.08)', tickColor: 'transparent' },
+    yAxis: { min: 0, labels: { style: { color: '#94a3b8', fontSize: '11px' } }, gridLineColor: 'rgba(15, 23, 42, 0.06)', title: { text: null } },
+    tooltip: { enabled: true, formatter: function() { return `<b>${this.x}</b>: ${this.y} 单` } },
+    legend: { enabled: false },
+    plotOptions: {
+      areaspline: {
+        lineWidth: 3,
+        marker: { enabled: true, symbol: 'circle', radius: 4, fillColor: '#3b82f6', lineWidth: 2, lineColor: '#fff' },
+        fillColor: { linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 }, stops: [[0, 'rgba(59, 130, 246, 0.25)'], [1, 'rgba(59, 130, 246, 0.02)']] },
+        lineColor: '#3b82f6'
       }
-    ]
+    },
+    series: [{ name: '订单', data: values }],
+    credits: { enabled: false }
   })
 }
 
@@ -318,7 +304,7 @@ const setTrendRange = async (days) => {
 }
 
 const handleResize = () => {
-  trendChart?.resize()
+  trendChart?.reflow()
 }
 
 const loadDashboard = async () => {

@@ -110,6 +110,22 @@
               </div>
             </div>
             <div class="mobile-account-actions">
+              <router-link to="/my-rentals" class="mobile-account-link" @click="closeNav">
+                <el-icon><Document /></el-icon>
+                <span>我的租赁</span>
+              </router-link>
+              <router-link to="/notices" class="mobile-account-link" @click="closeNav">
+                <el-icon><Bell /></el-icon>
+                <span>公告</span>
+              </router-link>
+              <router-link to="/friends" class="mobile-account-link" @click="closeNav">
+                <el-icon><ChatDotRound /></el-icon>
+                <span>好友</span>
+              </router-link>
+              <router-link to="/tickets" class="mobile-account-link" @click="closeNav">
+                <el-icon><Ticket /></el-icon>
+                <span>工单</span>
+              </router-link>
               <router-link to="/profile" class="mobile-account-link" @click="closeNav">
                 <el-icon><User /></el-icon>
                 <span>个人信息</span>
@@ -145,33 +161,29 @@
             <span class="nav-icon-bg"><el-icon><Calendar /></el-icon></span>
             <span>活动</span>
           </router-link>
-          <router-link to="/notices" class="nav-link" @click="closeNav">
-            <span class="nav-icon-bg"><el-icon><Bell /></el-icon></span>
-            <span>公告</span>
-          </router-link>
-          <router-link to="/my-rentals" class="nav-link" v-if="userStore.isLoggedIn" @click="closeNav">
-            <span class="nav-icon-bg"><el-icon><Document /></el-icon></span>
-            <span>我的</span>
-          </router-link>
-          <router-link to="/friends" class="nav-link" v-if="userStore.isLoggedIn" @click="closeNav">
-            <span class="nav-icon-bg"><el-icon><ChatDotRound /></el-icon></span>
-            <span>好友</span>
-            <el-badge v-if="contactsStore.totalUnreadCount > 0" :value="contactsStore.totalUnreadCount" :max="99" class="nav-badge" />
-          </router-link>
-          <router-link to="/tickets" class="nav-link" v-if="userStore.isLoggedIn" @click="closeNav">
-            <span class="nav-icon-bg"><el-icon><Ticket /></el-icon></span>
-            <span>工单</span>
-          </router-link>
-          <a
-            :href="openSourceProjectUrl"
-            class="nav-link nav-link-gitee"
-            target="_blank"
-            rel="noreferrer"
-            @click="closeNav"
-          >
-            <span class="nav-icon-bg"><el-icon><StarFilled /></el-icon></span>
-            <span>开源 Gitee</span>
-          </a>
+          <!-- 移动端显示开源链接 -->
+          <div class="mobile-source-links">
+            <a
+              :href="openSourceGiteeUrl"
+              class="nav-link nav-link-source"
+              target="_blank"
+              rel="noreferrer"
+              @click="closeNav"
+            >
+              <span class="nav-icon-bg"><el-icon><StarFilled /></el-icon></span>
+              <span>Gitee</span>
+            </a>
+            <a
+              :href="openSourceGithubUrl"
+              class="nav-link nav-link-source"
+              target="_blank"
+              rel="noreferrer"
+              @click="closeNav"
+            >
+              <span class="nav-icon-bg"><el-icon><StarFilled /></el-icon></span>
+              <span>GitHub</span>
+            </a>
+          </div>
           <!-- Mobile: the header login button is hidden, so keep a nav item. -->
           <router-link to="/login" class="nav-link nav-link-auth" v-if="!userStore.isLoggedIn" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><User /></el-icon></span>
@@ -180,15 +192,27 @@
         </nav>
 
         <div class="header-actions">
-          <a
-            :href="openSourceProjectUrl"
-            class="header-support-link"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <el-icon><StarFilled /></el-icon>
-            <span>开源Gitee</span>
-          </a>
+          <el-dropdown trigger="hover" placement="bottom-end">
+            <span class="header-support-link">
+              <el-icon><StarFilled /></el-icon>
+              <span>开源</span>
+              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu class="source-dropdown-menu">
+                <a :href="openSourceGiteeUrl" target="_blank" rel="noreferrer">
+                  <el-dropdown-item>
+                    <svg class="source-svg-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#C71D23" d="M11.984 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.016 0zm6.09 5.333c.328 0 .593.266.592.593v1.482a.594.594 0 0 1-.593.592H9.777c-.982 0-1.778.796-1.778 1.778v5.63c0 .327.266.592.593.592h5.63c.982 0 1.778-.796 1.778-1.778v-.296a.593.593 0 0 0-.592-.593h-4.15a.592.592 0 0 1-.592-.592v-1.482a.593.593 0 0 1 .593-.592h6.815c.327 0 .593.265.593.592v3.408a4 4 0 0 1-4 4H5.926a.593.593 0 0 1-.593-.593V9.778a4.444 4.444 0 0 1 4.445-4.444h8.296Z"/></svg> Gitee
+                  </el-dropdown-item>
+                </a>
+                <a :href="openSourceGithubUrl" target="_blank" rel="noreferrer">
+                  <el-dropdown-item>
+                    <svg class="source-svg-icon" viewBox="0 0 98 96"><path fill-rule="evenodd" clip-rule="evenodd" d="M48.854 0C21.839 0 0 22 0 49.217c0 21.756 13.993 40.172 33.405 46.69 2.427.49 3.316-1.059 3.316-2.362 0-1.141-.08-5.052-.08-9.127-13.59 2.934-16.42-5.867-16.42-5.867-2.184-5.704-5.42-7.17-5.42-7.17-4.448-3.015.324-3.015.324-3.015 4.934.326 7.523 5.052 7.523 5.052 4.367 7.496 11.404 5.378 14.235 4.074.404-3.178 1.699-5.378 3.074-6.6-10.839-1.141-22.243-5.378-22.243-24.283 0-5.378 1.94-9.778 5.014-13.2-.485-1.222-2.184-6.275.486-13.038 0 0 4.125-1.304 13.426 5.052a46.97 46.97 0 0 1 12.214-1.63c4.125 0 8.33.571 12.213 1.63 9.302-6.356 13.427-5.052 13.427-5.052 2.67 6.763.97 11.816.485 13.038 3.155 3.422 5.015 7.822 5.015 13.2 0 18.905-11.404 23.06-22.324 24.283 1.78 1.548 3.316 4.481 3.316 9.126 0 6.6-.08 11.897-.08 13.526 0 1.304.89 2.853 3.316 2.364 19.412-6.52 33.405-24.935 33.405-46.691C97.707 22 75.788 0 48.854 0z" fill="#24292f"/></svg> GitHub
+                  </el-dropdown-item>
+                </a>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <ThemeToggle variant="inline" :tone="isHomePage ? 'ghost' : 'solid'" />
           <div class="user-section" v-if="userStore.isLoggedIn">
             <el-dropdown :trigger="dropdownTrigger" placement="bottom-end" :show-timeout="120" :hide-timeout="180">
@@ -198,10 +222,21 @@
                 <span class="user-text">{{ userStore.username }}</span>
               </span>
               <template #dropdown>
-                <el-dropdown-menu>
+                <el-dropdown-menu class="user-dropdown-menu">
+                  <router-link to="/my-rentals">
+                    <el-dropdown-item>
+                      <el-icon><Document /></el-icon> 我的租赁
+                    </el-dropdown-item>
+                  </router-link>
+                  <router-link to="/notices">
+                    <el-dropdown-item>
+                      <el-icon><Bell /></el-icon> 公告
+                    </el-dropdown-item>
+                  </router-link>
                   <router-link to="/friends">
                     <el-dropdown-item>
                       <el-icon><ChatDotRound /></el-icon> 好友与消息
+                      <el-badge v-if="contactsStore.totalUnreadCount > 0" :value="contactsStore.totalUnreadCount" :max="99" class="dropdown-badge" />
                     </el-dropdown-item>
                   </router-link>
                   <router-link to="/tickets">
@@ -245,6 +280,7 @@
     <!-- 底部 -->
     <footer class="app-footer">
       <p>© 2026 BikeShare · 城市骑行计划</p>
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer" class="icp-link">赣ICP备2026005377号-1</a>
     </footer>
   </div>
 </template>
@@ -255,7 +291,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useContactsStore } from '@/stores/contacts'
 import { useMessage, useDialog } from 'naive-ui'
-import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation, StarFilled, Close, Calendar, Bell, Ticket } from '@element-plus/icons-vue'
+import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation, StarFilled, Close, Calendar, Bell, Ticket, ArrowDown } from '@element-plus/icons-vue'
 import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
 import { getCurrentUser } from '@/api/auth'
 import { getContacts } from '@/api/social'
@@ -287,7 +323,8 @@ const toastRef = ref({
 let socketClient = null
 
 const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
-const openSourceProjectUrl = 'https://gitee.com/loopeasen/bikelease'
+const openSourceGiteeUrl = 'https://gitee.com/loopeasen/bikelease'
+const openSourceGithubUrl = 'https://github.com/yaoqianxu-ll/bikeshare'
 const isHomePage = computed(() => route.name === 'Home')
 const dropdownTrigger = computed(() => (isMobile.value ? 'click' : 'hover'))
 const bgDrawerSize = computed(() => (isMobile.value ? '100%' : '400px'))
@@ -1210,6 +1247,54 @@ watch(
   color: #f4b400;
 }
 
+/* 开源链接容器 */
+.header-source-links {
+  display: flex;
+  gap: 8px;
+}
+
+.source-dropdown-menu {
+  padding: 4px !important;
+}
+
+.source-dropdown-menu a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.source-svg-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.source-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.source-icon-gitee {
+  background: #ca0c16;
+  color: #fff;
+}
+
+.source-icon-github {
+  background: #24292f;
+  color: #fff;
+}
+
+.mobile-source-links {
+  display: none;
+}
+
 /* 用户区域 */
 .user-section {
   display: flex;
@@ -1411,9 +1496,15 @@ html.dark .mobile-account-link-logout:hover {
 /* 下拉菜单 */
 :deep(.el-dropdown-menu__item) {
   transition: all 0.2s ease;
-  border-radius: 8px;
-  margin: 4px 8px;
+  border-radius: 4px;
+  margin: 0 4px;
+  padding: 4px 8px;
   color: var(--bs-ink);
+  font-size: 13px;
+}
+
+.user-dropdown-menu {
+  padding: 2px !important;
 }
 
 :deep(.el-dropdown-menu__item:hover) {
@@ -1511,9 +1602,20 @@ html.dark .mobile-account-link-logout:hover {
 }
 
 .app-footer p {
-  margin: 0;
+  margin: 0 0 6px 0;
   color: var(--bs-muted);
   font-size: 14px;
+}
+
+.icp-link {
+  color: var(--bs-muted);
+  font-size: 12px;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.icp-link:hover {
+  color: var(--brand-primary);
 }
 
 .mobile-nav-backdrop {
@@ -1697,6 +1799,20 @@ html.dark .mobile-account-link-logout:hover {
     background: var(--bs-surface);
     border: 1px solid var(--bs-stroke);
     backdrop-filter: blur(14px) saturate(140%);
+  }
+
+  .header-source-links {
+    display: none;
+  }
+
+  .mobile-source-links {
+    display: flex;
+    gap: 8px;
+  }
+
+  .nav-link-source {
+    flex: 1;
+    justify-content: center;
   }
 
   .nav-link {

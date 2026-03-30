@@ -312,7 +312,7 @@ const SERVICE_RANGE_KM = 10 // 服务半径（公里）
 
 // 分页
 const currentPage = ref(1)
-const pageSize = ref(12)
+const pageSize = ref(9)
 const total = ref(0)
 
 const bikeTypes = [

@@ -26,51 +26,126 @@
           <el-tag type="warning" effect="light">{{ pendingComments.length }}</el-tag>
         </div>
       </template>
-      <div v-if="pendingComments.length" class="moderation-list">
-        <article v-for="item in pendingComments" :key="item.id" class="moderation-item">
-          <div class="moderation-copy">
-            <strong>{{ item.content }}</strong>
-            <span>{{ item.authorName }} · {{ formatDate(item.createdAt) }}</span>
-            <p class="comment-post-hint">帖子ID: {{ item.postId }}</p>
-          </div>
-          <div class="table-actions">
-            <el-button size="small" type="success" @click="reviewComment(item, true)">通过</el-button>
-            <el-button size="small" type="warning" @click="reviewComment(item, false)">驳回</el-button>
-          </div>
-        </article>
-      </div>
-      <el-empty v-else description="暂无待审核评论" :image-size="72" />
+
+      <el-table v-loading="loading" :data="pendingComments">
+        <el-table-column label="评论内容" min-width="240">
+          <template #default="{ row }">
+            <div class="comment-cell">
+              <strong>{{ row.content }}</strong>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="作者" width="140">
+          <template #default="{ row }">
+            <div class="author-cell">
+              <el-avatar :size="24" :src="row.authorAvatar">{{ row.authorName?.charAt(0) }}</el-avatar>
+              <span>{{ row.authorName }}</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="时间" width="160">
+          <template #default="{ row }">
+            <span class="time-text">{{ formatDate(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="所属帖子" width="100" align="center">
+          <template #default="{ row }">
+            <span class="post-id">#{{ row.postId }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="140" align="center">
+          <template #default="{ row }">
+            <div class="table-actions">
+              <el-button size="small" type="success" plain @click="reviewComment(row, true)">通过</el-button>
+              <el-button size="small" type="danger" plain @click="reviewComment(row, false)">驳回</el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
     </el-card>
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { approveForumComment, getPendingForumComments, rejectForumComment } from '@/api/forum'
 import { formatDate } from '@/utils/format'
 
+const loading = ref(false)
 const pendingComments = ref([])
 
 const load = async () => {
+  loading.value = true
   try {
-    const res = await getPendingForumComments({ limit: 50 })
+    const res = await getPendingForumComments({ limit: 100 })
     pendingComments.value = res.data || []
+  } catch (error) {
+    console.error(error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const reviewComment = async (row, approved) => {
+  try {
+    if (approved) {
+      await approveForumComment(row.id)
+      ElMessage.success('评论已通过审核')
+    } else {
+      await rejectForumComment(row.id)
+      ElMessage.success('评论已驳回')
+    }
+    await load()
   } catch (error) {
     console.error(error)
   }
 }
 
-const reviewComment = async (item, approved) => {
-  if (approved) {
-    await approveForumComment(item.id)
-    ElMessage.success('评论已通过审核')
-  } else {
-    await rejectForumComment(item.id)
-    ElMessage.success('评论已驳回')
-  }
-  await load()
-}
-
 onMounted(load)
 </script>
+
+<style scoped>
+.comment-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comment-cell strong {
+  font-size: 14px;
+  color: var(--admin-ink);
+}
+
+.author-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.author-cell span {
+  font-size: 13px;
+  color: var(--admin-ink);
+}
+
+.time-text {
+  font-size: 13px;
+  color: var(--admin-muted);
+}
+
+.post-id {
+  font-size: 13px;
+  color: var(--el-color-primary);
+  font-weight: 500;
+}
+
+.table-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.table-actions .el-button {
+  padding: 5px 10px;
+}
+</style>
