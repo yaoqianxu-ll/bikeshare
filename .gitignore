@@ -45,8 +45,8 @@ _tmp_sidifensen_blog/
 .worktrees/
 worktrees/
 
-# SQL 迁移文件（只保留 bickdemo.sql）
+# SQL 迁移文件（只保留 init.sql）
 sql/*.sql
-!sql/bickdemo.sql
+!sql/init.sql
 
 .mcp.json

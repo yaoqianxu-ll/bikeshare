@@ -178,7 +178,7 @@ bikelease/
 │           └── OperationLogs.vue               #     操作日志
 │
 ├── sql/                                          # 数据库脚本
-│   └── bikedemo.sql                           #   完整数据库结构
+│   └── init.sql                           #   完整数据库结构
 │
 └── README.md                                    # 项目文档
 ```
@@ -289,7 +289,7 @@ CREATE DATABASE bickdemo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 EXIT;
 
 # 2. 导入数据结构
-mysql -u root -p bickdemo < sql/bikedemo.sql
+mysql -u root -p bickdemo < sql/init.sql
 ```
 
 > 💡 **提示**: 如果使用 Docker Compose 部署，数据库会自动初始化，无需手动执行以上步骤。
@@ -481,7 +481,7 @@ docker volume rm bikelease_mysql_data
 
 # 重新初始化
 docker compose up -d
-mysql -u root -p bickdemo < sql/bikedemo.sql
+mysql -u root -p bickdemo < sql/init.sql
 ```
 
 ## 🎨 UI 设计规范
