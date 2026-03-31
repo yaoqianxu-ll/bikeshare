@@ -135,8 +135,11 @@ bikelease/
 │       ├── dto/                                   #   数据传输对象
 │       ├── entity/                                #   实体类
 │       ├── exception/                            #   全局异常处理
+│       ├── listener/                            #   事件监听器
+│       │   └── AdminNotificationListener.java  #     通知监听器 (RabbitMQ → WebSocket)
 │       ├── mapper/                                #   MyBatis-Plus Mapper
 │       ├── service/                               #   业务逻辑服务
+│       │   └── AdminNotificationPublisher.java #     通知发布服务
 │       └── util/                                  #   工具类
 │
 ├── bickdemo-frontend/                           # 用户端前台 (Vue 3)
@@ -159,10 +162,14 @@ bikelease/
 │       ├── api/                                 #   API 接口封装
 │       ├── layouts/                             #   布局组件
 │       │   └── AdminLayout.vue                 #     管理后台布局
-│       ├── router/                              #   路由配置
-│       ├── stores/                              #   Pinia 状态管理
-│       │   └── auth.js                         #     认证状态
-│       └── views/                               #   页面组件
+│       ├── services/                           #   WebSocket 服务
+│       │   └── notification.js                 #     通知服务 (STOMP)
+│       ├── stores/                             #   Pinia 状态管理
+│       │   ├── auth.js                        #     认证状态
+│       │   └── notification.js                 #     通知状态
+│       ├── components/                         #   公共组件
+│       │   └── NotificationPanel.vue          #     通知面板组件
+│       └── views/                              #   页面组件
 │           ├── Dashboard.vue                    #     数据看板
 │           ├── Users.vue                        #     用户管理
 │           ├── Bicycles.vue                     #     车辆管理
@@ -255,6 +262,7 @@ bikelease/
 ### 🔧 管理后台
 
 - **数据看板**: ECharts 图表统计、实时数据
+- **实时通知**: WebSocket 实时推送、RabbitMQ 异步处理、铃铛图标下拉面板
 - **用户管理**: 用户列表、状态启用/禁用
 - **车辆管理**: 车辆 CRUD、批量导入
 - **订单管理**: 租赁订单查询、退款处理
@@ -538,6 +546,13 @@ html.dark {
 ```
 
 ## 📜 更新日志
+
+### [v1.1.0] - 2026-03
+
+- ✅ **管理端实时通知**: WebSocket + RabbitMQ 实时推送
+- ✅ **通知类型**: 用户注册、IP黑名单、帖子/评论审核、挂牌审核
+- ✅ **通知面板**: 铃铛图标、未读计数、下拉详情面板
+- ✅ **通知持久化**: 数据库存储 + localStorage 隐藏状态
 
 ### [v1.0.0] - 2026-03
 

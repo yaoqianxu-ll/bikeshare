@@ -14,18 +14,6 @@
         <div class="brand-icon"><el-icon><Monitor /></el-icon></div>
         <div class="brand-copy">
           <strong>BikeShare</strong>
-          <el-dropdown trigger="hover" class="brand-dropdown">
-            <div class="user-menu-trigger">
-              <div class="user-meta">
-                <strong>{{ authStore.username }}</strong>
-              </div>
-            </div>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
         </div>
       </div>
 
@@ -57,6 +45,22 @@
     </aside>
 
     <div class="main-shell">
+      <!-- Page top bar -->
+      <div class="page-top-bar">
+        <NotificationPanel />
+        <el-dropdown trigger="hover" class="user-dropdown">
+          <div class="user-menu-trigger">
+            <span class="user-name">{{ authStore.username }}</span>
+            <el-icon><ArrowDown /></el-icon>
+          </div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </div>
+
       <section class="content-shell">
         <div class="content-inner">
           <router-view />
@@ -77,16 +81,7 @@
           <div class="brand-icon"><el-icon><Monitor /></el-icon></div>
           <div class="brand-copy">
             <strong>BikeShare</strong>
-            <el-dropdown trigger="hover" class="brand-dropdown">
-              <div class="user-menu-trigger">
-                <div class="user-meta"><strong>{{ authStore.username }}</strong></div>
-              </div>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            <span class="brand-username">{{ authStore.username }}</span>
           </div>
         </div>
         <el-menu
@@ -120,11 +115,14 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { Bicycle, DataAnalysis, Document, Monitor, Setting, Expand, Bell, Calendar } from '@element-plus/icons-vue'
+import { useNotificationStore } from '@/stores/notification'
+import NotificationPanel from '@/components/NotificationPanel.vue'
+import { Bicycle, DataAnalysis, Document, Monitor, Setting, Expand, Calendar, ArrowDown } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
 
 // Mobile responsive state
 const drawerVisible = ref(false)
@@ -138,10 +136,14 @@ const updateWidth = () => {
 
 onMounted(() => {
   window.addEventListener('resize', updateWidth)
+  if (authStore.username) {
+    notificationStore.initWebSocket(authStore.username)
+  }
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateWidth)
+  notificationStore.disconnectWebSocket()
 })
 
 const toggleDrawer = () => {
@@ -249,9 +251,13 @@ const logout = () => {
   display: flex;
   gap: 12px;
   align-items: center;
-  padding: 12px 12px 16px;
+  padding: 10px 12px 8px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.15);
-  margin-bottom: 10px;
+  margin-bottom: 4px;
+}
+
+.notification-wrapper {
+  flex-shrink: 0;
 }
 
 .brand-icon {
@@ -271,7 +277,7 @@ const logout = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
   align-items: flex-start;
   min-width: 0;
 }
@@ -284,52 +290,9 @@ const logout = () => {
   text-overflow: ellipsis;
 }
 
-.brand-dropdown {
-  width: 100%;
-}
-
-.brand-dropdown .user-menu-trigger {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 12px;
-  cursor: pointer;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(255, 255, 255, 0.10);
-  transition: all 0.3s ease;
-  min-width: 0;
-}
-
-.brand-dropdown .user-menu-trigger:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(148, 163, 184, 0.35);
-}
-
-.brand-dropdown .user-meta {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-
-.brand-dropdown .user-meta strong {
-  color: #f1f5f9;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.brand-dropdown .user-menu-trigger .el-icon {
-  color: rgba(226, 232, 240, 0.70);
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
 /* ========== 导航菜单 ========== */
 .nav-menu {
-  margin-top: 10px;
+  margin-top: 4px;
   border: none;
   background: transparent;
   flex: 1;
@@ -374,7 +337,49 @@ const logout = () => {
 .main-shell {
   min-width: 0;
   margin-left: 224px;
-  padding: 18px 20px 24px;
+  padding: 8px 20px 24px;
+}
+
+/* ========== 页面顶部操作栏 ========== */
+.page-top-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 0;
+  padding: 0 0 8px;
+}
+
+.user-dropdown {
+  display: inline-flex;
+}
+
+.user-dropdown .user-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  transition: all 0.2s;
+}
+
+.user-dropdown .user-menu-trigger:hover {
+  background: #fff;
+  border-color: rgba(15, 23, 42, 0.15);
+}
+
+.user-dropdown .user-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.user-dropdown .el-icon {
+  font-size: 12px;
+  color: #64748b;
 }
 
 .content-shell {

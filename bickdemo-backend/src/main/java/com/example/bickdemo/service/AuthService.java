@@ -67,6 +67,7 @@ public class AuthService { // 认证服务类
     private final EmailMailService emailMailService; // 邮件发送服务
     private final StringRedisTemplate stringRedisTemplate; // Redis模板，用于存储验证码
     private final SystemLogService systemLogService; // 系统日志服务，用于记录登录日志
+    private final AdminNotificationPublisher adminNotificationPublisher; // 管理端通知发布器
 
     @Value("${app.mail.code-expire-minutes:10}") // 注入邮箱验证码过期分钟数，默认10分钟
     private int emailCodeExpireMinutes; // 邮箱验证码过期分钟数变量
@@ -100,6 +101,9 @@ public class AuthService { // 认证服务类
         user.setRole(UserRole.USER); // 设置用户角色为普通用户
         user.setEnabled(true); // 设置用户为启用状态
         userMapper.insert(user); // 将用户插入数据库
+
+        // 发送管理端通知
+        adminNotificationPublisher.notifyUserRegistered(user.getId(), user.getUsername(), user.getEmail());
 
         clearEmailCode(email); // 清理该邮箱的所有验证码
 

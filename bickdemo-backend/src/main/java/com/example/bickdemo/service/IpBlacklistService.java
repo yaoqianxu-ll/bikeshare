@@ -76,6 +76,8 @@ public class IpBlacklistService {
     private final ObjectMapper objectMapper;
     // IP 黑名单数据库 Mapper，用于数据库操作
     private final IpBlacklistMapper ipBlacklistMapper;
+    // 管理端通知发布器
+    private final AdminNotificationPublisher adminNotificationPublisher;
 
     // Redis key 前缀，从配置文件读取，默认值为 "bickdemo:"
     @Value("${app.redis.key-prefix:bickdemo:}")
@@ -201,6 +203,8 @@ public class IpBlacklistService {
         }
         // 调用内部封禁方法，如果 duration 为 null 则使用默认封禁时长
         banInternal(ip.trim(), reason, duration == null ? Duration.ofMinutes(Math.max(banDurationMinutes, 1L)) : duration);
+        // 发送管理端通知
+        adminNotificationPublisher.notifyBlacklistAdded(ip.trim(), reason);
     }
 
     /**
@@ -220,6 +224,9 @@ public class IpBlacklistService {
 
         // 同步更新数据库，将状态标记为过期
         removeFromDatabase(normalizedIp);
+
+        // 发送管理端通知
+        adminNotificationPublisher.notifyBlacklistRemoved(normalizedIp);
     }
 
     /**

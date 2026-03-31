@@ -1431,15 +1431,15 @@ onMounted(() => {
 }
 
 .info-icon-wrapper {
-  width: 42px;
-  height: 42px;
+  width: 24px;
+  height: 24px;
   background: linear-gradient(135deg, var(--brand-primary) 0%, #ff8c5a 100%);
-  border-radius: 12px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 18px;
+  font-size: 12px;
   flex-shrink: 0;
   box-shadow: 0 4px 14px rgba(255, 107, 53, 0.3);
 }
@@ -1591,6 +1591,10 @@ onMounted(() => {
   .return-btn,
   .detail-btn {
     width: 100%;
+  }
+
+  .detail-info-grid {
+    grid-template-columns: 1fr;
   }
 
   .modern-dialog :deep(.el-dialog),

@@ -8,9 +8,11 @@ import com.example.bickdemo.dto.ApiResponse;
 import com.example.bickdemo.dto.BlacklistEntryResponse;
 import com.example.bickdemo.dto.BlacklistRequest;
 import com.example.bickdemo.dto.SystemLogOverviewResponse;
+import com.example.bickdemo.entity.AdminNotification;
 import com.example.bickdemo.entity.LoginLog;
 import com.example.bickdemo.entity.OperationLog;
 import com.example.bickdemo.entity.VisitLog;
+import com.example.bickdemo.service.AdminNotificationService;
 import com.example.bickdemo.service.SystemLogService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,7 @@ import java.util.List;
 public class AdminSystemController {
 
     private final SystemLogService systemLogService;
+    private final AdminNotificationService adminNotificationService;
 
     /**
      * 获取后台系统总览数据。
@@ -209,5 +212,61 @@ public class AdminSystemController {
     public ResponseEntity<ApiResponse<Void>> batchDeleteOperationLogs(@RequestBody List<Long> ids) {
         systemLogService.deleteOperationLogs(ids);
         return ResponseEntity.ok(ApiResponse.success("批量删除成功", null));
+    }
+
+    // ========== 通知管理 ==========
+
+    /**
+     * 获取当前管理员的通知列表
+     */
+    @GetMapping("/notifications")
+    public ResponseEntity<ApiResponse<Page<AdminNotification>>> getNotifications(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                adminNotificationService.getNotifications(userDetails.getUsername(), page, size)
+        ));
+    }
+
+    /**
+     * 获取当前管理员的未读通知数量
+     */
+    @GetMapping("/notifications/unread-count")
+    public ResponseEntity<ApiResponse<Long>> getUnreadCount(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.success(
+                adminNotificationService.getUnreadCount(userDetails.getUsername())
+        ));
+    }
+
+    /**
+     * 标记通知为已读
+     */
+    @PutMapping("/notifications/{id}/read")
+    public ResponseEntity<ApiResponse<Void>> markAsRead(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        adminNotificationService.markAsRead(id, userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("已标记为已读", null));
+    }
+
+    /**
+     * 标记所有通知为已读
+     */
+    @PutMapping("/notifications/read-all")
+    public ResponseEntity<ApiResponse<Void>> markAllAsRead(@AuthenticationPrincipal UserDetails userDetails) {
+        adminNotificationService.markAllAsRead(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("已标记全部为已读", null));
+    }
+
+    /**
+     * 清空所有通知
+     */
+    @DeleteMapping("/notifications")
+    public ResponseEntity<ApiResponse<Void>> clearAll(@AuthenticationPrincipal UserDetails userDetails) {
+        adminNotificationService.clearAll(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("已清空通知", null));
     }
 }

@@ -114,6 +114,8 @@ public class MarketplaceService {
     private final FriendshipMapper friendshipMapper;
     // 租赁位置守卫服务，用于校验用户是否在租赁范围内
     private final RentalLocationGuardService rentalLocationGuardService;
+    // 管理端通知发布器
+    private final AdminNotificationPublisher adminNotificationPublisher;
 
     /**
      * 发现附近可租车辆（平台库存 + 个人挂牌混合）
@@ -359,6 +361,10 @@ public class MarketplaceService {
 
         // 插入数据库
         marketplaceListingMapper.insert(listing);
+
+        // 发送待审核通知给管理员
+        adminNotificationPublisher.notifyMarketplaceListingPending(listing.getId(), listing.getName(), owner.getUsername());
+
         // 转换为响应DTO并返回
         return toListingResponse(listing);
     }
@@ -398,6 +404,11 @@ public class MarketplaceService {
             listing.setReviewRemark(null);
             listing.setReviewerId(null);
             listing.setReviewedAt(null);
+            // 发送待审核通知给管理员
+            owner = userMapper.selectById(listing.getOwnerId());
+            if (owner != null) {
+                adminNotificationPublisher.notifyMarketplaceListingPending(listing.getId(), listing.getName(), owner.getUsername());
+            }
         }
         // 更新数据库
         marketplaceListingMapper.updateById(listing);
@@ -428,6 +439,13 @@ public class MarketplaceService {
         listing.setReviewedAt(LocalDateTime.now());
         // 更新数据库
         marketplaceListingMapper.updateById(listing);
+
+        // 发送审核结果通知给挂牌所有者
+        User owner = userMapper.selectById(listing.getOwnerId());
+        if (owner != null) {
+            adminNotificationPublisher.notifyMarketplaceListingResult(listingId, listing.getName(), owner.getUsername(), true);
+        }
+
         return toListingResponse(listing);
     }
 
@@ -461,6 +479,13 @@ public class MarketplaceService {
         listing.setReviewedAt(LocalDateTime.now());
         // 更新数据库
         marketplaceListingMapper.updateById(listing);
+
+        // 发送审核结果通知给挂牌所有者
+        User owner = userMapper.selectById(listing.getOwnerId());
+        if (owner != null) {
+            adminNotificationPublisher.notifyMarketplaceListingResult(listingId, listing.getName(), owner.getUsername(), false);
+        }
+
         return toListingResponse(listing);
     }
 

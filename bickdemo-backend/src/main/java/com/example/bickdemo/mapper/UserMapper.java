@@ -17,6 +17,12 @@ import java.util.List;
 public interface UserMapper extends BaseMapper<User> {
 
     /**
+     * 获取所有管理员用户名
+     */
+    @Select("SELECT username FROM users WHERE role = 'ADMIN' AND enabled = 1 AND deleted = 0")
+    List<String> selectAllAdminUsernames();
+
+    /**
      * 根据用户名查询用户
      */
     @Select("SELECT * FROM users WHERE username = #{username} AND deleted = 0")

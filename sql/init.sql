@@ -10143,4 +10143,25 @@ INSERT INTO `visit_logs` VALUES (7015, 6, '要谦虚', 'USER', 'POST', '/api/for
 INSERT INTO `visit_logs` VALUES (7016, 1, 'admin', 'ADMIN', 'POST', '/api/forum/comments/23/approve', '127.0.0.1', '本机地址', 'SUCCESS', 200, 15, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-30 11:40:00', '2026-03-30 11:40:00', '2026-03-30 11:40:00', 0);
 INSERT INTO `visit_logs` VALUES (7017, 6, '要谦虚', 'USER', 'GET', '/api/auth/me', '127.0.0.1', '本机地址', 'SUCCESS', 200, 2, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', NULL, '2026-03-30 11:51:47', '2026-03-30 11:51:47', '2026-03-30 11:51:47', 0);
 
+-- ----------------------------
+-- Table structure for admin_notifications
+-- ----------------------------
+DROP TABLE IF EXISTS `admin_notifications`;
+CREATE TABLE `admin_notifications` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '通知ID',
+  `event_type` varchar(50) NOT NULL COMMENT '事件类型',
+  `title` varchar(255) NOT NULL COMMENT '通知标题',
+  `content` text NULL COMMENT '通知内容',
+  `admin_username` varchar(50) NOT NULL COMMENT '目标管理员用户名',
+  `target_id` bigint NULL COMMENT '关联目标ID',
+  `target_type` varchar(50) NULL COMMENT '关联目标类型',
+  `actor_username` varchar(50) NULL COMMENT '触发事件的用户',
+  `is_read` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否已读',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_admin_username`(`admin_username` ASC) USING BTREE,
+  INDEX `idx_is_read`(`is_read` ASC) USING BTREE,
+  INDEX `idx_created_at`(`created_at` ASC) USING BTREE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '管理端通知表' ROW_FORMAT = Dynamic;
+
 SET FOREIGN_KEY_CHECKS = 1;

@@ -23,10 +23,11 @@ export function getMarketplaceLocationHint() {
   })
 }
 
-export function getMyMarketplaceListings() {
+export function getMyMarketplaceListings(params) {
   return request({
     url: '/marketplace/listings/my',
-    method: 'get'
+    method: 'get',
+    params
   })
 }
 
@@ -61,17 +62,19 @@ export function createMarketplaceApplication(id, data) {
   })
 }
 
-export function getMarketplaceOwnerApplications() {
+export function getMarketplaceOwnerApplications(params) {
   return request({
     url: '/marketplace/applications/owner',
-    method: 'get'
+    method: 'get',
+    params
   })
 }
 
-export function getMarketplaceRenterApplications() {
+export function getMarketplaceRenterApplications(params) {
   return request({
     url: '/marketplace/applications/renter',
-    method: 'get'
+    method: 'get',
+    params
   })
 }
 

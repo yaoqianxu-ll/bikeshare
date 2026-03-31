@@ -111,7 +111,7 @@
         <el-table-column label="操作时间" min-width="170">
           <template #default="{ row }">{{ formatDate(row.operationTime) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="130" align="center">
+        <el-table-column label="操作" width="180" align="center">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button size="small" plain @click="showDetail(row)">详情</el-button>

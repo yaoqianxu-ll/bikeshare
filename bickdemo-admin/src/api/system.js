@@ -91,3 +91,41 @@ export function batchDeleteOperationLogs(ids) {
     data: ids
   })
 }
+
+// ========== 通知管理 ==========
+
+export function getNotifications(params) {
+  return request({
+    url: '/admin/system/notifications',
+    method: 'get',
+    params
+  })
+}
+
+export function getUnreadCount() {
+  return request({
+    url: '/admin/system/notifications/unread-count',
+    method: 'get'
+  })
+}
+
+export function markNotificationAsRead(id) {
+  return request({
+    url: `/admin/system/notifications/${id}/read`,
+    method: 'put'
+  })
+}
+
+export function markAllNotificationsAsRead() {
+  return request({
+    url: '/admin/system/notifications/read-all',
+    method: 'put'
+  })
+}
+
+export function clearAllNotifications() {
+  return request({
+    url: '/admin/system/notifications',
+    method: 'delete'
+  })
+}

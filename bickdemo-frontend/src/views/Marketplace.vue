@@ -100,7 +100,11 @@
                 <div class="price-line">{{ formatMoney(item.pricePerHour) }} / 小时</div>
                 <p class="muted">{{ item.description || '暂无更多说明。' }}</p>
                 <div class="meta-list">
-                  <div v-if="item.sourceType === 'OWNER'">车主：{{ item.ownerUsername }}</div>
+                  <div v-if="item.sourceType === 'OWNER'" class="owner-info">
+                    <el-avatar v-if="item.ownerAvatar" :size="28" :src="item.ownerAvatar" class="owner-avatar" />
+                    <el-avatar v-else :size="28" class="owner-avatar">{{ item.ownerUsername?.charAt(0).toUpperCase() }}</el-avatar>
+                    <span class="owner-name">车主：{{ item.ownerUsername }}</span>
+                  </div>
                   <div v-if="item.sourceType === 'OWNER'">交付：{{ getDeliveryModeLabel(item.deliveryMode) }}</div>
                   <div v-if="item.sourceType === 'PLATFORM'">库存：{{ item.quantity ?? 1 }}</div>
                 </div>
@@ -158,45 +162,80 @@
               <el-button type="primary" @click="openListingDialog()">发布出租车辆</el-button>
             </div>
             <el-empty v-if="!marketLoading && !myListings.length" description="还没有个人出租挂牌" />
-            <el-row v-else :gutter="16" v-loading="marketLoading">
-              <el-col v-for="listing in myListings" :key="listing.id" :xs="24" :sm="12" :lg="8" class="card-col">
-                <el-card shadow="hover">
-                  <template #header>
-                    <div class="card-header">
-                      <div>
-                        <strong>{{ listing.name }}</strong>
-                        <div class="muted">{{ listing.location }}</div>
-                      </div>
-                      <el-space wrap>
-                        <el-tag :type="getReviewStatusType(listing.reviewStatus)">{{ getReviewStatusLabel(listing.reviewStatus) }}</el-tag>
-                        <el-tag v-if="shouldShowListingStatus(listing)" :type="getListingStatusType(listing.status)" effect="plain">{{ getListingStatusLabel(listing.status) }}</el-tag>
-                      </el-space>
+            <div v-else v-loading="marketLoading">
+              <div
+                v-for="listing in myListings"
+                :key="listing.id"
+                class="app-card"
+                :class="{ expanded: expandedListingId === listing.id }"
+                @click="expandedListingId = expandedListingId === listing.id ? null : listing.id"
+              >
+                <div class="app-card-main">
+                  <div class="app-card-content" style="flex: 1;">
+                    <div class="app-card-title">{{ listing.name }}</div>
+                    <div class="app-card-meta">{{ listing.location || '未填写地点' }}</div>
+                  </div>
+                  <div class="app-card-status">
+                    <el-space wrap>
+                      <el-tag :type="getReviewStatusType(listing.reviewStatus)" size="small">{{ getReviewStatusLabel(listing.reviewStatus) }}</el-tag>
+                      <el-tag v-if="shouldShowListingStatus(listing)" size="small" :type="getListingStatusType(listing.status)" effect="plain">{{ getListingStatusLabel(listing.status) }}</el-tag>
+                    </el-space>
+                    <el-icon class="app-card-arrow"><ArrowDown /></el-icon>
+                  </div>
+                </div>
+                <el-collapse-transition>
+                  <div v-if="expandedListingId === listing.id" class="app-card-detail">
+                    <div class="meta-list" style="margin-bottom: 12px;">
+                      <div>{{ formatMoney(listing.pricePerHour) }}/小时</div>
+                      <div>{{ getDeliveryModeLabel(listing.deliveryMode) }}</div>
+                      <div>进行中申请 {{ listing.activeApplicationCount ?? 0 }}</div>
                     </div>
-                  </template>
-                  <div class="meta-list">
-                    <div>{{ formatMoney(listing.pricePerHour) }}/小时</div>
-                    <div>{{ getDeliveryModeLabel(listing.deliveryMode) }}</div>
-                    <div>进行中申请 {{ listing.activeApplicationCount ?? 0 }}</div>
+                    <div class="review-hint" :class="`review-hint--${(listing.reviewStatus || '').toLowerCase()}`">
+                      {{ getReviewStatusHint(listing) }}
+                    </div>
+                    <div v-if="listing.reviewRemark" class="review-remark">审核备注：{{ listing.reviewRemark }}</div>
+                    <p class="muted" style="margin: 12px 0;">{{ listing.description || '暂无车辆说明。' }}</p>
+                    <div class="app-actions">
+                      <el-button size="small" plain @click.stop="openListingDialog(listing)">编辑</el-button>
+                      <el-button
+                        v-if="listing.reviewStatus === 'APPROVED'"
+                        size="small"
+                        :type="listing.status === 'OFFLINE' ? 'success' : 'warning'"
+                        plain
+                        @click.stop="toggleListingStatus(listing)"
+                      >
+                        {{ listing.status === 'OFFLINE' ? '重新上架' : '下架' }}
+                      </el-button>
+                    </div>
                   </div>
-                  <div class="review-hint" :class="`review-hint--${(listing.reviewStatus || '').toLowerCase()}`">
-                    {{ getReviewStatusHint(listing) }}
-                  </div>
-                  <div v-if="listing.reviewRemark" class="review-remark">审核备注：{{ listing.reviewRemark }}</div>
-                  <p class="muted">{{ listing.description || '暂无车辆说明。' }}</p>
-                  <el-space wrap>
-                    <el-button plain @click="openListingDialog(listing)">编辑</el-button>
-                    <el-button
-                      v-if="listing.reviewStatus === 'APPROVED'"
-                      plain
-                      :type="listing.status === 'OFFLINE' ? 'success' : 'warning'"
-                      @click="toggleListingStatus(listing)"
-                    >
-                      {{ listing.status === 'OFFLINE' ? '重新上架' : '下架' }}
-                    </el-button>
-                  </el-space>
-                </el-card>
-              </el-col>
-            </el-row>
+                </el-collapse-transition>
+              </div>
+            </div>
+
+            <div class="pagination-wrapper" v-if="myListingTotal > myListingPageSize">
+              <span class="pagination-total">共 {{ myListingTotal }} 条</span>
+              <el-dropdown trigger="click" @command="(size) => { myListingPageSize = size; myListingPage = 1; loadPrivateData() }">
+                <span class="pagination-size-trigger">
+                  {{ myListingPageSize }} 条/页
+                  <el-icon><ArrowDown /></el-icon>
+                </span>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item :command="5" :class="{ active: myListingPageSize === 5 }">5 条/页</el-dropdown-item>
+                    <el-dropdown-item :command="10" :class="{ active: myListingPageSize === 10 }">10 条/页</el-dropdown-item>
+                    <el-dropdown-item :command="20" :class="{ active: myListingPageSize === 20 }">20 条/页</el-dropdown-item>
+                    <el-dropdown-item :command="50" :class="{ active: myListingPageSize === 50 }">50 条/页</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+              <el-pagination
+                v-model:current-page="myListingPage"
+                v-model:page-size="myListingPageSize"
+                :total="myListingTotal"
+                layout="prev, pager, next"
+                @current-change="loadPrivateData"
+              />
+            </div>
 
             <div class="sub-title">车主收到的申请</div>
             <el-empty v-if="!marketLoading && !ownerApplications.length" description="暂时还没有申请" />
@@ -209,7 +248,7 @@
                 @click="expandedAppId = expandedAppId === app.id ? null : app.id"
               >
                 <div class="app-card-main">
-                  <el-avatar :size="40" class="app-avatar">{{ app.renterUsername?.charAt(0).toUpperCase() }}</el-avatar>
+                  <el-avatar :size="40" :src="app.renterAvatar" class="app-avatar">{{ app.renterUsername?.charAt(0).toUpperCase() }}</el-avatar>
                   <div class="app-card-content">
                     <div class="app-card-title">{{ app.listingTitle }}</div>
                     <div class="app-card-meta">{{ app.renterUsername }} · {{ formatDateRange(app.requestedStartTime, app.requestedEndTime) }}</div>
@@ -268,8 +307,10 @@
                 </span>
                 <template #dropdown>
                   <el-dropdown-menu>
+                    <el-dropdown-item :command="5" :class="{ active: ownerAppPageSize === 5 }">5 条/页</el-dropdown-item>
                     <el-dropdown-item :command="10" :class="{ active: ownerAppPageSize === 10 }">10 条/页</el-dropdown-item>
                     <el-dropdown-item :command="20" :class="{ active: ownerAppPageSize === 20 }">20 条/页</el-dropdown-item>
+                    <el-dropdown-item :command="50" :class="{ active: ownerAppPageSize === 50 }">50 条/页</el-dropdown-item>
                     <el-dropdown-item :command="50" :class="{ active: ownerAppPageSize === 50 }">50 条/页</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -293,37 +334,84 @@
           </el-empty>
           <template v-else>
             <el-empty v-if="!marketLoading && !renterApplications.length" description="你还没有提交过个人出租申请" />
-            <div v-else class="stack" v-loading="marketLoading">
-              <el-card v-for="app in renterApplications" :key="app.id" shadow="never">
-                <div class="card-header">
-                  <div>
-                    <strong>{{ app.listingTitle }}</strong>
-                    <div class="muted">车主：{{ app.ownerUsername }} · {{ formatDateRange(app.requestedStartTime, app.requestedEndTime) }}</div>
+            <div v-else v-loading="marketLoading">
+              <div
+                v-for="app in renterApplications"
+                :key="app.id"
+                class="app-card"
+                :class="{ expanded: expandedRenterAppId === app.id }"
+                @click="expandedRenterAppId = expandedRenterAppId === app.id ? null : app.id"
+              >
+                <div class="app-card-main">
+                  <el-avatar :size="40" :src="app.ownerAvatar" class="app-avatar">{{ app.ownerUsername?.charAt(0).toUpperCase() }}</el-avatar>
+                  <div class="app-card-content">
+                    <div class="app-card-title">{{ app.listingTitle }}</div>
+                    <div class="app-card-meta">{{ app.ownerUsername }} · {{ formatDateRange(app.requestedStartTime, app.requestedEndTime) }}</div>
                   </div>
-                  <el-space wrap>
-                    <el-tag :type="getApplicationStatusType(app.status)">{{ getApplicationStatusLabel(app.status) }}</el-tag>
-                    <el-button text @click="consultPeer(app.ownerId, app.listingTitle)">咨询车主</el-button>
-                  </el-space>
+                  <div class="app-card-status">
+                    <el-tag :type="getApplicationStatusType(app.status)" size="small">{{ getApplicationStatusLabel(app.status) }}</el-tag>
+                    <el-icon class="app-card-arrow"><ArrowDown /></el-icon>
+                  </div>
                 </div>
-                <p class="muted">{{ app.renterMessage || '你没有留下说明。' }}</p>
-                <div class="meta-list">
-                  <div>交付地点：{{ app.meetupLocation || '待确认' }}</div>
-                  <div v-if="app.meetupTime">交付时间：{{ formatDateTime(app.meetupTime) }}</div>
-                </div>
-                <el-space wrap>
-                  <el-button v-if="['PENDING_OWNER_CONFIRMATION', 'NEGOTIATING', 'CONFIRMED', 'MEETUP_PENDING'].includes(app.status)" plain @click="updateRenterApplication(app, 'CANCELLED')">取消申请</el-button>
-                  <el-button v-if="app.status === 'IN_USE'" type="primary" @click="updateRenterApplication(app, 'RETURN_PENDING')">申请归还</el-button>
-                </el-space>
-                <el-timeline class="timeline">
-                  <el-timeline-item v-for="node in app.timeline" :key="`${app.id}-${node.title}`" :type="getTimelineType(node.state)" :timestamp="formatDateTime(node.eventTime)">
-                    <div class="timeline-row">
-                      <span>{{ node.title }}</span>
-                      <el-tag size="small" effect="plain">{{ node.state }}</el-tag>
+                <el-collapse-transition>
+                  <div v-if="expandedRenterAppId === app.id" class="app-card-detail">
+                    <div class="app-detail-section">
+                      <div class="app-detail-label">我的留言</div>
+                      <div class="app-detail-value">{{ app.renterMessage || '你没有留下说明。' }}</div>
                     </div>
-                    <div class="muted">{{ node.description }}</div>
-                  </el-timeline-item>
-                </el-timeline>
-              </el-card>
+                    <div class="app-detail-row">
+                      <div class="app-detail-section">
+                        <div class="app-detail-label">交付地点</div>
+                        <div class="app-detail-value">{{ app.meetupLocation || '待确认' }}</div>
+                      </div>
+                      <div class="app-detail-section" v-if="app.meetupTime">
+                        <div class="app-detail-label">交付时间</div>
+                        <div class="app-detail-value">{{ formatDateTime(app.meetupTime) }}</div>
+                      </div>
+                    </div>
+                    <div class="app-actions">
+                      <el-button size="small" @click.stop="consultPeer(app.ownerId, app.listingTitle)">发消息</el-button>
+                      <el-button v-if="['PENDING_OWNER_CONFIRMATION', 'NEGOTIATING', 'CONFIRMED', 'MEETUP_PENDING'].includes(app.status)" size="small" type="danger" plain @click.stop="updateRenterApplication(app, 'CANCELLED')">取消申请</el-button>
+                      <el-button v-if="app.status === 'IN_USE'" size="small" type="primary" @click.stop="updateRenterApplication(app, 'RETURN_PENDING')">申请归还</el-button>
+                    </div>
+                    <el-divider v-if="app.timeline?.length" />
+                    <el-timeline v-if="app.timeline?.length" class="timeline">
+                      <el-timeline-item v-for="node in app.timeline" :key="`${app.id}-${node.title}`" :type="getTimelineType(node.state)" :timestamp="formatDateTime(node.eventTime)">
+                        <div class="timeline-row">
+                          <span>{{ node.title }}</span>
+                          <el-tag size="small" effect="plain">{{ node.state }}</el-tag>
+                        </div>
+                        <div class="muted">{{ node.description }}</div>
+                      </el-timeline-item>
+                    </el-timeline>
+                  </div>
+                </el-collapse-transition>
+              </div>
+            </div>
+
+            <div class="pagination-wrapper" v-if="renterAppTotal > renterAppPageSize">
+              <span class="pagination-total">共 {{ renterAppTotal }} 条</span>
+              <el-dropdown trigger="click" @command="(size) => { renterAppPageSize = size; renterAppPage = 1; loadPrivateData() }">
+                <span class="pagination-size-trigger">
+                  {{ renterAppPageSize }} 条/页
+                  <el-icon><ArrowDown /></el-icon>
+                </span>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item :command="5" :class="{ active: renterAppPageSize === 5 }">5 条/页</el-dropdown-item>
+                    <el-dropdown-item :command="10" :class="{ active: renterAppPageSize === 10 }">10 条/页</el-dropdown-item>
+                    <el-dropdown-item :command="20" :class="{ active: renterAppPageSize === 20 }">20 条/页</el-dropdown-item>
+                    <el-dropdown-item :command="50" :class="{ active: renterAppPageSize === 50 }">50 条/页</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+              <el-pagination
+                v-model:current-page="renterAppPage"
+                v-model:page-size="renterAppPageSize"
+                :total="renterAppTotal"
+                layout="prev, pager, next"
+                @current-change="loadPrivateData"
+              />
             </div>
           </template>
         </el-card>
@@ -444,6 +532,8 @@ const activeDiscoverSourceText = ref('')
 const listingRegionWarning = ref('')
 const selectedDiscoverItem = ref(null)
 const expandedAppId = ref(null)
+const expandedRenterAppId = ref(null)
+const expandedListingId = ref(null)
 const listingFormRef = ref(null)
 const applicationFormRef = ref(null)
 const listingImageInputRef = ref(null)
@@ -452,11 +542,17 @@ const discoverTotal = ref(0)
 const discoverPage = ref(1)
 const discoverPageSize = ref(12)
 const myListings = ref([])
+const myListingTotal = ref(0)
+const myListingPage = ref(1)
+const myListingPageSize = ref(5)
 const ownerApplications = ref([])
 const ownerAppTotal = ref(0)
 const ownerAppPage = ref(1)
-const ownerAppPageSize = ref(10)
+const ownerAppPageSize = ref(5)
 const renterApplications = ref([])
+const renterAppTotal = ref(0)
+const renterAppPage = ref(1)
+const renterAppPageSize = ref(5)
 const coords = reactive({ latitude: null, longitude: null })
 const discoverFilters = reactive({ type: '', radiusKm: 8 })
 const discoverRegion = reactive({ provinceCode: '', cityCode: '', districtCode: '' })
@@ -671,7 +767,7 @@ const syncListingRegionSelection = () => {
 }
 
 const loadDiscover = async () => { discoverLoading.value = true; try { const params = { radiusKm: discoverFilters.radiusKm, type: discoverFilters.type || undefined, page: discoverPage.value, size: discoverPageSize.value }; if (coords.latitude !== null && coords.longitude !== null) { params.latitude = coords.latitude; params.longitude = coords.longitude } const res = await getMarketplaceDiscover(params); discoverItems.value = Array.isArray(res.data) ? res.data : (res.data.records || []); discoverTotal.value = Array.isArray(res.data) ? res.data.length : (res.data.total || 0) } finally { discoverLoading.value = false } }
-const loadPrivateData = async () => { if (!userStore.isLoggedIn) return; marketLoading.value = true; try { const [listingRes, ownerRes, renterRes] = await Promise.all([getMyMarketplaceListings(), getMarketplaceOwnerApplications({ page: ownerAppPage.value, size: ownerAppPageSize.value }), getMarketplaceRenterApplications()]); myListings.value = listingRes.data || []; ownerApplications.value = ownerRes.data.content || []; ownerAppTotal.value = ownerRes.data.totalElements || 0; renterApplications.value = renterRes.data || [] } finally { marketLoading.value = false } }
+const loadPrivateData = async () => { if (!userStore.isLoggedIn) return; marketLoading.value = true; try { const [listingRes, ownerRes, renterRes] = await Promise.all([getMyMarketplaceListings({ page: myListingPage.value, size: myListingPageSize.value }), getMarketplaceOwnerApplications({ page: ownerAppPage.value, size: ownerAppPageSize.value }), getMarketplaceRenterApplications({ page: renterAppPage.value, size: renterAppPageSize.value })]); const allListings = listingRes.data?.content || listingRes.data || []; myListingTotal.value = allListings.length; const listingStart = (myListingPage.value - 1) * myListingPageSize.value; myListings.value = allListings.slice(listingStart, listingStart + myListingPageSize.value); const allOwnerApps = ownerRes.data?.content || ownerRes.data || []; ownerAppTotal.value = allOwnerApps.length; const ownerStart = (ownerAppPage.value - 1) * ownerAppPageSize.value; ownerApplications.value = allOwnerApps.slice(ownerStart, ownerStart + ownerAppPageSize.value); const allRenterApps = renterRes.data?.content || renterRes.data || []; renterAppTotal.value = allRenterApps.length; const renterStart = (renterAppPage.value - 1) * renterAppPageSize.value; renterApplications.value = allRenterApps.slice(renterStart, renterStart + renterAppPageSize.value) } finally { marketLoading.value = false } }
 const initializeDiscoverBySilentLocation = async () => {
   locating.value = true
   try {
@@ -1078,6 +1174,23 @@ watch(() => userStore.isLoggedIn, (loggedIn) => { if (loggedIn) { loadPrivateDat
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.owner-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.owner-avatar {
+  background: var(--brand-primary);
+  flex-shrink: 0;
+}
+
+.owner-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .review-hint {

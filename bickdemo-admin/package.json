@@ -20,6 +20,8 @@
     "lottie-web": "^5.13.0",
     "naive-ui": "^2.41.0",
     "pinia": "^2.1.7",
+    "sockjs-client": "^1.6.1",
+    "stompjs": "^2.3.3",
     "vfonts": "^0.0.3",
     "vue": "^3.4.0",
     "vue-router": "^4.2.5"

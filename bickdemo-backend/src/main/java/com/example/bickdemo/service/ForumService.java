@@ -154,6 +154,8 @@ public class ForumService {
     private final FriendRequestMapper friendRequestMapper;
     // 用户Mapper
     private final UserMapper userMapper;
+    // 管理端通知发布器
+    private final AdminNotificationPublisher adminNotificationPublisher;
 
     /**
      * 获取帖子列表方法。
@@ -397,6 +399,11 @@ public class ForumService {
         // 保存帖子的多张图片
         savePostImages(post.getId(), imageUrls);
 
+        // 如果是非管理员用户发帖，发送待审核通知给管理员
+        if (!isAdmin(currentUser)) {
+            adminNotificationPublisher.notifyForumPostPending(post.getId(), post.getTitle(), currentUser.getUsername());
+        }
+
         // 构建并返回帖子响应DTO
         return toPostResponse(post, currentUser, currentUser, Collections.emptySet(), Collections.emptySet(), imageUrls);
     }
@@ -524,6 +531,12 @@ public class ForumService {
         User author = userMapper.selectById(comment.getUserId());
         // 获取回复目标用户信息（如果有）
         User replyToUser = comment.getReplyToUserId() == null ? null : userMapper.selectById(comment.getReplyToUserId());
+
+        // 发送审核结果通知给作者
+        if (author != null) {
+            adminNotificationPublisher.notifyForumCommentResult(commentId, comment.getContent(), author.getUsername(), true);
+        }
+
         // 构建并返回评论响应DTO
         return toCommentResponse(comment, author, replyToUser, currentUser);
     }
@@ -555,6 +568,12 @@ public class ForumService {
         User author = userMapper.selectById(comment.getUserId());
         // 获取回复目标用户信息（如果有）
         User replyToUser = comment.getReplyToUserId() == null ? null : userMapper.selectById(comment.getReplyToUserId());
+
+        // 发送审核结果通知给作者
+        if (author != null) {
+            adminNotificationPublisher.notifyForumCommentResult(commentId, comment.getContent(), author.getUsername(), false);
+        }
+
         // 构建并返回评论响应DTO
         return toCommentResponse(comment, author, replyToUser, currentUser);
     }
@@ -767,6 +786,12 @@ public class ForumService {
 
         // 获取回复目标用户信息（如果有）
         User replyToUser = comment.getReplyToUserId() == null ? null : userMapper.selectById(comment.getReplyToUserId());
+
+        // 如果是非管理员用户评论，发送待审核通知给管理员
+        if (!isAdmin(currentUser)) {
+            adminNotificationPublisher.notifyForumCommentPending(comment.getId(), comment.getContent(), currentUser.getUsername());
+        }
+
         // 构建并返回评论响应DTO
         return toCommentResponse(comment, currentUser, replyToUser, currentUser);
     }
@@ -1444,6 +1469,13 @@ public class ForumService {
         User author = userMapper.selectById(post.getUserId());
         // 获取帖子图片
         List<String> imageUrls = resolveImageUrls(post, forumPostImageMapper.findByPostId(postId));
+
+        // 发送审核结果通知给作者
+        if (author != null) {
+            boolean approved = (nextStatus == ForumPostStatus.APPROVED);
+            adminNotificationPublisher.notifyForumPostResult(postId, post.getTitle(), author.getUsername(), approved);
+        }
+
         // 构建并返回响应
         return toPostResponse(post, author, currentUser, Collections.emptySet(), Collections.emptySet(), imageUrls);
     }

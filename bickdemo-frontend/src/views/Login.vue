@@ -52,6 +52,7 @@
                       v-model="form.username"
                       placeholder="请输入用户名"
                       size="large"
+                      @keyup.enter="handleLogin"
                     />
                     <span class="password-toggle-placeholder"></span>
                   </div>
@@ -65,6 +66,7 @@
                       :type="showPassword ? 'text' : 'password'"
                       placeholder="请输入密码"
                       size="large"
+                      @keyup.enter="handleLogin"
                     />
                     <el-icon class="password-toggle" @click="showPassword = !showPassword">
                       <View v-if="showPassword" /><Hide v-else />
