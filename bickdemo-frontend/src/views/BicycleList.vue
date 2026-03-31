@@ -225,16 +225,6 @@
           </div>
 
           <div class="detail-info-grid">
-            <div class="info-item" v-if="selectedBicycle.quantity != null">
-              <div class="info-icon-wrapper">
-                <el-icon><Box /></el-icon>
-              </div>
-              <div class="info-content">
-                <span class="info-label">可租数量</span>
-                <span class="info-value">{{ selectedBicycle.quantity }} 辆</span>
-              </div>
-            </div>
-
             <div class="info-item" v-if="selectedBicycle.location">
               <div class="info-icon-wrapper">
                 <el-icon><Location /></el-icon>
@@ -242,6 +232,16 @@
               <div class="info-content">
                 <span class="info-label">停放位置</span>
                 <span class="info-value">{{ selectedBicycle.location }}</span>
+              </div>
+            </div>
+
+            <div class="info-item" v-if="selectedBicycle.quantity != null">
+              <div class="info-icon-wrapper">
+                <el-icon><Box /></el-icon>
+              </div>
+              <div class="info-content">
+                <span class="info-label">可租数量</span>
+                <span class="info-value">{{ selectedBicycle.quantity }} 辆</span>
               </div>
             </div>
           </div>
@@ -1410,7 +1410,7 @@ onMounted(() => {
 
 .detail-info-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -1591,10 +1591,6 @@ onMounted(() => {
   .return-btn,
   .detail-btn {
     width: 100%;
-  }
-
-  .detail-info-grid {
-    grid-template-columns: 1fr;
   }
 
   .modern-dialog :deep(.el-dialog),
