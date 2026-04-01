@@ -40,10 +40,9 @@
           <div class="avatar-actions">
             <el-upload
               :show-file-list="false"
-              :http-request="handleAvatarUpload"
-              :before-upload="beforeAvatarUpload"
+              :before-upload="handleAvatarSelect"
             >
-              <el-button type="primary" :loading="avatarUploading">上传头像</el-button>
+              <el-button type="primary">上传头像</el-button>
             </el-upload>
             <el-button v-if="avatarUrl" type="danger" plain :loading="avatarDeleting" @click="handleAvatarDelete">
               删除头像
@@ -189,6 +188,12 @@
         </section>
       </div>
     </el-card>
+
+    <AvatarCropper
+      ref="cropperRef"
+      v-model="cropperDialogVisible"
+      @confirm="handleAvatarCropConfirm"
+    />
   </div>
 </template>
 
@@ -197,12 +202,14 @@ import { ref, reactive, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useUserStore } from '@/stores/user'
 import { getCurrentUser, updateUser, uploadAvatar, deleteAvatar, changePassword, sendEmailCode } from '@/api/auth'
+import AvatarCropper from '@/components/AvatarCropper.vue'
 
 const userStore = useUserStore()
 const message = useMessage()
 const formRef = ref(null)
 const emailFormRef = ref(null)
 const passwordFormRef = ref(null)
+const cropperRef = ref(null)
 const profileLoading = ref(false)
 const emailLoading = ref(false)
 const passwordLoading = ref(false)
@@ -214,6 +221,8 @@ const userInfo = ref(null)
 const avatarUploading = ref(false)
 const avatarDeleting = ref(false)
 const emailEditorVisible = ref(false)
+const cropperDialogVisible = ref(false)
+const pendingAvatarFile = ref(null)
 const REMEMBER_KEY = 'bickdemo:rememberLogin'
 let countdownTimer = null
 let passwordCountdownTimer = null
@@ -414,6 +423,40 @@ const beforeAvatarUpload = (file) => {
     return false
   }
   return true
+}
+
+const handleAvatarSelect = (file) => {
+  const isImage = file.type.startsWith('image/')
+  const isLt5M = file.size / 1024 / 1024 < 5
+
+  if (!isImage) {
+    message.warning('只能上传图片文件!')
+    return false
+  }
+  if (!isLt5M) {
+    message.warning('图片大小不能超过 5MB!')
+    return false
+  }
+
+  pendingAvatarFile.value = file
+  cropperDialogVisible.value = true
+  cropperRef.value?.open(file)
+  return false
+}
+
+const handleAvatarCropConfirm = async (blob) => {
+  try {
+    avatarUploading.value = true
+    const file = new File([blob], pendingAvatarFile.value.name || 'avatar.jpg', { type: 'image/jpeg' })
+    const res = await uploadAvatar(file)
+    applyUserInfo(res.data)
+    message.success('头像已更新')
+  } catch (error) {
+    console.error(error)
+  } finally {
+    avatarUploading.value = false
+    pendingAvatarFile.value = null
+  }
 }
 
 const handleAvatarUpload = async (options) => {
