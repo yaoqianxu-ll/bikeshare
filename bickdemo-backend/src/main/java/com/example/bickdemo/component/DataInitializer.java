@@ -39,40 +39,52 @@ public class DataInitializer implements CommandLineRunner {
         initMinioBucket();
 
         // 创建默认管理员账号
-        if (!userMapper.existsByUsername("admin")) {
-            User admin = new User();
-            admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setEmail("admin@example.com");
-            admin.setRole(UserRole.ADMIN);
-            admin.setEnabled(true);
-            userMapper.insert(admin);
-            log.info("默认管理员账号创建成功：admin / admin123");
+        try {
+            if (!userMapper.existsByUsername("admin")) {
+                User admin = new User();
+                admin.setUsername("admin");
+                admin.setPassword(passwordEncoder.encode("admin123"));
+                admin.setEmail("admin@example.com");
+                admin.setRole(UserRole.ADMIN);
+                admin.setEnabled(true);
+                userMapper.insert(admin);
+                log.info("默认管理员账号创建成功：admin / admin123");
+            }
+        } catch (Exception e) {
+            log.warn("管理员账号可能已存在，跳过创建：{}", e.getMessage());
         }
 
         // 创建测试用户
-        if (!userMapper.existsByUsername("user")) {
-            User user = new User();
-            user.setUsername("user");
-            user.setPassword(passwordEncoder.encode("user123"));
-            user.setEmail("user@example.com");
-            user.setRole(UserRole.USER);
-            user.setEnabled(true);
-            userMapper.insert(user);
-            log.info("测试用户账号创建成功：user / user123");
+        try {
+            if (!userMapper.existsByUsername("user")) {
+                User user = new User();
+                user.setUsername("user");
+                user.setPassword(passwordEncoder.encode("user123"));
+                user.setEmail("user@example.com");
+                user.setRole(UserRole.USER);
+                user.setEnabled(true);
+                userMapper.insert(user);
+                log.info("测试用户账号创建成功：user / user123");
+            }
+        } catch (Exception e) {
+            log.warn("测试用户可能已存在，跳过创建：{}", e.getMessage());
         }
 
         // 创建只读测试账户
-        if (!userMapper.existsByUsername("test")) {
-            User test = new User();
-            test.setUsername("test");
-            test.setPassword(passwordEncoder.encode("123456"));
-            test.setEmail("test@test.com");
-            test.setBio("只读测试账户");
-            test.setRole(UserRole.ADMIN);
-            test.setEnabled(true);
-            userMapper.insert(test);
-            log.info("只读测试账户创建成功：test / 123456");
+        try {
+            if (!userMapper.existsByUsername("test")) {
+                User test = new User();
+                test.setUsername("test");
+                test.setPassword(passwordEncoder.encode("123456"));
+                test.setEmail("test@test.com");
+                test.setBio("只读测试账户");
+                test.setRole(UserRole.ADMIN);
+                test.setEnabled(true);
+                userMapper.insert(test);
+                log.info("只读测试账户创建成功：test / 123456");
+            }
+        } catch (Exception e) {
+            log.warn("测试账户可能已存在，跳过创建：{}", e.getMessage());
         }
 
         // 初始化默认背景图片

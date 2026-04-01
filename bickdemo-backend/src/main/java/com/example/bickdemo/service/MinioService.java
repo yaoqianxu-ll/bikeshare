@@ -6,10 +6,13 @@ import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -49,6 +52,16 @@ public class MinioService {
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
 
     /**
+     * 图片压缩最大宽度
+     */
+    private static final int MAX_WIDTH = 1920;
+
+    /**
+     * 图片压缩质量 (0.0-1.0)
+     */
+    private static final float COMPRESS_QUALITY = 0.85f;
+
+    /**
      * 上传图片到 MinIO。
      * 按日期分目录存储，文件命名为：userId-时间戳.jpg
      * 上传前会做文件类型和大小校验，上传成功后返回可直接访问的 URL。
@@ -67,21 +80,23 @@ public class MinioService {
                 throw new RuntimeException("图片大小不能超过 5MB");
             }
 
+            // 压缩图片
+            byte[] compressedBytes = compressImage(file);
+
             // 按日期分目录：2026-03-28/
             String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            // 文件名：userId-时间戳.jpg
+            // 文件名：userId-时间戳.jpg (统一转为jpg格式)
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
-            String extension = getExtension(file.getOriginalFilename());
-            String filename = userId + "-" + timestamp + extension;
+            String filename = userId + "-" + timestamp + ".jpg";
 
             // 完整对象路径：日期目录/文件名
             String objectName = datePath + "/" + filename;
 
-            // 文件流直接写入 MinIO，不在本地磁盘落临时副本。
+            // 文件流写入 MinIO
             minioClient.putObject(PutObjectArgs.builder()
                     .bucket(bucketName)
                     .object(objectName)
-                    .stream(file.getInputStream(), file.getSize(), -1)
+                    .stream(new ByteArrayInputStream(compressedBytes), compressedBytes.length, -1)
                     .contentType(file.getContentType())
                     .build());
 
@@ -91,6 +106,19 @@ public class MinioService {
             log.error("上传图片失败", e);
             throw new RuntimeException("上传图片失败：" + e.getMessage());
         }
+    }
+
+    /**
+     * 压缩图片
+     */
+    private byte[] compressImage(MultipartFile file) throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        Thumbnails.of(file.getInputStream())
+                .width(MAX_WIDTH)
+                .outputQuality(COMPRESS_QUALITY)
+                .outputFormat("jpg")
+                .toOutputStream(outputStream);
+        return outputStream.toByteArray();
     }
 
     /**
