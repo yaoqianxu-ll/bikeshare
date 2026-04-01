@@ -141,7 +141,7 @@
                   multiple
                   accept="image/*"
                 >
-                  <el-button text type="primary" :icon="Picture">
+                  <el-button class="upload-btn" :icon="Picture">
                     图片 {{ publishForm.imageUrls.length }}/9
                   </el-button>
                 </el-upload>
@@ -362,7 +362,7 @@
         <el-card v-if="userStore.isLoggedIn" class="side-card my-posts-card" shadow="never">
           <div class="my-posts-header">
             <h3><el-icon><User /></el-icon> 我的帖子</h3>
-            <el-button v-if="myPosts.length" type="primary" link size="small" @click="loadMyPosts">
+            <el-button v-if="myPosts.length" class="refresh-btn" @click="loadMyPosts">
               <el-icon><Refresh /></el-icon>
             </el-button>
           </div>
@@ -2392,6 +2392,19 @@ onMounted(() => {
   color: var(--el-color-primary);
 }
 
+/* 刷新按钮样式 */
+.refresh-btn {
+  color: #409eff;
+  font-size: 16px;
+}
+
+/* 图片上传按钮样式 */
+.upload-btn {
+  color: #409eff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .my-posts-list {
   display: grid;
   gap: 10px;
@@ -3422,6 +3435,14 @@ html.dark .hot-post-meta {
 /* 我的帖子 */
 html.dark .my-posts-header h3 {
   color: #f8fafc;
+}
+
+html.dark .refresh-btn {
+  color: #409eff;
+}
+
+html.dark .upload-btn {
+  color: #409eff;
 }
 
 html.dark .my-post-item {

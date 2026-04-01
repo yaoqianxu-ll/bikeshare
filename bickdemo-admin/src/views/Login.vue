@@ -79,7 +79,7 @@
 import { reactive, ref, h } from 'vue'
 import { useRouter } from 'vue-router'
 import { NIcon, NButton, NInput, NForm, NFormItem, useMessage } from 'naive-ui'
-import { login } from '@/api/auth'
+import { adminLogin } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 
 const PersonIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
@@ -113,7 +113,7 @@ const submit = async () => {
     await formRef.value?.validate()
     loading.value = true
 
-    const res = await login(form)
+    const res = await adminLogin(form)
 
     if (res.data?.role !== 'ADMIN') {
       authStore.logout()
@@ -211,6 +211,7 @@ const submit = async () => {
   color: #999;
   margin-right: 8px;
 }
+
 
 :deep(.n-input__placeholder) {
   color: #666 !important;

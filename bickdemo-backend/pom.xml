@@ -158,6 +158,14 @@
         </dependency>
     </dependencies>
 
+    <!-- JitPack 仓库 (用于 GitHub Packages) -->
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <build>
         <plugins>
             <plugin>

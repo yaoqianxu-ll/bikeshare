@@ -1,165 +1,127 @@
 <template>
-  <div class="login-container">
-    <!-- 动态背景装饰 -->
-    <div class="background-decorations">
-      <div class="floating-shape shape-1"></div>
-      <div class="floating-shape shape-2"></div>
-      <div class="floating-shape shape-3"></div>
-      <div class="floating-shape shape-4"></div>
-    </div>
-
-    <div class="login-card">
-      <div class="login-card-inner">
-        <!-- 左侧品牌区 -->
-        <div class="card-brand">
-          <div class="brand-content">
-            <div class="logo-wrapper">
+  <div class="login-page" :style="pageStyle">
+    <!-- 左侧背景区 80% -->
+    <div class="login-brand" :class="{ 'bg-ready': bgLoaded }">
+      <!-- 导航栏 - 与主页一致 -->
+      <header class="login-header">
+        <div class="header-content">
+          <router-link to="/" class="logo-section">
+            <div class="logo-icon-box">
               <el-icon class="logo-icon"><Bicycle /></el-icon>
             </div>
-            <h1 class="brand-title">BikeShare</h1>
-            <p class="brand-slogan">探索城市，从骑行开始</p>
-            <div class="brand-features">
-              <div class="feature-item">
-                <el-icon><CircleCheck /></el-icon>
-                <span>便捷租借</span>
-              </div>
-              <div class="feature-item">
-                <el-icon><Star /></el-icon>
-                <span>优质服务</span>
-              </div>
-              <div class="feature-item">
-                <el-icon><Location /></el-icon>
-                <span>随借随还</span>
-              </div>
+            <div class="logo-text-section">
+              <h1 class="logo">BikeShare</h1>
             </div>
-          </div>
+          </router-link>
+
+          <nav class="nav-links">
+            <router-link to="/" class="nav-link">
+              <span class="nav-icon-bg"><el-icon><House /></el-icon></span>
+              <span>首页</span>
+            </router-link>
+            <router-link to="/bicycles" class="nav-link">
+              <span class="nav-icon-bg"><el-icon><Bicycle /></el-icon></span>
+              <span>单车</span>
+            </router-link>
+            <router-link to="/marketplace" class="nav-link">
+              <span class="nav-icon-bg"><el-icon><LocationInformation /></el-icon></span>
+              <span>出租</span>
+            </router-link>
+            <router-link to="/statistics" class="nav-link">
+              <span class="nav-icon-bg"><el-icon><DataAnalysis /></el-icon></span>
+              <span>统计</span>
+            </router-link>
+            <router-link to="/forum" class="nav-link">
+              <span class="nav-icon-bg"><el-icon><ChatLineSquare /></el-icon></span>
+              <span>论坛</span>
+            </router-link>
+          </nav>
         </div>
+      </header>
 
-        <!-- 右侧登录区 -->
-        <div class="card-form">
-          <div class="form-header">
-            <h2 class="login-title">欢迎回来</h2>
-            <p class="login-subtitle">登录您的账户，开始骑行之旅</p>
-          </div>
-
-          <el-tabs v-model="loginMode" class="auth-tabs">
-            <el-tab-pane label="账号登录" name="account">
-              <el-form :model="form" :rules="rules" ref="formRef" class="login-form">
-                <el-form-item prop="username">
-                  <div class="input-wrapper">
-                    <el-icon class="input-icon"><User /></el-icon>
-                    <el-input
-                      v-model="form.username"
-                      placeholder="请输入用户名"
-                      size="large"
-                      @keyup.enter="handleLogin"
-                    />
-                    <span class="password-toggle-placeholder"></span>
-                  </div>
-                </el-form-item>
-
-                <el-form-item prop="password">
-                  <div class="input-wrapper">
-                    <el-icon class="input-icon"><Lock /></el-icon>
-                    <el-input
-                      v-model="form.password"
-                      :type="showPassword ? 'text' : 'password'"
-                      placeholder="请输入密码"
-                      size="large"
-                      @keyup.enter="handleLogin"
-                    />
-                    <el-icon class="password-toggle" @click="showPassword = !showPassword">
-                      <View v-if="showPassword" /><Hide v-else />
-                    </el-icon>
-                  </div>
-                </el-form-item>
-
-                <div class="login-options">
-                  <el-checkbox v-model="rememberPassword">保存密码</el-checkbox>
-                </div>
-
-                <el-form-item>
-                  <el-button
-                    type="primary"
-                    :loading="loading"
-                    @click="handleLogin"
-                    size="large"
-                    class="login-btn"
-                  >
-                    <span>登 录</span>
-                    <el-icon class="btn-icon"><Right /></el-icon>
-                  </el-button>
-                </el-form-item>
-              </el-form>
-            </el-tab-pane>
-
-            <el-tab-pane label="邮箱登录" name="email">
-              <el-form :model="emailLoginForm" :rules="emailLoginRules" ref="emailLoginFormRef" class="login-form">
-                <el-form-item prop="email">
-                  <div class="input-wrapper">
-                    <el-icon class="input-icon"><Message /></el-icon>
-                    <el-input
-                      v-model="emailLoginForm.email"
-                      placeholder="请输入邮箱"
-                      size="large"
-                    />
-                    <span class="password-toggle-placeholder"></span>
-                  </div>
-                </el-form-item>
-
-                <el-form-item prop="password">
-                  <div class="input-wrapper">
-                    <el-icon class="input-icon"><Lock /></el-icon>
-                    <el-input
-                      v-model="emailLoginForm.password"
-                      :type="showPassword ? 'text' : 'password'"
-                      placeholder="请输入密码"
-                      size="large"
-                      @keyup.enter="handleEmailLogin"
-                    />
-                    <el-icon class="password-toggle" @click="showPassword = !showPassword">
-                      <View v-if="showPassword" /><Hide v-else />
-                    </el-icon>
-                  </div>
-                </el-form-item>
-
-                <div class="login-options login-options-between">
-                  <span class="email-tip">支持使用注册邮箱直接登录</span>
-                  <button type="button" class="text-link-btn" @click="forgotDialogVisible = true">忘记密码？</button>
-                </div>
-
-                <el-form-item>
-                  <el-button
-                    type="primary"
-                    :loading="emailLoading"
-                    @click="handleEmailLogin"
-                    size="large"
-                    class="login-btn"
-                  >
-                    <span>邮箱登录</span>
-                    <el-icon class="btn-icon"><Right /></el-icon>
-                  </el-button>
-                </el-form-item>
-              </el-form>
-            </el-tab-pane>
-          </el-tabs>
-
-          <div class="form-footer">
-            <p class="link-text">
-              <span>还没有账号？</span>
-              <router-link to="/register" class="register-link">立即注册</router-link>
-            </p>
-          </div>
+      <!-- 品牌内容 -->
+      <div class="brand-content">
+        <div class="brand-headline">
+          <h1 class="brand-title">探索城市<br>从骑行开始</h1>
+          
         </div>
       </div>
     </div>
 
-    <el-dialog v-model="forgotDialogVisible" title="通过邮箱找回密码" width="440px">
+    <!-- 右侧表单区 20% -->
+    <div class="login-form-area">
+      <div class="form-header">
+        <h2>欢迎回来</h2>
+        <p>登录您的账户，开始骑行之旅</p>
+      </div>
+
+      <el-form :model="form" :rules="rules" ref="formRef" class="login-form">
+        <el-form-item prop="account">
+          <el-input
+            v-model="form.account"
+            placeholder="请输入用户名或邮箱"
+            size="large"
+            @keyup.enter="handleLogin"
+          />
+        </el-form-item>
+
+        <el-form-item prop="password">
+          <el-input
+            v-model="form.password"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="请输入密码"
+            size="large"
+            @keyup.enter="handleLogin"
+          >
+            <template #suffix>
+              <el-icon class="password-toggle" @click="showPassword = !showPassword">
+                <View v-if="showPassword" /><Hide v-else />
+              </el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
+
+        <!-- 图形验证码 -->
+        <div class="captcha-wrapper" v-if="captchaImage">
+          <el-input
+            v-model="form.captcha"
+            placeholder="请输入验证码"
+            size="large"
+            class="captcha-input"
+            @keyup.enter="handleLogin"
+          />
+          <img :src="captchaImage" alt="验证码" class="captcha-img" @click="refreshCaptcha" />
+        </div>
+        <div v-if="captchaError" class="captcha-error">{{ captchaError }}</div>
+
+        <div class="options-row">
+          <el-checkbox v-model="rememberPassword">保存密码</el-checkbox>
+          <button type="button" class="forgot-link" @click="forgotDialogVisible = true">忘记密码？</button>
+        </div>
+
+        <el-form-item>
+          <el-button
+            type="primary"
+            :loading="loading"
+            @click="handleLogin"
+            size="large"
+            class="login-btn"
+          >
+            登 录
+          </el-button>
+        </el-form-item>
+      </el-form>
+
+      <p class="register-link">还没有账号？<router-link to="/register">立即注册</router-link></p>
+    </div>
+
+    <!-- 忘记密码弹窗 -->
+    <el-dialog v-model="forgotDialogVisible" title="通过邮箱找回密码" width="480px">
       <el-form :model="resetForm" :rules="resetRules" ref="resetFormRef" label-width="0">
-        <el-form-item prop="email">
+        <el-form-item prop="email" class="full-width-item">
           <el-input v-model="resetForm.email" placeholder="请输入注册邮箱" />
         </el-form-item>
-        <el-form-item prop="code">
+        <el-form-item prop="code" class="full-width-item">
           <div class="code-row">
             <el-input v-model="resetForm.code" placeholder="请输入验证码" />
             <el-button :disabled="countdown > 0" @click="handleSendResetCode">
@@ -167,7 +129,7 @@
             </el-button>
           </div>
         </el-form-item>
-        <el-form-item prop="newPassword">
+        <el-form-item prop="newPassword" class="full-width-item">
           <el-input v-model="resetForm.newPassword" type="password" placeholder="请输入新密码" show-password />
         </el-form-item>
       </el-form>
@@ -180,45 +142,69 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { login, loginByEmail, sendEmailCode, resetPasswordByEmail } from '@/api/auth'
-import { User, Lock, Right, Bicycle, CircleCheck, Star, Location, Message, View, Hide } from '@element-plus/icons-vue'
+import { login, loginByEmail, sendEmailCode, resetPasswordByEmail, getCaptcha } from '@/api/auth'
+import { getSelectableBackgrounds } from '@/api/background'
+
+const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
+import { Bicycle, View, Hide, House, LocationInformation, DataAnalysis, ChatLineSquare, Calendar } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const message = ElMessage
 const userStore = useUserStore()
 const formRef = ref(null)
-const emailLoginFormRef = ref(null)
 const resetFormRef = ref(null)
 const loading = ref(false)
-const emailLoading = ref(false)
 const resetLoading = ref(false)
 const rememberPassword = ref(false)
 const showPassword = ref(false)
 const REMEMBER_KEY = 'bickdemo:rememberLogin'
-const loginMode = ref('account')
 const forgotDialogVisible = ref(false)
 const countdown = ref(0)
 let countdownTimer = null
 
 const form = reactive({
-  username: '',
-  password: ''
+  account: '',
+  password: '',
+  captcha: ''
 })
 
-const emailLoginForm = reactive({
-  email: '',
-  password: ''
-})
+const captchaImage = ref('')
+const captchaId = ref('')
+const captchaError = ref('')
 
 const resetForm = reactive({
   email: '',
   code: '',
   newPassword: ''
 })
+
+const backgrounds = ref([])
+const currentBackground = ref('')
+const bgLoaded = ref(false)
+
+const pageStyle = computed(() => {
+  if (currentBackground.value) {
+    return {
+      '--bg-image': `url(${currentBackground.value})`,
+      '--bg-opacity': bgLoaded.value ? '1' : '0'
+    }
+  }
+  return {}
+})
+
+// 预加载图片
+const preloadImage = (url) => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve(true)
+    img.onerror = () => resolve(false)
+    img.src = url
+  })
+}
 
 const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,100}$/
 
@@ -235,16 +221,23 @@ const validatePassword = (_rule, value, callback) => {
 }
 
 const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  account: [{ required: true, message: '请输入用户名或邮箱', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  captcha: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
 }
 
-const emailLoginRules = {
-  email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
-  ],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+// 获取验证码
+const refreshCaptcha = async () => {
+  try {
+    const res = await getCaptcha()
+    if (res.data) {
+      captchaImage.value = res.data.image
+      captchaId.value = res.data.captchaId
+      form.captcha = ''
+    }
+  } catch (error) {
+    console.error('获取验证码失败:', error)
+  }
 }
 
 const resetRules = {
@@ -266,9 +259,9 @@ const loadRememberedLogin = () => {
 
   try {
     const parsed = JSON.parse(savedLogin)
-    form.username = parsed.username || ''
+    form.account = parsed.account || ''
     form.password = parsed.password || ''
-    rememberPassword.value = Boolean(parsed.username || parsed.password)
+    rememberPassword.value = Boolean(parsed.account || parsed.password)
   } catch (error) {
     localStorage.removeItem(REMEMBER_KEY)
   }
@@ -281,50 +274,52 @@ const persistRememberedLogin = () => {
   }
 
   localStorage.setItem(REMEMBER_KEY, JSON.stringify({
-    username: form.username,
+    account: form.account,
     password: form.password
   }))
 }
 
 const handleLogin = async () => {
+  captchaError.value = ''
   if (!formRef.value) return
 
   await formRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
       try {
-        const res = await login(form)
+        const isEmail = form.account.includes('@')
+        let res
+        if (isEmail) {
+          res = await loginByEmail({
+            email: form.account,
+            password: form.password,
+            captcha: form.captcha,
+            captchaId: captchaId.value
+          })
+        } else {
+          res = await login({
+            username: form.account,
+            password: form.password,
+            captcha: form.captcha,
+            captchaId: captchaId.value
+          })
+        }
         persistRememberedLogin()
         userStore.setUser(res.data.token, res.data.username, res.data.role, res.data.userId)
         message.success('登录成功')
         router.push('/')
       } catch (error) {
         console.error(error)
-        message.error(error?.response?.data?.message || error?.message || '用户名或密码错误')
+        const errorMsg = error?.response?.data?.message || error?.message || '登录失败'
+        if (errorMsg.includes('验证码')) {
+          captchaError.value = errorMsg
+          refreshCaptcha()
+        } else {
+          message.error(errorMsg)
+        }
       } finally {
         loading.value = false
       }
-    }
-  })
-}
-
-const handleEmailLogin = async () => {
-  if (!emailLoginFormRef.value) return
-
-  await emailLoginFormRef.value.validate(async (valid) => {
-    if (!valid) return
-
-    emailLoading.value = true
-    try {
-      const res = await loginByEmail(emailLoginForm)
-      userStore.setUser(res.data.token, res.data.username, res.data.role, res.data.userId)
-      message.success('登录成功')
-      router.push('/')
-    } catch (error) {
-      console.error(error)
-      message.error(error?.response?.data?.message || error?.message || '登录失败')
-    } finally {
-      emailLoading.value = false
     }
   })
 }
@@ -372,7 +367,6 @@ const handleResetPassword = async () => {
       forgotDialogVisible.value = false
       resetForm.code = ''
       resetForm.newPassword = ''
-      loginMode.value = 'email'
     } catch (error) {
       console.error(error)
       message.error(error?.response?.data?.message || '重置失败')
@@ -382,677 +376,488 @@ const handleResetPassword = async () => {
   })
 }
 
+// 加载背景图 - 与主页保持一致
+const loadBackgrounds = async () => {
+  try {
+    const res = await getSelectableBackgrounds()
+    backgrounds.value = res.data || []
+
+    let bgUrl = ''
+
+    // 优先使用用户上次选择的背景
+    const savedBgId = localStorage.getItem(LOCAL_BG_KEY)
+    if (savedBgId) {
+      const savedBg = backgrounds.value.find(bg => bg.id === Number(savedBgId))
+      if (savedBg) {
+        bgUrl = savedBg.imageUrl
+      }
+    }
+
+    // 其次使用启用的背景
+    if (!bgUrl) {
+      const enabledBg = backgrounds.value.find(bg => bg.enabled) || backgrounds.value[0]
+      if (enabledBg) {
+        bgUrl = enabledBg.imageUrl
+      }
+    }
+
+    if (bgUrl) {
+      currentBackground.value = bgUrl
+      await preloadImage(bgUrl)
+      bgLoaded.value = true
+    }
+  } catch (error) {
+    console.error('加载背景失败:', error)
+    bgLoaded.value = true // 出错也显示默认背景
+  }
+}
+
 onMounted(() => {
+  loadBackgrounds()
   loadRememberedLogin()
+  refreshCaptcha()
 })
 </script>
 
 <style scoped>
-/* ========== 主容器 ========== */
-.login-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: transparent;
-  position: relative;
-  overflow: hidden;
-}
-
-/* ========== 背景装饰 ========== */
-.background-decorations {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  display: none;
-}
-
-.floating-shape {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.5;
-  animation: float 6s ease-in-out infinite;
-}
-
-.shape-1 {
-  width: 400px;
-  height: 400px;
-  background: #ff6b35;
-  top: -100px;
-  right: -100px;
-  animation-delay: 0s;
-}
-
-.shape-2 {
-  width: 300px;
-  height: 300px;
-  background: #f72585;
-  bottom: -50px;
-  left: -50px;
-  animation-delay: 1s;
-}
-
-.shape-3 {
-  width: 250px;
-  height: 250px;
-  background: #7b2cbf;
-  top: 50%;
-  left: 50%;
-  animation-delay: 2s;
-}
-
-.shape-4 {
-  width: 200px;
-  height: 200px;
-  background: #4361ee;
-  top: 20%;
-  left: 20%;
-  animation-delay: 3s;
-}
-
-@keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(20px, -30px) scale(1.05); }
-  66% { transform: translate(-20px, 20px) scale(0.95); }
-}
-
-/* ========== 登录卡片 ========== */
-.login-card {
+.login-page {
   width: 100%;
-  max-width: 900px;
+  height: 100vh;
+  display: flex;
+  background: #0f172a;
+}
+
+/* ========== 左侧背景区 80% ========== */
+.login-brand {
+  flex: 8;
   position: relative;
-  z-index: 1;
-}
-
-.login-card-inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow:
-    0 25px 80px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-  animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* ========== 品牌区 ========== */
-.card-brand {
-  background: rgba(15, 23, 42, 0.92);
-  padding: 60px 40px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
+  background: var(--bg-image, #0f172a) center/cover;
+  background-color: #0f172a;
+  opacity: var(--bg-opacity, 0);
+  transition: opacity 0.5s ease-in;
 }
 
-.card-brand::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(700px 420px at 20% 20%, rgba(255, 107, 53, 0.18), transparent 60%);
+.login-brand.bg-ready {
   opacity: 1;
 }
 
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+.login-brand::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15,23,42,0.7) 0%, rgba(15,23,42,0.4) 30%, rgba(15,23,42,0.7) 100%);
 }
 
-.brand-content {
+/* ========== 导航栏 ========== */
+.login-header {
   position: relative;
   z-index: 1;
-  color: #fff;
+  padding: 16px 40px;
 }
 
-.logo-wrapper {
-  width: 80px;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
+.login-header .header-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  gap: 60px;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  gap: 12px;
+}
+
+.logo-icon-box {
+  width: 42px;
+  height: 42px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .logo-icon {
-  font-size: 40px;
+  font-size: 22px;
   color: #fff;
 }
 
-.brand-title {
-  font-size: 36px;
-  font-weight: 800;
-  margin: 0 0 12px;
-  letter-spacing: -1px;
-  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+.logo-text-section .logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: -0.5px;
 }
 
-.brand-slogan {
-  font-size: 16px;
-  opacity: 0.9;
-  margin: 0 0 40px;
-  font-weight: 400;
-}
-
-.brand-features {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.feature-item {
+.nav-links {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 15px;
+  gap: 4px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  text-decoration: none;
+  color: rgba(255,255,255,0.75);
+  font-size: 14px;
+  border-radius: 10px;
+  transition: all 0.2s;
   font-weight: 500;
 }
 
-.feature-item .el-icon {
-  width: 24px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+.nav-link:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+}
+
+.nav-link.nav-link-active {
+  color: #fff;
+  background: rgba(255,255,255,0.15);
+}
+
+.nav-icon-bg {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 14px;
+  font-size: 16px;
 }
 
-/* ========== 表单区 ========== */
-.card-form {
-  padding: 60px 50px;
-  background: rgba(255, 255, 255, 0.98);
+/* ========== 品牌内容 ========== */
+.brand-content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  padding: 60px 40px;
 }
 
-.form-header {
-  margin-bottom: 40px;
+.brand-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.login-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--bs-ink);
-  margin: 0 0 8px;
-}
-
-.login-subtitle {
-  color: #6c757d;
-  font-size: 15px;
+.brand-title {
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #fff;
   margin: 0;
+}
+
+.brand-desc {
+  color: rgba(255,255,255,0.8);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 400px;
+}
+
+/* ========== 右侧表单区 20% ========== */
+.login-form-area {
+  flex: 2;
+  background: #fff;
+  padding: 60px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.form-header h2 {
+  color: #1e293b;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.form-header p {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0 0 32px;
 }
 
 /* ========== 表单样式 ========== */
 .login-form {
-  margin-top: 32px;
-}
-
-.auth-tabs {
-  margin-top: 16px;
-}
-
-.auth-tabs :deep(.el-tabs__nav-wrap::after) {
-  background: rgba(148, 163, 184, 0.2);
-}
-
-.auth-tabs :deep(.el-tabs__item) {
-  font-weight: 700;
-}
-
-.login-options {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  margin: -6px 0 18px;
-  min-height: 32px;
-}
-
-.login-options-between {
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 32px;
-}
-
-.login-options :deep(.el-checkbox__label) {
-  color: #475569;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.email-tip {
-  color: #64748b;
-  font-size: 13px;
-}
-
-.text-link-btn {
-  border: none;
-  background: transparent;
-  color: var(--brand-primary);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 0;
-}
-
-.code-row {
   width: 100%;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
 }
 
 :deep(.el-form-item) {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
-.input-wrapper {
-  display: flex;
-  align-items: center;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 0 16px;
+:deep(.el-input__wrapper) {
+  height: 46px;
+  border-radius: 10px;
+  box-shadow: none !important;
   border: 1.5px solid #e2e8f0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 52px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  background: #f8fafc;
 }
 
-.input-wrapper:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+:deep(.el-input__inner) {
+  font-size: 14px;
+  color: #1e293b;
 }
 
-.input-wrapper:focus-within {
-  border-color: var(--brand-primary);
-}
-
-.input-icon {
-  font-size: 18px;
+:deep(.el-input__inner::placeholder) {
   color: #94a3b8;
-  margin-right: 12px;
-  transition: color 0.3s ease;
+}
+
+:deep(.el-input__wrapper:hover) {
+  border-color: #cbd5e1;
+}
+
+:deep(.el-input__wrapper.is-focus) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1) !important;
 }
 
 .password-toggle {
   font-size: 16px;
   color: #94a3b8;
   cursor: pointer;
-  margin-left: 8px;
-  transition: color 0.3s ease;
-  width: 20px;
-  text-align: center;
-}
-
-.password-toggle-placeholder {
-  width: 20px;
-  margin-left: 8px;
+  margin-right: 4px;
 }
 
 .password-toggle:hover {
-  color: var(--brand-primary);
+  color: #3b82f6;
 }
 
-.input-wrapper:focus-within .input-icon {
-  color: var(--brand-primary);
+/* ========== 验证码 ========== */
+.captcha-wrapper {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
 }
 
-:deep(.el-input__wrapper) {
+.captcha-input {
   flex: 1;
-  min-width: 0;
+}
+
+.captcha-input :deep(.el-input__wrapper) {
+  height: 46px;
+  border-radius: 10px;
   box-shadow: none !important;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.captcha-input :deep(.el-input__inner) {
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.captcha-input :deep(.el-input__inner::placeholder) {
+  color: #94a3b8;
+}
+
+.captcha-input :deep(.el-input__wrapper:hover) {
+  border-color: #cbd5e1;
+}
+
+.captcha-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1) !important;
+}
+
+.captcha-img {
+  height: 46px;
+  width: 100px;
+  border-radius: 10px;
+  object-fit: cover;
+  cursor: pointer;
+  border: 1.5px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.captcha-error {
+  color: #f56c6c;
+  font-size: 12px;
+  margin-top: -12px;
+  margin-bottom: 12px;
+}
+
+/* ========== 选项行 ========== */
+.options-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+:deep(.el-checkbox__label) {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.forgot-link {
+  border: none;
   background: transparent;
-}
-
-:deep(.el-input__inner) {
-  font-size: 15px;
-  color: #1a1a2e;
-}
-
-:deep(.el-input__inner::placeholder) {
-  color: #adb5bd;
+  color: #3b82f6;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
 }
 
 /* ========== 登录按钮 ========== */
 .login-btn {
   width: 100%;
-  height: 54px;
-  font-size: 16px;
+  height: 48px;
+  border-radius: 10px;
+  font-size: 15px;
   font-weight: 600;
-  border-radius: 14px;
-  background: var(--brand-primary);
-  border: none;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.18);
-  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
-.login-btn:hover:not(:disabled) {
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22);
-  background: #ff7b4a;
-}
-
-.login-btn:active:not(:disabled) {
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
-}
-
-.btn-icon {
-  font-size: 18px;
-  transition: transform 0.2s ease;
-}
-
-.login-btn:hover .btn-icon {
-  transform: translateX(3px);
-}
-
-/* ========== 表单底部 ========== */
-.form-footer {
-  margin-top: 32px;
-  text-align: center;
-}
-
-.link-text {
-  color: #6c757d;
-  font-size: 14px;
-}
-
+/* ========== 注册链接 ========== */
 .register-link {
-  color: var(--brand-primary);
-  text-decoration: none;
-  font-weight: 600;
-  margin-left: 4px;
-  transition: all 0.2s ease;
+  text-align: center;
+  margin-top: 24px;
+  color: #64748b;
+  font-size: 13px;
 }
 
-.register-link:hover {
-  color: #c2410c;
+.register-link a {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.register-link a:hover {
   text-decoration: underline;
 }
 
 /* ========== 响应式 ========== */
 @media (max-width: 768px) {
-  .login-container {
-    padding: 12px;
-    align-items: stretch;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  .login-page {
+    flex-direction: column;
   }
 
-  .login-card {
-    max-width: 100%;
+  .login-brand {
+    flex: none;
+    height: auto;
+    min-height: 200px;
   }
 
-  .login-card-inner {
-    grid-template-columns: 1fr;
-    border-radius: 20px;
+  .login-header {
+    padding: 12px 20px;
   }
 
-  .card-brand {
-    padding: 40px 30px;
+  .nav-links {
+    display: none;
   }
 
-  .logo-wrapper {
-    width: 60px;
-    height: 60px;
-    margin-bottom: 16px;
-  }
-
-  .logo-icon {
-    font-size: 28px;
+  .brand-content {
+    padding: 40px 20px;
   }
 
   .brand-title {
     font-size: 28px;
   }
 
-  .brand-features {
-    display: none;
-  }
-
-  .card-form {
-    padding: 34px 24px;
-  }
-
-  .login-title {
-    font-size: 24px;
-  }
-
-  .login-form {
-    margin-top: 24px;
-  }
-
-  .login-btn {
-    height: 50px;
-  }
-
-  :deep(.el-dialog) {
-    width: min(440px, calc(100vw - 24px)) !important;
-    margin: max(8vh, 32px) auto 0 !important;
+  .login-form-area {
+    flex: 1;
+    padding: 40px 20px;
   }
 }
 
-@media (max-width: 520px) {
-  .card-brand {
-    padding: 32px 22px;
-  }
-
-  .card-form {
-    padding: 28px 18px;
-  }
-
-  .form-header {
-    margin-bottom: 28px;
-  }
-
-  .auth-tabs :deep(.el-tabs__item) {
-    padding: 0 12px;
-    font-size: 14px;
-  }
-
-  .code-row {
-    grid-template-columns: 1fr;
-  }
-
-  .code-row :deep(.el-button) {
-    width: 100%;
-  }
-
-  .input-wrapper {
-    padding-left: 12px;
-  }
-
-  .input-icon {
-    margin-right: 10px;
-    font-size: 18px;
-  }
-
-  .login-options-between {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  :deep(.el-dialog__body),
-  :deep(.el-dialog__footer),
-  :deep(.el-dialog__header) {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
+/* ========== 弹窗内表单样式 ========== */
+.full-width-item {
+  width: 100%;
 }
 
-/* ========== 黑夜模式 ========== */
-html.dark .login-card-inner {
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(148, 163, 184, 0.20);
+.full-width-item .el-input {
+  width: 100%;
 }
 
-html.dark .card-form {
-  background: rgba(15, 23, 42, 0.85);
+:deep(.el-dialog__body) {
+  padding: 20px 24px !important;
 }
 
-html.dark .login-title {
-  color: #ffffff;
+:deep(.el-dialog__body .el-form-item) {
+  margin-bottom: 16px !important;
 }
 
-html.dark .login-subtitle {
-  color: #cbd5e1;
+:deep(.el-dialog__body .el-input) {
+  width: 100%;
 }
 
-html.dark :deep(.el-tabs__nav-wrap::after) {
-  background: rgba(148, 163, 184, 0.30);
+:deep(.el-dialog__body .el-input__wrapper) {
+  height: 42px !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  border: 1.5px solid #e2e8f0 !important;
+  background: #f8fafc !important;
 }
 
-html.dark :deep(.el-tabs__item) {
-  color: #cbd5e1;
+:deep(.el-dialog__body .el-input__inner) {
+  font-size: 14px !important;
+  color: #1e293b !important;
 }
 
-html.dark :deep(.el-tabs__item.is-active) {
-  color: #ffffff;
+:deep(.el-dialog__body .el-input__placeholder) {
+  color: #94a3b8 !important;
 }
 
-html.dark :deep(.el-tabs__active-bar) {
-  background: var(--brand-primary);
+:deep(.el-dialog__body .el-input:hover .el-input__wrapper) {
+  border-color: #cbd5e1 !important;
 }
 
-html.dark :deep(.el-form-item__label) {
-  color: #cbd5e1;
+:deep(.el-dialog__body .el-input.is-focus .el-input__wrapper) {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1) !important;
 }
 
-html.dark .input-wrapper {
-  background: rgba(30, 41, 59, 0.8);
-  border-color: rgba(148, 163, 184, 0.2);
+.code-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
-html.dark .input-wrapper:hover {
-  border-color: rgba(148, 163, 184, 0.4);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+.code-row .el-input {
+  flex: 2.5;
+  min-width: 0;
 }
 
-html.dark .input-wrapper:focus-within {
-  border-color: var(--brand-primary);
+.code-row .el-input__wrapper {
+  width: 100%;
+  height: 42px !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  border: 1.5px solid #e2e8f0 !important;
+  background: #f8fafc !important;
 }
 
-html.dark .input-icon {
-  color: #64748b;
+.code-row .el-input:hover .el-input__wrapper {
+  border-color: #cbd5e1 !important;
 }
 
-html.dark .input-wrapper:focus-within .input-icon {
-  color: var(--brand-primary);
+.code-row .el-input.is-focus .el-input__wrapper {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1) !important;
 }
 
-html.dark .password-toggle {
-  color: #64748b;
+.code-row .el-button {
+  flex: 1;
+  height: 42px;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  color: #475569;
+  font-size: 13px;
+  padding: 0 12px;
+  flex-shrink: 0;
 }
 
-html.dark .password-toggle:hover {
-  color: var(--brand-primary);
-}
-
-html.dark :deep(.el-input__inner) {
-  color: #f1f5f9;
-}
-
-html.dark :deep(.el-input__inner::placeholder) {
-  color: #94a3b8;
-}
-
-html.dark :deep(.el-checkbox__label) {
-  color: #cbd5e1;
-}
-
-html.dark :deep(.el-checkbox__input .el-checkbox__inner) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(148, 163, 184, 0.30);
-}
-
-html.dark :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-  background: var(--brand-primary);
-  border-color: var(--brand-primary);
-}
-
-html.dark .email-tip {
-  color: #94a3b8;
-}
-
-html.dark .text-link-btn {
-  color: #fdba74;
-}
-
-html.dark .text-link-btn:hover {
-  color: #fb923c;
-}
-
-html.dark .link-text {
-  color: #cbd5e1;
-}
-
-html.dark .register-link {
-  color: #fdba74;
-}
-
-html.dark .register-link:hover {
-  color: #fb923c;
-}
-
-html.dark :deep(.el-dialog) {
-  background: rgba(15, 23, 42, 0.95);
-  border: 1px solid rgba(148, 163, 184, 0.20);
-}
-
-html.dark :deep(.el-dialog__header) {
-  border-bottom-color: rgba(148, 163, 184, 0.20);
-}
-
-html.dark :deep(.el-dialog__title) {
-  color: #ffffff;
-}
-
-html.dark :deep(.el-dialog__body) {
-  color: #e2e8f0;
-}
-
-html.dark :deep(.el-dialog__footer) {
-  border-top-color: rgba(148, 163, 184, 0.20);
-}
-
-html.dark :deep(.el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-html.dark :deep(.el-input__inner) {
-  color: #ffffff;
-}
-
-html.dark :deep(.el-button--default) {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(148, 163, 184, 0.20);
-  color: #e2e8f0;
-}
-
-html.dark :deep(.el-button--default:hover) {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(203, 213, 225, 0.30);
-  color: #ffffff;
+.code-row .el-button:hover:not(:disabled) {
+  border-color: #3b82f6;
+  color: #3b82f6;
 }
 </style>

@@ -1,149 +1,142 @@
 <template>
-  <div class="register-container">
-    <div class="background-decorations">
-      <div class="floating-shape shape-1"></div>
-      <div class="floating-shape shape-2"></div>
-      <div class="floating-shape shape-3"></div>
-      <div class="floating-shape shape-4"></div>
-    </div>
-
-    <div class="register-card">
-      <div class="register-card-inner">
-        <div class="card-brand">
-          <div class="brand-content">
-            <div class="logo-wrapper">
+  <div class="register-page" :style="pageStyle">
+    <!-- 左侧背景区 80% -->
+    <div class="register-brand" :class="{ 'bg-ready': bgLoaded }">
+      <!-- 导航栏 - 与主页一致 -->
+      <header class="register-header">
+        <div class="header-content">
+          <router-link to="/" class="logo-section">
+            <div class="logo-icon-box">
               <el-icon class="logo-icon"><Bicycle /></el-icon>
             </div>
-            <h1 class="brand-title">BikeShare</h1>
-            <p class="brand-slogan">加入我们，开启骑行之旅</p>
-            <div class="brand-features">
-              <div class="feature-item">
-                <el-icon><CircleCheck /></el-icon>
-                <span>邮箱验证</span>
-              </div>
-              <div class="feature-item">
-                <el-icon><Star /></el-icon>
-                <span>即时可用</span>
-              </div>
-              <div class="feature-item">
-                <el-icon><User /></el-icon>
-                <span>专属账户</span>
-              </div>
+            <div class="logo-text-section">
+              <h1 class="logo">BikeShare</h1>
             </div>
-          </div>
+          </router-link>
+
+          <nav class="nav-links">
+            <router-link to="/" class="nav-link">
+              <span class="nav-icon-bg"><el-icon><House /></el-icon></span>
+              <span>首页</span>
+            </router-link>
+            <router-link to="/bicycles" class="nav-link">
+              <span class="nav-icon-bg"><el-icon><Bicycle /></el-icon></span>
+              <span>单车</span>
+            </router-link>
+            <router-link to="/marketplace" class="nav-link">
+              <span class="nav-icon-bg"><el-icon><LocationInformation /></el-icon></span>
+              <span>出租</span>
+            </router-link>
+            <router-link to="/statistics" class="nav-link">
+              <span class="nav-icon-bg"><el-icon><DataAnalysis /></el-icon></span>
+              <span>统计</span>
+            </router-link>
+            <router-link to="/forum" class="nav-link">
+              <span class="nav-icon-bg"><el-icon><ChatLineSquare /></el-icon></span>
+              <span>论坛</span>
+            </router-link>
+          </nav>
         </div>
+      </header>
 
-        <div class="card-form">
-          <div class="form-header">
-            <h2 class="register-title">创建账户</h2>
-            <p class="register-subtitle">使用邮箱验证码完成注册</p>
-          </div>
-
-          <el-form :model="form" :rules="rules" ref="formRef" class="register-form">
-            <el-form-item prop="username">
-              <div class="input-wrapper">
-                <el-icon class="input-icon"><User /></el-icon>
-                <el-input
-                  v-model="form.username"
-                  placeholder="请输入用户名"
-                  size="large"
-                />
-                <span class="password-toggle-placeholder"></span>
-              </div>
-            </el-form-item>
-
-            <el-form-item prop="email">
-              <div class="input-wrapper">
-                <el-icon class="input-icon"><Message /></el-icon>
-                <el-input
-                  v-model="form.email"
-                  placeholder="请输入邮箱"
-                  size="large"
-                />
-                <span class="password-toggle-placeholder"></span>
-              </div>
-            </el-form-item>
-
-            <el-form-item prop="code">
-              <div class="code-row">
-                <div class="input-wrapper code-input-wrapper">
-                  <el-icon class="input-icon"><Message /></el-icon>
-                  <el-input
-                    v-model="form.code"
-                    placeholder="请输入验证码"
-                    size="large"
-                  />
-                </div>
-                <el-button class="code-btn" :disabled="countdown > 0" @click="handleSendCode">
-                  {{ countdown > 0 ? `${countdown}s后重试` : '发送验证码' }}
-                </el-button>
-              </div>
-            </el-form-item>
-
-            <el-form-item prop="password">
-              <div class="input-wrapper">
-                <el-icon class="input-icon"><Lock /></el-icon>
-                <el-input
-                  v-model="form.password"
-                  :type="showPassword ? 'text' : 'password'"
-                  placeholder="请输入密码"
-                  size="large"
-                />
-                <el-icon class="password-toggle" @click="showPassword = !showPassword">
-                  <View v-if="showPassword" /><Hide v-else />
-                </el-icon>
-              </div>
-            </el-form-item>
-
-            <el-form-item prop="confirmPassword">
-              <div class="input-wrapper">
-                <el-icon class="input-icon"><Lock /></el-icon>
-                <el-input
-                  v-model="form.confirmPassword"
-                  :type="showPassword ? 'text' : 'password'"
-                  placeholder="请确认密码"
-                  size="large"
-                  @keyup.enter="handleRegister"
-                />
-                <el-icon class="password-toggle" @click="showPassword = !showPassword">
-                  <View v-if="showPassword" /><Hide v-else />
-                </el-icon>
-              </div>
-            </el-form-item>
-
-            <el-form-item>
-              <el-button
-                type="primary"
-                :loading="loading"
-                @click="handleRegister"
-                size="large"
-                class="register-btn"
-              >
-                <span>立即注册</span>
-                <el-icon class="btn-icon"><Right /></el-icon>
-              </el-button>
-            </el-form-item>
-          </el-form>
-
-          <div class="form-footer">
-            <p class="link-text">
-              <span>已有账号？</span>
-              <router-link to="/login" class="login-link">立即登录</router-link>
-            </p>
-          </div>
+      <!-- 品牌内容 -->
+      <div class="brand-content">
+        <div class="brand-headline">
+          <h1 class="brand-title">加入我们<br>开启骑行之旅</h1>
         </div>
       </div>
+    </div>
+
+    <!-- 右侧表单区 20% -->
+    <div class="register-form-area">
+      <div class="form-header">
+        <h2>创建账户</h2>
+        <p>使用邮箱验证码完成注册</p>
+      </div>
+
+      <el-form :model="form" :rules="rules" ref="formRef" class="register-form">
+        <el-form-item prop="username">
+          <el-input
+            v-model="form.username"
+            placeholder="请输入用户名"
+            size="large"
+          />
+        </el-form-item>
+
+        <el-form-item prop="email">
+          <el-input
+            v-model="form.email"
+            placeholder="请输入邮箱"
+            size="large"
+          />
+        </el-form-item>
+
+        <el-form-item prop="code">
+          <div class="code-row">
+            <el-input
+              v-model="form.code"
+              placeholder="请输入验证码"
+              size="large"
+            />
+            <el-button class="code-btn" :disabled="countdown > 0" @click="handleSendCode">
+              {{ countdown > 0 ? `${countdown}s后重试` : '发送验证码' }}
+            </el-button>
+          </div>
+        </el-form-item>
+
+        <el-form-item prop="password">
+          <el-input
+            v-model="form.password"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="请输入密码"
+            size="large"
+          >
+            <template #suffix>
+              <el-icon class="password-toggle" @click="showPassword = !showPassword">
+                <View v-if="showPassword" /><Hide v-else />
+              </el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
+
+        <el-form-item prop="confirmPassword">
+          <el-input
+            v-model="form.confirmPassword"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="请确认密码"
+            size="large"
+            @keyup.enter="handleRegister"
+          />
+        </el-form-item>
+
+        <el-form-item>
+          <el-button
+            type="primary"
+            :loading="loading"
+            @click="handleRegister"
+            size="large"
+            class="register-btn"
+          >
+            注 册
+          </el-button>
+        </el-form-item>
+      </el-form>
+
+      <p class="login-link">已有账号？<router-link to="/login">立即登录</router-link></p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { register, sendEmailCode } from '@/api/auth'
+import { getSelectableBackgrounds } from '@/api/background'
+
+const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Right, Bicycle, CircleCheck, Star, Message, View, Hide } from '@element-plus/icons-vue'
+import { Bicycle, View, Hide, House, LocationInformation, DataAnalysis, ChatLineSquare, Calendar } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -161,6 +154,30 @@ const form = reactive({
   password: '',
   confirmPassword: ''
 })
+
+const backgrounds = ref([])
+const currentBackground = ref('')
+const bgLoaded = ref(false)
+
+const pageStyle = computed(() => {
+  if (currentBackground.value) {
+    return {
+      '--bg-image': `url(${currentBackground.value})`,
+      '--bg-opacity': bgLoaded.value ? '1' : '0'
+    }
+  }
+  return {}
+})
+
+// 预加载图片
+const preloadImage = (url) => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve(true)
+    img.onerror = () => resolve(false)
+    img.src = url
+  })
+}
 
 const usernamePattern = /^[A-Za-z0-9\u4E00-\u9FFF]+$/
 const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,100}$/
@@ -273,534 +290,364 @@ const handleRegister = async () => {
     }
   })
 }
+
+// 加载背景图 - 与主页保持一致
+const loadBackgrounds = async () => {
+  try {
+    const res = await getSelectableBackgrounds()
+    backgrounds.value = res.data || []
+
+    let bgUrl = ''
+
+    // 优先使用用户上次选择的背景
+    const savedBgId = localStorage.getItem(LOCAL_BG_KEY)
+    if (savedBgId) {
+      const savedBg = backgrounds.value.find(bg => bg.id === Number(savedBgId))
+      if (savedBg) {
+        bgUrl = savedBg.imageUrl
+      }
+    }
+
+    // 其次使用启用的背景
+    if (!bgUrl) {
+      const enabledBg = backgrounds.value.find(bg => bg.enabled) || backgrounds.value[0]
+      if (enabledBg) {
+        bgUrl = enabledBg.imageUrl
+      }
+    }
+
+    if (bgUrl) {
+      currentBackground.value = bgUrl
+      await preloadImage(bgUrl)
+      bgLoaded.value = true
+    }
+  } catch (error) {
+    console.error('加载背景失败:', error)
+    bgLoaded.value = true
+  }
+}
+
+loadBackgrounds()
 </script>
 
 <style scoped>
-/* ========== 主容器 ========== */
-.register-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: transparent;
-  position: relative;
-  overflow: hidden;
-}
-
-/* ========== 背景装饰 ========== */
-.background-decorations {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  display: none;
-}
-
-.floating-shape {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.5;
-  animation: float 6s ease-in-out infinite;
-}
-
-.shape-1 {
-  width: 400px;
-  height: 400px;
-  background: #ff6b35;
-  top: -100px;
-  right: -100px;
-  animation-delay: 0s;
-}
-
-.shape-2 {
-  width: 300px;
-  height: 300px;
-  background: #f72585;
-  bottom: -50px;
-  left: -50px;
-  animation-delay: 1s;
-}
-
-.shape-3 {
-  width: 250px;
-  height: 250px;
-  background: #7b2cbf;
-  top: 50%;
-  left: 50%;
-  animation-delay: 2s;
-}
-
-.shape-4 {
-  width: 200px;
-  height: 200px;
-  background: #4361ee;
-  top: 20%;
-  left: 20%;
-  animation-delay: 3s;
-}
-
-@keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(20px, -30px) scale(1.05); }
-  66% { transform: translate(-20px, 20px) scale(0.95); }
-}
-
-/* ========== 注册卡片 ========== */
-.register-card {
+.register-page {
   width: 100%;
-  max-width: 900px;
+  height: 100vh;
+  display: flex;
+  background: #0f172a;
+}
+
+/* ========== 左侧背景区 80% ========== */
+.register-brand {
+  flex: 8;
   position: relative;
-  z-index: 1;
-}
-
-.register-card-inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow:
-    0 25px 80px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-  animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* ========== 品牌区 ========== */
-.card-brand {
-  background: rgba(15, 23, 42, 0.92);
-  padding: 60px 40px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
+  background: var(--bg-image, #0f172a) center/cover;
+  background-color: #0f172a;
+  opacity: 0;
+  transition: opacity 0.5s ease-in;
 }
 
-.card-brand::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(700px 420px at 20% 20%, rgba(255, 107, 53, 0.18), transparent 60%);
+.register-brand.bg-ready {
   opacity: 1;
 }
 
-.brand-content {
-  position: relative;
-  z-index: 1;
-  color: #fff;
+.register-brand::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15,23,42,0.7) 0%, rgba(15,23,42,0.4) 30%, rgba(15,23,42,0.7) 100%);
 }
 
-.logo-wrapper {
-  width: 80px;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
+/* ========== 导航栏 ========== */
+.register-header {
+  position: relative;
+  z-index: 1;
+  padding: 16px 40px;
+}
+
+.register-header .header-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  gap: 60px;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  gap: 12px;
+}
+
+.logo-icon-box {
+  width: 42px;
+  height: 42px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .logo-icon {
-  font-size: 40px;
+  font-size: 22px;
   color: #fff;
 }
 
-.brand-title {
-  font-size: 36px;
-  font-weight: 800;
-  margin: 0 0 12px;
-  letter-spacing: -1px;
-  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+.logo-text-section .logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: -0.5px;
 }
 
-.brand-slogan {
-  font-size: 16px;
-  opacity: 0.9;
-  margin: 0 0 40px;
-  font-weight: 400;
-}
-
-.brand-features {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.feature-item {
+.nav-links {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 15px;
+  gap: 4px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  text-decoration: none;
+  color: rgba(255,255,255,0.75);
+  font-size: 14px;
+  border-radius: 10px;
+  transition: all 0.2s;
   font-weight: 500;
 }
 
-.feature-item .el-icon {
-  width: 24px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+.nav-link:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+}
+
+.nav-link.router-link-exact-active {
+  color: #fff;
+  background: rgba(255,255,255,0.15);
+}
+
+.nav-icon-bg {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 14px;
+  font-size: 16px;
 }
 
-/* ========== 表单区 ========== */
-.card-form {
-  padding: 60px 50px;
-  background: rgba(255, 255, 255, 0.98);
+/* ========== 品牌内容 ========== */
+.brand-content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  padding: 60px 40px;
 }
 
-.form-header {
-  margin-bottom: 40px;
+.brand-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.register-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--bs-ink);
-  margin: 0 0 8px;
-}
-
-.register-subtitle {
-  color: #6c757d;
-  font-size: 15px;
+.brand-title {
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #fff;
   margin: 0;
+}
+
+.brand-desc {
+  color: rgba(255,255,255,0.8);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 400px;
+}
+
+/* ========== 右侧表单区 20% ========== */
+.register-form-area {
+  flex: 2;
+  background: #fff;
+  padding: 50px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.form-header h2 {
+  color: #1e293b;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.form-header p {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0 0 28px;
 }
 
 /* ========== 表单样式 ========== */
 .register-form {
-  margin-top: 32px;
+  width: 100%;
 }
 
 :deep(.el-form-item) {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
-.input-wrapper {
-  display: flex;
-  align-items: center;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 0 16px;
+:deep(.el-input__wrapper) {
+  height: 46px;
+  border-radius: 10px;
+  box-shadow: none !important;
   border: 1.5px solid #e2e8f0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 52px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  background: #f8fafc;
 }
 
-.input-wrapper:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+:deep(.el-input__inner) {
+  font-size: 14px;
+  color: #1e293b;
 }
 
-.input-wrapper:focus-within {
-  border-color: var(--brand-primary);
-}
-
-.input-icon {
-  font-size: 18px;
+:deep(.el-input__inner::placeholder) {
   color: #94a3b8;
-  margin-right: 12px;
-  transition: color 0.3s ease;
+}
+
+:deep(.el-input__wrapper:hover) {
+  border-color: #cbd5e1;
+}
+
+:deep(.el-input__wrapper.is-focus) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1) !important;
 }
 
 .password-toggle {
   font-size: 16px;
   color: #94a3b8;
   cursor: pointer;
-  margin-left: 8px;
-  transition: color 0.3s ease;
-  width: 20px;
-  text-align: center;
-}
-
-.password-toggle-placeholder {
-  width: 20px;
-  margin-left: 8px;
+  margin-right: 4px;
 }
 
 .password-toggle:hover {
-  color: var(--brand-primary);
+  color: #3b82f6;
 }
 
-.input-wrapper:focus-within .input-icon {
-  color: var(--brand-primary);
-}
-
-:deep(.el-input__wrapper) {
-  flex: 1;
-  min-width: 0;
-  box-shadow: none !important;
-  background: transparent;
-}
-
-:deep(.el-input__inner) {
-  font-size: 15px;
-  color: #1a1a2e;
-}
-
-:deep(.el-input__inner::placeholder) {
-  color: #adb5bd;
-}
-
+/* ========== 验证码 ========== */
 .code-row {
+  display: flex;
+  gap: 10px;
   width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
 }
 
-.code-input-wrapper {
+.code-row .el-input {
+  flex: 2.5;
+}
+
+.code-row .el-input__wrapper {
   width: 100%;
+  height: 46px;
+  border-radius: 10px;
+  box-shadow: none !important;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.code-row .el-input__wrapper:hover {
+  border-color: #cbd5e1;
+}
+
+.code-row .el-input.is-focus .el-input__wrapper {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1) !important;
 }
 
 .code-btn {
-  height: 52px;
-  padding: 0 20px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 14px;
+  flex: 1;
+  height: 46px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
   border: 1.5px solid #e2e8f0;
-  background: #ffffff;
+  background: #fff;
   color: #475569;
-  transition: all 0.3s ease;
+  white-space: nowrap;
 }
 
 .code-btn:hover:not(:disabled) {
-  border-color: var(--brand-primary);
-  color: var(--brand-primary);
-  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.15);
+  border-color: #3b82f6;
+  color: #3b82f6;
 }
 
 /* ========== 注册按钮 ========== */
 .register-btn {
   width: 100%;
-  height: 54px;
-  font-size: 16px;
+  height: 48px;
+  border-radius: 10px;
+  font-size: 15px;
   font-weight: 600;
-  border-radius: 14px;
-  background: var(--brand-primary);
-  border: none;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.18);
-  transition: background 0.2s ease, box-shadow 0.2s ease;
+  margin-top: 8px;
 }
 
-.register-btn:hover:not(:disabled) {
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22);
-  background: #ff7b4a;
-}
-
-.register-btn:active:not(:disabled) {
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
-}
-
-.btn-icon {
-  font-size: 18px;
-  transition: transform 0.2s ease;
-}
-
-.register-btn:hover .btn-icon {
-  transform: translateX(3px);
-}
-
-/* ========== 表单底部 ========== */
-.form-footer {
-  margin-top: 32px;
-  text-align: center;
-}
-
-.link-text {
-  color: #6c757d;
-  font-size: 14px;
-}
-
+/* ========== 登录链接 ========== */
 .login-link {
-  color: var(--brand-primary);
-  text-decoration: none;
-  font-weight: 600;
-  margin-left: 4px;
-  transition: all 0.2s ease;
+  text-align: center;
+  margin-top: 24px;
+  color: #64748b;
+  font-size: 13px;
 }
 
-.login-link:hover {
-  color: #c2410c;
+.login-link a {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-link a:hover {
   text-decoration: underline;
 }
 
 /* ========== 响应式 ========== */
 @media (max-width: 768px) {
-  .register-card-inner {
-    grid-template-columns: 1fr;
+  .register-page {
+    flex-direction: column;
   }
 
-  .card-brand {
-    padding: 40px 30px;
+  .register-brand {
+    flex: none;
+    height: auto;
+    min-height: 200px;
   }
 
-  .logo-wrapper {
-    width: 60px;
-    height: 60px;
-    margin-bottom: 16px;
+  .register-header {
+    padding: 12px 20px;
   }
 
-  .logo-icon {
-    font-size: 28px;
+  .nav-links {
+    display: none;
+  }
+
+  .brand-content {
+    padding: 40px 20px;
   }
 
   .brand-title {
     font-size: 28px;
   }
 
-  .brand-features {
-    display: none;
+  .register-form-area {
+    flex: 1;
+    padding: 40px 20px;
   }
-
-  .card-form {
-    padding: 40px 30px;
-  }
-
-  .register-title {
-    font-size: 24px;
-  }
-
-  .code-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ========== 黑夜模式 ========== */
-html.dark .register-card-inner {
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(148, 163, 184, 0.20);
-}
-
-html.dark .card-form {
-  background: rgba(15, 23, 42, 0.85);
-}
-
-html.dark .register-title {
-  color: #ffffff;
-}
-
-html.dark .register-subtitle {
-  color: #cbd5e1;
-}
-
-html.dark :deep(.el-form-item__label) {
-  color: #cbd5e1;
-}
-
-html.dark .input-wrapper {
-  background: rgba(30, 41, 59, 0.8);
-  border-color: rgba(148, 163, 184, 0.2);
-}
-
-html.dark .input-wrapper:hover {
-  border-color: rgba(148, 163, 184, 0.4);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-html.dark .input-wrapper:focus-within {
-  border-color: var(--brand-primary);
-}
-
-html.dark .input-icon {
-  color: #64748b;
-}
-
-html.dark .input-wrapper:focus-within .input-icon {
-  color: var(--brand-primary);
-}
-
-html.dark .password-toggle {
-  color: #64748b;
-}
-
-html.dark .password-toggle:hover {
-  color: var(--brand-primary);
-}
-
-html.dark :deep(.el-input__inner) {
-  color: #ffffff;
-}
-
-html.dark :deep(.el-input__inner::placeholder) {
-  color: #64748b;
-}
-
-html.dark .code-row {
-  background: transparent;
-}
-
-html.dark :deep(.el-button--default) {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(148, 163, 184, 0.20);
-  color: #e2e8f0;
-}
-
-html.dark :deep(.el-button--default:hover) {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(203, 213, 225, 0.30);
-  color: #ffffff;
-}
-
-html.dark .link-text {
-  color: #cbd5e1;
-}
-
-html.dark .login-link {
-  color: #fdba74;
-}
-
-html.dark .login-link:hover {
-  color: #fb923c;
-}
-
-html.dark :deep(.el-checkbox__label) {
-  color: #cbd5e1;
-}
-
-html.dark :deep(.el-checkbox__input .el-checkbox__inner) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(148, 163, 184, 0.30);
-}
-
-html.dark :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-  background: var(--brand-primary);
-  border-color: var(--brand-primary);
-}
-
-html.dark .agreement-tip {
-  color: #94a3b8;
-}
-
-html.dark .agreement-tip a {
-  color: #fdba74;
-}
-
-html.dark .agreement-tip a:hover {
-  color: #fb923c;
 }
 </style>

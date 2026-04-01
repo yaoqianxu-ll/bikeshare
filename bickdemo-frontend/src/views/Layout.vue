@@ -308,8 +308,19 @@ const navOpen = ref(false)
 const showBgSelector = ref(false)
 const selectedBgId = ref(null)
 const backgrounds = ref([])
+const bgLoaded = ref(false)
 const uploading = ref(false)
 const isMobile = ref(false)
+
+// 预加载图片
+const preloadImage = (url) => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve(true)
+    img.onerror = () => resolve(false)
+    img.src = url
+  })
+}
 const toastRef = ref({
   visible: false,
   username: '',
@@ -462,6 +473,7 @@ const loadBackgrounds = async () => {
     if (userStore.isAdmin) {
       const enabledBg = backgrounds.value.find(bg => bg.enabled)
       if (enabledBg) selectedBgId.value = enabledBg.id
+      preloadBgImage()
       return
     }
 
@@ -478,15 +490,29 @@ const loadBackgrounds = async () => {
       const enabledBg = backgrounds.value.find(bg => bg.enabled) || backgrounds.value[0]
       selectedBgId.value = enabledBg ? enabledBg.id : null
     }
+    preloadBgImage()
   } catch (error) {
     console.error(error)
+    bgLoaded.value = true
   }
+}
+
+// 预加载背景图
+const preloadBgImage = async () => {
+  const chosen = selectedBgId.value ? backgrounds.value.find(bg => bg.id === selectedBgId.value) : null
+  const enabledBg = backgrounds.value.find(bg => bg.enabled)
+  const activeBg = userStore.isAdmin ? (enabledBg || chosen) : (chosen || enabledBg)
+  if (activeBg && activeBg.imageUrl) {
+    await preloadImage(activeBg.imageUrl)
+  }
+  bgLoaded.value = true
 }
 
 // 选择背景
 const selectBackground = async (id) => {
   try {
     selectedBgId.value = id
+    bgLoaded.value = false
     if (userStore.isAdmin) {
       await setEnabledBackground(id, true)
       message.success('背景已切换')
@@ -495,10 +521,17 @@ const selectBackground = async (id) => {
       try {
         window?.localStorage?.setItem(LOCAL_BG_KEY, String(id))
       } catch (_) {}
+      // 预加载新背景
+      const selectedBg = backgrounds.value.find(bg => bg.id === id)
+      if (selectedBg && selectedBg.imageUrl) {
+        await preloadImage(selectedBg.imageUrl)
+      }
+      bgLoaded.value = true
       message.success('背景已切换')
     }
   } catch (error) {
     console.error(error)
+    bgLoaded.value = true
   }
 }
 
@@ -506,6 +539,7 @@ const selectBackground = async (id) => {
 const handleUploadSuccess = async (response, file) => {
   if (response.code === 200 && response.data) {
     message.success('上传成功')
+    bgLoaded.value = false
     loadBackgrounds()
   } else {
     message.error(response.message || '上传失败')
@@ -564,7 +598,9 @@ const containerStyle = computed(() => {
       backgroundImage: `url(${activeBg.imageUrl})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
-      backgroundAttachment: 'fixed'
+      backgroundAttachment: 'fixed',
+      opacity: bgLoaded.value ? '1' : '0',
+      transition: 'opacity 0.5s ease-in'
     }
   }
   return {}
@@ -960,6 +996,8 @@ watch(
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: #0f172a;
+  opacity: 1;
 }
 
 /* ========== 头部导航 ========== */

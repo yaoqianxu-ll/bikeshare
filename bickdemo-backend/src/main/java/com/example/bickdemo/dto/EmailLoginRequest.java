@@ -13,4 +13,10 @@ public class EmailLoginRequest {
 
     @NotBlank(message = "密码不能为空")
     private String password;
+
+    /** 图形验证码答案 */
+    private String captcha;
+
+    /** 图形验证码 ID */
+    private String captchaId;
 }

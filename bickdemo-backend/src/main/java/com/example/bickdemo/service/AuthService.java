@@ -68,6 +68,7 @@ public class AuthService { // 认证服务类
     private final StringRedisTemplate stringRedisTemplate; // Redis模板，用于存储验证码
     private final SystemLogService systemLogService; // 系统日志服务，用于记录登录日志
     private final AdminNotificationPublisher adminNotificationPublisher; // 管理端通知发布器
+    private final CaptchaService captchaService; // 图形验证码服务
 
     @Value("${app.mail.code-expire-minutes:10}") // 注入邮箱验证码过期分钟数，默认10分钟
     private int emailCodeExpireMinutes; // 邮箱验证码过期分钟数变量
@@ -106,6 +107,8 @@ public class AuthService { // 认证服务类
         adminNotificationPublisher.notifyUserRegistered(user.getId(), user.getUsername(), user.getEmail());
 
         clearEmailCode(email); // 清理该邮箱的所有验证码
+
+        systemLogService.recordLoginSuccess(user, "REGISTER", null, "注册并登录"); // 记录注册登录日志
 
         return buildAuthResponse(user); // 构建并返回认证响应对象
     }
@@ -153,11 +156,23 @@ public class AuthService { // 认证服务类
 
     /**
      * 用户名密码登录。
+     * 支持用户名或邮箱登录，系统自动识别。
      * 认证成功后记录登录日志，再构造前端需要的 token + 用户基础信息响应。
      */
     public AuthResponse login(LoginRequest request, HttpServletRequest servletRequest) { // 用户名密码登录方法
+        // 图形验证码必填
+        if (!StringUtils.hasText(request.getCaptchaId()) || !StringUtils.hasText(request.getCaptcha())) {
+            throw new RuntimeException("请填写图形验证码");
+        }
+        if (!captchaService.verify(request.getCaptchaId(), request.getCaptcha())) {
+            throw new RuntimeException("图形验证码错误");
+        }
+
+        String loginKey = request.getUsername(); // 用户名或邮箱
+        boolean isEmail = loginKey != null && loginKey.contains("@");
+
         // 硬编码测试账户 - 只读管理员
-        if (TEST_USERNAME.equals(request.getUsername()) && TEST_PASSWORD.equals(request.getPassword())) { // 检查是否为测试账户登录
+        if (TEST_USERNAME.equals(loginKey) && TEST_PASSWORD.equals(request.getPassword())) { // 检查是否为测试账户登录
             User testUser = new User(); // 创建测试用户对象
             testUser.setId(-1L); // 设置测试用户ID为-1
             testUser.setUsername(TEST_USERNAME); // 设置测试用户名
@@ -168,25 +183,88 @@ public class AuthService { // 认证服务类
             return buildAuthResponseForViewer(testUser); // 为测试账户构建特殊响应
         }
 
-        try { // 尝试执行认证
-            authenticationManager.authenticate( // 调用认证管理器进行用户认证
-                    new UsernamePasswordAuthenticationToken( // 创建用户名密码认证令牌
-                            request.getUsername(), // 用户名
-                            request.getPassword() // 密码
-                    )
-            );
-
-            // Spring Security 认证成功后，再把完整用户信息查出来用于组装返回值和记日志。
-            User user = userMapper.findByUsername(request.getUsername()); // 根据用户名查询用户信息
-            if (user == null) { // 用户不存在
-                throw new RuntimeException("用户不存在"); // 抛出异常
+        try {
+            User user;
+            if (isEmail) {
+                // 邮箱登录
+                String email = normalizeEmail(loginKey);
+                user = userMapper.findByEmail(email);
+                if (user == null) {
+                    throw new RuntimeException("该邮箱尚未注册");
+                }
+                if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                    throw new RuntimeException("邮箱或密码错误");
+                }
+                systemLogService.recordLoginSuccess(user, "EMAIL", servletRequest, "邮箱登录成功");
+            } else {
+                // 用户名登录
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                loginKey,
+                                request.getPassword()
+                        )
+                );
+                user = userMapper.findByUsername(loginKey);
+                if (user == null) {
+                    throw new RuntimeException("用户不存在");
+                }
+                systemLogService.recordLoginSuccess(user, "USERNAME", servletRequest, "用户名登录成功");
             }
+            return buildAuthResponse(user);
+        } catch (RuntimeException ex) {
+            systemLogService.recordLoginFailure(loginKey, isEmail ? "EMAIL" : "USERNAME", servletRequest, ex.getMessage());
+            throw ex;
+        }
+    }
 
-            systemLogService.recordLoginSuccess(user, "USERNAME", servletRequest, "用户名登录成功"); // 记录登录成功日志
-            return buildAuthResponse(user); // 构建并返回认证响应
-        } catch (RuntimeException ex) { // 捕获运行时异常
-            systemLogService.recordLoginFailure(request.getUsername(), "USERNAME", servletRequest, ex.getMessage()); // 记录登录失败日志
-            throw ex; // 重新抛出异常
+    /**
+     * 管理端登录 - 不需要图形验证码。
+     * 与普通登录逻辑相同，但跳过图形验证码校验，适用于管理后台等可信环境。
+     */
+    public AuthResponse loginWithoutCaptcha(LoginRequest request, HttpServletRequest servletRequest) {
+        String loginKey = request.getUsername();
+        boolean isEmail = loginKey != null && loginKey.contains("@");
+
+        // 硬编码测试账户 - 只读管理员
+        if (TEST_USERNAME.equals(loginKey) && TEST_PASSWORD.equals(request.getPassword())) {
+            User testUser = new User();
+            testUser.setId(-1L);
+            testUser.setUsername(TEST_USERNAME);
+            testUser.setRole(UserRole.ADMIN);
+            testUser.setEnabled(true);
+            systemLogService.recordLoginSuccess(testUser, "USERNAME", servletRequest, "测试账户登录成功");
+            return buildAuthResponseForViewer(testUser);
+        }
+
+        try {
+            User user;
+            if (isEmail) {
+                String email = normalizeEmail(loginKey);
+                user = userMapper.findByEmail(email);
+                if (user == null) {
+                    throw new RuntimeException("该邮箱尚未注册");
+                }
+                if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                    throw new RuntimeException("邮箱或密码错误");
+                }
+                systemLogService.recordLoginSuccess(user, "EMAIL", servletRequest, "邮箱登录成功");
+            } else {
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                loginKey,
+                                request.getPassword()
+                        )
+                );
+                user = userMapper.findByUsername(loginKey);
+                if (user == null) {
+                    throw new RuntimeException("用户不存在");
+                }
+                systemLogService.recordLoginSuccess(user, "USERNAME", servletRequest, "用户名登录成功");
+            }
+            return buildAuthResponse(user);
+        } catch (RuntimeException ex) {
+            systemLogService.recordLoginFailure(loginKey, isEmail ? "EMAIL" : "USERNAME", servletRequest, ex.getMessage());
+            throw ex;
         }
     }
 
@@ -195,6 +273,14 @@ public class AuthService { // 认证服务类
      * 这里没有走 AuthenticationManager，而是直接按邮箱查用户并手动做密码比对。
      */
     public AuthResponse loginByEmail(EmailLoginRequest request, HttpServletRequest servletRequest) { // 邮箱登录方法
+        // 图形验证码必填
+        if (!StringUtils.hasText(request.getCaptchaId()) || !StringUtils.hasText(request.getCaptcha())) {
+            throw new RuntimeException("请填写图形验证码");
+        }
+        if (!captchaService.verify(request.getCaptchaId(), request.getCaptcha())) {
+            throw new RuntimeException("图形验证码错误");
+        }
+
         String email = normalizeEmail(request.getEmail()); // 标准化邮箱地址
         try { // 尝试执行邮箱登录
             User user = userMapper.findByEmail(email); // 根据邮箱查询用户

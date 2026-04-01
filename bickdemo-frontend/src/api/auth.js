@@ -84,3 +84,10 @@ export function deleteAvatar() {
     method: 'delete'
   })
 }
+
+export function getCaptcha() {
+  return request({
+    url: '/auth/captcha',
+    method: 'get'
+  })
+}

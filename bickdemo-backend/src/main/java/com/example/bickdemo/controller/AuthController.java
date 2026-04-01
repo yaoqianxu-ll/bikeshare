@@ -4,10 +4,12 @@ import com.example.bickdemo.dto.*;
 import com.example.bickdemo.entity.User;
 import com.example.bickdemo.service.AuthService;
 import com.example.bickdemo.service.JwtService;
+import com.example.bickdemo.service.CaptchaService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,6 +35,31 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtService jwtService;
+    private final CaptchaService captchaService;
+
+    /**
+     * 获取图形验证码。
+     * 返回验证码图片 (Base64) 和 captchaId，用于前端展示和验证。
+     */
+    @GetMapping("/captcha")
+    public ResponseEntity<ApiResponse<Map<String, String>>> getCaptcha() {
+        Map<String, String> result = captchaService.generateCaptcha();
+        return ResponseEntity.ok(ApiResponse.success("获取成功", result));
+    }
+
+    /**
+     * 验证图形验证码。
+     */
+    @PostMapping("/captcha/verify")
+    public ResponseEntity<ApiResponse<Boolean>> verifyCaptcha(@RequestParam("captchaId") String captchaId,
+                                                               @RequestParam("answer") String answer) {
+        boolean isValid = captchaService.verify(captchaId, answer);
+        if (isValid) {
+            return ResponseEntity.ok(ApiResponse.success("验证成功", true));
+        } else {
+            return ResponseEntity.ok(ApiResponse.error(400, "验证码错误"));
+        }
+    }
 
     /**
      * 用户注册入口。
@@ -52,6 +79,17 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request,
                                                            HttpServletRequest servletRequest) {
         AuthResponse response = authService.login(request, servletRequest);
+        return ResponseEntity.ok(ApiResponse.success("登录成功", response));
+    }
+
+    /**
+     * 管理端登录入口 - 不需要图形验证码。
+     * 适用于管理后台等可信环境，避免影响管理端用户体验。
+     */
+    @PostMapping("/admin/login")
+    public ResponseEntity<ApiResponse<AuthResponse>> adminLogin(@Valid @RequestBody LoginRequest request,
+                                                                  HttpServletRequest servletRequest) {
+        AuthResponse response = authService.loginWithoutCaptcha(request, servletRequest);
         return ResponseEntity.ok(ApiResponse.success("登录成功", response));
     }
 

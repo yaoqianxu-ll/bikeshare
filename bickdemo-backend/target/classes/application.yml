@@ -129,3 +129,11 @@ app:
       guest-max-requests-per-minute: ${APP_SECURITY_IP_GUEST_MAX_REQUESTS_PER_MINUTE:60}
       authenticated-max-requests-per-minute: ${APP_SECURITY_IP_AUTH_MAX_REQUESTS_PER_MINUTE:60}
       ban-duration-minutes: ${APP_SECURITY_IP_BAN_DURATION_MINUTES:15}
+
+# 图形验证码配置
+captcha:
+  length: 4
+  width: 120
+  height: 40
+  font-size: 24
+  session-key: captcha

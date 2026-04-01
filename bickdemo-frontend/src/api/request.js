@@ -84,12 +84,16 @@ request.interceptors.response.use(
           }
         }
       } else if (status === 400) {
-        // 400 错误显示详细验证信息
-        if (data && data.data && typeof data.data === 'object') {
-          const messages = Object.values(data.data).join('; ')
-          ElMessage.error(messages)
-        } else if (data && data.message) {
-          ElMessage.error(data.message)
+        // 400 错误显示详细验证信息（登录相关请求由调用方自行处理错误提示）
+        const reqUrl = String(error?.config?.url || '')
+        const isLoginRequest = reqUrl.includes('/auth/login') || reqUrl.includes('/auth/email/login')
+        if (!isLoginRequest) {
+          if (data && data.data && typeof data.data === 'object') {
+            const messages = Object.values(data.data).join('; ')
+            ElMessage.error(messages)
+          } else if (data && data.message) {
+            ElMessage.error(data.message)
+          }
         }
       } else {
         if (data && data.message) {
