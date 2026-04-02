@@ -16,6 +16,12 @@ import com.example.bickdemo.entity.BicycleStatus;
 import com.example.bickdemo.entity.BicycleType;
 // 引入自行车 Mapper 接口，用于数据库操作
 import com.example.bickdemo.mapper.BicycleMapper;
+// 引入用户 Mapper 接口，用于查询用户信息
+import com.example.bickdemo.mapper.UserMapper;
+// 引入租赁 Mapper 接口，用于查询租赁信息
+import com.example.bickdemo.mapper.RentalMapper;
+// 引入用户实体类
+import com.example.bickdemo.entity.User;
 // 引入 MyBatis-Plus 的分页组件，支持分页查询
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 // 引入 Lombok 的注解，用于生成包含所有 final 字段的构造函数
@@ -37,6 +43,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 // 引入 Java 的流收集器，用于将流转换为列表
 import java.util.stream.Collectors;
+// 引入 Java 的集合接口
+import java.util.Set;
+// 引入 Java 的 HashMap 类，用于存储租赁数量映射
+import java.util.HashMap;
+// 引入 Java 的 Map 接口
+import java.util.Map;
 
 /**
  * 自行车管理服务类。
@@ -54,6 +66,10 @@ public class BicycleService {
 
     // 自行车 Mapper 接口，用于执行数据库 CRUD 操作
     private final BicycleMapper bicycleMapper;
+    // 用户 Mapper 接口，用于查询用户信息
+    private final UserMapper userMapper;
+    // 租赁 Mapper 接口，用于查询租赁信息
+    private final RentalMapper rentalMapper;
 
     /**
      * 兼容旧状态枚举的方法。
@@ -102,18 +118,15 @@ public class BicycleService {
 
     /**
      * 分页获取车辆列表，供管理端表格使用。
-     * 使用缓存减少数据库压力，缓存 key 包含所有筛选参数。
      *
      * @param type   自行车类型筛选条件，可为 null 表示不筛选
      * @param status 自行车状态筛选条件，可为 null 表示不筛选
      * @param page   当前页码，从 1 开始
      * @param size   每页记录数
+     * @param username 当前登录用户名，为 null 表示未登录
      * @return 包含分页信息的自行车响应对象列表
      */
-    // 使用缓存，key 由类型、状态、页码、每页大小组成
-    @Cacheable(cacheNames = CacheNames.BICYCLES_PAGE,
-               key = "'page:' + #p2 + ':size:' + #p3 + ':type:' + (#p0 != null ? #p0.name() : 'all') + ':status:' + (#p1 != null ? #p1.name() : 'all')")
-    public Page<BicycleResponse> getBicyclesPage(BicycleType type, BicycleStatus status, int page, int size) {
+    public Page<BicycleResponse> getBicyclesPage(BicycleType type, BicycleStatus status, int page, int size, String username) {
         // 创建 Lambda 查询条件包装器
         LambdaQueryWrapper<Bicycle> wrapper = new LambdaQueryWrapper<Bicycle>()
                 // 只查询未删除的记录
@@ -131,12 +144,32 @@ public class BicycleService {
 
         // 执行分页查询，传入当前页码和每页大小
         Page<Bicycle> bicyclePage = bicycleMapper.selectPage(new Page<>(page, size), wrapper);
+        // 转换结果
+        List<BicycleResponse> records = bicyclePage.getRecords().stream().map(this::convertToResponse).collect(Collectors.toList());
+
+        // 如果用户已登录，查询其正在租用的自行车及其数量
+        if (username != null) {
+            User user = userMapper.findByUsername(username);
+            if (user != null) {
+                List<RentalMapper.BicycleRentalVO> rentals = rentalMapper.findActiveRentalsByUserId(user.getId());
+                Map<Long, Integer> rentalMap = new java.util.HashMap<>();
+                for (RentalMapper.BicycleRentalVO rental : rentals) {
+                    rentalMap.merge(rental.getBicycleId(), rental.getQuantity(), Integer::sum);
+                }
+                for (BicycleResponse bike : records) {
+                    Integer rentedQty = rentalMap.get(bike.getId());
+                    bike.setRentedByCurrentUser(rentedQty != null && rentedQty > 0);
+                    bike.setRentedQuantityByCurrentUser(rentedQty);
+                }
+            }
+        }
+
         // 创建响应分页对象，设置当前页和每页大小
         Page<BicycleResponse> result = new Page<>(bicyclePage.getCurrent(), bicyclePage.getSize());
         // 设置总记录数
         result.setTotal(bicyclePage.getTotal());
-        // 将查询到的实体列表转换为响应对象列表并设置到分页结果中
-        result.setRecords(bicyclePage.getRecords().stream().map(this::convertToResponse).collect(Collectors.toList()));
+        // 将转换后的列表设置到分页结果中
+        result.setRecords(records);
         // 返回分页结果
         return result;
     }
@@ -162,8 +195,7 @@ public class BicycleService {
      *
      * @return 所有可租的自行车响应对象列表（库存大于 0 且状态为可用或已租出）
      */
-    // 使用缓存，结果为空时不缓存
-    @Cacheable(cacheNames = CacheNames.BICYCLES_AVAILABLE, unless = "#result.isEmpty()")
+    // 不使用缓存，直接查数据库
     public List<BicycleResponse> getAvailableBicycles() {
         // 记录调试日志
         log.debug("查询可用自行车");
@@ -182,14 +214,12 @@ public class BicycleService {
 
     /**
      * 按主键获取车辆详情。
-     * 使用缓存提升详情接口响应速度。
+     * 直接查数据库，确保数据最新。
      *
      * @param id 自行车主键 ID
      * @return 自行车响应对象
      * @throws RuntimeException 如果自行车不存在
      */
-    // 使用缓存，key 为自行车 ID，结果为 null 时不缓存
-    @Cacheable(cacheNames = CacheNames.BICYCLE_DETAIL, key = "#id", unless = "#result == null")
     public BicycleResponse getBicycleById(Long id) {
         // 记录调试日志，包含自行车 ID
         log.debug("根据 ID 查询自行车：{}", id);

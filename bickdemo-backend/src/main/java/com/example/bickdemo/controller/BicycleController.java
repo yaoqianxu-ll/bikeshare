@@ -12,6 +12,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -51,8 +53,11 @@ public class BicycleController {
             @RequestParam(required = false) BicycleType type,
             @RequestParam(required = false) BicycleStatus status,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Page<BicycleResponse> bicyclePage = bicycleService.getBicyclesPage(type, status, page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Page<BicycleResponse> bicyclePage = bicycleService.getBicyclesPage(
+                type, status, page, size,
+                userDetails == null ? null : userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(bicyclePage));
     }
 

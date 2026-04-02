@@ -34,6 +34,21 @@ public interface RentalMapper extends BaseMapper<Rental> {
     List<Rental> findByStatus(@Param("status") RentalStatus status);
 
     /**
+     * 查询用户进行中租赁的自行车ID列表及其数量
+     */
+    @Select("SELECT bicycle_id, quantity FROM rentals WHERE user_id = #{userId} AND status = 'ACTIVE' AND deleted = 0")
+    List<BicycleRentalVO> findActiveRentalsByUserId(@Param("userId") Long userId);
+
+    class BicycleRentalVO {
+        private Long bicycleId;
+        private Integer quantity;
+        public Long getBicycleId() { return bicycleId; }
+        public void setBicycleId(Long bicycleId) { this.bicycleId = bicycleId; }
+        public Integer getQuantity() { return quantity; }
+        public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    }
+
+    /**
      * 统计进行中租赁中的车辆数量
      */
     @Select("""

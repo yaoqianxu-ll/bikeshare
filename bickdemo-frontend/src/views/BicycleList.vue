@@ -85,7 +85,7 @@
               </el-button>
               <el-button
                 v-if="userStore.isLoggedIn && isBikeSoldOut(bike)"
-                type="primary"
+                type="warning"
                 class="rent-btn"
                 disabled
               >
@@ -148,12 +148,17 @@
             <el-input-number
               v-model="rentForm.quantity"
               :min="1"
-              :max="Math.max(1, selectedBicycle.quantity || 1)"
+              :max="rentMaxQuantity"
               :step="1"
               controls-position="right"
               style="width: 100%"
             />
-            <div class="qty-hint">可租数量：{{ selectedBicycle.quantity ?? 0 }}</div>
+            <div class="qty-hint">
+              库存数量：{{ selectedBicycle?.quantity ?? 0 }} 辆
+              <span v-if="selectedBicycle?.rentedQuantityByCurrentUser">
+                (已租 {{ selectedBicycle.rentedQuantityByCurrentUser }} 辆)
+              </span>
+            </div>
           </el-form-item>
           <el-form-item>
             <el-date-picker
@@ -240,8 +245,13 @@
                 <el-icon><Box /></el-icon>
               </div>
               <div class="info-content">
-                <span class="info-label">可租数量</span>
-                <span class="info-value">{{ selectedBicycle.quantity }} 辆</span>
+                <span class="info-label">库存数量</span>
+                <span class="info-value">
+                  {{ selectedBicycle.quantity || 0 }} 辆
+                  <span v-if="selectedBicycle.rentedQuantityByCurrentUser" class="rented-hint">
+                    (已租 {{ selectedBicycle.rentedQuantityByCurrentUser }} 辆)
+                  </span>
+                </span>
               </div>
             </div>
           </div>
@@ -279,7 +289,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import {
   Bicycle,
@@ -292,6 +302,7 @@ import {
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getBicyclesPage } from '@/api/bicycle'
+import { getBicycleById } from '@/api/bicycle'
 import { createRental, endRental, getMyActiveRentals } from '@/api/rental'
 import { getMarketplaceLocationHint } from '@/api/marketplace'
 
@@ -347,6 +358,12 @@ const rentForm = reactive({
   quantity: 1
 })
 
+// 计算最大可租数量的计算属性
+const rentMaxQuantity = computed(() => {
+  if (!selectedBicycle.value) return 1
+  return selectedBicycle.value.quantity ?? 1
+})
+
 const loadBicycles = async (page = currentPage.value) => {
   try {
     const params = {
@@ -358,11 +375,12 @@ const loadBicycles = async (page = currentPage.value) => {
 
     const res = await getBicyclesPage(params)
     const records = res.data.records || []
-    bicycles.value = records.filter(b => {
+    // 使用解构赋值强制触发 Vue 响应式更新
+    bicycles.value = [...records.filter(b => {
       // When user explicitly filters "可租赁", only show in-stock items.
       if (filterStatus.value === 'AVAILABLE') return (b?.quantity ?? 0) > 0
       return true
-    })
+    })]
     total.value = Number(res.data.total || 0)
     currentPage.value = Number(res.data.current || page)
 
@@ -419,14 +437,13 @@ const loadUserActiveRentals = async () => {
     const res = await getMyActiveRentals()
     const rentedBicycleIds = res.data.map(r => r.bicycleId)
     const rentalMap = new Map(res.data.map(r => [r.bicycleId, r.id]))
+    // 记录每辆车的已租数量
+    const quantityMap = new Map(res.data.map(r => [r.bicycleId, r.quantity || 1]))
 
     bicycles.value.forEach(bike => {
-      bike.rentedByCurrentUser = false
-      bike.rentalId = null
-      if (rentedBicycleIds.includes(bike.id)) {
-        bike.rentedByCurrentUser = true
-        bike.rentalId = rentalMap.get(bike.id)
-      }
+      bike.rentedByCurrentUser = rentedBicycleIds.includes(bike.id)
+      bike.rentalId = rentalMap.get(bike.id) || null
+      bike.rentedQuantityByCurrentUser = quantityMap.get(bike.id) || 0
     })
   } catch (error) {
     console.error('获取活跃租赁失败', error)
@@ -452,6 +469,7 @@ const loadUserLocation = async () => {
 }
 
 const isBikeSoldOut = (bike) => {
+  // 直接用 quantity 判断是否售罄，不减去已租数量
   return bike?.status === 'AVAILABLE' && (bike?.quantity ?? 0) <= 0
 }
 
@@ -484,6 +502,7 @@ const toRad = (value) => {
  * 需要满足：状态可用、有库存、且在服务范围内（10 公里）
  */
 const isBikeRentable = (bike) => {
+  // 直接用 quantity 判断是否可租，不减去已租数量
   if (bike?.status !== 'AVAILABLE' || (bike?.quantity ?? 0) <= 0) {
     return false
   }
@@ -525,6 +544,7 @@ const getDisplayStatus = (target) => {
   if (target && typeof target === 'object') {
     if (isBikeSoldOut(target)) return 'SOLD_OUT'
     if (target.status === 'RENTED') {
+      // 直接用 quantity 判断，不减去已租数量
       return (target.quantity ?? 0) > 0 ? 'AVAILABLE' : 'SOLD_OUT'
     }
     return target.status
@@ -592,16 +612,61 @@ const getTypeText = (type) => {
   return texts[type] || type
 }
 
-const handleRent = (bike) => {
-  selectedBicycle.value = bike
+const handleRent = async (bike) => {
+  try {
+    // 获取最新数据
+    const res = await getBicycleById(bike.id)
+    selectedBicycle.value = res.data
+    // 额外查询用户的活跃租赁，合并已租数量（必须等这个完成后再打开对话框）
+    await mergeUserRentalInfo(selectedBicycle.value)
+  } catch (error) {
+    console.error('获取自行车详情失败', error)
+    selectedBicycle.value = bike
+  }
   rentForm.expectedEndTime = null
   rentForm.quantity = 1
   rentDialogVisible.value = true
 }
 
-const viewDetail = (bike) => {
-  selectedBicycle.value = bike
-  detailDialogVisible.value = true
+const viewDetail = async (bike) => {
+  try {
+    // 通过 API 获取最新数据，避免缓存问题
+    const res = await getBicycleById(bike.id)
+    selectedBicycle.value = res.data
+    // 额外查询用户的活跃租赁，合并已租数量
+    await mergeUserRentalInfo(selectedBicycle.value)
+    detailDialogVisible.value = true
+  } catch (error) {
+    // 如果 API 获取失败， fallback 到本地数据
+    selectedBicycle.value = bike
+    detailDialogVisible.value = true
+  }
+}
+
+/**
+ * 合并用户的活跃租赁信息到自行车对象
+ */
+const mergeUserRentalInfo = async (bike) => {
+  if (!bike) return
+  try {
+    const res = await getMyActiveRentals()
+    // 确保 res.data 是数组
+    const rentals = Array.isArray(res.data) ? res.data.filter(r => r.bicycleId === bike.id) : []
+    if (rentals.length > 0) {
+      bike.rentedByCurrentUser = true
+      bike.rentalId = rentals[0].id // 保留第一个租赁 ID 用于归还
+      bike.rentedQuantityByCurrentUser = rentals.reduce((sum, r) => sum + (r.quantity || 1), 0)
+    } else {
+      bike.rentedByCurrentUser = false
+      bike.rentalId = null
+      bike.rentedQuantityByCurrentUser = 0
+    }
+  } catch (error) {
+    console.error('获取活跃租赁失败', error)
+    bike.rentedByCurrentUser = false
+    bike.rentalId = null
+    bike.rentedQuantityByCurrentUser = 0
+  }
 }
 
 const goToRent = (bike) => {
@@ -627,6 +692,8 @@ const confirmRent = async () => {
     })
     message.success('租赁成功')
     rentDialogVisible.value = false
+    detailDialogVisible.value = false
+    selectedBicycle.value = null
     await loadBicycles()
   } catch (error) {
     console.error(error)
@@ -1046,6 +1113,11 @@ onMounted(() => {
   margin-top: 6px;
   font-size: 12px;
   color: #6c757d;
+}
+
+.rented-hint {
+  color: #10b981;
+  font-weight: 500;
 }
 
 .bike-location .el-icon {

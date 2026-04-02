@@ -95,8 +95,6 @@ public class RentalService {
      */
     // 创建租赁订单方法，使用事务保证数据一致性
     @Transactional
-    // 清除统计数据缓存，确保新建租赁后统计准确
-    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
     // 创建租赁方法，参数：用户ID、租赁请求、HTTP请求对象
     public RentalResponse createRental(Long userId, RentalRequest request, HttpServletRequest servletRequest) {
         // 根据自行车ID查询自行车信息

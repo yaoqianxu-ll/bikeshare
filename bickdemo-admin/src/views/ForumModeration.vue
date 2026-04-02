@@ -85,7 +85,7 @@
         <el-table-column label="评论" width="70" align="center">
           <template #default="{ row }">{{ row.commentCount }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="140" align="center">
+        <el-table-column label="操作" width="160" align="center">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button size="small" :type="row.pinned ? 'warning' : 'success'" plain @click="togglePin(row)">
@@ -145,6 +145,16 @@ const review = async (item, approved) => {
     ElMessage.success('帖子已驳回')
   }
   await load()
+}
+
+const togglePin = async (row) => {
+  try {
+    await pinForumPost(row.id, !row.pinned)
+    ElMessage.success(row.pinned ? '已取消置顶' : '帖子已置顶')
+    await load()
+  } catch (error) {
+    console.error('置顶操作失败:', error)
+  }
 }
 
 const remove = async (row) => {

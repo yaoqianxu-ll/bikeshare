@@ -1896,6 +1896,7 @@ onBeforeUnmount(async () => {
   display: flex;
   gap: 12px;
   max-width: 70%;
+  align-items: flex-start;
 }
 
 .message-item.self {
@@ -1907,6 +1908,7 @@ onBeforeUnmount(async () => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  align-items: flex-start;
 }
 
 .message-item.self .message-content {

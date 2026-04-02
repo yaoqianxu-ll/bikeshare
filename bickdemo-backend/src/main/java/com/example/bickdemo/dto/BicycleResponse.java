@@ -44,4 +44,10 @@ public class BicycleResponse {
     /** 更新时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
     private LocalDateTime updatedAt;
+
+    /** 当前用户是否正在租用该车辆 */
+    private Boolean rentedByCurrentUser;
+
+    /** 当前用户已租用该车辆的数量 */
+    private Integer rentedQuantityByCurrentUser;
 }

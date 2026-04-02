@@ -185,10 +185,6 @@
               :class="{ 'is-pinned': post.pinned }"
               @click="openPost(post.id)"
             >
-              <div v-if="post.pinned" class="pinned-badge">
-                <el-icon><Top /></el-icon>
-                <span>置顶</span>
-              </div>
               <div class="post-top">
                 <button class="author-chip" type="button" @click.stop="openAuthorProfile(post.authorId)">
                   <el-avatar :src="post.authorAvatar" :size="46" lazy>

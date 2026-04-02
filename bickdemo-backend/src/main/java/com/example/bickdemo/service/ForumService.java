@@ -1514,8 +1514,8 @@ public class ForumService {
         if (Objects.equals(currentUser.getId(), post.getUserId())) {
             return true;
         }
-        // 管理员只处理审核中的内容，不主动删除已经公开展示的帖子
-        return isAdmin(currentUser) && post.getStatus() != ForumPostStatus.APPROVED;
+        // 管理员可以删除任何帖子
+        return isAdmin(currentUser);
     }
 
     /**
