@@ -7,11 +7,12 @@ export function getAllBackgrounds() {
   })
 }
 
-export function uploadBackground(file, name, sort) {
+export function uploadBackground(file, name, sort, type) {
   const formData = new FormData()
   formData.append('file', file)
   if (name) formData.append('name', name)
   formData.append('sort', sort || 0)
+  formData.append('type', type || 'CUSTOM')
   return request({
     url: '/backgrounds/upload',
     method: 'post',

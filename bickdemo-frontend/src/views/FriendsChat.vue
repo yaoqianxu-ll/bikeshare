@@ -475,10 +475,10 @@
       </div>
     </el-drawer>
 
-    <!-- 新建聊天对话框 -->
+    <!-- 添加好友对话框 -->
     <el-dialog
       v-model="newChatDialogVisible"
-      title="新建聊天"
+      title="添加好友"
       width="420px"
       destroy-on-close
     >
@@ -527,8 +527,9 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, h } from 'vue'
-import { useMessage, useDialog } from 'naive-ui'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useMessage } from 'naive-ui'
+import { ElMessageBox } from 'element-plus'
 import {
   ArrowLeft,
   Bell,
@@ -573,7 +574,6 @@ const contactsStore = useContactsStore()
 const router = useRouter()
 const route = useRoute()
 const message = useMessage()
-const dialog = useDialog()
 
 // 搜索相关
 const searchKeyword = ref('')
@@ -1067,45 +1067,27 @@ const handleRejectRequest = async (request) => {
 }
 
 const handleCreateFriendRequest = async (user) => {
-  return new Promise((resolve) => {
-    let inputValue = ''
-    dialog.warning({
-      title: '发送好友申请',
-      content: h('div', {}, [
-        h('p', { style: 'margin-bottom: 8px' }, `给 ${user.username} 留一句打招呼的话`),
-        h('input', {
-          type: 'text',
-          placeholder: '比如：一起聊聊骑行路线吧',
-          style: 'width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ddd; border-radius: 4px;',
-          onInput: (e) => { inputValue = e.target.value }
-        })
-      ]),
-      positiveText: '发送',
-      negativeText: '取消',
-      onPositiveClick: async () => {
-        try {
-          await createFriendRequest({
-            receiverId: user.id,
-            remark: inputValue || ''
-          })
-          message.success('好友申请已发送')
-          await Promise.all([loadRequests(), loadContacts()])
-          resolve()
-        } catch (error) {
-          if (error !== 'cancel' && error !== 'close') {
-            console.error(error)
-          }
-          resolve()
-        }
-      },
-      onNegativeClick: () => {
-        resolve()
-      },
-      onClose: () => {
-        resolve()
+  try {
+    const { value: remark } = await ElMessageBox.prompt(
+      `给 ${user.username} 留一句打招呼的话`,
+      '发送好友申请',
+      {
+        confirmButtonText: '发送',
+        cancelButtonText: '取消',
+        placeholder: '比如：一起聊聊骑行路线吧'
       }
+    )
+    await createFriendRequest({
+      receiverId: user.id,
+      remark: remark || ''
     })
-  })
+    message.success('好友申请已发送')
+    await Promise.all([loadRequests(), loadContacts()])
+  } catch (error) {
+    if (error !== 'cancel' && error !== 'close') {
+      console.error(error)
+    }
+  }
 }
 
 // 消息发送
@@ -1203,7 +1185,7 @@ const handleImageSelected = async (event) => {
   }
 }
 
-// 新建聊天
+// 添加好友
 const showNewChatDialog = () => {
   newChatDialogVisible.value = true
   newChatKeyword.value = ''
@@ -2336,7 +2318,7 @@ onBeforeUnmount(async () => {
   gap: 8px;
 }
 
-/* 新建聊天对话框 */
+/* 添加好友对话框 */
 .new-chat-results {
   margin-top: 16px;
   max-height: 300px;

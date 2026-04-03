@@ -290,7 +290,8 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useContactsStore } from '@/stores/contacts'
-import { useMessage, useDialog } from 'naive-ui'
+import { useMessage } from 'naive-ui'
+import { ElMessageBox } from 'element-plus'
 import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation, StarFilled, Close, Calendar, Bell, Ticket, ArrowDown } from '@element-plus/icons-vue'
 import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
 import { getCurrentUser } from '@/api/auth'
@@ -303,7 +304,6 @@ const route = useRoute()
 const userStore = useUserStore()
 const contactsStore = useContactsStore()
 const message = useMessage()
-const dialog = useDialog()
 const navOpen = ref(false)
 const showBgSelector = ref(false)
 const selectedBgId = ref(null)
@@ -569,23 +569,20 @@ const beforeUpload = (file) => {
 
 // 删除背景
 const deleteBg = async (id) => {
-  dialog.warning({
-    title: '提示',
-    content: '确认删除该背景图片吗？',
-    positiveText: '确定',
-    negativeText: '取消',
-    onPositiveClick: async () => {
-      try {
-        await deleteBackground(id)
-        message.success('删除成功')
-        loadBackgrounds()
-      } catch (error) {
-        console.error(error)
-      }
-    },
-    onNegativeClick: () => {},
-    onClose: () => {}
-  })
+  try {
+    await ElMessageBox.confirm('确认删除该背景图片吗？', '删除确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await deleteBackground(id)
+    message.success('删除成功')
+    loadBackgrounds()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error(error)
+    }
+  }
 }
 
 // 计算背景样式

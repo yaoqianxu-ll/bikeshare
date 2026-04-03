@@ -10165,3 +10165,4 @@ CREATE TABLE `admin_notifications` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '管理端通知表' ROW_FORMAT = Dynamic;
 
 SET FOREIGN_KEY_CHECKS = 1;
+ALTER TABLE activities ADD INDEX idx_activity_expire_check (status, deleted, end_time);

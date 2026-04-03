@@ -43,6 +43,17 @@
       </el-upload>
       <div class="form-grid">
         <el-input v-model="uploadForm.name" placeholder="背景名称" />
+        <el-dropdown trigger="click" @command="handleTypeCommand" style="width: 150px">
+          <el-button>
+            {{ typeLabel }}<el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="CUSTOM">自定义</el-dropdown-item>
+              <el-dropdown-item command="DEFAULT">默认背景</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-input-number v-model="uploadForm.sort" :min="1" :max="999" />
         <el-button type="primary" :loading="uploading" @click="submit">上传背景</el-button>
       </div>
@@ -74,8 +85,9 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { deleteBackground, getAllBackgrounds, setEnabledBackground, updateBackground, uploadBackground } from '@/api/background'
 
 const records = ref([])
@@ -84,8 +96,11 @@ const uploading = ref(false)
 const uploadForm = reactive({
   file: null,
   name: '',
+  type: 'CUSTOM',
   sort: 0
 })
+
+const typeLabel = computed(() => uploadForm.type === 'DEFAULT' ? '默认背景' : '自定义')
 
 const load = async () => {
   const res = await getAllBackgrounds()
@@ -105,6 +120,10 @@ const handleRemove = () => {
   fileList.value = []
 }
 
+const handleTypeCommand = (command) => {
+  uploadForm.type = command
+}
+
 const submit = async () => {
   if (!uploadForm.file) {
     ElMessage.warning('请先选择图片')
@@ -112,11 +131,12 @@ const submit = async () => {
   }
   uploading.value = true
   try {
-    await uploadBackground(uploadForm.file, uploadForm.name, uploadForm.sort)
+    await uploadBackground(uploadForm.file, uploadForm.name, uploadForm.sort, uploadForm.type)
     ElMessage.success('背景上传成功')
     uploadForm.file = null
     fileList.value = []
     uploadForm.name = ''
+    uploadForm.type = 'CUSTOM'
     uploadForm.sort = 0
     await load()
   } finally {

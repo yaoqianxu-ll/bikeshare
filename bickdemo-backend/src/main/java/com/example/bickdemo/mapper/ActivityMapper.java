@@ -45,4 +45,16 @@ public interface ActivityMapper extends BaseMapper<Activity> {
             "ORDER BY id DESC" +
             "</script>")
     List<Activity> findAllIncludeDeleted(@Param("status") String status);
+
+    /**
+     * 增量查询已过期且需要自动结束的活动（只查必要字段）
+     * 只查询 end_time 在指定时间段内的已发布活动
+     */
+    @Select("SELECT id, title, end_time FROM activities " +
+            "WHERE status = 'PUBLISHED' AND deleted = 0 AND end_time > #{checkFrom} AND end_time <= #{checkTo} " +
+            "ORDER BY end_time ASC LIMIT #{limit}")
+    List<Activity> findExpiredActivitiesBetween(
+            @Param("checkFrom") java.time.LocalDateTime checkFrom,
+            @Param("checkTo") java.time.LocalDateTime checkTo,
+            @Param("limit") int limit);
 }

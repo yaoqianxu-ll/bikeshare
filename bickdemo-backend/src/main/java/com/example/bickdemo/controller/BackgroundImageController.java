@@ -72,7 +72,8 @@ public class BackgroundImageController {
     public ResponseEntity<ApiResponse<BackgroundImage>> uploadBackground(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "sort", defaultValue = "0") Integer sort) {
+            @RequestParam(value = "sort", defaultValue = "0") Integer sort,
+            @RequestParam(value = "type", defaultValue = "CUSTOM") String type) {
         try {
             // 先把图片上传到对象存储，再把返回 URL 落入背景图表。
             String imageUrl = minioService.uploadImage(file);
@@ -81,7 +82,7 @@ public class BackgroundImageController {
             BackgroundImage image = new BackgroundImage();
             image.setName(name != null ? name : file.getOriginalFilename());
             image.setImageUrl(imageUrl);
-            image.setType("CUSTOM");
+            image.setType(type != null ? type : "CUSTOM");
             image.setEnabled(false); // 默认不启用
             image.setSort(sort);
 
