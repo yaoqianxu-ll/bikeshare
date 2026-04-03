@@ -58,7 +58,7 @@
         <!-- 活动描述 -->
         <div class="description-section" v-if="activity.description">
           <h3>活动介绍</h3>
-          <div class="description-content" v-html="activity.description"></div>
+          <div class="description-content">{{ activity.description }}</div>
         </div>
 
         <!-- 报名按钮 -->

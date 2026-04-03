@@ -90,19 +90,7 @@
           layout="total, prev, pager, next"
           @current-change="loadRentals"
         />
-        <el-dropdown trigger="click" @command="handleSizeChange">
-          <span class="page-size-trigger">
-            {{ pageSize }}条/页<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item :command="10">10条/页</el-dropdown-item>
-              <el-dropdown-item :command="20">20条/页</el-dropdown-item>
-              <el-dropdown-item :command="50">50条/页</el-dropdown-item>
-              <el-dropdown-item :command="100">100条/页</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <PageSizeDropdown v-model="pageSize" @change="loadRentals" />
       </div>
     </el-card>
 
@@ -137,7 +125,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useMessage, useDialog } from 'naive-ui'
 import { getMyRentals, endRental, cancelRental } from '@/api/rental'
-import { ArrowDown } from '@element-plus/icons-vue'
+import PageSizeDropdown from '@/components/PageSizeDropdown.vue'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -157,12 +145,6 @@ const totalText = computed(() => {
   const n = Number(total.value)
   return Number.isFinite(n) ? `共 ${n} 条` : ''
 })
-
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  currentPage.value = 1
-  loadRentals()
-}
 
 const formatText = (value) => {
   if (value === null || value === undefined) return '-'

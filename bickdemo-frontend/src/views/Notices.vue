@@ -54,19 +54,7 @@
           layout="total, prev, pager, next"
           @current-change="loadNotices"
         />
-        <el-dropdown trigger="click" @command="handleSizeChange">
-          <span class="page-size-trigger">
-            {{ pageSize }}条/页<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item :command="10">10条/页</el-dropdown-item>
-              <el-dropdown-item :command="15">15条/页</el-dropdown-item>
-              <el-dropdown-item :command="20">20条/页</el-dropdown-item>
-              <el-dropdown-item :command="30">30条/页</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <PageSizeDropdown v-model="pageSize" @change="loadNotices" />
       </div>
     </el-card>
 
@@ -81,7 +69,7 @@
         </div>
         <el-image v-if="selectedNotice.coverImage" :src="selectedNotice.coverImage" fit="cover" class="detail-cover" />
         <el-divider />
-        <div class="detail-content" v-html="selectedNotice.content"></div>
+        <div class="detail-content">{{ selectedNotice.content }}</div>
       </div>
       <template #footer>
         <el-button @click="detailDialogVisible = false">关闭</el-button>
@@ -93,8 +81,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bell, ArrowRight, ArrowDown } from '@element-plus/icons-vue'
+import { Bell, ArrowRight } from '@element-plus/icons-vue'
 import { getNotices } from '@/api/notice'
+import PageSizeDropdown from '@/components/PageSizeDropdown.vue'
 
 const notices = ref([])
 const loading = ref(false)
@@ -108,12 +97,6 @@ const totalText = computed(() => {
   const n = Number(total.value)
   return Number.isFinite(n) ? `共 ${n} 条公告` : ''
 })
-
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  currentPage.value = 1
-  loadNotices()
-}
 
 const loadNotices = async () => {
   loading.value = true

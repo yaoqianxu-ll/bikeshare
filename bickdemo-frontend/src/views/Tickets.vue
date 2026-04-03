@@ -60,18 +60,7 @@
           layout="total, prev, pager, next"
           @current-change="loadTickets"
         />
-        <el-dropdown trigger="click" @command="handleSizeChange">
-          <span class="page-size-trigger">
-            {{ pageSize }}条/页<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item :command="10">10条/页</el-dropdown-item>
-              <el-dropdown-item :command="20">20条/页</el-dropdown-item>
-              <el-dropdown-item :command="50">50条/页</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <PageSizeDropdown v-model="pageSize" @change="loadTickets" />
       </div>
     </el-card>
 
@@ -110,7 +99,7 @@
         <!-- 工单内容 -->
         <div class="ticket-content-section">
           <h4>工单内容</h4>
-          <div class="ticket-content" v-html="selectedTicket.content"></div>
+          <div class="ticket-content">{{ selectedTicket.content }}</div>
         </div>
 
         <!-- 附件 -->
@@ -142,7 +131,7 @@
                 <span class="message-sender">{{ msg.senderType === 'ADMIN' ? '管理员' : '我' }}</span>
                 <span class="message-time">{{ formatDateTime(msg.createdAt) }}</span>
               </div>
-              <div class="message-content" v-html="msg.content"></div>
+              <div class="message-content">{{ msg.content }}</div>
             </div>
           </div>
         </div>
@@ -193,8 +182,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
-import { Plus, ArrowDown } from '@element-plus/icons-vue'
+import { Plus } from '@element-plus/icons-vue'
 import { getTickets, getTicketById, sendTicketMessage, submitTicketFeedback } from '@/api/ticket'
+import PageSizeDropdown from '@/components/PageSizeDropdown.vue'
 
 const router = useRouter()
 const message = useMessage()
@@ -221,12 +211,6 @@ const totalText = computed(() => {
   const n = Number(total.value)
   return Number.isFinite(n) ? `共 ${n} 条` : ''
 })
-
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  currentPage.value = 1
-  loadTickets()
-}
 
 const loadTickets = async () => {
   loading.value = true

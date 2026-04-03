@@ -308,7 +308,7 @@
                 >
                   删除
                 </el-button>
-                <el-button size="small" text @click.stop="openPost(post.id)">查看详情</el-button>
+                <el-button size="small" text @click.stop="openPost(post.id)">详情</el-button>
               </div>
             </article>
           </div>
