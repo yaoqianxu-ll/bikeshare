@@ -9,6 +9,7 @@
 # 编译产物
 target/
 *.class
+bickdemo-app/
 
 # Node
 bickdemo-frontend/node_modules/
