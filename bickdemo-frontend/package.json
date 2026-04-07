@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "user": "vite",
-    "build": "vp build",
-    "preview": "vp preview"
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@antv/g2": "^5.4.8",
@@ -27,7 +27,7 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
     "sass": "^1.97.3",
-    "vite-plus": "^0.1.16"
+    "vite": "^5.0.0"
   },
   "packageManager": "npm@11.12.1"
 }

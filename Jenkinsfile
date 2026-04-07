@@ -227,7 +227,7 @@ pipeline {
                         echo "安装依赖..." &&
                         npm install --legacy-peer-deps &&
                         echo "构建..." &&
-                        npx vp build &&
+                        npx vite build &&
                         echo "检查产物：" && ls -lh dist/
                     '''
                 }
