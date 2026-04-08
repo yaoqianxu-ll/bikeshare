@@ -91,3 +91,11 @@ export function getCaptcha() {
     method: 'get'
   })
 }
+
+export function checkUsername(username) {
+  return request({
+    url: '/auth/check-username',
+    method: 'get',
+    params: { username }
+  })
+}

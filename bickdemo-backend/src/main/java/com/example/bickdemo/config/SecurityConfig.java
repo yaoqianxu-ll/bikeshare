@@ -125,7 +125,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         // 登录注册接口允许匿名访问。
-                        .requestMatchers("/api/auth/login", "/api/auth/admin/login", "/api/auth/register", "/api/auth/email/login", "/api/auth/email/send-code", "/api/auth/email/reset-password", "/api/auth/captcha", "/api/auth/captcha/verify").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/admin/login", "/api/auth/register", "/api/auth/email/login", "/api/auth/email/send-code", "/api/auth/email/reset-password", "/api/auth/captcha", "/api/auth/captcha/verify", "/api/auth/check-username").permitAll()
                         // 公开查询和 WebSocket 握手接口允许匿名访问。
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/ws", "/ws/**").permitAll()

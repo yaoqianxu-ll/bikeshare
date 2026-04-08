@@ -8,10 +8,8 @@ import com.example.bickdemo.dto.LoginRequest; // 引入登录请求对象
 import com.example.bickdemo.dto.RegisterRequest; // 引入注册请求对象
 import com.example.bickdemo.dto.UpdatePasswordRequest; // 引入更新密码请求对象
 import com.example.bickdemo.dto.UpdateUserRequest; // 引入更新用户请求对象
-import com.example.bickdemo.entity.EmailAuth; // 引入邮箱认证实体
 import com.example.bickdemo.entity.User; // 引入用户实体
 import com.example.bickdemo.entity.UserRole; // 引入用户角色枚举
-import com.example.bickdemo.mapper.EmailAuthMapper; // 引入邮箱认证Mapper接口
 import com.example.bickdemo.mapper.UserMapper; // 引入用户Mapper接口
 import lombok.RequiredArgsConstructor; // 引入Lombok注解，用于生成构造函数
 import lombok.extern.slf4j.Slf4j; // 引入日志注解
@@ -59,7 +57,6 @@ public class AuthService { // 认证服务类
     private static final String[] EMAIL_CODE_TYPES = {"REGISTER", "RESET_PASSWORD", "UPDATE_EMAIL", "UPDATE_PASSWORD"}; // 支持的验证码类型数组
 
     private final UserMapper userMapper; // 用户数据访问对象，由构造函数注入
-    private final EmailAuthMapper emailAuthMapper; // 邮箱认证数据访问对象
     private final PasswordEncoder passwordEncoder; // 密码加密器，用于密码的哈希处理
     private final AuthenticationManager authenticationManager; // Spring Security认证管理器
     private final JwtService jwtService; // JWT服务，用于生成和验证令牌
@@ -111,6 +108,13 @@ public class AuthService { // 认证服务类
         systemLogService.recordLoginSuccess(user, "REGISTER", null, "注册并登录"); // 记录注册登录日志
 
         return buildAuthResponse(user); // 构建并返回认证响应对象
+    }
+
+    /**
+     * 检查用户名是否已存在
+     */
+    public boolean isUsernameExists(String username) {
+        return userMapper.existsByUsername(username);
     }
 
     /**
@@ -477,24 +481,7 @@ public class AuthService { // 认证服务类
             return; // 验证码正确，直接返回
         }
 
-        validateEmailCodeFromDatabase(email, code, normalizedType); // Redis没有则从数据库校验
-    }
-
-    private void validateEmailCodeFromDatabase(String email, String code, String type) { // 从数据库校验验证码的私有方法
-        // 数据库校验属于兼容历史实现的降级路径，避免旧环境因数据迁移问题无法登录/注册。
-        EmailAuth record = emailAuthMapper.findByEmail(email); // 从数据库查找邮箱认证记录
-        if (record == null) { // 记录不存在
-            throw new RuntimeException("请先获取验证码"); // 抛出异常
-        }
-        if (!type.equalsIgnoreCase(String.valueOf(record.getCodeType()))) { // 检查验证码类型是否匹配
-            throw new RuntimeException("验证码用途不匹配，请重新获取"); // 抛出异常
-        }
-        if (!StringUtils.hasText(record.getVerifyCode()) || !record.getVerifyCode().equals(code)) { // 检查验证码是否正确
-            throw new RuntimeException("验证码错误"); // 抛出异常
-        }
-        if (record.getCodeExpireAt() == null || record.getCodeExpireAt().isBefore(LocalDateTime.now())) { // 检查验证码是否过期
-            throw new RuntimeException("验证码已过期，请重新获取"); // 抛出异常
-        }
+        throw new RuntimeException("请先获取验证码");
     }
 
     private void clearEmailCode(String email) { // 清理邮箱所有验证码的私有方法
@@ -502,16 +489,6 @@ public class AuthService { // 认证服务类
         for (String type : EMAIL_CODE_TYPES) { // 遍历所有验证码类型
             stringRedisTemplate.delete(buildEmailCodeKey(email, type)); // 删除该类型对应的验证码
         }
-        clearEmailCodeFromDatabase(email); // 同时清理数据库中的验证码记录
-    }
-
-    private void clearEmailCodeFromDatabase(String email) { // 清理数据库中验证码记录的私有方法
-        EmailAuth record = emailAuthMapper.findByEmail(email); // 查找邮箱认证记录
-        if (record == null) return; // 记录不存在，直接返回
-        record.setVerifyCode(null); // 清除验证码
-        record.setCodeType(null); // 清除验证码类型
-        record.setCodeExpireAt(null); // 清除过期时间
-        emailAuthMapper.updateById(record); // 更新记录
     }
 
     private String buildEmailCodeKey(String email, String type) { // 构建邮箱验证码Redis键的私有方法

@@ -72,6 +72,15 @@ public class AuthController {
     }
 
     /**
+     * 检查用户名是否已存在
+     */
+    @GetMapping("/check-username")
+    public ResponseEntity<ApiResponse<Boolean>> checkUsername(@RequestParam String username) {
+        boolean exists = authService.isUsernameExists(username);
+        return ResponseEntity.ok(ApiResponse.success(exists));
+    }
+
+    /**
      * 用户名密码登录入口。
      * HttpServletRequest 会传给服务层，用于记录登录 IP、UA 等审计信息。
      */

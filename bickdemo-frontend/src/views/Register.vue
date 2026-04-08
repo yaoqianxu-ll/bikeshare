@@ -55,11 +55,13 @@
       </div>
 
       <el-form :model="form" :rules="rules" ref="formRef" class="register-form">
-        <el-form-item prop="username">
+        <el-form-item prop="username" :error="usernameError">
           <el-input
             v-model="form.username"
             placeholder="请输入用户名"
             size="large"
+            @blur="handleUsernameBlur"
+            @input="usernameError = ''"
           />
         </el-form-item>
 
@@ -113,6 +115,7 @@
           <el-button
             type="primary"
             :loading="loading"
+            :disabled="!!usernameError"
             @click="handleRegister"
             size="large"
             class="register-btn"
@@ -131,7 +134,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { register, sendEmailCode } from '@/api/auth'
+import { register, sendEmailCode, checkUsername } from '@/api/auth'
 import { getSelectableBackgrounds } from '@/api/background'
 
 const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
@@ -158,6 +161,7 @@ const form = reactive({
 const backgrounds = ref([])
 const currentBackground = ref('')
 const bgLoaded = ref(false)
+const usernameError = ref('')
 
 const pageStyle = computed(() => {
   if (currentBackground.value) {
@@ -179,19 +183,22 @@ const preloadImage = (url) => {
   })
 }
 
-const usernamePattern = /^[A-Za-z0-9\u4E00-\u9FFF]+$/
 const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,100}$/
 
-const validateUsername = (_rule, value, callback) => {
-  if (!value) {
-    callback(new Error('请输入用户名'))
-    return
+const handleUsernameBlur = async () => {
+  if (!form.username || form.username.length < 3) return
+
+  try {
+    const res = await checkUsername(form.username)
+    if (res.data) {
+      // 用户名已存在
+      usernameError.value = '用户名已存在'
+    } else {
+      usernameError.value = ''
+    }
+  } catch (error) {
+    console.error('检查用户名失败:', error)
   }
-  if (!usernamePattern.test(value)) {
-    callback(new Error('用户名只能包含中文、英文和数字'))
-    return
-  }
-  callback()
 }
 
 const validatePassword = (_rule, value, callback) => {
@@ -217,8 +224,7 @@ const validateConfirmPassword = (rule, value, callback) => {
 const rules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 50, message: '用户名长度必须在 3-50 个字符之间', trigger: 'blur' },
-    { validator: validateUsername, trigger: 'blur' }
+    { min: 3, max: 50, message: '用户名长度必须在 3-50 个字符之间', trigger: 'blur' }
   ],
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
@@ -268,6 +274,12 @@ const handleSendCode = async () => {
 
 const handleRegister = async () => {
   if (!formRef.value) return
+
+  // 先检查用户名是否已存在
+  if (usernameError.value) {
+    message.error('用户名已存在，请更换后再试')
+    return
+  }
 
   await formRef.value.validate(async (valid) => {
     if (valid) {
@@ -504,6 +516,14 @@ loadBackgrounds()
 
 :deep(.el-form-item) {
   margin-bottom: 16px;
+}
+
+.username-exists-error {
+  color: #f56c6c;
+  font-size: 12px;
+  margin-top: -12px;
+  margin-bottom: 12px;
+  padding-left: 4px;
 }
 
 :deep(.el-input__wrapper) {

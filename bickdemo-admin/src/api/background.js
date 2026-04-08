@@ -7,6 +7,13 @@ export function getAllBackgrounds() {
   })
 }
 
+export function getSelectableBackgrounds() {
+  return request({
+    url: '/backgrounds/selectable',
+    method: 'get'
+  })
+}
+
 export function getBackgroundsPage(page, size) {
   return request({
     url: '/backgrounds/page',

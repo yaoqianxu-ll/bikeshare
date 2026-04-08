@@ -1,102 +1,114 @@
 <template>
-  <div class="login-page">
-    <div class="login-container">
-      <div class="login-card">
-        <div class="card-header">
-          <div class="logo">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
-              <path d="M15.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM5 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5zm5.8-10l2.4-2.4.8.8c1.3 1.3 3 2.1 5.1 2.1V9c-1.5 0-2.7-.6-3.6-1.5l-1.9-1.9c-.5-.4-1-.6-1.6-.6s-1.1.2-1.4.6L7.8 8.4c-.4.4-.6.9-.6 1.4 0 .6.2 1.1.6 1.4L11 14v5h2v-6.2l-2.2-2.3zM19 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z"/>
-            </svg>
+  <div class="login-page" :style="pageStyle">
+    <!-- 左侧背景区 -->
+    <div class="login-brand" :class="{ 'bg-ready': bgLoaded }">
+      <!-- 顶部 Logo -->
+      <header class="login-header">
+        <router-link to="/login" class="logo-section">
+          <div class="logo-icon-box">
+            <el-icon class="logo-icon"><Bicycle /></el-icon>
           </div>
-          <h1 class="title">BikeShare</h1>
-          <p class="subtitle">自行车租赁管理系统</p>
+          <div class="logo-text">
+            <h1 class="logo">BikeShare</h1>
+            <span class="logo-sub">管理系统</span>
+          </div>
+        </router-link>
+      </header>
+
+      <!-- 底部品牌标语 -->
+      <div class="brand-footer">
+        <div class="brand-content">
+          <h1 class="brand-title">智能管理<br>高效运营</h1>
+          <p class="brand-desc">专业的自行车租赁管理系统，助力企业数字化转型</p>
+        </div>
+        <div class="brand-footer-line"></div>
+        <p class="brand-copyright">© 2026 BikeShare Admin</p>
+      </div>
+    </div>
+
+    <!-- 右侧表单区 -->
+    <div class="login-form-area">
+      <div class="form-card">
+        <div class="form-header">
+          <h2>管理员登录</h2>
+          <p>请输入管理员账号信息</p>
         </div>
 
-        <n-form ref="formRef" :model="form" :rules="rules" size="large">
-          <n-form-item path="username">
-            <n-input
-              v-model:value="form.username"
+        <el-form :model="form" :rules="rules" ref="formRef" class="login-form">
+          <el-form-item prop="username">
+            <el-input
+              v-model="form.username"
               placeholder="请输入管理员用户名"
+              size="large"
               @keyup.enter="submit"
             >
               <template #prefix>
-                <n-icon :component="PersonIcon" />
+                <el-icon><User /></el-icon>
               </template>
-            </n-input>
-          </n-form-item>
+            </el-input>
+          </el-form-item>
 
-          <n-form-item path="password">
-            <n-input
-              v-model:value="form.password"
+          <el-form-item prop="password">
+            <el-input
+              v-model="form.password"
               :type="showPassword ? 'text' : 'password'"
               placeholder="请输入密码"
+              size="large"
               @keyup.enter="submit"
             >
               <template #prefix>
-                <n-icon :component="LockIcon" />
+                <el-icon><Lock /></el-icon>
               </template>
               <template #suffix>
-                <span
-                  class="password-toggle"
-                  @click="showPassword = !showPassword"
-                >
-                  <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#1890ff">
-                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                  </svg>
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#1890ff">
-                    <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>
-                  </svg>
-                </span>
+                <el-icon class="password-toggle" @click="showPassword = !showPassword">
+                  <View v-if="showPassword" /><Hide v-else />
+                </el-icon>
               </template>
-            </n-input>
-          </n-form-item>
+            </el-input>
+          </el-form-item>
 
-          <n-button
-            type="primary"
-            block
-            size="large"
-            :loading="loading"
-            @click="submit"
-            class="submit-btn"
-          >
-            {{ loading ? '登录中...' : '登 录' }}
-          </n-button>
-        </n-form>
+          <el-form-item>
+            <el-button
+              type="primary"
+              :loading="loading"
+              @click="submit"
+              size="large"
+              class="login-btn"
+            >
+              {{ loading ? '登录中...' : '登 录' }}
+            </el-button>
+          </el-form-item>
+        </el-form>
 
-
-        <!-- 测试账户提示 -->
         <div class="test-account-hint">
-          <n-tag type="info" size="small">测试账户: test / 123456</n-tag>
+          <el-tag type="info" size="small">测试账户: admin / admin123</el-tag>
         </div>
       </div>
-
-      <p class="copyright">© 2026 BikeShare. All rights reserved.</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref, h } from 'vue'
+import { reactive, ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { NIcon, NButton, NInput, NForm, NFormItem, useMessage } from 'naive-ui'
+import { ElMessage } from 'element-plus'
+import { Bicycle, User, Lock, View, Hide } from '@element-plus/icons-vue'
 import { adminLogin } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
+import { getSelectableBackgrounds } from '@/api/background'
 
-const PersonIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
-  h('path', { d: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' }))
-const LockIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
-  h('path', { d: 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' }))
-const EyeIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
-  h('path', { d: 'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z' }))
-const EyeOffIcon = () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'currentColor' },
-  h('path', { d: 'M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z' }))
+const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
 
 const router = useRouter()
-const message = useMessage()
+const message = ElMessage
 const authStore = useAuthStore()
 const formRef = ref(null)
 const loading = ref(false)
 const showPassword = ref(false)
+
+const backgrounds = ref([])
+const currentBackground = ref('')
+const bgLoaded = ref(false)
 
 const form = reactive({
   username: '',
@@ -104,154 +116,355 @@ const form = reactive({
 })
 
 const rules = {
-  username: { required: true, message: '请输入用户名', trigger: 'blur' },
-  password: { required: true, message: '请输入密码', trigger: 'blur' }
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+}
+
+const pageStyle = computed(() => {
+  if (currentBackground.value) {
+    return {
+      '--bg-image': `url(${currentBackground.value})`,
+      '--bg-opacity': bgLoaded.value ? '1' : '0'
+    }
+  }
+  return {}
+})
+
+const preloadImage = (url) => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve(true)
+    img.onerror = () => resolve(false)
+    img.src = url
+  })
+}
+
+const loadBackgrounds = async () => {
+  try {
+    const res = await getSelectableBackgrounds()
+    backgrounds.value = res.data || []
+
+    let bgUrl = ''
+
+    const savedBgId = localStorage.getItem(LOCAL_BG_KEY)
+    if (savedBgId) {
+      const savedBg = backgrounds.value.find(bg => bg.id === Number(savedBgId))
+      if (savedBg) {
+        bgUrl = savedBg.imageUrl
+      }
+    }
+
+    if (!bgUrl) {
+      const enabledBg = backgrounds.value.find(bg => bg.enabled) || backgrounds.value[0]
+      if (enabledBg) {
+        bgUrl = enabledBg.imageUrl
+      }
+    }
+
+    if (bgUrl) {
+      currentBackground.value = bgUrl
+      await preloadImage(bgUrl)
+      bgLoaded.value = true
+    } else {
+      bgLoaded.value = true
+    }
+  } catch (error) {
+    console.error('加载背景失败:', error)
+    bgLoaded.value = true
+  }
 }
 
 const submit = async () => {
-  try {
-    await formRef.value?.validate()
+  if (!formRef.value) return
+
+  await formRef.value.validate(async (valid) => {
+    if (!valid) return
+
     loading.value = true
+    try {
+      const res = await adminLogin(form)
 
-    const res = await adminLogin(form)
+      if (res.data?.role !== 'ADMIN') {
+        authStore.logout()
+        message.error('当前账号不是管理员，无法进入后台')
+        return
+      }
 
-    if (res.data?.role !== 'ADMIN') {
-      authStore.logout()
-      message.error('当前账号不是管理员，无法进入后台')
-      return
+      authStore.setAuth(res.data)
+      message.success('登录成功，正在跳转...')
+      router.push('/dashboard')
+    } catch (error) {
+      console.error('登录失败:', error)
+      message.error(error?.response?.data?.message || error?.message || '登录失败')
+    } finally {
+      loading.value = false
     }
-
-    authStore.setAuth(res.data)
-    message.success('登录成功，正在跳转...')
-    router.push('/dashboard')
-  } catch (error) {
-    console.error('登录失败:', error)
-  } finally {
-    loading.value = false
-  }
+  })
 }
+
+onMounted(() => {
+  loadBackgrounds()
+})
 </script>
 
 <style scoped>
 .login-page {
   width: 100%;
   height: 100vh;
-  background: #f5f5f5;
+  display: flex;
+  background: #0f172a;
+}
+
+/* ========== 左侧背景区 ========== */
+.login-brand {
+  flex: 7;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-image, linear-gradient(160deg, #1e3a5f 0%, #0f172a 60%, #1a2744 100%)) center/cover;
+  background-color: #0f172a;
+  opacity: var(--bg-opacity, 0);
+  transition: opacity 0.6s ease-in;
+}
+
+.login-brand.bg-ready {
+  opacity: 1;
+}
+
+.login-brand::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(15,23,42,0.3) 40%, rgba(15,23,42,0.7) 100%);
+  pointer-events: none;
+}
+
+/* ========== 顶部导航栏 ========== */
+.login-header {
+  position: relative;
+  z-index: 1;
+  padding: 28px 40px;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  gap: 14px;
+}
+
+.logo-icon-box {
+  width: 52px;
+  height: 52px;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(16px);
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(255,255,255,0.15);
 }
 
-.login-container {
-  width: 100%;
-  max-width: 400px;
-  padding: 20px;
+.logo-icon {
+  font-size: 26px;
+  color: #fff;
 }
 
-.login-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 40px 36px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-}
-
-.card-header {
-  text-align: center;
-  margin-bottom: 32px;
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .logo {
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 16px;
-  background: #f0f5ff;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #409eff;
-}
-
-.title {
-  margin: 0 0 8px;
-  font-size: 24px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-.subtitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
   margin: 0;
-  font-size: 14px;
-  color: #666;
+  letter-spacing: -0.5px;
 }
 
-:deep(.n-form-item) {
+.logo-sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+/* ========== 底部品牌内容 ========== */
+.brand-footer {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  padding: 48px 40px 40px;
+}
+
+.brand-content {
+  margin-bottom: 32px;
+}
+
+.brand-title {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1.18;
+  color: #fff;
+  margin: 0 0 16px;
+  letter-spacing: -1px;
+}
+
+.brand-desc {
+  color: rgba(255,255,255,0.7);
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 340px;
+}
+
+.brand-footer-line {
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  border-radius: 2px;
   margin-bottom: 20px;
 }
 
-:deep(.n-input) {
-  height: 42px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+.brand-copyright {
+  color: rgba(255,255,255,0.4);
+  font-size: 13px;
+  margin: 0;
+}
+
+/* ========== 右侧表单区 ========== */
+.login-form-area {
+  flex: 3;
+  min-width: 400px;
   background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
 }
 
-:deep(.n-input:hover) {
-  border-color: #409eff;
-  background: #fff;
+.form-card {
+  width: 100%;
+  max-width: 340px;
 }
 
-:deep(.n-input--focus) {
-  border-color: #409eff;
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.15);
-  background: #fff;
+.form-header {
+  margin-bottom: 36px;
 }
 
-:deep(.n-input__prefix) {
-  color: #999;
-  margin-right: 8px;
+.form-header h2 {
+  color: #1e293b;
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0 0 8px;
 }
 
-
-:deep(.n-input__placeholder) {
-  color: #666 !important;
-  font-size: 15px !important;
+.form-header p {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0;
 }
 
-:deep(.n-input__input-el) {
-  color: #000 !important;
+/* ========== 表单样式 ========== */
+.login-form {
+  width: 100%;
 }
 
-:deep(.n-input__textarea-el) {
-  color: #000 !important;
+:deep(.el-form-item) {
+  margin-bottom: 20px;
 }
 
-.submit-btn {
-  margin-top: 8px;
-  height: 42px;
+:deep(.el-input__wrapper) {
+  height: 48px;
+  border-radius: 10px;
+  box-shadow: none !important;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+:deep(.el-input__inner) {
   font-size: 15px;
-  border-radius: 6px;
+  color: #1e293b;
 }
 
-.copyright {
-  text-align: center;
-  margin-top: 24px;
-  font-size: 12px;
-  color: #bbb;
+:deep(.el-input__prefix) {
+  color: #94a3b8;
+  margin-right: 10px;
+}
+
+:deep(.el-input__inner::placeholder) {
+  color: #94a3b8;
+}
+
+:deep(.el-input__wrapper:hover) {
+  border-color: #cbd5e1;
+}
+
+:deep(.el-input__wrapper.is-focus) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12) !important;
+  background: #fff;
 }
 
 .password-toggle {
+  font-size: 16px;
+  color: #94a3b8;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 4px;
+  margin-right: 4px;
+  transition: color 0.2s;
 }
 
+.password-toggle:hover {
+  color: #3b82f6;
+}
+
+/* ========== 登录按钮 ========== */
+.login-btn {
+  width: 100%;
+  height: 50px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+/* ========== 测试账户提示 ========== */
 .test-account-hint {
-  margin-top: 16px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px dashed #e2e8f0;
   text-align: center;
-  padding-top: 12px;
-  border-top: 1px dashed #eee;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 900px) {
+  .login-page {
+    flex-direction: column;
+  }
+
+  .login-brand {
+    flex: none;
+    min-height: 280px;
+  }
+
+  .login-header {
+    padding: 20px 24px;
+  }
+
+  .brand-footer {
+    padding: 32px 24px 28px;
+  }
+
+  .brand-title {
+    font-size: 34px;
+  }
+
+  .login-form-area {
+    flex: 1;
+    min-width: auto;
+    padding: 36px 24px;
+  }
 }
 </style>
