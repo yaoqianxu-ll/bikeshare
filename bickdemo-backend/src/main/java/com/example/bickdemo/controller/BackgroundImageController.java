@@ -1,5 +1,6 @@
 package com.example.bickdemo.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.bickdemo.annotation.AdminOperationLog;
 import com.example.bickdemo.dto.ApiResponse;
 import com.example.bickdemo.entity.BackgroundImage;
@@ -51,6 +52,19 @@ public class BackgroundImageController {
     @AdminOperationLog(module = "背景管理", action = "获取背景列表", type = "查询")
     public ResponseEntity<ApiResponse<List<BackgroundImage>>> getAllBackgroundsAdmin() {
         List<BackgroundImage> backgrounds = backgroundImageService.getAll();
+        return ResponseEntity.ok(ApiResponse.success(backgrounds));
+    }
+
+    /**
+     * 管理员分页查看背景图列表。
+     */
+    @GetMapping("/page")
+    @PreAuthorize("hasRole('ADMIN')")
+    @AdminOperationLog(module = "背景管理", action = "分页获取背景列表", type = "查询")
+    public ResponseEntity<ApiResponse<IPage<BackgroundImage>>> getBackgroundsPage(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        IPage<BackgroundImage> backgrounds = backgroundImageService.getPage(page, size);
         return ResponseEntity.ok(ApiResponse.success(backgrounds));
     }
 

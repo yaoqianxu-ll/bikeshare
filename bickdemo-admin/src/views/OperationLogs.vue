@@ -26,7 +26,7 @@
 
     <div class="page-toolbar">
       <div class="toolbar-left">
-        <el-input v-model="query.username" clearable placeholder="操作人员" @keyup.enter="search" />
+        <el-input v-model="query.username" clearable placeholder="操作人员" @input="search" />
         <el-dropdown trigger="click" @command="handleRoleChange">
           <el-button class="filter-btn">{{ getRoleLabel(query.roleName) || '操作角色' }}<el-icon class="el-icon--right"><arrow-down /></el-icon></el-button>
           <template #dropdown>
@@ -65,8 +65,8 @@
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <el-input v-model="query.ip" clearable placeholder="操作 IP" @keyup.enter="search" />
-        <el-input v-model="query.requestUri" clearable placeholder="请求 URL" @keyup.enter="search" />
+        <el-input v-model="query.ip" clearable placeholder="操作 IP" @input="search" />
+        <el-input v-model="query.requestUri" clearable placeholder="请求 URL" @input="search" />
         <el-date-picker
           v-model="query.range"
           type="datetimerange"

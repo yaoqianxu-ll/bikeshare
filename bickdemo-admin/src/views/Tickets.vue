@@ -39,7 +39,7 @@
           placeholder="搜索工单标题/内容..."
           clearable
           class="search-input"
-          @keyup.enter="handleFilter"
+          @input="handleFilter"
           @clear="handleFilter"
         >
           <template #prefix>

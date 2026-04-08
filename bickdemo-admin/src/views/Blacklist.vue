@@ -25,7 +25,7 @@
 
     <div class="page-toolbar">
       <div class="toolbar-left">
-        <el-input v-model="query.keyword" clearable placeholder="搜索 IP / 地址 / 原因" @keyup.enter="search" />
+        <el-input v-model="query.keyword" clearable placeholder="搜索 IP / 地址 / 原因" @input="search" />
       </div>
       <div class="table-actions">
         <el-button @click="load">刷新</el-button>

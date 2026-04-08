@@ -40,11 +40,13 @@ public interface ActivityMapper extends BaseMapper<Activity> {
     @Select("<script>" +
             "SELECT * FROM activities " +
             "<where>" +
+            "<if test='keyword != null and keyword != \"\"'> AND title LIKE CONCAT('%', #{keyword}, '%') </if>" +
             "<if test='status != null'> AND status = #{status} </if>" +
+            "<if test='difficulty != null and difficulty != \"\"'> AND difficulty = #{difficulty} </if>" +
             "</where>" +
             "ORDER BY id DESC" +
             "</script>")
-    List<Activity> findAllIncludeDeleted(@Param("status") String status);
+    List<Activity> findAllIncludeDeleted(@Param("keyword") String keyword, @Param("status") String status, @Param("difficulty") String difficulty);
 
     /**
      * 增量查询已过期且需要自动结束的活动（只查必要字段）

@@ -119,6 +119,7 @@ public class BicycleService {
     /**
      * 分页获取车辆列表，供管理端表格使用。
      *
+     * @param name    车辆名称模糊匹配，可为 null 表示不筛选
      * @param type   自行车类型筛选条件，可为 null 表示不筛选
      * @param status 自行车状态筛选条件，可为 null 表示不筛选
      * @param page   当前页码，从 1 开始
@@ -126,11 +127,13 @@ public class BicycleService {
      * @param username 当前登录用户名，为 null 表示未登录
      * @return 包含分页信息的自行车响应对象列表
      */
-    public Page<BicycleResponse> getBicyclesPage(BicycleType type, BicycleStatus status, int page, int size, String username) {
+    public Page<BicycleResponse> getBicyclesPage(String name, BicycleType type, BicycleStatus status, int page, int size, String username) {
         // 创建 Lambda 查询条件包装器
         LambdaQueryWrapper<Bicycle> wrapper = new LambdaQueryWrapper<Bicycle>()
                 // 只查询未删除的记录
                 .eq(Bicycle::getDeleted, 0)
+                // 如果名称不为 null，则添加名称模糊匹配条件
+                .like(name != null && !name.trim().isEmpty(), Bicycle::getName, name)
                 // 如果类型不为 null，则添加类型筛选条件
                 .eq(type != null, Bicycle::getType, type)
                 // 当筛选可用状态时，同时查询 AVAILABLE 和 RENTED 状态的车辆

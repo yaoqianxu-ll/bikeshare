@@ -25,6 +25,18 @@
 
     <div class="page-toolbar">
       <div class="toolbar-left">
+        <el-input
+          v-model="query.name"
+          placeholder="搜索车辆名称"
+          class="search-input"
+          clearable
+          @clear="handleFilter"
+          @input="handleFilter"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
         <el-dropdown trigger="click" @command="handleTypeChange">
           <el-button class="filter-btn" :type="query.type ? 'primary' : 'default'">
             {{ query.type ? typeOptions.find(o => o.value === query.type)?.label : '车辆类型' }}
@@ -228,7 +240,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowDown } from '@element-plus/icons-vue'
+import { ArrowDown, Search } from '@element-plus/icons-vue'
 import { createBicycle, deleteBicycle, getBicyclesPage, updateBicycle } from '@/api/bicycle'
 import { uploadImage } from '@/api/file'
 import { chinaRegionOptions } from '@/data/chinaRegionOptions'
@@ -242,7 +254,7 @@ const total = ref(0)
 const formRef = ref()
 const regionWarning = ref('')
 
-const query = reactive({ page: 1, size: 10, type: '', status: '' })
+const query = reactive({ page: 1, size: 10, name: '', type: '', status: '' })
 const form = reactive({
   id: null,
   name: '',
@@ -374,6 +386,7 @@ const load = async () => {
     const res = await getBicyclesPage({
       page: query.page,
       size: query.size,
+      name: query.name || undefined,
       type: query.type || undefined,
       status: query.status || undefined
     })
@@ -497,6 +510,10 @@ onMounted(load)
   min-width: 120px;
 }
 
+.search-input {
+  width: 200px;
+}
+
 .region-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -544,6 +561,10 @@ onMounted(load)
 </style>\n<style>
 .filter-btn {
   min-width: 120px;
+}
+
+.search-input {
+  width: 200px;
 }
 
 .region-toolbar {

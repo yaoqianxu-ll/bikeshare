@@ -170,9 +170,10 @@ public class ActivityService {
      * 分页获取活动列表（包含已删除的，用于管理端）
      * 管理员可以查看包括已删除在内的所有活动
      */
-    public Page<ActivityResponse> getActivitiesPageIncludeDeleted(ActivityStatus status, int page, int size) {
+    public Page<ActivityResponse> getActivitiesPage(String keyword, ActivityStatus status, String difficulty, int page, int size) {
         // 使用原生 SQL 查询，绕过逻辑删除过滤，查询所有活动（包括已删除的）
-        List<Activity> activities = activityMapper.findAllIncludeDeleted(status != null ? status.name() : null);
+        List<Activity> activities = activityMapper.findAllIncludeDeleted(
+                keyword, status != null ? status.name() : null, difficulty);
 
         // 计算分页起始位置
         int start = (page - 1) * size;

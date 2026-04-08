@@ -1,6 +1,8 @@
 package com.example.bickdemo.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.bickdemo.entity.BackgroundImage;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -24,4 +26,10 @@ public interface BackgroundImageMapper extends BaseMapper<BackgroundImage> {
      */
     @Select("SELECT * FROM background_images WHERE deleted = 0 ORDER BY sort ASC")
     List<BackgroundImage> findAllSelectable();
+
+    /**
+     * 分页查询所有背景图片（包含已禁用的）
+     */
+    @Select("SELECT * FROM background_images WHERE deleted = 0 ORDER BY sort ASC")
+    IPage<BackgroundImage> selectPage(Page<BackgroundImage> page);
 }

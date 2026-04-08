@@ -35,10 +35,12 @@ public class AdminActivityController {
     @GetMapping
     @AdminOperationLog(module = "活动管理", action = "获取活动列表", type = "查询")
     public ResponseEntity<ApiResponse<Page<ActivityResponse>>> getActivitiesPage(
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) ActivityStatus status,
+            @RequestParam(required = false) String difficulty,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Page<ActivityResponse> activities = activityService.getActivitiesPageIncludeDeleted(status, page, size);
+        Page<ActivityResponse> activities = activityService.getActivitiesPage(keyword, status, difficulty, page, size);
         return ResponseEntity.ok(ApiResponse.success(activities));
     }
 

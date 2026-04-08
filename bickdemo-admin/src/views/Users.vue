@@ -26,7 +26,7 @@
 
     <div class="page-toolbar">
       <div class="toolbar-left">
-        <el-input v-model="query.keyword" clearable placeholder="搜索用户名或邮箱" @keyup.enter="search" />
+        <el-input v-model="query.keyword" clearable placeholder="搜索用户名或邮箱" @input="search" />
         <el-dropdown trigger="click" @command="handleRoleChange">
           <el-button class="filter-btn">
             {{ getRoleLabel(query.role) || '角色' }}

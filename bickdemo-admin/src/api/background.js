@@ -7,6 +7,14 @@ export function getAllBackgrounds() {
   })
 }
 
+export function getBackgroundsPage(page, size) {
+  return request({
+    url: '/backgrounds/page',
+    method: 'get',
+    params: { page, size }
+  })
+}
+
 export function uploadBackground(file, name, sort, type) {
   const formData = new FormData()
   formData.append('file', file)

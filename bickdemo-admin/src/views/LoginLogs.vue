@@ -22,7 +22,7 @@
 
     <div class="page-toolbar">
       <div class="toolbar-left">
-        <el-input v-model="query.username" clearable placeholder="用户名 / 邮箱" @keyup.enter="search" />
+        <el-input v-model="query.username" clearable placeholder="用户名 / 邮箱" @input="search" />
         <el-dropdown trigger="click" @command="handleMethodChange">
           <el-button class="filter-btn">{{ getMethodLabel(query.method) || '登录方式' }}<el-icon class="el-icon--right"><arrow-down /></el-icon></el-button>
           <template #dropdown>
@@ -41,7 +41,7 @@
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <el-input v-model="query.ip" clearable placeholder="登录 IP" @keyup.enter="search" />
+        <el-input v-model="query.ip" clearable placeholder="登录 IP" @input="search" />
         <el-date-picker
           v-model="query.range"
           type="datetimerange"

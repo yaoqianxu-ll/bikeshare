@@ -61,7 +61,7 @@
           clearable
           class="search-input"
           @clear="handleFilter"
-          @keyup.enter="handleFilter"
+          @input="handleFilter"
         >
           <template #prefix>
             <el-icon><search /></el-icon>

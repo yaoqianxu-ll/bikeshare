@@ -31,7 +31,7 @@
           clearable
           placeholder="搜索车辆名、地点或车主"
           class="keyword-input"
-          @keyup.enter="handleFilter"
+          @input="handleFilter"
           @clear="handleFilter"
         />
         <el-dropdown trigger="click" @command="handleReviewStatusChange">

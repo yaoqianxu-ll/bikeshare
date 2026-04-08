@@ -50,13 +50,14 @@ public class BicycleController {
     @GetMapping("/page")
     @AdminOperationLog(module = "车辆管理", action = "获取车辆列表", type = "查询")
     public ResponseEntity<ApiResponse<?>> getBicyclesPage(
+            @RequestParam(required = false) String name,
             @RequestParam(required = false) BicycleType type,
             @RequestParam(required = false) BicycleStatus status,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal UserDetails userDetails) {
         Page<BicycleResponse> bicyclePage = bicycleService.getBicyclesPage(
-                type, status, page, size,
+                name, type, status, page, size,
                 userDetails == null ? null : userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(bicyclePage));
     }
