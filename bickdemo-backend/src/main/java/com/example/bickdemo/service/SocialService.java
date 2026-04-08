@@ -99,6 +99,8 @@ public class SocialService {
     private static final String RELATION_REQUEST_SENT = "REQUEST_SENT";
     // 关系状态常量：已收到好友请求
     private static final String RELATION_REQUEST_RECEIVED = "REQUEST_RECEIVED";
+    // 消息撤回时间窗口，单位：分钟
+    private static final int RECALL_WINDOW_MINUTES = 2;
 
     // 用户Mapper，用于操作用户数据
     private final UserMapper userMapper;
@@ -652,6 +654,169 @@ public class SocialService {
         return response;
     }
 
+    /**
+     * 撤回消息。
+     *
+     * 业务规则：
+     * 1. 仅消息发送者可以撤回自己的消息
+     * 2. 消息发出后仅 2 分钟内可撤回
+     * 3. 消息只能被撤回一次（已撤回消息不可再撤回）
+     *
+     * 撤回后：
+     * - 消息在数据库中标记 recalled=1, recalled_at=当前时间
+     * - 发送者在聊天界面看到"重新编辑"按钮（前端根据 recalled=true 判断）
+     * - 接收者通过 WebSocket 收到 MESSAGE_RECALLED 事件，看到"消息已撤回"占位
+     *
+     * @param currentUsername 当前用户名
+     * @param messageId       要撤回的消息ID
+     * @return 包含 messageId 和 recalledAt 的 Map
+     * @throws RuntimeException 当消息不存在、无权撤回、已撤回或超过2分钟窗口时抛出
+     */
+    @Transactional
+    public Map<String, Object> recallMessage(String currentUsername, Long messageId) {
+        // 1. 获取当前登录用户
+        User currentUser = requireUser(currentUsername);
+
+        // 2. 根据消息ID查询消息（绕过逻辑删除）
+        ChatMessage message = chatMessageMapper.selectByIdForRecall(messageId);
+
+        // 3. 校验：消息是否存在
+        if (message == null) {
+            throw new RuntimeException("消息不存在");
+        }
+
+        // 4. 校验：必须是消息发送者本人才能撤回
+        if (!Objects.equals(message.getSenderId(), currentUser.getId())) {
+            throw new RuntimeException("只能撤回自己发送的消息");
+        }
+
+        // 5. 校验：消息是否已被撤回（不可重复撤回）
+        if (Boolean.TRUE.equals(message.getRecalled())) {
+            throw new RuntimeException("消息已撤回，不能重复撤回");
+        }
+
+        // 6. 校验：是否在2分钟撤回窗口内
+        LocalDateTime createdAt = message.getCreatedAt();
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (createdAt.plusMinutes(RECALL_WINDOW_MINUTES).isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("撤回时间已超过2分钟，无法撤回");
+        }
+
+        // 7. 执行撤回：更新数据库标记
+        LocalDateTime recalledAt = LocalDateTime.now();
+        chatMessageMapper.markRecalled(messageId, recalledAt);
+
+        // 8. 通过 WebSocket 通知接收方（接收方将看到"消息已撤回"）
+        User receiver = requireEnabledUser(message.getReceiverId());
+        // 构建仅包含ID和撤回标记的消息响应对象
+        ChatMessageResponse recalledMsg = new ChatMessageResponse();
+        recalledMsg.setId(message.getId());
+        recalledMsg.setRecalled(true);
+        SocialWsEvent event = new SocialWsEvent() {{
+            setEventType(SocialEventType.MESSAGE_RECALLED);
+            setRecipientUsername(receiver.getUsername());
+            // 推送时带上消息ID，接收方前端据此更新对应消息的UI状态
+            setMessage(recalledMsg);
+            setContactUserId(currentUser.getId());
+            setNotice("对方撤回了一条消息");
+        }};
+        socialEventPublisher.publish(event);
+        // 同时直接发送 WebSocket（确保实时性）
+        try {
+            messagingTemplate.convertAndSendToUser(receiver.getUsername(), "/queue/social", event);
+        } catch (Exception ex) {
+            log.warn("撤回通知 WebSocket 发送失败: {}", ex.getMessage());
+        }
+
+        // 9. 返回结果
+        return Map.of("messageId", messageId, "recalledAt", recalledAt);
+    }
+
+    /**
+     * 重新编辑并发送消息（仅限已撤回消息）。
+     *
+     * 业务规则：
+     * 1. 仅原消息发送者可以重新发送
+     * 2. 消息必须处于已撤回状态（recalled=true）才能重新发送
+     * 3. 重新发送后，消息内容、媒体URL、发送时间均会更新
+     * 4. 消息类型（TEXT/IMAGE/EMOJI/STICKER）不可更改
+     *
+     * 重新发送后：
+     * - 消息重置为正常状态（recalled=0, recalled_at=NULL），内容替换为新内容
+     * - 消息在对话中位置保持不变（created_at 更新，但消息ID不变）
+     * - 接收方通过 WebSocket 收到 MESSAGE_RESENT 事件，看到更新后的内容
+     *
+     * @param currentUsername 当前用户名
+     * @param messageId       要重新发送的消息ID（必须是已撤回消息）
+     * @param request         新的消息内容请求（content、mediaUrl、type）
+     * @return 更新后的消息响应对象
+     * @throws RuntimeException 当消息不存在、无权操作、非撤回状态或内容校验失败时抛出
+     */
+    @Transactional
+    public ChatMessageResponse resendMessage(String currentUsername, Long messageId, ChatMessageRequest request) {
+        // 1. 获取当前登录用户
+        User currentUser = requireUser(currentUsername);
+
+        // 2. 根据消息ID查询原消息（必须是已撤回的消息）
+        ChatMessage original = chatMessageMapper.selectByIdForRecall(messageId);
+
+        // 3. 校验：消息是否存在
+        if (original == null) {
+            throw new RuntimeException("消息不存在");
+        }
+
+        // 4. 校验：必须是消息发送者本人
+        if (!Objects.equals(original.getSenderId(), currentUser.getId())) {
+            throw new RuntimeException("只能重新发送自己撤回的消息");
+        }
+
+        // 5. 校验：消息必须处于已撤回状态
+        if (!Boolean.TRUE.equals(original.getRecalled())) {
+            throw new RuntimeException("只能重新发送已撤回的消息");
+        }
+
+        // 6. 解析并校验新的消息内容
+        ChatMessageType messageType = resolveMessageType(request.getType());
+        String content = normalizeNullable(request.getContent());
+        String mediaUrl = normalizeNullable(request.getMediaUrl());
+        validateMessagePayload(messageType, content, mediaUrl);
+
+        // 7. 贴纸类型兜底：如果类型是贴纸但没有内容，使用默认文本
+        if (messageType == ChatMessageType.STICKER && !StringUtils.hasText(content)) {
+            content = "Sticker";
+        }
+
+        // 8. 执行更新：重置撤回状态，更新内容和时间
+        chatMessageMapper.updateContentAndTime(messageId, content, mediaUrl);
+
+        // 9. 重新查询更新后的消息（获取新的 created_at 等信息）
+        ChatMessage updated = chatMessageMapper.selectByIdForRecall(messageId);
+        User receiver = requireEnabledUser(original.getReceiverId());
+
+        // 10. 构建响应对象（保留原消息ID，更新内容）
+        ChatMessageResponse response = toChatMessageResponse(updated, currentUser.getId(), currentUser, receiver);
+
+        // 11. 通过 WebSocket 通知接收方（接收方看到更新后的消息内容）
+        SocialWsEvent event = new SocialWsEvent() {{
+            setEventType(SocialEventType.MESSAGE_RESENT);
+            setRecipientUsername(receiver.getUsername());
+            setMessage(response);
+            setContactUserId(currentUser.getId());
+            setNotice("对方重新发送了一条消息");
+        }};
+        socialEventPublisher.publish(event);
+        // 同时直接发送 WebSocket（确保实时性）
+        try {
+            messagingTemplate.convertAndSendToUser(receiver.getUsername(), "/queue/social", event);
+        } catch (Exception ex) {
+            log.warn("重新发送通知 WebSocket 失败: {}", ex.getMessage());
+        }
+
+        return response;
+    }
+
     // 获取用户信息，如果不存在则抛出异常
     private User requireUser(String username) {
         // 根据用户名查询用户
@@ -785,6 +950,7 @@ public class SocialService {
                 message.getMediaUrl(), // 媒体URL
                 read, // 是否已读
                 message.getReadAt(), // 已读时间
+                message.getRecalled(), // 消息是否已撤回
                 mine, // 是否是自己发送的
                 message.getCreatedAt() // 创建时间
         );
