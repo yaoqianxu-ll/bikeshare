@@ -36,6 +36,11 @@ public class ChatMessageResponse {
      * 仅当 recalled=true 时有值，用于"重新编辑"功能恢复原始内容
      */
     private String originalContent;
+    /**
+     * 消息撤回时间
+     * 用于判断"重新编辑"按钮是否还在2分钟有效期内
+     */
+    private LocalDateTime recalledAt;
     private Boolean mine;
     private LocalDateTime createdAt;
 }

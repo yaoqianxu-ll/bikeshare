@@ -222,10 +222,17 @@
                 class="message-item"
                 :class="{ self: message.mine }"
               >
-                <!-- 已撤回消息（发送者）：居中显示一行提示，无头像时间 -->
+                <!-- 已撤回消息（发送者）：居中显示一行提示，含时间 -->
                 <div v-if="message.recalled && message.mine" class="recall-notice">
+                  <span class="recall-time">{{ formatTime(message.createdAt) }}</span>
                   <span class="recall-text">你撤回了一条消息</span>
-                  <el-button link size="small" type="primary" @click.stop="handleEditToInput(message)">重新编辑</el-button>
+                  <el-button v-if="canResendRecall(message)" link size="small" @click.stop="handleEditToInput(message)">重新编辑</el-button>
+                </div>
+
+                <!-- 已撤回消息（接收方）：居中显示一行提示，含时间 -->
+                <div v-else-if="message.recalled && !message.mine" class="recall-notice">
+                  <span class="recall-time">{{ formatTime(message.createdAt) }}</span>
+                  <span class="recall-text">对方撤回了一条消息</span>
                 </div>
 
                 <template v-else>
@@ -240,14 +247,8 @@
                       <span class="message-time">{{ formatTime(message.createdAt) }}</span>
                     </div>
 
-                    <!-- 已撤回消息：接收方显示灰色"消息已撤回"占位 -->
-                    <div v-if="message.recalled && !message.mine" class="message-bubble recalled">
-                      <span>消息已撤回</span>
-                    </div>
-
                     <!-- 正常消息：显示原内容，右键弹出菜单 -->
                     <div
-                      v-else
                       class="message-bubble"
                       :class="message.type?.toLowerCase()"
                       @contextmenu.prevent.stop="handleMessageRightClick(message, $event)"
@@ -633,6 +634,12 @@ const messages = ref([])
 const messagePage = ref(1)
 const messageHasMore = ref(false)
 
+// 用于实时计算撤回有效期
+const now = ref(Date.now())
+setInterval(() => {
+  now.value = Date.now()
+}, 1000)
+
 // 消息操作相关状态
 const contextMenuVisible = ref(false)    // 右键菜单是否显示
 const contextMenuMessage = ref(null)     // 右键菜单对应的消息
@@ -873,6 +880,14 @@ const formatDateTime = (value) => {
   const hh = String(date.getHours()).padStart(2, '0')
   const mm = String(date.getMinutes()).padStart(2, '0')
   return `${year}-${month}-${day} ${hh}:${mm}`
+}
+
+// 判断撤回消息是否还在2分钟重新编辑有效期内
+const canResendRecall = (message) => {
+  if (!message.recalledAt) return false
+  const recalledTime = new Date(message.recalledAt).getTime()
+  const twoMinutes = 2 * 60 * 1000
+  return now.value - recalledTime < twoMinutes
 }
 
 const formatTimeShort = (value) => {
@@ -1287,7 +1302,8 @@ const handleRecall = async (message) => {
       messages.value[idx] = {
         ...messages.value[idx],
         recalled: true,
-        originalContent: message.content // 保存原始内容用于重新编辑
+        originalContent: message.content, // 保存原始内容用于重新编辑
+        recalledAt: new Date() // 记录撤回时间，用于判断重新编辑有效期
       }
     }
     message.success('消息已撤回')
@@ -1535,7 +1551,8 @@ const handleSocketEvent = async (event) => {
       messages.value[idx] = {
         ...messages.value[idx],
         recalled: true,
-        content: '消息已撤回'
+        content: '消息已撤回',
+        recalledAt: event.message?.recalledAt || new Date()
       }
     }
   }
@@ -2768,15 +2785,37 @@ html.dark .context-menu-item:hover {
   background: #3a3a3a;
 }
 
-/* 发送者撤回后的整行提示：浅灰色背景 */
+/* 发送者撤回后的整行提示：居中显示 */
 .recall-notice {
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 8px;
+  width: 100%;
   padding: 6px 12px;
-  background: #f5f7fa;
-  border-radius: 4px;
   font-size: 13px;
+}
+
+/* 包含撤回提示的消息项：占满宽度并居中 */
+.message-item:has(.recall-notice) {
+  max-width: 100%;
+  justify-content: center;
+}
+
+.message-item:has(.recall-notice).self {
+  margin-left: 0;
+  flex-direction: row;
+}
+
+/* "重新编辑"按钮：浅蓝色文字，无背景无边框 */
+.recall-notice :deep(.el-button) {
+  color: #8cc8ff !important;
+  font-size: 13px;
+  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 /* "你撤回了一条消息"：灰色普通文字 */
@@ -2784,15 +2823,21 @@ html.dark .context-menu-item:hover {
   color: #909399;
 }
 
-/* "重新编辑"按钮：蓝色主色调，与灰色区分 */
-.recall-notice :deep(.el-button) {
-  color: #409eff !important;
+/* 撤回提示中的时间：浅灰色 */
+.recall-time {
+  color: #c0c4cc;
 }
 
-/* 已撤回消息气泡样式（接收方视角） */
-.message-bubble.recalled {
-  color: #c0c4cc;
-  font-style: italic;
-  background: #f5f7fa;
+/* ========== 深色模式 - 撤回提示 ========== */
+html.dark .recall-text {
+  color: #808080;
+}
+
+html.dark .recall-time {
+  color: #505050;
+}
+
+html.dark .recall-notice :deep(.el-button) {
+  color: #6aa8ff !important;
 }
 </style>

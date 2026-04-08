@@ -714,6 +714,7 @@ public class SocialService {
         ChatMessageResponse recalledMsg = new ChatMessageResponse();
         recalledMsg.setId(message.getId());
         recalledMsg.setRecalled(true);
+        recalledMsg.setRecalledAt(recalledAt);
         SocialWsEvent event = new SocialWsEvent() {{
             setEventType(SocialEventType.MESSAGE_RECALLED);
             setRecipientUsername(receiver.getUsername());
@@ -952,6 +953,7 @@ public class SocialService {
                 message.getReadAt(), // 已读时间
                 message.getRecalled(), // 消息是否已撤回
                 message.getOriginalContent(), // 撤回前的原始内容
+                message.getRecalledAt(), // 撤回时间
                 mine, // 是否是自己发送的
                 message.getCreatedAt() // 创建时间
         );
