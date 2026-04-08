@@ -233,13 +233,18 @@
                     <span class="message-time">{{ formatTime(message.createdAt) }}</span>
                   </div>
 
-                  <!-- 已撤回消息：发送方和接收方都显示"消息已撤回" -->
-                  <div v-if="message.recalled" class="message-bubble recalled">
+                  <!-- 已撤回消息：接收方显示灰色"消息已撤回"占位 -->
+                  <div v-if="message.recalled && !message.mine" class="message-bubble recalled">
                     <span>消息已撤回</span>
                   </div>
 
-                  <!-- 正常消息 -->
-                  <div v-else class="message-bubble" :class="message.type?.toLowerCase()" @click.stop="toggleMessageMenu(message)">
+                  <!-- 正常消息 或 已撤回但发送者视角：显示原内容，右键弹出菜单 -->
+                  <div
+                    v-else
+                    class="message-bubble"
+                    :class="[message.type?.toLowerCase(), { recalled: message.recalled && message.mine }]"
+                    @contextmenu.prevent.stop="handleMessageRightClick(message, $event)"
+                  >
                     <template v-if="message.type === 'IMAGE'">
                       <el-image
                         :src="message.mediaUrl"
@@ -252,7 +257,7 @@
                     <template v-else-if="message.type === 'EMOJI'">
                       <span class="emoji-content">{{ message.content }}</span>
                     </template>
-                    <template v-else>{{ message.content }}</template>
+                    <template v-else>{{ message.originalContent || message.content }}</template>
                   </div>
 
                   <!-- 已发送消息的阅读状态 -->
@@ -260,13 +265,7 @@
                     {{ formatReadState(message) }}
                   </div>
 
-                  <!-- 消息操作浮层：点击消息后显示 -->
-                  <div v-if="activeMessageMenu?.id === message.id && !message.recalled" class="message-menu-popup" @click.stop>
-                    <el-button size="small" link @click.stop="handleCopyMessage(message)">复制</el-button>
-                    <el-button v-if="message.mine && canRecall(message)" size="small" link type="primary" @click.stop="handleRecall(message)">撤回</el-button>
-                  </div>
-
-                  <!-- 发送者已撤回消息：显示"重新编辑"按钮，点击后将内容放回输入框 -->
+                  <!-- 发送者已撤回消息：显示"重新编辑"按钮 -->
                   <div v-if="message.recalled && message.mine" class="recall-edit-btn">
                     <el-button link size="small" type="primary" @click.stop="handleEditToInput(message)">重新编辑</el-button>
                   </div>
@@ -540,6 +539,21 @@
       </div>
     </el-dialog>
 
+    <!-- 右键消息上下文菜单 -->
+    <div
+      v-if="contextMenuVisible"
+      class="context-menu"
+      :style="{ left: contextMenuPosition.x + 'px', top: contextMenuPosition.y + 'px' }"
+      @click.stop
+    >
+      <div class="context-menu-item" @click="handleCopyMessage(contextMenuMessage)">复制</div>
+      <div
+        v-if="contextMenuMessage?.mine && canRecall(contextMenuMessage)"
+        class="context-menu-item"
+        @click="handleRecall(contextMenuMessage)"
+      >撤回</div>
+    </div>
+
   </div>
 </template>
 
@@ -617,8 +631,10 @@ const messagePage = ref(1)
 const messageHasMore = ref(false)
 
 // 消息操作相关状态
-const activeMessageMenu = ref(null)   // 当前显示操作菜单的消息
-const editingMessageId = ref(null)     // 正在重新编辑的撤回消息ID
+const contextMenuVisible = ref(false)    // 右键菜单是否显示
+const contextMenuMessage = ref(null)     // 右键菜单对应的消息
+const contextMenuPosition = ref({ x: 0, y: 0 }) // 右键菜单位置
+const editingMessageId = ref(null)       // 正在重新编辑的撤回消息ID
 
 // 输入
 const draft = ref('')
@@ -1221,23 +1237,24 @@ const sendPayload = async (payload) => {
 }
 
 /**
- * 切换消息操作菜单的显示
- * 点击消息气泡时显示/隐藏操作菜单
+ * 处理消息右键点击
+ * 在鼠标位置显示上下文菜单
  *
  * @param {object} message - 消息对象
+ * @param {Event} event - 右键事件
  */
-const toggleMessageMenu = (message) => {
-  if (activeMessageMenu.value?.id === message.id) {
-    activeMessageMenu.value = null
-  } else {
-    activeMessageMenu.value = message
+const handleMessageRightClick = (message, event) => {
+  // 显示自定义右键菜单
+  contextMenuVisible.value = true
+  contextMenuMessage.value = message
+  contextMenuPosition.value = {
+    x: event.clientX,
+    y: event.clientY
   }
 }
 
 /**
- * 复制消息内容到剪贴板
- *
- * @param {object} message - 要复制的消息对象
+ * 复制消息内容
  */
 const handleCopyMessage = async (message) => {
   try {
@@ -1246,17 +1263,14 @@ const handleCopyMessage = async (message) => {
   } catch (err) {
     message.error('复制失败')
   }
-  activeMessageMenu.value = null
+  contextMenuVisible.value = false
 }
 
 /**
- * 处理撤回按钮点击
- * 调用后端撤回接口，成功后更新本地消息状态为 recalled=true
- *
- * @param {object} message - 要撤回的消息对象
+ * 撤回消息
  */
 const handleRecall = async (message) => {
-  activeMessageMenu.value = null
+  contextMenuVisible.value = false
   try {
     await recallChatMessage(message.id)
     // 如果撤回的正是正在编辑的消息，清除编辑状态
@@ -1271,7 +1285,7 @@ const handleRecall = async (message) => {
         ...messages.value[idx],
         recalled: true,
         originalContent: message.content, // 保存原始内容
-        content: '消息已撤回' // 显示占位文字
+        content: '消息已撤回' // 接收方显示占位
       }
     }
     message.success('消息已撤回')
@@ -1636,9 +1650,9 @@ onMounted(async () => {
   // 连接 WebSocket
   connectSocket()
 
-  // 全局点击关闭消息操作菜单
+  // 全局点击关闭右键菜单
   document.addEventListener('click', () => {
-    activeMessageMenu.value = null
+    contextMenuVisible.value = false
   })
 
   if (typeof window !== 'undefined') {
@@ -2715,50 +2729,53 @@ html.dark .user-item:hover {
 
 /* ========== 消息撤回相关样式 ========== */
 
-/* 消息操作浮层：点击消息后显示 */
-.message-menu-popup {
-  position: absolute;
-  top: -36px;
-  left: 0;
-  z-index: 10;
-  display: flex;
-  gap: 4px;
+/* 右键上下文菜单 */
+.context-menu {
+  position: fixed;
+  z-index: 9999;
   background: #fff;
   border: 1px solid #e4e7ed;
   border-radius: 8px;
-  padding: 4px 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  white-space: nowrap;
+  padding: 4px 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  min-width: 100px;
 }
 
-html.dark .message-menu-popup {
+html.dark .context-menu {
   background: #2a2a2a;
   border-color: #3a3a3a;
 }
 
-/* 撤回按钮默认隐藏，悬停消息项时显示 */
-.recall-btn,
-.recall-edit-btn {
-  margin-top: 2px;
-  opacity: 0;
-  transition: opacity 0.2s;
+.context-menu-item {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #303133;
+  cursor: pointer;
+  transition: background 0.15s;
 }
 
-/* 悬停时显示撤回/重新编辑按钮 */
-.message-item:hover .recall-btn,
-.message-item:hover .recall-edit-btn {
-  opacity: 1;
+.context-menu-item:hover {
+  background: #f5f7fa;
 }
 
-/* 已撤回消息气泡样式（接收方视角） */
+html.dark .context-menu-item {
+  color: #e0e0e0;
+}
+
+html.dark .context-menu-item:hover {
+  background: #3a3a3a;
+}
+
+/* 已撤回消息气泡样式（发送方和接收方都显示为灰色占位） */
 .message-bubble.recalled {
   color: #c0c4cc;
   font-style: italic;
   background: #f5f7fa;
 }
 
-/* 重新编辑弹窗中的输入框 */
-.edit-dialog-content {
-  width: 100%;
+/* 重新编辑按钮 */
+.recall-edit-btn {
+  margin-top: 2px;
+  text-align: left;
 }
 </style>
