@@ -222,60 +222,62 @@
                 class="message-item"
                 :class="{ self: message.mine }"
               >
-                <div v-if="!message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar)">
-                  <img v-if="message.senderAvatar" :src="message.senderAvatar" :alt="message.senderUsername" />
-                  <span v-else>{{ getInitial(message.senderUsername) }}</span>
+                <!-- 已撤回消息（发送者）：居中显示一行提示，无头像时间 -->
+                <div v-if="message.recalled && message.mine" class="recall-notice">
+                  <span class="recall-text">你撤回了一条消息</span>
+                  <el-button link size="small" type="primary" @click.stop="handleEditToInput(message)">重新编辑</el-button>
                 </div>
 
-                <div class="message-content">
-                  <div class="message-meta">
-                    <span class="sender-name">{{ message.mine ? '我' : message.senderUsername }}</span>
-                    <span class="message-time">{{ formatTime(message.createdAt) }}</span>
+                <template v-else>
+                  <div v-if="!message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar)">
+                    <img v-if="message.senderAvatar" :src="message.senderAvatar" :alt="message.senderUsername" />
+                    <span v-else>{{ getInitial(message.senderUsername) }}</span>
                   </div>
 
-                  <!-- 已撤回消息：接收方显示灰色"消息已撤回"占位 -->
-                  <div v-if="message.recalled && !message.mine" class="message-bubble recalled">
-                    <span>消息已撤回</span>
+                  <div class="message-content">
+                    <div class="message-meta">
+                      <span class="sender-name">{{ message.mine ? '我' : message.senderUsername }}</span>
+                      <span class="message-time">{{ formatTime(message.createdAt) }}</span>
+                    </div>
+
+                    <!-- 已撤回消息：接收方显示灰色"消息已撤回"占位 -->
+                    <div v-if="message.recalled && !message.mine" class="message-bubble recalled">
+                      <span>消息已撤回</span>
+                    </div>
+
+                    <!-- 正常消息：显示原内容，右键弹出菜单 -->
+                    <div
+                      v-else
+                      class="message-bubble"
+                      :class="message.type?.toLowerCase()"
+                      @contextmenu.prevent.stop="handleMessageRightClick(message, $event)"
+                    >
+                      <template v-if="message.type === 'IMAGE'">
+                        <el-image
+                          :src="message.mediaUrl"
+                          :preview-src-list="[message.mediaUrl]"
+                          fit="cover"
+                          preview-teleported
+                        />
+                        <p v-if="message.content" class="image-caption">{{ message.content }}</p>
+                      </template>
+                      <template v-else-if="message.type === 'EMOJI'">
+                        <span class="emoji-content">{{ message.content }}</span>
+                      </template>
+                      <template v-else>{{ message.content }}</template>
+                    </div>
+
+                    <!-- 已发送消息的阅读状态 -->
+                    <div v-if="message.mine && !message.recalled" class="read-status" :class="{ read: isMessageRead(message) }">
+                      {{ formatReadState(message) }}
+                    </div>
                   </div>
 
-                  <!-- 发送者撤回：显示整行提示"你撤回了一条消息 重新编辑" -->
-                  <div v-else-if="message.recalled && message.mine" class="recall-notice">
-                    <span class="recall-text">你撤回了一条消息</span>
-                    <el-button link size="small" type="primary" @click.stop="handleEditToInput(message)">重新编辑</el-button>
+                  <div v-if="message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar || userStore.avatar)">
+                    <img v-if="message.senderAvatar || userStore.avatar" :src="message.senderAvatar || userStore.avatar" />
+                    <span v-else>{{ getInitial(message.senderUsername || userStore.username) }}</span>
                   </div>
-
-                  <!-- 正常消息：显示原内容，右键弹出菜单 -->
-                  <div
-                    v-else
-                    class="message-bubble"
-                    :class="message.type?.toLowerCase()"
-                    @contextmenu.prevent.stop="handleMessageRightClick(message, $event)"
-                  >
-                    <template v-if="message.type === 'IMAGE'">
-                      <el-image
-                        :src="message.mediaUrl"
-                        :preview-src-list="[message.mediaUrl]"
-                        fit="cover"
-                        preview-teleported
-                      />
-                      <p v-if="message.content" class="image-caption">{{ message.content }}</p>
-                    </template>
-                    <template v-else-if="message.type === 'EMOJI'">
-                      <span class="emoji-content">{{ message.content }}</span>
-                    </template>
-                    <template v-else>{{ message.content }}</template>
-                  </div>
-
-                  <!-- 已发送消息的阅读状态 -->
-                  <div v-if="message.mine && !message.recalled" class="read-status" :class="{ read: isMessageRead(message) }">
-                    {{ formatReadState(message) }}
-                  </div>
-                </div>
-
-                <div v-if="message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar || userStore.avatar)">
-                  <img v-if="message.senderAvatar || userStore.avatar" :src="message.senderAvatar || userStore.avatar" />
-                  <span v-else>{{ getInitial(message.senderUsername || userStore.username) }}</span>
-                </div>
+                </template>
               </div>
             </template>
 
