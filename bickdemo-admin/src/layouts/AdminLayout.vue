@@ -47,6 +47,7 @@
     <div class="main-shell">
       <!-- Page top bar -->
       <div class="page-top-bar">
+        <ThemeToggle variant="inline" tone="ghost" />
         <NotificationPanel />
         <el-dropdown trigger="hover" class="user-dropdown">
           <div class="user-menu-trigger">
@@ -116,13 +117,16 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNotificationStore } from '@/stores/notification'
+import { useThemeStore } from '@/stores/theme'
 import NotificationPanel from '@/components/NotificationPanel.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 import { Bicycle, DataAnalysis, Document, Monitor, Setting, Expand, Calendar, ArrowDown } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
+const themeStore = useThemeStore()
 
 // Mobile responsive state
 const drawerVisible = ref(false)
@@ -139,6 +143,7 @@ onMounted(() => {
   if (authStore.username) {
     notificationStore.initWebSocket(authStore.username)
   }
+  themeStore.initTheme()
 })
 
 onUnmounted(() => {
@@ -504,5 +509,74 @@ const logout = () => {
   .sidebar {
     display: none;
   }
+}
+
+/* ===================== 深色模式覆盖 ===================== */
+html.dark .admin-layout {
+  background: linear-gradient(180deg, #0b1220 0%, #111827 100%);
+}
+
+html.dark .page-card,
+html.dark .metric-card,
+html.dark .background-item,
+html.dark .mini-item,
+html.dark .moderation-item {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+html.dark .page-toolbar {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+html.dark .user-dropdown .user-menu-trigger {
+  background: rgba(30, 41, 59, 0.90);
+  border-color: rgba(148, 163, 184, 0.20);
+  color: #e2e8f0;
+}
+
+html.dark .user-dropdown .user-menu-trigger:hover {
+  background: rgba(30, 41, 59, 1);
+}
+
+html.dark .user-dropdown .user-name {
+  color: #e2e8f0;
+}
+
+html.dark .hero-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+html.dark .hero-chip strong {
+  color: #f1f5f9;
+}
+
+html.dark .hero-copy h2,
+html.dark .card-head h3,
+html.dark .content-header h3 {
+  color: var(--admin-ink);
+}
+
+html.dark .metric-card strong {
+  color: #f1f5f9;
+}
+
+html.dark .bike-row strong {
+  color: var(--admin-ink);
+}
+
+html.dark .background-title strong {
+  color: var(--admin-ink);
+}
+
+html.dark .moderation-copy strong {
+  color: var(--admin-ink);
+}
+
+html.dark .hero-tag {
+  background: rgba(64, 158, 255, 0.15);
+  color: #93c5fd;
 }
 </style>

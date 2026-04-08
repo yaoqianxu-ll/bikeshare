@@ -1657,8 +1657,8 @@ html.dark .mobile-account-link-logout:hover {
   display: none;
 }
 
-/* 大屏幕缩放适配 - 隐藏导航文字只显示图标 */
-@media (max-width: 1300px) {
+/* 大屏幕缩放适配 - 隐藏导航文字只显示图标（932px断点） */
+@media (max-width: 932px) {
   .nav-link > span:last-child {
     display: none;
   }

@@ -638,7 +638,8 @@ loadBackgrounds()
 }
 
 /* ========== 响应式 ========== */
-@media (max-width: 768px) {
+/* 935px及以下：切换到平板/移动端布局 */
+@media (max-width: 935px) {
   .register-page {
     flex-direction: column;
   }
@@ -668,6 +669,8 @@ loadBackgrounds()
   .register-form-area {
     flex: 1;
     padding: 40px 20px;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
 </style>

@@ -2,7 +2,7 @@
   --admin-bg: #f3f6fb;
   --admin-bg-soft: #f7f9fc;
   --admin-surface: #ffffff;
-  --admin-surface-strong: #ffffff;
+  --admin-surface-solid: #ffffff;
   --admin-surface-soft: #f8fafc;
   --admin-border: rgba(15, 23, 42, 0.08);
   --admin-border-strong: rgba(15, 23, 42, 0.12);
@@ -18,6 +18,23 @@
   --admin-radius-xl: 30px;
   --admin-radius-lg: 24px;
   --admin-radius-md: 18px;
+}
+
+/* ===================== 深色模式变量 ===================== */
+html.dark {
+  color-scheme: dark;
+  --admin-bg: #0b1220;
+  --admin-bg-soft: #111827;
+  --admin-surface: #1e293b;
+  --admin-surface-solid: #1e293b;
+  --admin-surface-soft: #0f172a;
+  --admin-border: rgba(255, 255, 255, 0.08);
+  --admin-border-strong: rgba(255, 255, 255, 0.12);
+  --admin-ink: #f1f5f9;
+  --admin-ink-soft: #e2e8f0;
+  --admin-muted: #94a3b8;
+  --admin-shadow: 0 12px 28px rgba(0, 0, 0, 0.30);
+  --admin-shadow-soft: 0 8px 20px rgba(0, 0, 0, 0.24);
 }
 
 html,
@@ -791,4 +808,517 @@ html.dark :deep(.el-input__inner) {
 
 html.dark :deep(.el-input__inner::placeholder) {
   color: #64748b !important;
+}
+
+/* ===================== 深色模式布局覆盖 ===================== */
+
+/* 深色模式主背景 */
+html.dark .admin-layout {
+  background: linear-gradient(180deg, #0b1220 0%, #111827 100%);
+}
+
+/* 深色模式页面卡片 */
+html.dark .page-card,
+html.dark .metric-card,
+html.dark .background-item,
+html.dark .mini-item,
+html.dark .moderation-item,
+html.dark .hero-chip {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+/* 深色模式工具栏 */
+html.dark .page-toolbar {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+/* 深色模式用户菜单 */
+html.dark .user-dropdown .user-menu-trigger {
+  background: rgba(30, 41, 59, 0.90);
+  border-color: rgba(148, 163, 184, 0.20);
+  color: #e2e8f0;
+}
+
+html.dark .user-dropdown .user-menu-trigger:hover {
+  background: rgba(30, 41, 59, 1);
+  border-color: rgba(148, 163, 184, 0.30);
+}
+
+html.dark .user-dropdown .user-name {
+  color: #e2e8f0;
+}
+
+/* 深色模式表格 */
+html.dark :deep(.el-table) {
+  --el-table-border-color: rgba(255, 255, 255, 0.06);
+  --el-table-row-hover-bg-color: rgba(64, 158, 255, 0.08);
+  background: transparent;
+}
+
+html.dark :deep(.el-table th.el-table__cell) {
+  background: rgba(30, 41, 59, 0.80);
+  color: var(--admin-muted);
+}
+
+html.dark :deep(.el-table tr),
+html.dark :deep(.el-table__body td.el-table__cell) {
+  background: transparent;
+  color: var(--admin-ink);
+}
+
+/* 深色模式 el-card */
+html.dark :deep(.el-card) {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+/* 深色模式 el-dialog */
+html.dark :deep(.el-dialog) {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+html.dark :deep(.el-dialog__header) {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+html.dark :deep(.el-dialog__footer) {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+/* 深色模式输入框 */
+html.dark :deep(.el-input__wrapper),
+html.dark :deep(.el-textarea__inner),
+html.dark :deep(.el-select__wrapper) {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10) inset;
+}
+
+html.dark :deep(.el-input__wrapper:hover),
+html.dark :deep(.el-textarea__inner:hover),
+html.dark :deep(.el-select__wrapper:hover) {
+  box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.45) inset;
+}
+
+html.dark :deep(.el-input__wrapper.is-focus),
+html.dark :deep(.el-select__wrapper.is-focused) {
+  box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.68) inset;
+}
+
+/* 深色模式按钮 */
+html.dark :deep(.el-button) {
+  --el-button-bg-color: var(--admin-surface);
+  --el-button-border-color: var(--admin-border);
+  --el-button-text-color: var(--admin-ink);
+  --el-button-hover-bg-color: rgba(255, 255, 255, 0.08);
+  --el-button-hover-border-color: rgba(64, 158, 255, 0.45);
+  --el-button-hover-text-color: var(--admin-ink);
+}
+
+html.dark :deep(.el-button--primary) {
+  --el-button-bg-color: rgba(64, 158, 255, 0.85);
+  --el-button-border-color: rgba(64, 158, 255, 0.5);
+  --el-button-text-color: #fff;
+  --el-button-hover-bg-color: rgba(64, 158, 255, 0.95);
+  --el-button-hover-border-color: rgba(64, 158, 255, 0.70);
+  --el-button-hover-text-color: #fff;
+}
+
+/* 深色模式分页 */
+html.dark :deep(.el-pagination) {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-button-bg-color: rgba(255, 255, 255, 0.04);
+  --el-pagination-hover-color: rgba(64, 158, 255, 0.12);
+}
+
+html.dark :deep(.el-pager li) {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--admin-muted);
+}
+
+html.dark :deep(.el-pager li:hover) {
+  background: rgba(64, 158, 255, 0.12);
+}
+
+html.dark :deep(.el-pager li.is-active) {
+  background: rgba(64, 158, 255, 0.20);
+  color: #fff;
+}
+
+/* 深色模式标签 */
+html.dark :deep(.el-tag) {
+  --el-tag-bg-color: rgba(255, 255, 255, 0.08);
+  --el-tag-border-color: rgba(255, 255, 255, 0.12);
+  --el-tag-text-color: var(--admin-muted);
+}
+
+/* 深色模式头像 */
+html.dark :deep(.el-avatar) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--admin-muted) !important;
+}
+
+/* 深色模式消息提示 */
+html.dark :deep(.el-message) {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+html.dark :deep(.el-message__content) {
+  color: var(--admin-ink);
+}
+
+/* 深色模式通知面板 */
+html.dark :deep(.el-badge__content) {
+  background: var(--admin-danger);
+}
+
+/* 深色模式加载 */
+html.dark :deep(.el-loading-mask) {
+  background: rgba(11, 18, 32, 0.85);
+}
+
+html.dark :deep(.el-loading-spinner .path) {
+  stroke: var(--admin-primary);
+}
+
+/* 深色模式弹出框 */
+html.dark :deep(.el-popover.el-popper) {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+/* 深色模式 Drawer */
+html.dark :deep(.el-drawer) {
+  background: var(--admin-surface);
+}
+
+html.dark :deep(.el-drawer__header) {
+  border-color: var(--admin-border);
+  color: var(--admin-ink);
+}
+
+/* 深色模式步骤条 */
+html.dark :deep(.el-step__title) {
+  color: var(--admin-ink);
+}
+
+html.dark :deep(.el-step__description) {
+  color: var(--admin-muted);
+}
+
+/* 深色模式标签页 */
+html.dark :deep(.el-tabs__item) {
+  color: var(--admin-muted);
+}
+
+html.dark :deep(.el-tabs__item.is-active) {
+  color: var(--admin-primary);
+}
+
+html.dark :deep(.el-tabs__active-bar) {
+  background-color: var(--admin-primary);
+}
+
+/* ===================== 深色模式所有卡片元素 ===================== */
+
+/* 页面工具栏 */
+html.dark .page-toolbar {
+  background: var(--admin-surface) !important;
+  border-color: var(--admin-border);
+}
+
+/* 英雄卡片 */
+html.dark .hero-chip {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+html.dark .hero-chip span {
+  color: var(--admin-muted);
+}
+
+html.dark .hero-chip strong {
+  color: var(--admin-ink);
+}
+
+/* 迷你项目列表项 */
+html.dark .mini-item {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(15, 23, 42, 0.06);
+}
+
+html.dark .mini-item strong {
+  color: var(--admin-ink);
+}
+
+/* 审核列表项 */
+html.dark .moderation-item {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(15, 23, 42, 0.06);
+}
+
+/* 背景项 */
+html.dark .background-item {
+  background: var(--admin-surface) !important;
+  border-color: var(--admin-border);
+}
+
+/* 页面卡片 */
+html.dark .page-card {
+  background: var(--admin-surface) !important;
+  border-color: var(--admin-border);
+}
+
+html.dark .page-card :deep(.el-card__body) {
+  background: var(--admin-surface);
+}
+
+html.dark .page-card :deep(.el-card__header) {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+/* 指标卡片 */
+html.dark .metric-card {
+  background: var(--admin-surface) !important;
+  border-color: var(--admin-border);
+}
+
+html.dark .metric-card span {
+  color: var(--admin-muted);
+}
+
+html.dark .metric-card strong {
+  color: var(--admin-ink);
+}
+
+html.dark .metric-card small {
+  color: var(--admin-muted);
+}
+
+/* 页面英雄区 */
+html.dark .page-hero {
+  background: var(--admin-surface) !important;
+  border-color: var(--admin-border);
+}
+
+html.dark .page-hero::before {
+  background: linear-gradient(90deg, rgba(64, 158, 255, 0.08), transparent 28%);
+}
+
+/* 图表卡片 */
+html.dark .chart-card {
+  background: var(--admin-surface) !important;
+  border-color: var(--admin-border);
+}
+
+/* 分割线 */
+html.dark .el-divider {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .el-divider__text {
+  color: var(--admin-muted);
+}
+
+/* 自行车相关 */
+html.dark .bike-cover {
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+html.dark .bike-cover-empty {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--admin-muted) !important;
+}
+
+html.dark .bike-row strong {
+  color: var(--admin-ink);
+}
+
+html.dark .bike-row p {
+  color: var(--admin-muted);
+}
+
+/* 上传相关 */
+html.dark .upload-tip {
+  color: var(--admin-muted);
+}
+
+/* 背景预览 */
+html.dark .background-preview {
+  border: 1px solid var(--admin-border);
+}
+
+/* 所有文字颜色覆盖 */
+html.dark .hero-copy h2,
+html.dark .card-head h3,
+html.dark .content-header h3,
+html.dark .content-header h3 {
+  color: var(--admin-ink) !important;
+}
+
+html.dark .hero-copy p,
+html.dark .card-head p,
+html.dark .content-header p {
+  color: var(--admin-muted) !important;
+}
+
+html.dark .muted-inline {
+  color: var(--admin-muted) !important;
+}
+
+/* 标签样式 */
+html.dark .hero-tag {
+  background: rgba(64, 158, 255, 0.12);
+  color: #93c5fd;
+}
+
+/* 悬浮卡片的阴影在深色模式下调整 */
+html.dark .metric-card:hover,
+html.dark .background-item:hover,
+html.dark .mini-item:hover,
+html.dark .moderation-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.25);
+}
+
+/* 表格单元格 */
+html.dark :deep(.el-table td.el-table__cell) {
+  color: var(--admin-ink);
+}
+
+/* el-input 内部文字 */
+html.dark :deep(.el-input__inner) {
+  color: var(--admin-ink) !important;
+}
+
+/* el-select 选中值 */
+html.dark :deep(.el-select__tags-text) {
+  color: var(--admin-ink);
+}
+
+/* 分页器背景 */
+html.dark :deep(.el-pagination__total) {
+  color: var(--admin-muted);
+}
+
+html.dark :deep(.el-pagination__jump) {
+  color: var(--admin-muted);
+}
+
+/* 空状态 */
+html.dark :deep(.el-empty__description) {
+  color: var(--admin-muted);
+}
+
+/* 徽章 */
+html.dark :deep(.el-badge__content) {
+  background: var(--admin-danger);
+}
+
+/* 时间线 */
+html.dark :deep(.el-timeline-item__content) {
+  color: var(--admin-ink);
+}
+
+html.dark :deep(.el-timeline-item__timestamp) {
+  color: var(--admin-muted);
+}
+
+/* 步骤条 */
+html.dark :deep(.el-step__icon) {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+  color: var(--admin-muted);
+}
+
+html.dark :deep(.el-step__title) {
+  color: var(--admin-ink);
+}
+
+html.dark :deep(.el-step__description) {
+  color: var(--admin-muted);
+}
+
+/* 警告提示 */
+html.dark :deep(.el-alert) {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--admin-border);
+}
+
+html.dark :deep(.el-alert__title) {
+  color: var(--admin-ink);
+}
+
+html.dark :deep(.el-alert__description) {
+  color: var(--admin-muted);
+}
+
+/* 计数 */
+html.dark :deep(.el-statistic__head) {
+  color: var(--admin-muted);
+}
+
+html.dark :deep(.el-statistic__content) {
+  color: var(--admin-ink);
+}
+
+/* 搜索框 */
+html.dark :deep(.el-search__inner) {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+/* 文本域 */
+html.dark :deep(.el-textarea__inner) {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--admin-border);
+  color: var(--admin-ink);
+}
+
+html.dark :deep(.el-textarea__inner::placeholder) {
+  color: var(--admin-muted);
+}
+
+/* 下拉选项标签 */
+html.dark :deep(.el-select-dropdown__item) {
+  color: var(--admin-ink);
+}
+
+html.dark :deep(.el-select-dropdown__item.hover),
+html.dark :deep(.el-select-dropdown__item:hover) {
+  background: rgba(64, 158, 255, 0.08);
+}
+
+html.dark :deep(.el-select-dropdown__item.selected) {
+  color: var(--admin-primary);
+}
+
+/* 日期选择器 */
+html.dark :deep(.el-date-picker) {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+html.dark :deep(.el-picker-panel) {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+  color: var(--admin-ink);
+}
+
+/* 工具提示 */
+html.dark :deep(.el-tooltip__popper) {
+  background: var(--admin-surface) !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-ink) !important;
+}
+
+html.dark :deep(.el-tooltip__popper .el-popper__arrow::before) {
+  background: var(--admin-surface) !important;
+  border-color: var(--admin-border) !important;
 }
