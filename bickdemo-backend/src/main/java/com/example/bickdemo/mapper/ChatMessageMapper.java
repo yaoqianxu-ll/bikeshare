@@ -135,24 +135,29 @@ public interface ChatMessageMapper extends BaseMapper<ChatMessage> {
 
     /**
      * 标记指定消息为已撤回状态
-     * 更新 recalled=1 和 recalled_at=当前时间
+     * 同时保存原始内容到 original_content 字段，用于支持"重新编辑"功能
      *
-     * @param id         消息ID
-     * @param recalledAt 撤回时间
+     * @param id             消息ID
+     * @param recalledAt     撤回时间
+     * @param originalContent 撤回前的原始消息内容
      * @return 影响行数
      */
     @Update("""
             UPDATE chat_messages
             SET recalled = 1,
                 recalled_at = #{recalledAt},
+                original_content = #{originalContent},
                 updated_at = NOW()
             WHERE id = #{id} AND deleted = 0
             """)
-    int markRecalled(@Param("id") Long id, @Param("recalledAt") LocalDateTime recalledAt);
+    int markRecalled(@Param("id") Long id,
+                     @Param("recalledAt") LocalDateTime recalledAt,
+                     @Param("originalContent") String originalContent);
 
     /**
      * 更新消息内容和时间（用于重新编辑发送）
      * 重置 recalled=0 和 recalled_at=NULL，并更新 content、media_url、created_at
+     * 同时清除 original_content
      *
      * @param id       消息ID
      * @param content  新的消息内容
@@ -165,11 +170,12 @@ public interface ChatMessageMapper extends BaseMapper<ChatMessage> {
                 media_url = #{mediaUrl},
                 recalled = 0,
                 recalled_at = NULL,
+                original_content = NULL,
                 created_at = NOW(),
                 updated_at = NOW()
             WHERE id = #{id} AND deleted = 0
             """)
     int updateContentAndTime(@Param("id") Long id,
-                             @Param("content") String content,
-                             @Param("mediaUrl") String mediaUrl);
+                              @Param("content") String content,
+                              @Param("mediaUrl") String mediaUrl);
 }

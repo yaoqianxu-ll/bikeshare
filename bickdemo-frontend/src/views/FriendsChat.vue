@@ -577,6 +577,7 @@ import {
   markConversationRead,
   recallChatMessage,
   rejectFriendRequest,
+  resendChatMessage,
   searchUsers,
   sendChatMessage
 } from '@/api/social'
@@ -617,6 +618,7 @@ const messageHasMore = ref(false)
 
 // 消息操作相关状态
 const activeMessageMenu = ref(null)   // 当前显示操作菜单的消息
+const editingMessageId = ref(null)     // 正在重新编辑的撤回消息ID
 
 // 输入
 const draft = ref('')
@@ -1132,6 +1134,33 @@ const handleSendText = async () => {
   const content = draft.value.trim()
   if (!content || !activeContact.value) return
 
+  // 如果正在编辑撤回消息，调用重新发送接口
+  if (editingMessageId.value) {
+    const messageId = editingMessageId.value
+    const msg = messages.value.find(m => m.id === messageId)
+    try {
+      const res = await resendChatMessage(messageId, {
+        content,
+        type: msg?.type || 'TEXT'
+      })
+      // 用后端返回的完整消息对象替换本地记录
+      const updated = normalizeMessage(res.data)
+      const idx = messages.value.findIndex(m => m.id === messageId)
+      if (idx >= 0) {
+        messages.value[idx] = updated
+      }
+      draft.value = ''
+      editingMessageId.value = null
+      message.success('消息已重新发送')
+      await nextTick()
+      scrollToBottom()
+    } catch (error) {
+      console.error('重新发送失败:', error)
+      message.error(error?.message || '重新发送失败')
+    }
+    return
+  }
+
   await sendPayload({ type: 'TEXT', content })
 }
 
@@ -1230,10 +1259,20 @@ const handleRecall = async (message) => {
   activeMessageMenu.value = null
   try {
     await recallChatMessage(message.id)
-    // 更新本地消息状态：标记为已撤回
+    // 如果撤回的正是正在编辑的消息，清除编辑状态
+    if (editingMessageId.value === message.id) {
+      editingMessageId.value = null
+      draft.value = ''
+    }
+    // 更新本地消息状态：标记为已撤回，同时保存原始内容用于重新编辑
     const idx = messages.value.findIndex(m => m.id === message.id)
     if (idx >= 0) {
-      messages.value[idx] = { ...messages.value[idx], recalled: true, content: '消息已撤回' }
+      messages.value[idx] = {
+        ...messages.value[idx],
+        recalled: true,
+        originalContent: message.content, // 保存原始内容
+        content: '消息已撤回' // 显示占位文字
+      }
     }
     message.success('消息已撤回')
   } catch (error) {
@@ -1244,13 +1283,15 @@ const handleRecall = async (message) => {
 
 /**
  * 处理"重新编辑"按钮点击
- * 将已撤回消息的内容放回输入框
+ * 将已撤回消息的原始内容放回输入框，并记录正在编辑的消息ID
  *
  * @param {object} message - 已撤回的消息对象
  */
 const handleEditToInput = (message) => {
-  // 将原消息内容放回输入框
-  draft.value = message.content || ''
+  // 优先使用 originalContent（从数据库保存的原始内容），否则使用已显示的 content
+  const contentToRestore = message.originalContent || message.content || ''
+  draft.value = contentToRestore
+  editingMessageId.value = message.id // 标记正在编辑的撤回消息
   activeMessageMenu.value = null
   // 滚动到底部并聚焦输入框
   nextTick(() => {

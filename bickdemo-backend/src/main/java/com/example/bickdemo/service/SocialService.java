@@ -704,9 +704,9 @@ public class SocialService {
             throw new RuntimeException("撤回时间已超过2分钟，无法撤回");
         }
 
-        // 7. 执行撤回：更新数据库标记
+        // 7. 执行撤回：更新数据库标记，同时保存原始内容用于支持"重新编辑"
         LocalDateTime recalledAt = LocalDateTime.now();
-        chatMessageMapper.markRecalled(messageId, recalledAt);
+        chatMessageMapper.markRecalled(messageId, recalledAt, message.getContent());
 
         // 8. 通过 WebSocket 通知接收方（接收方将看到"消息已撤回"）
         User receiver = requireEnabledUser(message.getReceiverId());
@@ -937,7 +937,7 @@ public class SocialService {
 
         // 同一条消息会按"当前查看者视角"转换，mine 字段决定前端左右气泡布局。
         // 创建并返回聊天消息响应对象
-        return new ChatMessageResponse(
+        ChatMessageResponse response = new ChatMessageResponse(
                 message.getId(), // 消息ID
                 sender.getId(), // 发送者ID
                 sender.getUsername(), // 发送者用户名
@@ -951,9 +951,11 @@ public class SocialService {
                 read, // 是否已读
                 message.getReadAt(), // 已读时间
                 message.getRecalled(), // 消息是否已撤回
+                message.getOriginalContent(), // 撤回前的原始内容
                 mine, // 是否是自己发送的
                 message.getCreatedAt() // 创建时间
         );
+        return response;
     }
 
     // 判断消息是否已读

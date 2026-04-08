@@ -66,6 +66,13 @@ public class ChatMessage {
     @TableField("recalled_at")
     private LocalDateTime recalledAt;
 
+    /**
+     * 消息被撤回前的原始内容
+     * 仅当 recalled = true 时有值，用于支持"重新编辑"功能恢复原始内容
+     */
+    @TableField("original_content")
+    private String originalContent;
+
     @TableLogic
     private Integer deleted;
 }
