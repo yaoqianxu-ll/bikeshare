@@ -238,11 +238,17 @@
                     <span>消息已撤回</span>
                   </div>
 
-                  <!-- 正常消息 或 已撤回但发送者视角：显示原内容，右键弹出菜单 -->
+                  <!-- 发送者撤回：显示整行提示"你撤回了一条消息 重新编辑" -->
+                  <div v-else-if="message.recalled && message.mine" class="recall-notice">
+                    <span class="recall-text">你撤回了一条消息</span>
+                    <el-button link size="small" type="primary" @click.stop="handleEditToInput(message)">重新编辑</el-button>
+                  </div>
+
+                  <!-- 正常消息：显示原内容，右键弹出菜单 -->
                   <div
                     v-else
                     class="message-bubble"
-                    :class="[message.type?.toLowerCase(), { recalled: message.recalled && message.mine }]"
+                    :class="message.type?.toLowerCase()"
                     @contextmenu.prevent.stop="handleMessageRightClick(message, $event)"
                   >
                     <template v-if="message.type === 'IMAGE'">
@@ -257,17 +263,12 @@
                     <template v-else-if="message.type === 'EMOJI'">
                       <span class="emoji-content">{{ message.content }}</span>
                     </template>
-                    <template v-else>{{ message.originalContent || message.content }}</template>
+                    <template v-else>{{ message.content }}</template>
                   </div>
 
                   <!-- 已发送消息的阅读状态 -->
                   <div v-if="message.mine && !message.recalled" class="read-status" :class="{ read: isMessageRead(message) }">
                     {{ formatReadState(message) }}
-                  </div>
-
-                  <!-- 发送者已撤回消息：显示"重新编辑"按钮 -->
-                  <div v-if="message.recalled && message.mine" class="recall-edit-btn">
-                    <el-button link size="small" type="primary" @click.stop="handleEditToInput(message)">重新编辑</el-button>
                   </div>
                 </div>
 
@@ -1284,8 +1285,7 @@ const handleRecall = async (message) => {
       messages.value[idx] = {
         ...messages.value[idx],
         recalled: true,
-        originalContent: message.content, // 保存原始内容
-        content: '消息已撤回' // 接收方显示占位
+        originalContent: message.content // 保存原始内容用于重新编辑
       }
     }
     message.success('消息已撤回')
@@ -2766,16 +2766,31 @@ html.dark .context-menu-item:hover {
   background: #3a3a3a;
 }
 
-/* 已撤回消息气泡样式（发送方和接收方都显示为灰色占位） */
+/* 发送者撤回后的整行提示：浅灰色背景 */
+.recall-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+/* "你撤回了一条消息"：灰色普通文字 */
+.recall-text {
+  color: #909399;
+}
+
+/* "重新编辑"按钮：蓝色主色调，与灰色区分 */
+.recall-notice :deep(.el-button) {
+  color: #409eff !important;
+}
+
+/* 已撤回消息气泡样式（接收方视角） */
 .message-bubble.recalled {
   color: #c0c4cc;
   font-style: italic;
   background: #f5f7fa;
-}
-
-/* 重新编辑按钮 */
-.recall-edit-btn {
-  margin-top: 2px;
-  text-align: left;
 }
 </style>
