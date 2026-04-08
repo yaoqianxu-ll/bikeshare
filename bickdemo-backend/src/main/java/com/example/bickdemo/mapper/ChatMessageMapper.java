@@ -122,4 +122,54 @@ public interface ChatMessageMapper extends BaseMapper<ChatMessage> {
               AND deleted = 0
             """)
     int syncReadFlagFromReadAt();
+
+    /**
+     * 根据消息ID查询单条消息（用于撤回/重新发送场景）
+     * 绕过 BaseMapper 的逻辑删除统一过滤，直接查询 deleted=0 的记录
+     *
+     * @param id 消息ID
+     * @return 消息实体，如果不存在或已删除则返回 null
+     */
+    @Select("SELECT * FROM chat_messages WHERE id = #{id} AND deleted = 0")
+    ChatMessage selectByIdForRecall(@Param("id") Long id);
+
+    /**
+     * 标记指定消息为已撤回状态
+     * 更新 recalled=1 和 recalled_at=当前时间
+     *
+     * @param id         消息ID
+     * @param recalledAt 撤回时间
+     * @return 影响行数
+     */
+    @Update("""
+            UPDATE chat_messages
+            SET recalled = 1,
+                recalled_at = #{recalledAt},
+                updated_at = NOW()
+            WHERE id = #{id} AND deleted = 0
+            """)
+    int markRecalled(@Param("id") Long id, @Param("recalledAt") LocalDateTime recalledAt);
+
+    /**
+     * 更新消息内容和时间（用于重新编辑发送）
+     * 重置 recalled=0 和 recalled_at=NULL，并更新 content、media_url、created_at
+     *
+     * @param id       消息ID
+     * @param content  新的消息内容
+     * @param mediaUrl 新的媒体URL（可为 null）
+     * @return 影响行数
+     */
+    @Update("""
+            UPDATE chat_messages
+            SET content = #{content},
+                media_url = #{mediaUrl},
+                recalled = 0,
+                recalled_at = NULL,
+                created_at = NOW(),
+                updated_at = NOW()
+            WHERE id = #{id} AND deleted = 0
+            """)
+    int updateContentAndTime(@Param("id") Long id,
+                             @Param("content") String content,
+                             @Param("mediaUrl") String mediaUrl);
 }
