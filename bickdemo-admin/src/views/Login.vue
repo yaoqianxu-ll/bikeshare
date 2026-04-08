@@ -81,7 +81,7 @@
         </el-form>
 
         <div class="test-account-hint">
-          <el-tag type="info" size="small">测试账户: admin / admin123</el-tag>
+          <el-tag type="info" size="small">测试账户: test / 123456</el-tag>
         </div>
       </div>
     </div>
@@ -217,7 +217,7 @@ onMounted(() => {
 
 /* ========== 左侧背景区 ========== */
 .login-brand {
-  flex: 7;
+  flex: 8;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -336,29 +336,28 @@ onMounted(() => {
 
 /* ========== 右侧表单区 ========== */
 .login-form-area {
-  flex: 3;
-  min-width: 400px;
+  flex: 2;
   background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 60px 36px;
 }
 
 .form-card {
   width: 100%;
-  max-width: 340px;
+  max-width: 100%;
 }
 
 .form-header {
-  margin-bottom: 36px;
+  margin-bottom: 32px;
 }
 
 .form-header h2 {
   color: #1e293b;
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 700;
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
 
 .form-header p {
@@ -373,11 +372,11 @@ onMounted(() => {
 }
 
 :deep(.el-form-item) {
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 :deep(.el-input__wrapper) {
-  height: 48px;
+  height: 46px;
   border-radius: 10px;
   box-shadow: none !important;
   border: 1.5px solid #e2e8f0;
@@ -385,7 +384,7 @@ onMounted(() => {
 }
 
 :deep(.el-input__inner) {
-  font-size: 15px;
+  font-size: 14px;
   color: #1e293b;
 }
 
@@ -423,7 +422,7 @@ onMounted(() => {
 /* ========== 登录按钮 ========== */
 .login-btn {
   width: 100%;
-  height: 50px;
+  height: 48px;
   border-radius: 10px;
   font-size: 15px;
   font-weight: 600;
@@ -439,18 +438,18 @@ onMounted(() => {
 }
 
 /* ========== 响应式 ========== */
-@media (max-width: 900px) {
+@media (max-width: 935px) {
   .login-page {
     flex-direction: column;
   }
 
   .login-brand {
     flex: none;
-    min-height: 280px;
+    min-height: 200px;
   }
 
   .login-header {
-    padding: 20px 24px;
+    padding: 12px 20px;
   }
 
   .brand-footer {
@@ -458,13 +457,13 @@ onMounted(() => {
   }
 
   .brand-title {
-    font-size: 34px;
+    font-size: 28px;
   }
 
   .login-form-area {
     flex: 1;
     min-width: auto;
-    padding: 36px 24px;
+    padding: 40px 20px;
   }
 }
 </style>

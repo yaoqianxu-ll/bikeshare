@@ -47,7 +47,6 @@
     <div class="main-shell">
       <!-- Page top bar -->
       <div class="page-top-bar">
-        <ThemeToggle variant="inline" tone="ghost" />
         <NotificationPanel />
         <el-dropdown trigger="hover" class="user-dropdown">
           <div class="user-menu-trigger">
@@ -119,7 +118,6 @@ import { useAuthStore } from '@/stores/auth'
 import { useNotificationStore } from '@/stores/notification'
 import { useThemeStore } from '@/stores/theme'
 import NotificationPanel from '@/components/NotificationPanel.vue'
-import ThemeToggle from '@/components/ThemeToggle.vue'
 import { Bicycle, DataAnalysis, Document, Monitor, Setting, Expand, Calendar, ArrowDown } from '@element-plus/icons-vue'
 
 const route = useRoute()
