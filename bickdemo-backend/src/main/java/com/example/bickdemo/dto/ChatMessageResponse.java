@@ -26,6 +26,16 @@ public class ChatMessageResponse {
     private String mediaUrl;
     private Boolean read;
     private LocalDateTime readAt;
+    /**
+     * 消息是否已被撤回
+     * 用于消息撤回功能：true表示发送者已撤回该消息，前端应显示"消息已撤回"而非内容
+     */
+    private Boolean recalled = false;
+    /**
+     * 消息被撤回前的原始内容
+     * 仅当 recalled=true 时有值，用于"重新编辑"功能恢复原始内容
+     */
+    private String originalContent;
     private Boolean mine;
     private LocalDateTime createdAt;
 }

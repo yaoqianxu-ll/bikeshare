@@ -222,44 +222,62 @@
                 class="message-item"
                 :class="{ self: message.mine }"
               >
-                <div v-if="!message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar)">
-                  <img v-if="message.senderAvatar" :src="message.senderAvatar" :alt="message.senderUsername" />
-                  <span v-else>{{ getInitial(message.senderUsername) }}</span>
+                <!-- 已撤回消息（发送者）：居中显示一行提示，无头像时间 -->
+                <div v-if="message.recalled && message.mine" class="recall-notice">
+                  <span class="recall-text">你撤回了一条消息</span>
+                  <el-button link size="small" type="primary" @click.stop="handleEditToInput(message)">重新编辑</el-button>
                 </div>
 
-                <div class="message-content">
-                  <div class="message-meta">
-                    <span class="sender-name">{{ message.mine ? '我' : message.senderUsername }}</span>
-                    <span class="message-time">{{ formatTime(message.createdAt) }}</span>
+                <template v-else>
+                  <div v-if="!message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar)">
+                    <img v-if="message.senderAvatar" :src="message.senderAvatar" :alt="message.senderUsername" />
+                    <span v-else>{{ getInitial(message.senderUsername) }}</span>
                   </div>
 
-                  <div class="message-bubble" :class="message.type?.toLowerCase()">
-                    <template v-if="message.type === 'IMAGE'">
-                      <el-image
-                        :src="message.mediaUrl"
-                        :preview-src-list="[message.mediaUrl]"
-                        fit="cover"
-                        preview-teleported
-                      />
-                      <p v-if="message.content" class="image-caption">{{ message.content }}</p>
-                    </template>
-                    <template v-else-if="message.type === 'EMOJI'">
-                      <span class="emoji-content">{{ message.content }}</span>
-                    </template>
-                    <template v-else>
-                      {{ message.content }}
-                    </template>
+                  <div class="message-content">
+                    <div class="message-meta">
+                      <span class="sender-name">{{ message.mine ? '我' : message.senderUsername }}</span>
+                      <span class="message-time">{{ formatTime(message.createdAt) }}</span>
+                    </div>
+
+                    <!-- 已撤回消息：接收方显示灰色"消息已撤回"占位 -->
+                    <div v-if="message.recalled && !message.mine" class="message-bubble recalled">
+                      <span>消息已撤回</span>
+                    </div>
+
+                    <!-- 正常消息：显示原内容，右键弹出菜单 -->
+                    <div
+                      v-else
+                      class="message-bubble"
+                      :class="message.type?.toLowerCase()"
+                      @contextmenu.prevent.stop="handleMessageRightClick(message, $event)"
+                    >
+                      <template v-if="message.type === 'IMAGE'">
+                        <el-image
+                          :src="message.mediaUrl"
+                          :preview-src-list="[message.mediaUrl]"
+                          fit="cover"
+                          preview-teleported
+                        />
+                        <p v-if="message.content" class="image-caption">{{ message.content }}</p>
+                      </template>
+                      <template v-else-if="message.type === 'EMOJI'">
+                        <span class="emoji-content">{{ message.content }}</span>
+                      </template>
+                      <template v-else>{{ message.content }}</template>
+                    </div>
+
+                    <!-- 已发送消息的阅读状态 -->
+                    <div v-if="message.mine && !message.recalled" class="read-status" :class="{ read: isMessageRead(message) }">
+                      {{ formatReadState(message) }}
+                    </div>
                   </div>
 
-                  <div v-if="message.mine" class="read-status" :class="{ read: isMessageRead(message) }">
-                    {{ formatReadState(message) }}
+                  <div v-if="message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar || userStore.avatar)">
+                    <img v-if="message.senderAvatar || userStore.avatar" :src="message.senderAvatar || userStore.avatar" />
+                    <span v-else>{{ getInitial(message.senderUsername || userStore.username) }}</span>
                   </div>
-                </div>
-
-                <div v-if="message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar || userStore.avatar)">
-                  <img v-if="message.senderAvatar || userStore.avatar" :src="message.senderAvatar || userStore.avatar" />
-                  <span v-else>{{ getInitial(message.senderUsername || userStore.username) }}</span>
-                </div>
+                </template>
               </div>
             </template>
 
@@ -523,6 +541,22 @@
         </div>
       </div>
     </el-dialog>
+
+    <!-- 右键消息上下文菜单 -->
+    <div
+      v-if="contextMenuVisible"
+      class="context-menu"
+      :style="{ left: contextMenuPosition.x + 'px', top: contextMenuPosition.y + 'px' }"
+      @click.stop
+    >
+      <div class="context-menu-item" @click="handleCopyMessage(contextMenuMessage)">复制</div>
+      <div
+        v-if="contextMenuMessage?.mine && canRecall(contextMenuMessage)"
+        class="context-menu-item"
+        @click="handleRecall(contextMenuMessage)"
+      >撤回</div>
+    </div>
+
   </div>
 </template>
 
@@ -558,7 +592,9 @@ import {
   getSentFriendRequests,
   getUserProfile,
   markConversationRead,
+  recallChatMessage,
   rejectFriendRequest,
+  resendChatMessage,
   searchUsers,
   sendChatMessage
 } from '@/api/social'
@@ -596,6 +632,12 @@ const messageLoadingMore = ref(false)
 const messages = ref([])
 const messagePage = ref(1)
 const messageHasMore = ref(false)
+
+// 消息操作相关状态
+const contextMenuVisible = ref(false)    // 右键菜单是否显示
+const contextMenuMessage = ref(null)     // 右键菜单对应的消息
+const contextMenuPosition = ref({ x: 0, y: 0 }) // 右键菜单位置
+const editingMessageId = ref(null)       // 正在重新编辑的撤回消息ID
 
 // 输入
 const draft = ref('')
@@ -802,6 +844,22 @@ const formatReadState = (message) => {
 }
 
 const isMessageRead = (message) => Boolean(message?.read) || Boolean(message?.readAt)
+
+/**
+ * 判断某条消息是否在2分钟撤回窗口期内
+ *
+ * 业务规则：消息发送后2分钟内可以撤回，超过2分钟按钮隐藏
+ *
+ * @param {object} message - 消息对象
+ * @returns {boolean} - true 表示可以撤回，false 表示已超窗口期
+ */
+const canRecall = (message) => {
+  if (!message?.createdAt) return false
+  const created = new Date(message.createdAt)
+  const now = new Date()
+  const diffMinutes = (now - created) / 1000 / 60
+  return diffMinutes <= 2
+}
 
 // 新增时间格式化函数
 const formatDateTime = (value) => {
@@ -1095,6 +1153,33 @@ const handleSendText = async () => {
   const content = draft.value.trim()
   if (!content || !activeContact.value) return
 
+  // 如果正在编辑撤回消息，调用重新发送接口
+  if (editingMessageId.value) {
+    const messageId = editingMessageId.value
+    const msg = messages.value.find(m => m.id === messageId)
+    try {
+      const res = await resendChatMessage(messageId, {
+        content,
+        type: msg?.type || 'TEXT'
+      })
+      // 用后端返回的完整消息对象替换本地记录
+      const updated = normalizeMessage(res.data)
+      const idx = messages.value.findIndex(m => m.id === messageId)
+      if (idx >= 0) {
+        messages.value[idx] = updated
+      }
+      draft.value = ''
+      editingMessageId.value = null
+      message.success('消息已重新发送')
+      await nextTick()
+      scrollToBottom()
+    } catch (error) {
+      console.error('重新发送失败:', error)
+      message.error(error?.message || '重新发送失败')
+    }
+    return
+  }
+
   await sendPayload({ type: 'TEXT', content })
 }
 
@@ -1152,6 +1237,86 @@ const sendPayload = async (payload) => {
 
   await nextTick()
   scrollToBottom()
+}
+
+/**
+ * 处理消息右键点击
+ * 在鼠标位置显示上下文菜单
+ *
+ * @param {object} message - 消息对象
+ * @param {Event} event - 右键事件
+ */
+const handleMessageRightClick = (message, event) => {
+  // 显示自定义右键菜单
+  contextMenuVisible.value = true
+  contextMenuMessage.value = message
+  contextMenuPosition.value = {
+    x: event.clientX,
+    y: event.clientY
+  }
+}
+
+/**
+ * 复制消息内容
+ */
+const handleCopyMessage = async (message) => {
+  try {
+    await navigator.clipboard.writeText(String(message.content || ''))
+    message.success('已复制')
+  } catch (err) {
+    message.error('复制失败')
+  }
+  contextMenuVisible.value = false
+}
+
+/**
+ * 撤回消息
+ */
+const handleRecall = async (message) => {
+  contextMenuVisible.value = false
+  try {
+    await recallChatMessage(message.id)
+    // 如果撤回的正是正在编辑的消息，清除编辑状态
+    if (editingMessageId.value === message.id) {
+      editingMessageId.value = null
+      draft.value = ''
+    }
+    // 更新本地消息状态：标记为已撤回，同时保存原始内容用于重新编辑
+    const idx = messages.value.findIndex(m => m.id === message.id)
+    if (idx >= 0) {
+      messages.value[idx] = {
+        ...messages.value[idx],
+        recalled: true,
+        originalContent: message.content // 保存原始内容用于重新编辑
+      }
+    }
+    message.success('消息已撤回')
+  } catch (error) {
+    console.error('撤回失败:', error)
+    message.error(error?.message || '撤回失败')
+  }
+}
+
+/**
+ * 处理"重新编辑"按钮点击
+ * 将已撤回消息的原始内容放回输入框，并记录正在编辑的消息ID
+ *
+ * @param {object} message - 已撤回的消息对象
+ */
+const handleEditToInput = (message) => {
+  // 优先使用 originalContent（从数据库保存的原始内容），否则使用已显示的 content
+  const contentToRestore = message.originalContent || message.content || ''
+  draft.value = contentToRestore
+  editingMessageId.value = message.id // 标记正在编辑的撤回消息
+  activeMessageMenu.value = null
+  // 滚动到底部并聚焦输入框
+  nextTick(() => {
+    const textarea = document.querySelector('.input-box .el-textarea__inner')
+    if (textarea) {
+      textarea.focus()
+    }
+    scrollToBottom()
+  })
 }
 
 const toggleEmojiPicker = () => {
@@ -1355,6 +1520,43 @@ const handleSocketEvent = async (event) => {
       messageIds.has(Number(msg.id)) ? { ...msg, read: true, readAt: event.readReceipt.readAt } : msg
     )
   }
+
+  // ========== 消息撤回相关 WebSocket 事件处理 ==========
+
+  /**
+   * 处理对方撤回消息的通知
+   * 接收方收到此事件后，将对应消息替换为"消息已撤回"显示
+   */
+  if (event.eventType === 'MESSAGE_RECALLED' && event.message) {
+    const recalledId = Number(event.message.id)
+    const idx = messages.value.findIndex(m => m.id === recalledId)
+    if (idx >= 0) {
+      // 将消息标记为已撤回，内容显示为占位文字
+      messages.value[idx] = {
+        ...messages.value[idx],
+        recalled: true,
+        content: '消息已撤回'
+      }
+    }
+  }
+
+  /**
+   * 处理对方重新发送消息的通知
+   * 接收方收到此事件后，用新内容替换原消息
+   */
+  if (event.eventType === 'MESSAGE_RESENT' && event.message) {
+    const updatedMsg = normalizeMessage(event.message)
+    const idx = messages.value.findIndex(m => m.id === updatedMsg.id)
+    if (idx >= 0) {
+      // 更新消息内容
+      messages.value[idx] = updatedMsg
+    } else {
+      // 如果本地没有这条消息（边缘情况），追加到列表
+      messages.value = [...messages.value, updatedMsg]
+    }
+    await nextTick()
+    scrollToBottom()
+  }
 }
 
 /**
@@ -1446,9 +1648,14 @@ const disconnectSocket = async () => {
 // 生命周期
 onMounted(async () => {
   await Promise.allSettled([loadRequests(), loadContacts()])
-  
+
   // 连接 WebSocket
   connectSocket()
+
+  // 全局点击关闭右键菜单
+  document.addEventListener('click', () => {
+    contextMenuVisible.value = false
+  })
 
   if (typeof window !== 'undefined') {
     window.addEventListener('resize', () => {
@@ -1891,6 +2098,7 @@ onBeforeUnmount(async () => {
   flex-direction: column;
   gap: 4px;
   align-items: flex-start;
+  position: relative;
 }
 
 .message-item.self .message-content {
@@ -2519,5 +2727,72 @@ html.dark .info-value.copyable {
 
 html.dark .user-item:hover {
   background: #2a2a2a;
+}
+
+/* ========== 消息撤回相关样式 ========== */
+
+/* 右键上下文菜单 */
+.context-menu {
+  position: fixed;
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  padding: 4px 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  min-width: 100px;
+}
+
+html.dark .context-menu {
+  background: #2a2a2a;
+  border-color: #3a3a3a;
+}
+
+.context-menu-item {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #303133;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.context-menu-item:hover {
+  background: #f5f7fa;
+}
+
+html.dark .context-menu-item {
+  color: #e0e0e0;
+}
+
+html.dark .context-menu-item:hover {
+  background: #3a3a3a;
+}
+
+/* 发送者撤回后的整行提示：浅灰色背景 */
+.recall-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+/* "你撤回了一条消息"：灰色普通文字 */
+.recall-text {
+  color: #909399;
+}
+
+/* "重新编辑"按钮：蓝色主色调，与灰色区分 */
+.recall-notice :deep(.el-button) {
+  color: #409eff !important;
+}
+
+/* 已撤回消息气泡样式（接收方视角） */
+.message-bubble.recalled {
+  color: #c0c4cc;
+  font-style: italic;
+  background: #f5f7fa;
 }
 </style>

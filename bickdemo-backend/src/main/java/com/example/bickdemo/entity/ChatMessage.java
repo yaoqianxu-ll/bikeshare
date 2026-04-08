@@ -51,6 +51,28 @@ public class ChatMessage {
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
+    /**
+     * 消息是否已被撤回
+     * - false(默认值): 消息正常，未被撤回
+     * - true: 消息已被发送者撤回，接收方将看到"消息已撤回"提示
+     */
+    @TableField("recalled")
+    private Boolean recalled = false;
+
+    /**
+     * 消息被撤回的时间
+     * 仅当 recalled = true 时有值，记录发送者撤回消息的具体时间
+     */
+    @TableField("recalled_at")
+    private LocalDateTime recalledAt;
+
+    /**
+     * 消息被撤回前的原始内容
+     * 仅当 recalled = true 时有值，用于支持"重新编辑"功能恢复原始内容
+     */
+    @TableField("original_content")
+    private String originalContent;
+
     @TableLogic
     private Integer deleted;
 }
