@@ -233,7 +233,13 @@
                     <span class="message-time">{{ formatTime(message.createdAt) }}</span>
                   </div>
 
-                  <div class="message-bubble" :class="message.type?.toLowerCase()">
+                  <!-- 已撤回消息的接收方视角：显示"消息已撤回"灰色占位 -->
+                  <div v-if="message.recalled && !message.mine" class="message-bubble recalled">
+                    <span>消息已撤回</span>
+                  </div>
+
+                  <!-- 正常消息 -->
+                  <div v-else class="message-bubble" :class="message.type?.toLowerCase()">
                     <template v-if="message.type === 'IMAGE'">
                       <el-image
                         :src="message.mediaUrl"
@@ -246,13 +252,21 @@
                     <template v-else-if="message.type === 'EMOJI'">
                       <span class="emoji-content">{{ message.content }}</span>
                     </template>
-                    <template v-else>
-                      {{ message.content }}
-                    </template>
+                    <template v-else>{{ message.content }}</template>
                   </div>
 
                   <div v-if="message.mine" class="read-status" :class="{ read: isMessageRead(message) }">
                     {{ formatReadState(message) }}
+                  </div>
+
+                  <!-- 发送者的撤回按钮：2分钟内且未撤回时显示 -->
+                  <div v-if="message.mine && !message.recalled && canRecall(message)" class="recall-btn">
+                    <el-button link size="small" @click.stop="handleRecall(message)">撤回</el-button>
+                  </div>
+
+                  <!-- 发送者已撤回消息：显示"重新编辑"按钮 -->
+                  <div v-if="message.recalled && message.mine" class="recall-edit-btn">
+                    <el-button link size="small" type="primary" @click.stop="handleEdit(message)">重新编辑</el-button>
                   </div>
                 </div>
 
@@ -523,6 +537,27 @@
         </div>
       </div>
     </el-dialog>
+
+    <!-- 重新编辑弹窗：编辑已撤回消息 -->
+    <el-dialog
+      v-model="editDialogVisible"
+      title="重新编辑"
+      width="420px"
+      destroy-on-close
+    >
+      <el-input
+        v-model="editContent"
+        type="textarea"
+        :rows="3"
+        resize="none"
+        maxlength="500"
+        placeholder="输入消息内容"
+      />
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="editLoading" @click="handleResend">发送</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -558,7 +593,9 @@ import {
   getSentFriendRequests,
   getUserProfile,
   markConversationRead,
+  recallChatMessage,
   rejectFriendRequest,
+  resendChatMessage,
   searchUsers,
   sendChatMessage
 } from '@/api/social'
@@ -596,6 +633,12 @@ const messageLoadingMore = ref(false)
 const messages = ref([])
 const messagePage = ref(1)
 const messageHasMore = ref(false)
+
+// 消息撤回相关状态
+const editingMessage = ref(null)       // 当前正在重新编辑的消息
+const editDialogVisible = ref(false)   // 重新编辑弹窗显示状态
+const editContent = ref('')            // 重新编辑的内容
+const editLoading = ref(false)         // 重新发送提交中状态
 
 // 输入
 const draft = ref('')
@@ -802,6 +845,22 @@ const formatReadState = (message) => {
 }
 
 const isMessageRead = (message) => Boolean(message?.read) || Boolean(message?.readAt)
+
+/**
+ * 判断某条消息是否在2分钟撤回窗口期内
+ *
+ * 业务规则：消息发送后2分钟内可以撤回，超过2分钟按钮隐藏
+ *
+ * @param {object} message - 消息对象
+ * @returns {boolean} - true 表示可以撤回，false 表示已超窗口期
+ */
+const canRecall = (message) => {
+  if (!message?.createdAt) return false
+  const created = new Date(message.createdAt)
+  const now = new Date()
+  const diffMinutes = (now - created) / 1000 / 60
+  return diffMinutes <= 2
+}
 
 // 新增时间格式化函数
 const formatDateTime = (value) => {
@@ -1154,6 +1213,74 @@ const sendPayload = async (payload) => {
   scrollToBottom()
 }
 
+/**
+ * 处理撤回按钮点击
+ * 调用后端撤回接口，成功后更新本地消息状态为 recalled=true
+ *
+ * @param {object} message - 要撤回的消息对象
+ */
+const handleRecall = async (message) => {
+  try {
+    await recallChatMessage(message.id)
+    // 更新本地消息状态：标记为已撤回
+    const idx = messages.value.findIndex(m => m.id === message.id)
+    if (idx >= 0) {
+      messages.value[idx] = { ...messages.value[idx], recalled: true }
+    }
+    // 使用 Element Plus 的 message（项目中已引入 useMessage）
+    message.success('消息已撤回')
+  } catch (error) {
+    console.error('撤回失败:', error)
+    message.error(error?.message || '撤回失败')
+  }
+}
+
+/**
+ * 处理"重新编辑"按钮点击
+ * 弹出编辑框，预填原消息内容
+ *
+ * @param {object} message - 已撤回的消息对象
+ */
+const handleEdit = (message) => {
+  editingMessage.value = message
+  editContent.value = message.content || ''
+  editDialogVisible.value = true
+}
+
+/**
+ * 确认重新发送消息
+ * 调用后端重新发送接口，成功后更新本地消息内容并关闭弹窗
+ */
+const handleResend = async () => {
+  if (!editContent.value.trim() || !editingMessage.value) return
+  editLoading.value = true
+  try {
+    const res = await resendChatMessage(editingMessage.value.id, {
+      content: editContent.value.trim(),
+      type: editingMessage.value.type || 'TEXT'
+    })
+    // 用后端返回的完整消息对象替换本地记录
+    const updated = normalizeMessage(res.data)
+    const idx = messages.value.findIndex(m => m.id === editingMessage.value.id)
+    if (idx >= 0) {
+      messages.value[idx] = updated
+    }
+    // 关闭弹窗并重置状态
+    editDialogVisible.value = false
+    editingMessage.value = null
+    editContent.value = ''
+    message.success('消息已重新发送')
+    // 滚动到底部
+    await nextTick()
+    scrollToBottom()
+  } catch (error) {
+    console.error('重新发送失败:', error)
+    message.error(error?.message || '重新发送失败')
+  } finally {
+    editLoading.value = false
+  }
+}
+
 const toggleEmojiPicker = () => {
   emojiPickerVisible.value = !emojiPickerVisible.value
 }
@@ -1354,6 +1481,43 @@ const handleSocketEvent = async (event) => {
     messages.value = messages.value.map((msg) =>
       messageIds.has(Number(msg.id)) ? { ...msg, read: true, readAt: event.readReceipt.readAt } : msg
     )
+  }
+
+  // ========== 消息撤回相关 WebSocket 事件处理 ==========
+
+  /**
+   * 处理对方撤回消息的通知
+   * 接收方收到此事件后，将对应消息替换为"消息已撤回"显示
+   */
+  if (event.eventType === 'MESSAGE_RECALLED' && event.message) {
+    const recalledId = Number(event.message.id)
+    const idx = messages.value.findIndex(m => m.id === recalledId)
+    if (idx >= 0) {
+      // 将消息标记为已撤回，内容显示为占位文字
+      messages.value[idx] = {
+        ...messages.value[idx],
+        recalled: true,
+        content: '消息已撤回'
+      }
+    }
+  }
+
+  /**
+   * 处理对方重新发送消息的通知
+   * 接收方收到此事件后，用新内容替换原消息
+   */
+  if (event.eventType === 'MESSAGE_RESENT' && event.message) {
+    const updatedMsg = normalizeMessage(event.message)
+    const idx = messages.value.findIndex(m => m.id === updatedMsg.id)
+    if (idx >= 0) {
+      // 更新消息内容
+      messages.value[idx] = updatedMsg
+    } else {
+      // 如果本地没有这条消息（边缘情况），追加到列表
+      messages.value = [...messages.value, updatedMsg]
+    }
+    await nextTick()
+    scrollToBottom()
   }
 }
 
@@ -2519,5 +2683,33 @@ html.dark .info-value.copyable {
 
 html.dark .user-item:hover {
   background: #2a2a2a;
+}
+
+/* ========== 消息撤回相关样式 ========== */
+
+/* 撤回按钮默认隐藏，悬停消息项时显示 */
+.recall-btn,
+.recall-edit-btn {
+  margin-top: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+/* 悬停时显示撤回/重新编辑按钮 */
+.message-item:hover .recall-btn,
+.message-item:hover .recall-edit-btn {
+  opacity: 1;
+}
+
+/* 已撤回消息气泡样式（接收方视角） */
+.message-bubble.recalled {
+  color: #c0c4cc;
+  font-style: italic;
+  background: #f5f7fa;
+}
+
+/* 重新编辑弹窗中的输入框 */
+.edit-dialog-content {
+  width: 100%;
 }
 </style>
