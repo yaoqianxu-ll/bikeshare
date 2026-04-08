@@ -212,6 +212,8 @@ CREATE TABLE `chat_messages`  (
   `read_at` datetime NULL DEFAULT NULL COMMENT '已读时间',
   `created_at` datetime NULL DEFAULT NULL COMMENT '创建时间',
   `updated_at` datetime NULL DEFAULT NULL COMMENT '更新时间',
+  `recalled` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否已撤回：0-未撤回，1-已撤回',
+  `recalled_at` datetime NULL DEFAULT NULL COMMENT '撤回时间',
   `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_chat_messages_sender`(`sender_id` ASC) USING BTREE,
