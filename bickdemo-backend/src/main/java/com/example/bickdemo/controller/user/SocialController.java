@@ -1,4 +1,4 @@
-package com.example.bickdemo.controller;
+package com.example.bickdemo.controller.user;
 
 import com.example.bickdemo.dto.ApiResponse;
 import com.example.bickdemo.dto.ChatMessageRequest;
@@ -234,13 +234,13 @@ public class SocialController {
             testEvent.setEventType(SocialEventType.CHAT_MESSAGE);
             testEvent.setRecipientUsername(targetUsername);
             testEvent.setNotice("Test message from " + userDetails.getUsername());
-            
+
             messagingTemplate.convertAndSendToUser(
                     targetUsername,
                     "/queue/social",
                     testEvent
             );
-            
+
             return ResponseEntity.ok(ApiResponse.success("Test message sent to " + targetUsername, null));
         } catch (Exception ex) {
             return ResponseEntity.badRequest().body(ApiResponse.error(400, ex.getMessage()));
@@ -249,77 +249,31 @@ public class SocialController {
 
     /**
      * 撤回消息接口
-     *
-     * 接口路径: POST /api/social/messages/{id}/recall
-     * 权限: 仅消息发送者可撤回自己发出的消息，且须在发送后2分钟内
-     *
-     * 路径参数:
-     *   - id: 要撤回的消息ID
-     *
-     * 请求头:
-     *   - Authorization: Bearer {token}（包含用户认证信息）
-     *
-     * 响应:
-     *   - 成功: {code: 200, data: {messageId, recalledAt}}
-     *   - 失败: {code: 400/403/404, message: 错误描述}
-     *
-     * @param id    消息ID（路径参数）
-     * @param token 用户认证 Token（从请求头提取用户名）
-     * @return 撤回结果，包含消息ID和撤回时间
      */
     @PostMapping("/messages/{id}/recall")
     public ResponseEntity<ApiResponse<Map<String, Object>>> recallMessage(
             @PathVariable Long id,
             @RequestHeader("Authorization") String token) {
-        // 从 Token 中提取当前用户名
         String username = extractUsernameFromToken(token);
-        // 调用 Service 层执行业务逻辑
         Map<String, Object> result = socialService.recallMessage(username, id);
-        // 返回成功响应
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     /**
      * 重新编辑发送消息接口
-     *
-     * 接口路径: PUT /api/social/messages/{id}/resend
-     * 权限: 仅原消息发送者可重新编辑发送，且原消息必须处于已撤回状态
-     *
-     * 路径参数:
-     *   - id: 要重新发送的消息ID（必须是已撤回的消息）
-     *
-     * 请求头:
-     *   - Authorization: Bearer {token}
-     *
-     * 请求体 (JSON):
-     *   - content: 新的消息内容（文本/表情内容或图片说明）
-     *   - mediaUrl: 媒体文件URL（图片/贴纸类型必填，可为 null）
-     *   - type: 消息类型（TEXT/EMOJI/IMAGE/STICKER，不填默认为 TEXT）
-     *
-     * @param id     消息ID（路径参数）
-     * @param token  用户认证 Token
-     * @param request 重新编辑的消息内容请求体
-     * @return 更新后的消息响应对象（与发送消息响应格式一致）
      */
     @PutMapping("/messages/{id}/resend")
     public ResponseEntity<ApiResponse<ChatMessageResponse>> resendMessage(
             @PathVariable Long id,
             @RequestHeader("Authorization") String token,
             @RequestBody ChatMessageRequest request) {
-        // 从 Token 中提取当前用户名
         String username = extractUsernameFromToken(token);
-        // 调用 Service 层执行业务逻辑
         ChatMessageResponse result = socialService.resendMessage(username, id, request);
-        // 返回成功响应（更新后的消息）
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     /**
      * 从 Authorization 请求头中提取用户名。
-     * 解析 Bearer Token 并返回用户名。
-     *
-     * @param authorization Authorization 请求头（格式: Bearer {token}）
-     * @return 用户名
      */
     private String extractUsernameFromToken(String authorization) {
         if (authorization != null && authorization.startsWith("Bearer ")) {

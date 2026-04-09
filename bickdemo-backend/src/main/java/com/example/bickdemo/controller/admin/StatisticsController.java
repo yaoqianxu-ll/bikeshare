@@ -1,4 +1,4 @@
-package com.example.bickdemo.controller;
+package com.example.bickdemo.controller.admin;
 
 import com.example.bickdemo.dto.ApiResponse;
 import com.example.bickdemo.dto.StatisticsResponse;

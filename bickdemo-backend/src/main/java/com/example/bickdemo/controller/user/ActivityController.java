@@ -1,4 +1,4 @@
-package com.example.bickdemo.controller;
+package com.example.bickdemo.controller.user;
 
 import com.example.bickdemo.dto.ActivityMessageRequest;
 import com.example.bickdemo.dto.ActivityMessageResponse;

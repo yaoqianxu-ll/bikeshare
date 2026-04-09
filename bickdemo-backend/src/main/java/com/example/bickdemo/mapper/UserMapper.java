@@ -64,4 +64,10 @@ public interface UserMapper extends BaseMapper<User> {
             @Param("excludeUserId") Long excludeUserId,
             @Param("limit") Integer limit
     );
+
+    /**
+     * 查询所有用户的积分总和
+     */
+    @Select("SELECT COALESCE(SUM(points), 0) FROM users WHERE deleted = 0")
+    Long selectSumPoints();
 }

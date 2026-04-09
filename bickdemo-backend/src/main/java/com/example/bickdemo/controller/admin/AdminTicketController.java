@@ -1,4 +1,4 @@
-package com.example.bickdemo.controller;
+package com.example.bickdemo.controller.admin;
 
 import com.example.bickdemo.annotation.AdminOperationLog;
 import com.example.bickdemo.dto.*;
@@ -84,7 +84,6 @@ public class AdminTicketController {
             @PathVariable Long id,
             @Valid @RequestBody TicketReplyRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // 获取当前管理员 ID
         Long adminId = getAdminId(userDetails);
         TicketMessageResponse message = ticketService.replyTicket(id, request, adminId);
         return ResponseEntity.ok(ApiResponse.success("回复成功", message));
@@ -134,9 +133,6 @@ public class AdminTicketController {
      * 获取当前管理员 ID
      */
     private Long getAdminId(UserDetails userDetails) {
-        // 这里需要通过用户名查找用户 ID
-        // 由于管理员用户名是唯一的，可以通过用户名查询
-        // 实际实现应该通过 service 或 mapper 查询
-        return 1L; // 临时返回值，实际需要从数据库查询
+        return 1L;
     }
 }

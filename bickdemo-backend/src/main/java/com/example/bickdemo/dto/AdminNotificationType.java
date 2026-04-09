@@ -30,6 +30,10 @@ public enum AdminNotificationType {
     ACTIVITY_APPROVED("骑行活动已通过", NotificationPriority.LOW),
     ACTIVITY_REJECTED("骑行活动已驳回", NotificationPriority.MEDIUM),
 
+    // VIP会员相关
+    VIP_PURCHASED("用户开通VIP", NotificationPriority.HIGH),
+    VIP_EXPIRED("用户VIP已过期", NotificationPriority.MEDIUM),
+
     // 系统通知 (广播)
     SYSTEM_BROADCAST("系统通知", NotificationPriority.MEDIUM);
 

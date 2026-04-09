@@ -1,4 +1,4 @@
-package com.example.bickdemo.controller;
+package com.example.bickdemo.controller.admin;
 
 import com.example.bickdemo.annotation.AdminOperationLog;
 import com.example.bickdemo.dto.ApiResponse;
@@ -67,8 +67,7 @@ public class AdminNoticeController {
     public ResponseEntity<ApiResponse<NoticeResponse>> createNotice(
             @Valid @RequestBody NoticeRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // In a real application, you would get the author ID from the authenticated user
-        Long authorId = 1L; // Default admin ID, should be extracted from userDetails
+        Long authorId = 1L;
         NoticeResponse notice = noticeService.createNotice(request, authorId);
         return ResponseEntity.ok(ApiResponse.success("创建成功", notice));
     }

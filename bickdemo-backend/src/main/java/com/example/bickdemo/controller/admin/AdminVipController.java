@@ -23,8 +23,9 @@ public class AdminVipController {
     @AdminOperationLog(module = "VIP管理", action = "发放VIP", type = "管理")
     public ResponseEntity<ApiResponse<String>> grantVip(
             @RequestParam Long userId,
-            @RequestParam Integer days) {
-        vipService.grantVip(userId, days);
+            @RequestParam Integer days,
+            @RequestParam(required = false) Integer experience) {
+        vipService.grantVip(userId, days, experience);
         return ResponseEntity.ok(ApiResponse.success("VIP发放成功"));
     }
 

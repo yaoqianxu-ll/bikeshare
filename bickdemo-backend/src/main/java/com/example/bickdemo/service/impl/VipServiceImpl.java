@@ -8,6 +8,7 @@ import com.example.bickdemo.entity.User;
 import com.example.bickdemo.entity.VipBenefit;
 import com.example.bickdemo.mapper.UserMapper;
 import com.example.bickdemo.mapper.VipBenefitMapper;
+import com.example.bickdemo.service.AdminNotificationPublisher;
 import com.example.bickdemo.service.PointsService;
 import com.example.bickdemo.service.VipService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class VipServiceImpl implements VipService {
     private final UserMapper userMapper;
     private final VipBenefitMapper vipBenefitMapper;
     private final PointsService pointsService;
+    private final AdminNotificationPublisher adminNotificationPublisher;
 
     /** VIP套餐配置 */
     private static final int MONTHLY_DAYS = 30;
@@ -35,21 +37,42 @@ public class VipServiceImpl implements VipService {
     private static final int POINTS_QUARTERLY = 1200;
     private static final int POINTS_YEARLY = 4000;
 
+    /** VIP经验值常量 - 充值获得的经验 */
+    private static final int EXP_MONTHLY = 50;
+    private static final int EXP_QUARTERLY = 150;
+    private static final int EXP_YEARLY = 500;
+
+    /** VIP等级经验阈值 */
+    private static final int[] VIP_LEVEL_THRESHOLDS = {0, 100, 300, 600, 1000, 1500};
+    private static final int MAX_VIP_LEVEL = 6;
+
     @Override
     @Cacheable(value = CacheNames.VIP_STATUS, key = "#userId")
     public VipStatusResponse getVipStatus(Long userId) {
         User user = userMapper.selectById(userId);
         VipStatusResponse response = new VipStatusResponse();
 
-        boolean isVip = isVipUser(user);
-        response.setVipLevel(isVip ? 1 : 0);
-        response.setVipExpireTime(user != null ? user.getVipExpireTime() : null);
-        response.setIsVip(isVip);
+        int exp = user.getExperiencePoints() != null ? user.getExperiencePoints() : 0;
+        int level = calculateVipLevel(exp);
 
-        // VIP专属权益 - VIP用户自动获得这三个权益
-        response.setHasVisitorHidden(isVip);
-        response.setHasBurnAfterRead(isVip);
-        response.setHasSpecialCare(isVip);
+        response.setVipLevel(level);
+        response.setIsVip(level > 0);
+        response.setExperiencePoints(exp);
+        response.setCurrentLevel(level);
+
+        if (level >= MAX_VIP_LEVEL) {
+            response.setNextLevelExp(null);
+            response.setExperienceToNext(0);
+        } else {
+            int nextExp = VIP_LEVEL_THRESHOLDS[level];
+            response.setNextLevelExp(nextExp);
+            response.setExperienceToNext(nextExp - exp);
+        }
+
+        // VIP权益 - VIP1及以上都有
+        response.setHasVisitorHidden(level > 0);
+        response.setHasBurnAfterRead(level > 0);
+        response.setHasSpecialCare(level > 0);
 
         return response;
     }
@@ -68,10 +91,19 @@ public class VipServiceImpl implements VipService {
             throw new RuntimeException("无效的套餐类型");
         }
 
+        // 获得经验值
+        int expGain = getExpByPackageType(request.getPackageType());
+        int newExp = (user.getExperiencePoints() != null ? user.getExperiencePoints() : 0) + expGain;
+        newExp = Math.min(newExp, VIP_LEVEL_THRESHOLDS[MAX_VIP_LEVEL - 1]);
+
         LocalDateTime newExpireTime = extendVipTime(user, days);
-        user.setVipLevel(1);
+        user.setVipLevel(calculateVipLevel(newExp));
         user.setVipExpireTime(newExpireTime);
+        user.setExperiencePoints(newExp);
         userMapper.updateById(user);
+
+        // 发送管理员通知
+        adminNotificationPublisher.notifyVipPurchased(userId, user.getUsername(), request.getPackageType(), "购买");
     }
 
     @Override
@@ -80,6 +112,7 @@ public class VipServiceImpl implements VipService {
     public void redeemVip(Long userId, String packageType) {
         int pointsCost = getPointsCostByPackageType(packageType);
         int days = getDaysByPackageType(packageType);
+        int expGain = getExpByPackageType(packageType);
 
         if (pointsCost <= 0 || days <= 0) {
             throw new RuntimeException("无效的套餐类型");
@@ -93,10 +126,17 @@ public class VipServiceImpl implements VipService {
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
+        int newExp = (user.getExperiencePoints() != null ? user.getExperiencePoints() : 0) + expGain;
+        newExp = Math.min(newExp, VIP_LEVEL_THRESHOLDS[MAX_VIP_LEVEL - 1]);
+
         LocalDateTime newExpireTime = extendVipTime(user, days);
-        user.setVipLevel(1);
+        user.setVipLevel(calculateVipLevel(newExp));
         user.setVipExpireTime(newExpireTime);
+        user.setExperiencePoints(newExp);
         userMapper.updateById(user);
+
+        // 发送管理员通知
+        adminNotificationPublisher.notifyVipPurchased(userId, user.getUsername(), packageType, "兑换");
     }
 
     @Override
@@ -116,15 +156,20 @@ public class VipServiceImpl implements VipService {
     @Override
     @Transactional
     @CacheEvict(value = CacheNames.VIP_STATUS, key = "#userId")
-    public void grantVip(Long userId, Integer days) {
+    public void grantVip(Long userId, Integer days, Integer experience) {
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
 
+        int expGain = (experience != null) ? experience : 0;
+        int newExp = (user.getExperiencePoints() != null ? user.getExperiencePoints() : 0) + expGain;
+        newExp = Math.min(newExp, VIP_LEVEL_THRESHOLDS[MAX_VIP_LEVEL - 1]);
+
         LocalDateTime newExpireTime = extendVipTime(user, days);
-        user.setVipLevel(1);
+        user.setVipLevel(calculateVipLevel(newExp));
         user.setVipExpireTime(newExpireTime);
+        user.setExperiencePoints(newExp);
         userMapper.updateById(user);
     }
 
@@ -139,6 +184,7 @@ public class VipServiceImpl implements VipService {
 
         user.setVipLevel(0);
         user.setVipExpireTime(null);
+        // 注意：revoke 不清除经验值，保留等级进度
         userMapper.updateById(user);
     }
 
@@ -195,6 +241,31 @@ public class VipServiceImpl implements VipService {
             case "QUARTERLY" -> "季卡";
             case "YEARLY" -> "年卡";
             default -> "未知套餐";
+        };
+    }
+
+    /**
+     * 根据经验值计算VIP等级
+     */
+    private int calculateVipLevel(int experiencePoints) {
+        for (int i = VIP_LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+            if (experiencePoints >= VIP_LEVEL_THRESHOLDS[i]) {
+                return i + 1;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * 获取指定套餐的经验值
+     */
+    private int getExpByPackageType(String packageType) {
+        if (packageType == null) return 0;
+        return switch (packageType) {
+            case "MONTHLY" -> EXP_MONTHLY;
+            case "QUARTERLY" -> EXP_QUARTERLY;
+            case "YEARLY" -> EXP_YEARLY;
+            default -> 0;
         };
     }
 }

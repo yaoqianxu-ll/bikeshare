@@ -1,4 +1,4 @@
-package com.example.bickdemo.controller;
+package com.example.bickdemo.controller.user;
 
 import com.example.bickdemo.annotation.AdminOperationLog;
 import com.example.bickdemo.dto.ApiResponse;

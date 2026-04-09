@@ -134,7 +134,9 @@ const getEventTypeText = (eventType) => {
     'FORUM_COMMENT_REJECTED': '评论已驳回',
     'MARKETPLACE_LISTING_PENDING': '挂牌待审核',
     'MARKETPLACE_LISTING_APPROVED': '挂牌已通过',
-    'MARKETPLACE_LISTING_REJECTED': '挂牌已驳回'
+    'MARKETPLACE_LISTING_REJECTED': '挂牌已驳回',
+    'VIP_PURCHASED': '用户开通VIP',
+    'VIP_EXPIRED': '用户VIP已过期'
   }
   return map[eventType] || eventType
 }

@@ -33,6 +33,7 @@
               <el-dropdown-item command="">全部</el-dropdown-item>
               <el-dropdown-item command="ACTIVE">生效中</el-dropdown-item>
               <el-dropdown-item command="EXPIRED">已过期</el-dropdown-item>
+              <el-dropdown-item command="INACTIVE">未开通</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -63,22 +64,22 @@
         </el-table-column>
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.vipStatus === 'ACTIVE' ? 'success' : 'info'" effect="light">
-              {{ row.vipStatus === 'ACTIVE' ? '生效中' : '已过期' }}
-            </el-tag>
+            <el-tag v-if="row.vipLevel > 0 && row.vipStatus === 'ACTIVE'" type="success" effect="light">生效中</el-tag>
+            <el-tag v-else-if="row.vipLevel > 0 && row.vipStatus === 'EXPIRED'" type="warning" effect="light">已过期</el-tag>
+            <el-tag v-else type="info" effect="light">未开通</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="过期时间" min-width="170">
           <template #default="{ row }">
-            <span :class="isExpiringSoon(row.expireAt) ? 'text-warning' : ''">
-              {{ formatDate(row.expireAt) }}
+            <span :class="isExpiringSoon(row.vipExpireTime) ? 'text-warning' : ''">
+              {{ formatDate(row.vipExpireTime) }}
             </span>
           </template>
         </el-table-column>
         <el-table-column label="剩余天数" width="100" align="center">
           <template #default="{ row }">
-            <span :class="isExpiringSoon(row.expireAt) ? 'text-warning' : ''">
-              {{ getRemainingDays(row.expireAt) }}
+            <span :class="isExpiringSoon(row.vipExpireTime) ? 'text-warning' : ''">
+              {{ getRemainingDays(row.vipExpireTime) }}
             </span>
           </template>
         </el-table-column>
@@ -86,7 +87,7 @@
           <template #default="{ row }">
             <div class="table-actions">
               <el-button
-                v-if="row.vipStatus === 'ACTIVE'"
+                v-if="row.vipLevel > 0"
                 size="small"
                 type="danger"
                 plain
@@ -101,7 +102,7 @@
                 plain
                 @click="openGrantDialog(row)"
               >
-                续期
+                授予
               </el-button>
             </div>
           </template>
@@ -179,22 +180,22 @@ const grantRules = {
 }
 
 const statusLabel = computed(() => {
-  const map = { '': '状态', ACTIVE: '生效中', EXPIRED: '已过期' }
+  const map = { '': '状态', ACTIVE: '生效中', EXPIRED: '已过期', INACTIVE: '未开通' }
   return map[query.vipOnly] || '状态'
 })
 
-const isExpiringSoon = (expireAt) => {
-  if (!expireAt) return false
+const isExpiringSoon = (vipExpireTime) => {
+  if (!vipExpireTime) return false
   const now = new Date()
-  const expire = new Date(expireAt)
+  const expire = new Date(vipExpireTime)
   const diffDays = (expire - now) / (1000 * 60 * 60 * 24)
   return diffDays > 0 && diffDays <= 7
 }
 
-const getRemainingDays = (expireAt) => {
-  if (!expireAt) return '--'
+const getRemainingDays = (vipExpireTime) => {
+  if (!vipExpireTime) return '--'
   const now = new Date()
-  const expire = new Date(expireAt)
+  const expire = new Date(vipExpireTime)
   const diffDays = Math.ceil((expire - now) / (1000 * 60 * 60 * 24))
   if (diffDays < 0) return '已过期'
   return `${diffDays} 天`

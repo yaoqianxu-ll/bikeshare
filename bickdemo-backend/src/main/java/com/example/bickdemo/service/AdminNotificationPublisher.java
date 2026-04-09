@@ -287,4 +287,27 @@ public class AdminNotificationPublisher {
                 .build();
         publishToAdmin(authorUsername, event);
     }
+
+    /**
+     * 用户开通VIP通知
+     */
+    public void notifyVipPurchased(Long userId, String username, String packageType, String purchaseMethod) {
+        String packageName = switch (packageType) {
+            case "MONTHLY" -> "月卡";
+            case "QUARTERLY" -> "季卡";
+            case "YEARLY" -> "年卡";
+            default -> packageType;
+        };
+        String methodText = "购买".equals(purchaseMethod) ? "购买" : "兑换";
+        AdminNotificationEvent event = AdminNotificationEvent.builder()
+                .eventType(com.example.bickdemo.dto.AdminNotificationType.VIP_PURCHASED)
+                .title("用户开通VIP")
+                .content(String.format("用户 %s %s了VIP%s", username, methodText, packageName))
+                .targetId(userId)
+                .targetType("USER")
+                .actorUsername(username)
+                .metadata(java.util.Map.of("packageType", packageType, "purchaseMethod", purchaseMethod))
+                .build();
+        notifyAllAdmins(event);
+    }
 }

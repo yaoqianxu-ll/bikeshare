@@ -118,7 +118,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useNotificationStore } from '@/stores/notification'
 import { useThemeStore } from '@/stores/theme'
 import NotificationPanel from '@/components/NotificationPanel.vue'
-import { Bicycle, DataAnalysis, Document, Monitor, Setting, Expand, Calendar, ArrowDown } from '@element-plus/icons-vue'
+import { Bicycle, DataAnalysis, Document, Monitor, Setting, Expand, Calendar, ArrowDown, Tickets } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -186,6 +186,15 @@ const navGroups = [
     ]
   },
   {
+    index: 'member-group',
+    label: '会员管理',
+    icon: Tickets,
+    children: [
+      { path: '/points', label: '积分管理' },
+      { path: '/vip', label: 'VIP管理' }
+    ]
+  },
+  {
     index: 'system-group',
     label: '系统管理',
     icon: Setting,
@@ -199,7 +208,7 @@ const navGroups = [
   }
 ]
 const activePath = computed(() => route.path)
-const openGroups = ['overview-group', 'business-group', 'content-group', 'system-group']
+const openGroups = ['overview-group', 'business-group', 'content-group', 'member-group', 'system-group']
 
 const logout = () => {
   authStore.logout()
