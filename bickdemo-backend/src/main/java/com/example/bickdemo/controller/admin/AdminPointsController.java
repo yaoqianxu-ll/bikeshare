@@ -96,9 +96,9 @@ public class AdminPointsController {
         response.setAvatar(user.getAvatar());
         response.setPoints(user.getPoints());
 
-        // 根据经验值计算VIP等级
+        // 根据经验值计算VIP等级（兼容旧版vip_level）
         int exp = user.getExperiencePoints() != null ? user.getExperiencePoints() : 0;
-        int level = calculateVipLevel(exp);
+        int level = calculateVipLevel(exp, user.getVipLevel());
 
         response.setExperiencePoints(exp);
         response.setVipLevel(level);
@@ -122,7 +122,12 @@ public class AdminPointsController {
     }
 
     // 等级计算方法（与 VipServiceImpl 一致）
-    private int calculateVipLevel(int experiencePoints) {
+    // 优先使用experience_points计算，vip_level仅作为兼容备用
+    private int calculateVipLevel(int experiencePoints, Integer vipLevel) {
+        // 如果经验值为0但有旧版vip_level记录，保留其等级
+        if (experiencePoints <= 0 && vipLevel != null && vipLevel > 0) {
+            return vipLevel;
+        }
         if (experiencePoints <= 0) return 0;
         int[] thresholds = {0, 100, 300, 600, 1000, 1500};
         for (int i = thresholds.length - 1; i >= 0; i--) {
@@ -161,7 +166,7 @@ public class AdminPointsController {
         newExp = Math.min(newExp, thresholds[thresholds.length - 1]);
 
         user.setExperiencePoints(newExp);
-        user.setVipLevel(calculateVipLevel(newExp));
+        user.setVipLevel(calculateVipLevel(newExp, user.getVipLevel()));
         userMapper.updateById(user);
 
         return ResponseEntity.ok(ApiResponse.success("经验值调整成功"));
