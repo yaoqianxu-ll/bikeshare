@@ -1,11 +1,15 @@
 package com.example.bickdemo.config;
 
+import com.example.bickdemo.config.SocialMessagingConstants;
+import com.example.bickdemo.event.PointsEventPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -108,6 +112,25 @@ public class RabbitMqConfig {
                 .bind(adminNotifyQueue)
                 .to(adminNotifyExchange)
                 .with(AdminNotificationConstants.ADMIN_NOTIFY_BROADCAST_ROUTING_KEY);
+    }
+
+    // ========== 积分事件相关 ==========
+
+    @Bean
+    public DirectExchange pointsExchange() {
+        return new DirectExchange(PointsEventPublisher.EXCHANGE);
+    }
+
+    @Bean
+    public Queue pointsQueue() {
+        return QueueBuilder.durable(PointsEventPublisher.QUEUE).build();
+    }
+
+    @Bean
+    public Binding pointsBinding(Queue pointsQueue, DirectExchange pointsExchange) {
+        return BindingBuilder.bind(pointsQueue)
+                .to(pointsExchange)
+                .with(PointsEventPublisher.ROUTING_KEY);
     }
 
     @Bean

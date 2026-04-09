@@ -25,6 +25,10 @@ import com.example.bickdemo.mapper.RentalMapper;
 import com.example.bickdemo.mapper.UserMapper;
 // 引入租赁带自行车信息的视图对象
 import com.example.bickdemo.vo.RentalWithBicycleVO;
+// 引入积分事件发布器
+import com.example.bickdemo.event.PointsEventPublisher;
+// 引入积分事件
+import com.example.bickdemo.event.PointsEvent;
 // 引入 MyBatis-Plus 条件查询构造器
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 // 引入 MyBatis-Plus 分页插件
@@ -81,6 +85,8 @@ public class RentalService {
     private final UserMapper userMapper;
     // 租赁位置守卫服务，用于校验车辆位置
     private final RentalLocationGuardService rentalLocationGuardService;
+    // 积分事件发布器
+    private final PointsEventPublisher pointsEventPublisher;
 
     /**
      * 免费取消窗口。
@@ -216,6 +222,10 @@ public class RentalService {
 
         // 更新租赁记录到数据库
         rentalMapper.updateById(rental);
+
+        // 发布积分事件
+        pointsEventPublisher.publish(new PointsEvent("RENTAL_COMPLETE", rental.getUserId(), 10, rental.getId()));
+
         // 查询最新的自行车信息
         Bicycle latest = bicycleMapper.selectById(rental.getBicycleId());
         // 将租赁记录转换为响应对象并返回
