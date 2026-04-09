@@ -191,7 +191,8 @@ const navGroups = [
     icon: Tickets,
     children: [
       { path: '/points', label: '积分管理' },
-      { path: '/vip', label: 'VIP管理' }
+      { path: '/vip', label: 'VIP管理' },
+      { path: '/benefits', label: '权益管理' }
     ]
   },
   {

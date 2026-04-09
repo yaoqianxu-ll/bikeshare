@@ -106,6 +106,11 @@ const routes = [
         path: '/vip',
         name: 'VipManage',
         component: () => import('@/views/VipManagement.vue')
+      },
+      {
+        path: '/benefits',
+        name: 'BenefitsManage',
+        component: () => import('@/views/BenefitsManagement.vue')
       }
     ]
   },
