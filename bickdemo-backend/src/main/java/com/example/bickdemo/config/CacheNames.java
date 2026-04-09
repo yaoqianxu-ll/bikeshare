@@ -32,6 +32,9 @@ public final class CacheNames {
     // 积分缓存
     public static final String POINTS_BALANCE = "points:balance";
 
+    // VIP缓存
+    public static final String VIP_STATUS = "vip:status";
+
     private CacheNames() {
     }
 }
