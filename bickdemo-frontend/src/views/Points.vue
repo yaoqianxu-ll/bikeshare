@@ -43,7 +43,7 @@
               @click="handleSignIn"
               class="sign-btn"
             >
-              {{ signedToday ? '已签到' : '签到 +5积分' }}
+              {{ signedToday ? '已签到' : '签到 +3积分' }}
             </el-button>
           </div>
           <div class="sign-footer">
@@ -74,11 +74,11 @@
           </div>
           <div class="vip-item">
             <span class="vip-label">到期时间</span>
-            <span class="vip-value">{{ vipStatus.expireTime || '永久' }}</span>
+            <span class="vip-value">{{ vipStatus.vipExpireTime || '永久' }}</span>
           </div>
           <div class="vip-item">
             <span class="vip-label">积分倍率</span>
-            <span class="vip-value"> {{ vipStatus.pointsMultiplier || 2 }}x</span>
+            <span class="vip-value">1x</span>
           </div>
         </div>
         <div class="vip-benefits">
@@ -166,9 +166,9 @@
       <div class="purchase-form">
         <p class="purchase-tip">选择您想要的VIP套餐</p>
         <el-radio-group v-model="purchasePlan" class="purchase-plans">
-          <el-radio label="monthly">月卡 - 30元/月</el-radio>
-          <el-radio label="quarterly">季卡 - 80元/季度</el-radio>
-          <el-radio label="yearly">年卡 - 280元/年</el-radio>
+          <el-radio label="MONTHLY">月卡 - ¥9.9/30天</el-radio>
+          <el-radio label="QUARTERLY">季卡 - ¥25/90天</el-radio>
+          <el-radio label="YEARLY">年卡 - ¥88/365天</el-radio>
         </el-radio-group>
         <div class="purchase-benefits">
           <h4>VIP特权</h4>
@@ -189,13 +189,12 @@
     <!-- 兑换VIP对话框 -->
     <el-dialog v-model="showRedeemDialog" title="兑换VIP会员" width="400px">
       <div class="redeem-form">
-        <p class="redeem-tip">输入VIP兑换码</p>
-        <el-input
-          v-model="redeemCode"
-          placeholder="请输入兑换码"
-          class="redeem-input"
-        />
-        <p class="redeem-hint">兑换码可在活动中获得</p>
+        <p class="redeem-tip">选择要兑换的VIP套餐（使用积分）</p>
+        <el-radio-group v-model="redeemPlan" class="redeem-plans">
+          <el-radio label="MONTHLY">月卡 - 500积分</el-radio>
+          <el-radio label="QUARTERLY">季卡 - 1200积分</el-radio>
+          <el-radio label="YEARLY">年卡 - 4000积分</el-radio>
+        </el-radio-group>
       </div>
       <template #footer>
         <el-button @click="showRedeemDialog = false">取消</el-button>
@@ -229,7 +228,7 @@ const vipStatus = ref(null)
 const showPurchaseDialog = ref(false)
 const showRedeemDialog = ref(false)
 const purchasePlan = ref('monthly')
-const redeemCode = ref('')
+const redeemPlan = ref('')
 
 // 获取积分余额
 const loadPointsBalance = async () => {
@@ -255,7 +254,7 @@ const loadSignInStatus = async () => {
 const handleSignIn = async () => {
   try {
     await signIn()
-    ElMessage.success('签到成功，获得5积分')
+    ElMessage.success('签到成功，获得3积分')
     signedToday.value = true
     loadPointsBalance()
     loadRecords()
@@ -294,7 +293,7 @@ const loadVipStatus = async () => {
 // 购买VIP
 const handlePurchaseVip = async () => {
   try {
-    await purchaseVip({ plan: purchasePlan.value })
+    await purchaseVip({ packageType: purchasePlan.value })
     ElMessage.success('购买VIP成功')
     showPurchaseDialog.value = false
     loadVipStatus()
@@ -305,15 +304,14 @@ const handlePurchaseVip = async () => {
 
 // 兑换VIP
 const handleRedeemVip = async () => {
-  if (!redeemCode.value.trim()) {
-    ElMessage.warning('请输入兑换码')
+  if (!redeemPlan.value) {
+    ElMessage.warning('请选择要兑换的套餐')
     return
   }
   try {
-    await redeemVip({ code: redeemCode.value })
+    await redeemVip({ packageType: redeemPlan.value })
     ElMessage.success('兑换VIP成功')
     showRedeemDialog.value = false
-    redeemCode.value = ''
     loadVipStatus()
   } catch (error) {
     console.error(error)
