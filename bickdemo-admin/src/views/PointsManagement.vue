@@ -53,6 +53,11 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="经验值" width="120" align="center">
+          <template #default="{ row }">
+            <span class="exp-value">{{ row.experiencePoints }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="注册时间" min-width="170">
           <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
         </el-table-column>
@@ -90,6 +95,9 @@
         <el-form-item label="扣除积分" prop="points">
           <el-input-number v-model="adjustForm.points" :min="1" :max="selectedUser.points || 1" class="full-width" />
         </el-form-item>
+        <el-form-item label="调整经验值" prop="experience">
+          <el-input-number v-model="adjustForm.experience" :min="0" :max="1500" class="full-width" placeholder="直接设置经验值" />
+        </el-form-item>
         <el-form-item label="原因" prop="reason">
           <el-input v-model="adjustForm.reason" type="textarea" :rows="3" resize="none" maxlength="255" show-word-limit placeholder="请输入扣除原因" />
         </el-form-item>
@@ -106,18 +114,15 @@
         <el-table-column prop="id" label="记录 ID" width="80" />
         <el-table-column label="变动" width="120" align="center">
           <template #default="{ row }">
-            <span :class="row.change > 0 ? 'text-success' : 'text-danger'">
-              {{ row.change > 0 ? '+' : '' }}{{ row.change }}
+            <span :class="row.points > 0 ? 'text-success' : 'text-danger'">
+              {{ row.points > 0 ? '+' : '' }}{{ row.points }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="变动后余额" width="120" align="center">
-          <template #default="{ row }">{{ row.balance }}</template>
-        </el-table-column>
         <el-table-column label="类型" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.type === 'DEDUCTION' ? 'danger' : 'success'" effect="light" size="small">
-              {{ row.type === 'DEDUCTION' ? '扣除' : '奖励' }}
+            <el-tag :type="row.type === 'DEDUCT' ? 'danger' : 'success'" effect="light" size="small">
+              {{ row.type === 'DEDUCT' ? '扣除' : '奖励' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -143,7 +148,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getPointsList, adjustPoints, getPointsRecords } from '@/api/points'
+import { getPointsList, adjustPoints, getPointsRecords, adjustExperience } from '@/api/points'
 import { formatDate } from '@/utils/format'
 
 const loading = ref(false)
@@ -171,7 +176,8 @@ const query = reactive({
 
 const adjustForm = reactive({
   points: 0,
-  reason: ''
+  reason: '',
+  experience: 0
 })
 
 const adjustRules = {
@@ -189,6 +195,7 @@ const recordsQuery = reactive({
 const resetForm = () => {
   adjustForm.points = 0
   adjustForm.reason = ''
+  adjustForm.experience = 0
 }
 
 const load = async () => {
@@ -235,7 +242,13 @@ const submitAdjust = async () => {
       points: adjustForm.points,
       reason: adjustForm.reason
     })
-    ElMessage.success('积分已扣除')
+    if (adjustForm.experience > 0) {
+      await adjustExperience({
+        userId: selectedUser.id,
+        experience: adjustForm.experience
+      })
+    }
+    ElMessage.success('调整成功')
     adjustDialogVisible.value = false
     await load()
   } finally {
@@ -280,6 +293,11 @@ onMounted(load)
 }
 
 .points-value {
+  font-weight: 600;
+  color: #f59e0b;
+}
+
+.exp-value {
   font-weight: 600;
   color: #f59e0b;
 }

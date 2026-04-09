@@ -23,3 +23,11 @@ export function getPointsRecords(userId, params) {
     params
   })
 }
+
+export function adjustExperience(data) {
+  return request({
+    url: '/admin/points/adjust-exp',
+    method: 'post',
+    data
+  })
+}
