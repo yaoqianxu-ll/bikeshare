@@ -123,6 +123,7 @@ public class AdminPointsController {
 
     // 等级计算方法（与 VipServiceImpl 一致）
     private int calculateVipLevel(int experiencePoints) {
+        if (experiencePoints <= 0) return 0;
         int[] thresholds = {0, 100, 300, 600, 1000, 1500};
         for (int i = thresholds.length - 1; i >= 0; i--) {
             if (experiencePoints >= thresholds[i]) return i + 1;

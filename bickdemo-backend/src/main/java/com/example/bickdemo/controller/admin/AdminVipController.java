@@ -69,4 +69,29 @@ public class AdminVipController {
         vipBenefitMapper.update(null, wrapper);
         return ResponseEntity.ok(ApiResponse.success("权益更新成功"));
     }
+
+    /**
+     * 新增VIP权益
+     */
+    @PostMapping("/benefits")
+    @AdminOperationLog(module = "VIP管理", action = "新增权益", type = "管理")
+    public ResponseEntity<ApiResponse<String>> createBenefit(@RequestBody VipBenefit benefit) {
+        VipBenefit newBenefit = new VipBenefit();
+        newBenefit.setBenefitKey(benefit.getBenefitKey());
+        newBenefit.setBenefitName(benefit.getBenefitName());
+        newBenefit.setDescription(benefit.getDescription());
+        newBenefit.setIsActive(benefit.getIsActive() != null ? benefit.getIsActive() : true);
+        vipBenefitMapper.insert(newBenefit);
+        return ResponseEntity.ok(ApiResponse.success("权益新增成功"));
+    }
+
+    /**
+     * 删除VIP权益
+     */
+    @DeleteMapping("/benefits/{id}")
+    @AdminOperationLog(module = "VIP管理", action = "删除权益", type = "管理")
+    public ResponseEntity<ApiResponse<String>> deleteBenefit(@PathVariable Long id) {
+        vipBenefitMapper.deleteById(id);
+        return ResponseEntity.ok(ApiResponse.success("权益删除成功"));
+    }
 }

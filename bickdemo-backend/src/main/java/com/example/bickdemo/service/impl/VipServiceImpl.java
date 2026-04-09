@@ -246,8 +246,10 @@ public class VipServiceImpl implements VipService {
 
     /**
      * 根据经验值计算VIP等级
+     * 阈值：0=无VIP, 1-99=VIP1, 100-299=VIP2, 300-599=VIP3, 600-999=VIP4, 1000-1499=VIP5, 1500+=VIP6
      */
     private int calculateVipLevel(int experiencePoints) {
+        if (experiencePoints <= 0) return 0;
         for (int i = VIP_LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
             if (experiencePoints >= VIP_LEVEL_THRESHOLDS[i]) {
                 return i + 1;

@@ -108,6 +108,11 @@ const routes = [
         component: () => import('@/views/VipManagement.vue')
       },
       {
+        path: '/experience',
+        name: 'ExperienceManage',
+        component: () => import('@/views/ExperienceManagement.vue')
+      },
+      {
         path: '/benefits',
         name: 'BenefitsManage',
         component: () => import('@/views/BenefitsManagement.vue')

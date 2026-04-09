@@ -192,6 +192,7 @@ const navGroups = [
     children: [
       { path: '/points', label: '积分管理' },
       { path: '/vip', label: 'VIP管理' },
+      { path: '/experience', label: '经验管理' },
       { path: '/benefits', label: '权益管理' }
     ]
   },
