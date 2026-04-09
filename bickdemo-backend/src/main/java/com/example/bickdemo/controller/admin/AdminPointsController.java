@@ -156,8 +156,9 @@ public class AdminPointsController {
     @PostMapping("/adjust-exp")
     @AdminOperationLog(module = "积分管理", action = "调整用户经验值", type = "管理")
     public ResponseEntity<ApiResponse<String>> adjustExperience(
-            @RequestParam Long userId,
-            @RequestParam Integer experience) {
+            @RequestBody Map<String, Object> params) {
+        Long userId = Long.valueOf(params.get("userId").toString());
+        Integer experience = Integer.valueOf(params.get("experience").toString());
         User user = userMapper.selectById(userId);
         if (user == null) return ResponseEntity.ok(ApiResponse.error("用户不存在"));
 
