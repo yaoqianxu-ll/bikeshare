@@ -40,6 +40,12 @@ const routes = [
         component: () => import('@/views/Statistics.vue')
       },
       {
+        path: '/points',
+        name: 'Points',
+        component: () => import('@/views/Points.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: '/forum',
         name: 'Forum',
         component: () => import('@/views/Forum.vue')

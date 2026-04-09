@@ -126,6 +126,10 @@
                 <el-icon><Ticket /></el-icon>
                 <span>工单</span>
               </router-link>
+              <router-link to="/points" class="mobile-account-link" @click="closeNav">
+                <el-icon><Coin /></el-icon>
+                <span>积分</span>
+              </router-link>
               <router-link to="/profile" class="mobile-account-link" @click="closeNav">
                 <el-icon><User /></el-icon>
                 <span>个人信息</span>
@@ -152,6 +156,10 @@
           <router-link to="/statistics" class="nav-link" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><DataAnalysis /></el-icon></span>
             <span>统计</span>
+          </router-link>
+          <router-link to="/points" class="nav-link" @click="closeNav">
+            <span class="nav-icon-bg"><el-icon><Coin /></el-icon></span>
+            <span>积分</span>
           </router-link>
           <router-link to="/forum" class="nav-link" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><Document /></el-icon></span>
@@ -244,6 +252,11 @@
                       <el-icon><Ticket /></el-icon> 我的工单
                     </el-dropdown-item>
                   </router-link>
+                  <router-link to="/points">
+                    <el-dropdown-item>
+                      <el-icon><Coin /></el-icon> 我的积分
+                    </el-dropdown-item>
+                  </router-link>
                   <router-link to="/profile">
                     <el-dropdown-item><el-icon><User /></el-icon> 个人信息</el-dropdown-item>
                   </router-link>
@@ -292,7 +305,7 @@ import { useUserStore } from '@/stores/user'
 import { useContactsStore } from '@/stores/contacts'
 import { useMessage } from 'naive-ui'
 import { ElMessageBox } from 'element-plus'
-import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation, StarFilled, Close, Calendar, Bell, Ticket, ArrowDown } from '@element-plus/icons-vue'
+import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation, StarFilled, Close, Calendar, Bell, Ticket, ArrowDown, Coin } from '@element-plus/icons-vue'
 import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
 import { getCurrentUser } from '@/api/auth'
 import { getContacts } from '@/api/social'
