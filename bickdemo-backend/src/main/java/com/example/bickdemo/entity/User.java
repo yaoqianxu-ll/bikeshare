@@ -79,6 +79,10 @@ public class User implements UserDetails {
     @TableField(value = "vip_expire_time", exist = true)
     private LocalDateTime vipExpireTime;
 
+    /** 经验值 */
+    @TableField(value = "experience_points", exist = true)
+    private Integer experiencePoints = 0;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.name()));
