@@ -184,7 +184,7 @@ public class VipServiceImpl implements VipService {
 
         user.setVipLevel(0);
         user.setVipExpireTime(null);
-        // 注意：revoke 不清除经验值，保留等级进度
+        user.setExperiencePoints(0); // 清零经验值
         userMapper.updateById(user);
     }
 
