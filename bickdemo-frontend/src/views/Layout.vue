@@ -134,6 +134,10 @@
                 <el-icon><User /></el-icon>
                 <span>个人信息</span>
               </router-link>
+              <router-link to="/activities" class="mobile-account-link" @click="closeNav">
+                <el-icon><Calendar /></el-icon>
+                <span>活动中心</span>
+              </router-link>
               <button type="button" class="mobile-account-link mobile-account-link-logout" @click="handleLogout">
                 <el-icon><SwitchButton /></el-icon>
                 <span>退出登录</span>
@@ -164,10 +168,6 @@
           <router-link to="/forum" class="nav-link" @click="closeNav">
             <span class="nav-icon-bg"><el-icon><Document /></el-icon></span>
             <span>论坛</span>
-          </router-link>
-          <router-link to="/activities" class="nav-link" @click="closeNav">
-            <span class="nav-icon-bg"><el-icon><Calendar /></el-icon></span>
-            <span>活动</span>
           </router-link>
           <!-- 移动端显示开源链接 -->
           <div class="mobile-source-links">
@@ -260,6 +260,9 @@
                   <router-link to="/profile">
                     <el-dropdown-item><el-icon><User /></el-icon> 个人信息</el-dropdown-item>
                   </router-link>
+                  <router-link to="/activities">
+                    <el-dropdown-item><el-icon><Calendar /></el-icon> 活动中心</el-dropdown-item>
+                  </router-link>
                   <el-dropdown-item divided @click="handleLogout"><el-icon><SwitchButton /></el-icon> 退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -303,6 +306,9 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useContactsStore } from '@/stores/contacts'
+import { useNoticeStore } from '@/stores/notice'
+import { useActivityStore } from '@/stores/activity'
+import { useRentalStore } from '@/stores/rental'
 import { useMessage } from 'naive-ui'
 import { ElMessageBox } from 'element-plus'
 import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation, StarFilled, Close, Calendar, Bell, Ticket, ArrowDown, Coin } from '@element-plus/icons-vue'
