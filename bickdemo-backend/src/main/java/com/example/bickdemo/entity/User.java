@@ -67,6 +67,18 @@ public class User implements UserDetails {
     @TableLogic
     private Integer deleted;
 
+    /** 用户积分余额 */
+    @TableField(value = "points", exist = true)
+    private Integer points = 0;
+
+    /** VIP等级: 0=无, 1=VIP */
+    @TableField(value = "vip_level", exist = true)
+    private Integer vipLevel = 0;
+
+    /** VIP过期时间 */
+    @TableField(value = "vip_expire_time", exist = true)
+    private LocalDateTime vipExpireTime;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.name()));

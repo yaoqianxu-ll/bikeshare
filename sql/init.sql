@@ -10169,3 +10169,67 @@ CREATE TABLE `admin_notifications` (
 
 SET FOREIGN_KEY_CHECKS = 1;
 ALTER TABLE activities ADD INDEX idx_activity_expire_check (status, deleted, end_time);
+
+-- ----------------------------
+-- Points-VIP System Tables
+-- ----------------------------
+
+-- Users table new columns for points and vip
+ALTER TABLE users ADD COLUMN points INT DEFAULT 0 COMMENT '积分余额';
+ALTER TABLE users ADD COLUMN vip_level INT DEFAULT 0 COMMENT 'VIP等级:0=无,1=VIP';
+ALTER TABLE users ADD COLUMN vip_expire_time DATETIME DEFAULT NULL COMMENT 'VIP过期时间';
+
+-- 用户积分表（备用，如需单独存储积分变动详情可扩展）
+CREATE TABLE IF NOT EXISTS `user_points` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `points` int NOT NULL DEFAULT 0 COMMENT '积分余额',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_id`(`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户积分表';
+
+-- 用户VIP表（备用，如需单独存储VIP详情可扩展）
+CREATE TABLE IF NOT EXISTS `user_vip` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `vip_level` int NOT NULL DEFAULT 0 COMMENT 'VIP等级:0=无,1=VIP',
+  `vip_expire_time` datetime DEFAULT NULL COMMENT 'VIP过期时间',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_id`(`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户VIP表';
+
+-- Points records table
+CREATE TABLE IF NOT EXISTS `points_records` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `type` varchar(20) NOT NULL COMMENT '变动类型: EARN/SPEND/DEDUCT',
+  `points` int NOT NULL COMMENT '积分变动',
+  `reason` varchar(100) NOT NULL COMMENT '变动原因',
+  `biz_id` bigint DEFAULT NULL COMMENT '相关业务ID',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  INDEX `idx_user_id`(`user_id`),
+  INDEX `idx_type`(`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='积分变动记录';
+
+-- VIP benefits config table
+CREATE TABLE IF NOT EXISTS `vip_benefits` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `benefit_key` varchar(50) NOT NULL COMMENT '权益标识',
+  `benefit_name` varchar(50) NOT NULL COMMENT '权益名称',
+  `description` varchar(200) DEFAULT NULL COMMENT '权益描述',
+  `is_active` tinyint(1) DEFAULT 1 COMMENT '是否启用',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_benefit_key`(`benefit_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='VIP权益配置';
+
+-- Insert default VIP benefits
+INSERT INTO `vip_benefits` (`benefit_key`, `benefit_name`, `description`, `is_active`) VALUES
+('visitor_hidden', '隐藏访客记录', '查看个人主页时不留痕迹', 1),
+('burn_after_read', '阅后即焚', '社交消息阅读后自动销毁', 1),
+('special_care', '特别关心', '对特定好友的特别关注标记', 1);
