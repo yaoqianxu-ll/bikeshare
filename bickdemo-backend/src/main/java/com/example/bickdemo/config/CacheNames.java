@@ -29,6 +29,9 @@ public final class CacheNames {
     public static final String TICKETS_PAGE = "tickets:page";
     public static final String TICKETS_STATS = "tickets:stats";
 
+    // 积分缓存
+    public static final String POINTS_BALANCE = "points:balance";
+
     private CacheNames() {
     }
 }
