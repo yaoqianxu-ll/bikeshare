@@ -96,6 +96,16 @@ const routes = [
         path: '/system/operation-logs',
         name: 'SystemOperationLogs',
         component: () => import('@/views/OperationLogs.vue')
+      },
+      {
+        path: '/points',
+        name: 'PointsManage',
+        component: () => import('@/views/PointsManagement.vue')
+      },
+      {
+        path: '/vip',
+        name: 'VipManage',
+        component: () => import('@/views/VipManagement.vue')
       }
     ]
   },
