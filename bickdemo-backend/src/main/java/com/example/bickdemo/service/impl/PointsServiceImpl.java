@@ -12,7 +12,7 @@ import com.example.bickdemo.service.PointsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +28,7 @@ public class PointsServiceImpl implements PointsService {
 
     private final UserMapper userMapper;
     private final PointsRecordMapper pointsRecordMapper;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
     /** 积分常量 */
     private static final int POINTS_RENTAL = 10;       // 租车
@@ -135,13 +135,13 @@ public class PointsServiceImpl implements PointsService {
     @Transactional
     public boolean signIn(Long userId) {
         String signKey = String.format("signin:%d:%s", userId, LocalDate.now().format(DateTimeFormatter.ISO_DATE));
-        Boolean exists = redisTemplate.hasKey(signKey);
+        Boolean exists = stringRedisTemplate.hasKey(signKey);
         if (Boolean.TRUE.equals(exists)) {
             return false; // 今日已签到
         }
 
         // 设置签到标记（24小时过期）
-        redisTemplate.opsForValue().set(signKey, 1, 24, TimeUnit.HOURS);
+        stringRedisTemplate.opsForValue().set(signKey, "1", 24, TimeUnit.HOURS);
 
         // 增加积分
         addPoints(userId, POINTS_SIGNIN, "每日签到", null);
@@ -151,7 +151,7 @@ public class PointsServiceImpl implements PointsService {
     @Override
     public boolean hasSignedToday(Long userId) {
         String signKey = String.format("signin:%d:%s", userId, LocalDate.now().format(DateTimeFormatter.ISO_DATE));
-        return Boolean.TRUE.equals(redisTemplate.hasKey(signKey));
+        return Boolean.TRUE.equals(stringRedisTemplate.hasKey(signKey));
     }
 
     private PointsRecordResponse convertToResponse(PointsRecord record) {
