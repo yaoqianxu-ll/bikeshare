@@ -49,19 +49,19 @@
             <span class="exp-value">{{ row.experiencePoints || 0 }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="升级进度" min-width="180">
+        <el-table-column label="升级进度" min-width="160">
           <template #default="{ row }">
             <div v-if="row.vipLevel >= 6" class="max-level">
               <el-tag type="warning" effect="dark">已满级</el-tag>
             </div>
-            <div v-else class="exp-progress-cell">
+            <div v-else class="exp-cell">
               <el-progress
                 :percentage="getExpPercentage(row.experiencePoints, row.vipLevel)"
-                :stroke-width="8"
-                color="#f59e0b"
+                :stroke-width="4"
+                :color="getProgressColor(getExpPercentage(row.experiencePoints, row.vipLevel))"
                 :show-text="false"
               />
-              <span class="exp-hint">{{ row.experiencePoints || 0 }} / {{ getNextLevelExp(row.vipLevel) }} 经验</span>
+              <span class="exp-text">{{ row.experiencePoints || 0 }} / {{ getNextLevelExp(row.vipLevel) }}</span>
             </div>
           </template>
         </el-table-column>
@@ -168,6 +168,12 @@ const getExpPercentage = (exp, level) => {
   return Math.min(100, Math.max(0, Math.round(progress)))
 }
 
+const getProgressColor = (percentage) => {
+  if (percentage < 30) return '#10b981'
+  if (percentage < 70) return '#3b82f6'
+  return '#8b5cf6'
+}
+
 const load = async () => {
   loading.value = true
   try {
@@ -235,18 +241,25 @@ onMounted(load)
 
 .exp-value {
   font-weight: 600;
-  color: #f59e0b;
+  color: #8b5cf6;
 }
 
-.exp-progress-cell {
+.exp-cell {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 
-.exp-hint {
+.exp-cell .el-progress {
+  flex: 1;
+  min-width: 60px;
+}
+
+.exp-text {
   font-size: 12px;
   color: #64748b;
+  white-space: nowrap;
 }
 
 .max-level {
@@ -258,7 +271,7 @@ html.dark .user-line strong {
   color: #f1f5f9;
 }
 
-html.dark .exp-hint {
+html.dark .exp-text {
   color: #94a3b8;
 }
 </style>
