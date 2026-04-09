@@ -54,7 +54,7 @@
             <div v-if="row.vipLevel >= 6" class="max-level">
               <el-tag type="warning" effect="dark">已满级</el-tag>
             </div>
-            <div v-else class="exp-cell">
+            <div v-else-if="row.vipLevel > 0" class="exp-cell">
               <el-progress
                 :percentage="getExpPercentage(row.experiencePoints, row.vipLevel)"
                 :stroke-width="4"
@@ -62,6 +62,10 @@
                 :show-text="false"
               />
               <span class="exp-text">{{ row.experiencePoints || 0 }} / {{ getNextLevelExp(row.vipLevel) }}</span>
+            </div>
+            <div v-else class="exp-cell">
+              <el-progress :percentage="0" :stroke-width="4" color="#d1d5db" :show-text="false" />
+              <span class="exp-text">0 / 100</span>
             </div>
           </template>
         </el-table-column>
@@ -161,9 +165,11 @@ const getNextLevelExp = (level) => {
 }
 
 const getExpPercentage = (exp, level) => {
+  if (level <= 0) return 0
   if (level >= 6) return 100
-  const currentThreshold = VIP_LEVEL_THRESHOLDS[level - 1] || 0
+  const currentThreshold = VIP_LEVEL_THRESHOLDS[level - 1]
   const nextThreshold = VIP_LEVEL_THRESHOLDS[level]
+  if (nextThreshold === currentThreshold) return 0
   const progress = ((exp || 0) - currentThreshold) / (nextThreshold - currentThreshold) * 100
   return Math.min(100, Math.max(0, Math.round(progress)))
 }
