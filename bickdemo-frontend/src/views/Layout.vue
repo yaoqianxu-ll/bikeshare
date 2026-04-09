@@ -113,14 +113,17 @@
               <router-link to="/my-rentals" class="mobile-account-link" @click="closeNav">
                 <el-icon><Document /></el-icon>
                 <span>我的租赁</span>
+                <el-badge v-if="rentalStore.hasActiveRentals" is-dot />
               </router-link>
               <router-link to="/notices" class="mobile-account-link" @click="closeNav">
                 <el-icon><Bell /></el-icon>
                 <span>公告</span>
+                <el-badge v-if="noticeStore.hasUnread" is-dot />
               </router-link>
               <router-link to="/friends" class="mobile-account-link" @click="closeNav">
                 <el-icon><ChatDotRound /></el-icon>
                 <span>好友</span>
+                <el-badge v-if="contactsStore.totalUnreadCount > 0" :value="contactsStore.totalUnreadCount" :max="99" />
               </router-link>
               <router-link to="/tickets" class="mobile-account-link" @click="closeNav">
                 <el-icon><Ticket /></el-icon>
@@ -137,6 +140,7 @@
               <router-link to="/activities" class="mobile-account-link" @click="closeNav">
                 <el-icon><Calendar /></el-icon>
                 <span>活动中心</span>
+                <el-badge v-if="activityStore.hasNew" is-dot />
               </router-link>
               <button type="button" class="mobile-account-link mobile-account-link-logout" @click="handleLogout">
                 <el-icon><SwitchButton /></el-icon>
@@ -234,11 +238,13 @@
                   <router-link to="/my-rentals">
                     <el-dropdown-item>
                       <el-icon><Document /></el-icon> 我的租赁
+                      <el-badge v-if="rentalStore.hasActiveRentals" is-dot class="dropdown-badge" />
                     </el-dropdown-item>
                   </router-link>
                   <router-link to="/notices">
                     <el-dropdown-item>
                       <el-icon><Bell /></el-icon> 公告
+                      <el-badge v-if="noticeStore.hasUnread" is-dot class="dropdown-badge" />
                     </el-dropdown-item>
                   </router-link>
                   <router-link to="/friends">
@@ -261,7 +267,7 @@
                     <el-dropdown-item><el-icon><User /></el-icon> 个人信息</el-dropdown-item>
                   </router-link>
                   <router-link to="/activities">
-                    <el-dropdown-item><el-icon><Calendar /></el-icon> 活动中心</el-dropdown-item>
+                    <el-dropdown-item><el-icon><Calendar /></el-icon> 活动中心<el-badge v-if="activityStore.hasNew" is-dot class="dropdown-badge" /></el-dropdown-item>
                   </router-link>
                   <el-dropdown-item divided @click="handleLogout"><el-icon><SwitchButton /></el-icon> 退出登录</el-dropdown-item>
                 </el-dropdown-menu>
@@ -322,6 +328,9 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const contactsStore = useContactsStore()
+const noticeStore = useNoticeStore()
+const activityStore = useActivityStore()
+const rentalStore = useRentalStore()
 const message = useMessage()
 const navOpen = ref(false)
 const showBgSelector = ref(false)
@@ -657,6 +666,9 @@ onMounted(() => {
       .catch(() => {})
     loadContacts()
     connectSocket()
+    noticeStore.loadNotices()
+    activityStore.loadActivities()
+    rentalStore.loadActiveRentals()
   }
 })
 
@@ -665,6 +677,9 @@ watch(() => userStore.isLoggedIn, (loggedIn) => {
   if (loggedIn) {
     loadContacts()
     connectSocket()
+    noticeStore.loadNotices()
+    activityStore.loadActivities()
+    rentalStore.loadActiveRentals()
   } else {
     contactsStore.reset()
     disconnectSocket()

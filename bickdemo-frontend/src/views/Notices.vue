@@ -82,14 +82,17 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Bell, ArrowRight } from '@element-plus/icons-vue'
-import { getNotices } from '@/api/notice'
+import { useNoticeStore } from '@/stores/notice'
 import PageSizeDropdown from '@/components/PageSizeDropdown.vue'
 
-const notices = ref([])
+const noticeStore = useNoticeStore()
+const router = useRouter()
+
+const notices = computed(() => noticeStore.notices)
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(15)
-const total = ref(0)
+const total = computed(() => noticeStore.notices.length)
 const detailDialogVisible = ref(false)
 const selectedNotice = ref(null)
 
@@ -101,18 +104,9 @@ const totalText = computed(() => {
 const loadNotices = async () => {
   loading.value = true
   try {
-    const res = await getNotices({
-      page: currentPage.value,
-      size: pageSize.value
-    })
-
-    if (res.data.records) {
-      notices.value = res.data.records
-      total.value = res.data.total
-    } else {
-      notices.value = res.data || []
-      total.value = notices.value.length
-    }
+    await noticeStore.loadNotices()
+    // 标记所有公告为已读
+    noticeStore.markAllAsRead()
   } catch (error) {
     console.error(error)
   } finally {

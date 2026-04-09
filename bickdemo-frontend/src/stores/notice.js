@@ -1,22 +1,39 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getPublishedNotices, getNoticeById, getNoticesByType } from '@/api/notice'
+import { getNotices, getNoticeById } from '@/api/notice'
 
 export const useNoticeStore = defineStore('notice', () => {
   const notices = ref([])
   const currentNotice = ref(null)
   const loading = ref(false)
 
-  // 计算未读公告数量
-  const unreadCount = computed(() => {
-    return notices.value.filter(n => !n.read).length
+  // 从 localStorage 获取上次看到的最新公告ID
+  const lastSeenNoticeId = ref(localStorage.getItem('lastSeenNoticeId') || null)
+
+  // 计算是否有未读公告（比上次看到的更新）
+  const hasUnread = computed(() => {
+    if (!lastSeenNoticeId.value) {
+      // 从未设置过，有任何公告都算未读
+      return notices.value.length > 0
+    }
+    // 检查是否有比上次更新的公告
+    return notices.value.some(n => n.id > parseInt(lastSeenNoticeId.value))
   })
+
+  // 保存上次看到的最新公告ID
+  const markAllAsRead = () => {
+    if (notices.value.length > 0) {
+      const latestId = Math.max(...notices.value.map(n => n.id))
+      lastSeenNoticeId.value = latestId.toString()
+      localStorage.setItem('lastSeenNoticeId', lastSeenNoticeId.value)
+    }
+  }
 
   // 加载所有已发布的公告
   const loadNotices = async () => {
     loading.value = true
     try {
-      const res = await getPublishedNotices()
+      const res = await getNotices()
       notices.value = res.data || []
     } catch (error) {
       console.error('加载公告列表失败:', error)
@@ -40,13 +57,13 @@ export const useNoticeStore = defineStore('notice', () => {
     }
   }
 
-  // 按类型加载公告
+  // 按类型加载公告（使用相同的API，过滤在前端处理）
   const loadNoticesByType = async (type) => {
     loading.value = true
     try {
-      const res = await getNoticesByType(type)
-      notices.value = res.data || []
-      return res.data
+      const res = await getNotices()
+      notices.value = (res.data || []).filter(n => n.type === type)
+      return notices.value
     } catch (error) {
       console.error('按类型加载公告失败:', error)
       return []
@@ -73,11 +90,12 @@ export const useNoticeStore = defineStore('notice', () => {
     notices,
     currentNotice,
     loading,
-    unreadCount,
+    hasUnread,
     loadNotices,
     loadNoticeById,
     loadNoticesByType,
     markAsRead,
+    markAllAsRead,
     reset
   }
 })

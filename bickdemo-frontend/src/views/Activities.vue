@@ -93,17 +93,18 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { Calendar, Location, Clock } from '@element-plus/icons-vue'
-import { getActivities } from '@/api/activity'
+import { useActivityStore } from '@/stores/activity'
 import PageSizeDropdown from '@/components/PageSizeDropdown.vue'
 
 const router = useRouter()
 const message = useMessage()
+const activityStore = useActivityStore()
 
-const activities = ref([])
+const activities = computed(() => activityStore.activities)
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(12)
-const total = ref(0)
+const total = computed(() => activityStore.activities.length)
 
 const totalText = computed(() => {
   const n = Number(total.value)
@@ -113,18 +114,9 @@ const totalText = computed(() => {
 const loadActivities = async () => {
   loading.value = true
   try {
-    const res = await getActivities({
-      page: currentPage.value,
-      size: pageSize.value
-    })
-
-    if (res.data.records) {
-      activities.value = res.data.records
-      total.value = res.data.total
-    } else {
-      activities.value = res.data || []
-      total.value = activities.value.length
-    }
+    await activityStore.loadActivities()
+    // 标记所有活动为已读
+    activityStore.markAllAsRead()
   } catch (error) {
     console.error(error)
   } finally {
