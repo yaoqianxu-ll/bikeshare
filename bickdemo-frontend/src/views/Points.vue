@@ -74,7 +74,7 @@
           </div>
           <div class="vip-item">
             <span class="vip-label">到期时间</span>
-            <span class="vip-value">{{ vipStatus.vipExpireTime || '永久' }}</span>
+            <span class="vip-value">{{ formatVipExpireTime(vipStatus.vipExpireTime) }}</span>
           </div>
           <div class="vip-item">
             <span class="vip-label">积分倍率</span>
@@ -89,6 +89,22 @@
             <li>优先租赁热门车辆</li>
             <li>生日礼包</li>
           </ul>
+        </div>
+        <!-- 经验条（VIP等级进度） -->
+        <div class="exp-progress" v-if="vipStatus && vipStatus.currentLevel < 6">
+          <div class="exp-label">
+            <span>VIP {{ vipStatus.currentLevel }} → VIP {{ vipStatus.currentLevel + 1 }}</span>
+            <span class="exp-numbers">{{ vipStatus.experiencePoints }} / {{ vipStatus.nextLevelExp }} 经验</span>
+          </div>
+          <el-progress
+            :percentage="Math.round((vipStatus.experiencePoints / vipStatus.nextLevelExp) * 100)"
+            :stroke-width="10"
+            color="#f59e0b"
+            :show-text="false"
+          />
+        </div>
+        <div class="exp-max" v-else-if="vipStatus && vipStatus.currentLevel >= 6">
+          <el-tag type="warning" effect="dark">已满级 VIP 6</el-tag>
         </div>
       </div>
       <div class="vip-content vip-not-active" v-else>
@@ -141,8 +157,8 @@
               <el-icon><component :is="record.type === 'EARN' ? 'Plus' : 'Minus'" /></el-icon>
             </div>
             <div class="record-info">
-              <div class="record-title">{{ record.description || getRecordTypeText(record.type) }}</div>
-              <div class="record-time">{{ formatTime(record.createTime) }}</div>
+              <div class="record-title">{{ record.reason || getRecordTypeText(record.type) }}</div>
+              <div class="record-time">{{ formatTime(record.createdAt) }}</div>
             </div>
           </div>
           <div class="record-points" :class="record.type === 'EARN' ? 'positive' : 'negative'">
@@ -244,7 +260,7 @@ const loadPointsBalance = async () => {
 const loadSignInStatus = async () => {
   try {
     const res = await getSignInStatus()
-    signedToday.value = res.data?.signed || false
+    signedToday.value = res.data || false
   } catch (error) {
     console.error(error)
   }
@@ -331,11 +347,35 @@ const formatTime = (time) => {
   })
 }
 
+// 格式化VIP过期时间
+const formatVipExpireTime = (time) => {
+  if (!time) return '永久'
+  try {
+    // 处理 ISO 格式或带空格的格式
+    const normalizedTime = time.includes(' ') ? time.replace(' ', 'T') : time
+    const date = new Date(normalizedTime)
+    if (isNaN(date.getTime())) {
+      // 如果还解析不了，尝试手动解析
+      return time.replace('T', ' ').substring(0, 16)
+    }
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return time.substring(0, 16)
+  }
+}
+
 // 获取记录类型文本
 const getRecordTypeText = (type) => {
   const texts = {
     EARN: '获得积分',
     SPEND: '消费积分',
+    DEDUCT: '积分扣除',
     SIGN_IN: '签到奖励',
     VIP_BONUS: 'VIP加成',
     REFUND: '退款'
@@ -584,6 +624,38 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   justify-content: center;
+}
+
+/* VIP经验进度条 */
+.exp-progress {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(245, 158, 11, 0.08);
+  border-radius: 8px;
+}
+
+.exp-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #92400e;
+  margin-bottom: 6px;
+}
+
+.exp-numbers {
+  color: #b45309;
+}
+
+html.dark .exp-progress {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+html.dark .exp-label {
+  color: #fcd34d;
+}
+
+html.dark .exp-numbers {
+  color: #f59e0b;
 }
 
 /* VIP提示卡片 */
