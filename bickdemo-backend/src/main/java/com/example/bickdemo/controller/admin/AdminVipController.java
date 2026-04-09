@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/vip")
@@ -27,10 +28,11 @@ public class AdminVipController {
      */
     @PostMapping("/grant")
     @AdminOperationLog(module = "VIP管理", action = "发放VIP", type = "管理")
-    public ResponseEntity<ApiResponse<String>> grantVip(
-            @RequestParam Long userId,
-            @RequestParam Integer days,
-            @RequestParam(required = false) Integer experience) {
+    public ResponseEntity<ApiResponse<String>> grantVip(@RequestBody Map<String, Object> params) {
+        Long userId = Long.valueOf(params.get("userId").toString());
+        Integer days = Integer.valueOf(params.get("days").toString());
+        Integer experience = params.get("experience") != null
+                ? Integer.valueOf(params.get("experience").toString()) : null;
         vipService.grantVip(userId, days, experience);
         return ResponseEntity.ok(ApiResponse.success("VIP发放成功"));
     }
@@ -40,7 +42,8 @@ public class AdminVipController {
      */
     @PostMapping("/revoke")
     @AdminOperationLog(module = "VIP管理", action = "撤销VIP", type = "管理")
-    public ResponseEntity<ApiResponse<String>> revokeVip(@RequestParam Long userId) {
+    public ResponseEntity<ApiResponse<String>> revokeVip(@RequestBody Map<String, Object> params) {
+        Long userId = Long.valueOf(params.get("userId").toString());
         vipService.revokeVip(userId);
         return ResponseEntity.ok(ApiResponse.success("VIP撤销成功"));
     }
