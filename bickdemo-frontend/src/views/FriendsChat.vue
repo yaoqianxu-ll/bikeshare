@@ -188,7 +188,7 @@
             <div v-if="isMobile" class="back-btn" @click="showConversationList">
               <el-icon><ArrowLeft /></el-icon>
             </div>
-            <div class="chat-user">
+            <div class="chat-user" @click="openFriendProfile(activeContact)">
               <div class="avatar" :style="buildAvatarStyle(activeContact.avatar)">
                 <img v-if="activeContact.avatar" :src="activeContact.avatar" :alt="activeContact.username" />
                 <span v-else>{{ getInitial(activeContact.username) }}</span>
@@ -236,7 +236,7 @@
                 </div>
 
                 <template v-else>
-                  <div v-if="!message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar)">
+                  <div v-if="!message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar)" @click="openFriendProfileFromMessage(message)">
                     <img v-if="message.senderAvatar" :src="message.senderAvatar" :alt="message.senderUsername" />
                     <span v-else>{{ getInitial(message.senderUsername) }}</span>
                   </div>
@@ -274,7 +274,7 @@
                     </div>
                   </div>
 
-                  <div v-if="message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar || userStore.avatar)">
+                  <div v-if="message.mine" class="avatar" :style="buildAvatarStyle(message.senderAvatar || userStore.avatar)" @click="goToMyProfile">
                     <img v-if="message.senderAvatar || userStore.avatar" :src="message.senderAvatar || userStore.avatar" />
                     <span v-else>{{ getInitial(message.senderUsername || userStore.username) }}</span>
                   </div>
@@ -460,30 +460,30 @@
 
         <!-- 操作按钮 -->
         <div class="profile-actions">
-          <el-button 
-            v-if="friendProfile.canChat" 
-            type="primary" 
-            size="large" 
+          <el-button
+            v-if="friendProfile.relationStatus === 'FRIEND'"
+            type="primary"
+            size="large"
             class="action-btn"
             @click="closeFriendProfile"
           >
             <el-icon><ChatDotRound /></el-icon>
             继续聊天
           </el-button>
-          <el-button 
-            v-else-if="friendProfile.relationStatus === 'NONE'" 
-            type="primary" 
-            size="large" 
+          <el-button
+            v-else-if="friendProfile.relationStatus === 'NONE'"
+            type="primary"
+            size="large"
             class="action-btn"
             @click="handleCreateFriendRequestFromProfile"
           >
             <el-icon><Plus /></el-icon>
             添加好友
           </el-button>
-          <el-button 
-            v-else-if="friendProfile.relationStatus === 'REQUEST_RECEIVED'" 
-            type="success" 
-            size="large" 
+          <el-button
+            v-else-if="friendProfile.relationStatus === 'REQUEST_RECEIVED'"
+            type="success"
+            size="large"
             class="action-btn"
             @click="handleAcceptFromProfile"
           >
@@ -943,20 +943,32 @@ const copyToClipboard = async (text) => {
 // 从资料卡片操作
 const handleCreateFriendRequestFromProfile = async () => {
   if (!friendProfile.value) return
+  const targetUserId = friendProfile.value.userId
   closeFriendProfile()
   await handleCreateFriendRequest({
-    id: friendProfile.value.userId,
+    id: targetUserId,
     username: friendProfile.value.username,
     relationStatus: friendProfile.value.relationStatus
   })
+  // 重新加载联系人列表，并尝试重新打开该用户资料（好友关系已更新）
+  await loadContacts()
+  const updated = contacts.value.find(c => c.userId === targetUserId)
+  if (updated) {
+    openFriendProfile(updated)
+  }
 }
 
 const handleAcceptFromProfile = async () => {
   if (!friendProfile.value?.pendingRequestId) return
+  const targetUserId = friendProfile.value.userId
   await acceptFriendRequest(friendProfile.value.pendingRequestId)
   message.success('已同意好友申请')
   await Promise.all([loadRequests(), loadContacts()])
   closeFriendProfile()
+  const updated = contacts.value.find(c => c.userId === targetUserId)
+  if (updated) {
+    openFriendProfile(updated)
+  }
 }
 
 const normalizeMessage = (message) => ({
@@ -1401,6 +1413,29 @@ const openFriendProfile = (contact) => {
   if (!contact?.userId) return
   friendProfile.value = { ...contact }
   profileDrawerVisible.value = true
+}
+
+const openFriendProfileFromMessage = async (message) => {
+  if (!message?.senderId) return
+  const contact = contacts.value.find(c => c.userId === message.senderId)
+  if (contact) {
+    openFriendProfile(contact)
+    return
+  }
+  // 陌生人：先拉取资料再打开抽屉
+  try {
+    const res = await getUserProfile(message.senderId)
+    if (res.data) {
+      friendProfile.value = { ...res.data }
+      profileDrawerVisible.value = true
+    }
+  } catch (error) {
+    console.warn('获取用户详情失败:', error)
+  }
+}
+
+const goToMyProfile = () => {
+  router.push('/profile?from=chat')
 }
 
 const closeFriendProfile = () => {
@@ -2065,6 +2100,7 @@ onBeforeUnmount(async () => {
   align-items: center;
   gap: 12px;
   min-width: 0;
+  cursor: pointer;
 }
 
 .user-meta {
@@ -2107,7 +2143,7 @@ onBeforeUnmount(async () => {
 
 .message-item.self {
   margin-left: auto;
-  flex-direction: row-reverse;
+  flex-direction: row;
 }
 
 .message-content {
@@ -2314,6 +2350,7 @@ onBeforeUnmount(async () => {
   color: #fff;
   font-weight: 600;
   font-size: 14px;
+  cursor: pointer;
 }
 
 .avatar img {

@@ -595,9 +595,7 @@ const containerStyle = computed(() => {
       backgroundImage: `url(${activeBg.imageUrl})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
-      backgroundAttachment: 'fixed',
-      opacity: bgLoaded.value ? '1' : '0',
-      transition: 'opacity 0.5s ease-in'
+      backgroundAttachment: 'fixed'
     }
   }
   return {}
@@ -994,7 +992,7 @@ watch(
   display: flex;
   flex-direction: column;
   background: #0f172a;
-  opacity: 1;
+  transition: background-image 0.5s ease-in;
 }
 
 /* ========== 头部导航 ========== */

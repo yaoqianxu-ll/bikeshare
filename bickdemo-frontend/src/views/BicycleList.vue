@@ -633,8 +633,10 @@ const viewDetail = async (bike) => {
     // 通过 API 获取最新数据，避免缓存问题
     const res = await getBicycleById(bike.id)
     selectedBicycle.value = res.data
-    // 额外查询用户的活跃租赁，合并已租数量
-    await mergeUserRentalInfo(selectedBicycle.value)
+    // 仅登录用户需要合并租车信息
+    if (userStore.isLoggedIn) {
+      await mergeUserRentalInfo(selectedBicycle.value)
+    }
     detailDialogVisible.value = true
   } catch (error) {
     // 如果 API 获取失败， fallback 到本地数据

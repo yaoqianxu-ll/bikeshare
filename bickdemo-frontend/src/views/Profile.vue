@@ -4,6 +4,10 @@
       <template #header>
         <div class="profile-header">
           <div class="header-left">
+            <el-button v-if="fromChat" text @click="goBackToChat" class="back-btn">
+              <el-icon><ArrowLeft /></el-icon>
+              返回聊天
+            </el-button>
             <div class="avatar" v-if="!avatarUrl">{{ avatarText }}</div>
             <el-avatar v-else :src="avatarUrl" :size="44" class="avatar-img" />
             <div class="header-text">
@@ -195,10 +199,13 @@
 import { ref, reactive, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useUserStore } from '@/stores/user'
+import { useRoute, useRouter } from 'vue-router'
 import { getCurrentUser, updateUser, uploadAvatar, deleteAvatar, changePassword, sendEmailCode } from '@/api/auth'
 
 const userStore = useUserStore()
 const message = useMessage()
+const route = useRoute()
+const router = useRouter()
 const formRef = ref(null)
 const emailFormRef = ref(null)
 const passwordFormRef = ref(null)
@@ -213,6 +220,7 @@ const userInfo = ref(null)
 const avatarUploading = ref(false)
 const avatarDeleting = ref(false)
 const emailEditorVisible = ref(false)
+const fromChat = ref(false)
 const REMEMBER_KEY = 'bickdemo:rememberLogin'
 let countdownTimer = null
 let passwordCountdownTimer = null
@@ -660,7 +668,12 @@ const handlePasswordUpdate = async () => {
   }
 }
 
+const goBackToChat = () => {
+  router.push('/friends')
+}
+
 onMounted(() => {
+  fromChat.value = route.query.from === 'chat'
   loadUserInfo()
 })
 
@@ -692,6 +705,14 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--brand-primary);
+  font-weight: 600;
 }
 
 .avatar {
