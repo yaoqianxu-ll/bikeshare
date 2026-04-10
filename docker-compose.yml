@@ -56,6 +56,11 @@ services:
       - MAIL_USERNAME=${MAIL_USERNAME:-}
       - MAIL_PASSWORD=${MAIL_PASSWORD:-}
       - MAIL_FROM_NAME=${MAIL_FROM_NAME:-BikeShare}
+      - ALIPAY_APP_ID=${ALIPAY_APP_ID:-}
+      - ALIPAY_PRIVATE_KEY=${ALIPAY_PRIVATE_KEY:-}
+      - ALIPAY_PUBLIC_KEY=${ALIPAY_PUBLIC_KEY:-}
+      - ALIPAY_SANDBOX=${ALIPAY_SANDBOX:-true}
+      - ALIPAY_RETURN_URL=${ALIPAY_RETURN_URL:-https://bikeshare.online/points}
       - TZ=Asia/Shanghai
     volumes:
       - ./logs:/app/logs
