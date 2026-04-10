@@ -17,6 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -173,6 +174,10 @@ public class VipController {
             result.put("payUrl", payResult.get("payUrl"));
             result.put("isHtml", payResult.get("isHtml"));
             result.put("expireTime", order.getExpireTime().toString());
+            // 返回剩余秒数，前端直接使用避免时区解析问题
+            long remainingSeconds = java.time.Duration.between(
+                    LocalDateTime.now(), order.getExpireTime()).getSeconds();
+            result.put("remainingSeconds", Math.max(0, remainingSeconds));
 
             log.info("创建VIP订单成功: orderNo={}, isHtml={}", order.getOrderNo(), payResult.get("isHtml"));
             return ResponseEntity.ok(ApiResponse.success(result));
@@ -236,6 +241,12 @@ public class VipController {
         result.put("paidAt", order.getPaidAt());
         result.put("expireTime", order.getExpireTime());
         result.put("createdAt", order.getCreatedAt());
+        // 返回剩余秒数，前端直接使用避免时区解析问题
+        if (order.getExpireTime() != null) {
+            long remainingSeconds = java.time.Duration.between(
+                    LocalDateTime.now(), order.getExpireTime()).getSeconds();
+            result.put("remainingSeconds", Math.max(0, remainingSeconds));
+        }
 
         // 如果是待支付订单，直接返回存储的支付链接（避免重复生成）
         if ("PENDING".equals(order.getStatus())) {

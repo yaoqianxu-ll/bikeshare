@@ -468,18 +468,25 @@ const payStatusDesc = computed(() => {
 })
 
 // 启动倒计时
-const startCountdown = (expireTime) => {
+const startCountdown = (expireTimeOrSeconds) => {
   stopCountdown()
-  if (!expireTime) return
-  const update = () => {
-    const diff = new Date(expireTime) - new Date()
-    payCountdown.value = Math.max(0, Math.floor(diff / 1000))
+  if (!expireTimeOrSeconds) return
+  // 如果传入的是数字（剩余秒数），直接使用；否则解析ISO时间字符串
+  let initialSeconds
+  if (typeof expireTimeOrSeconds === 'number') {
+    initialSeconds = expireTimeOrSeconds
+  } else {
+    const diff = new Date(expireTimeOrSeconds) - new Date()
+    initialSeconds = Math.floor(diff / 1000)
+  }
+  payCountdown.value = Math.max(0, initialSeconds)
+  if (payCountdown.value <= 0) return
+  countdownTimer = setInterval(() => {
+    payCountdown.value = Math.max(0, payCountdown.value - 1)
     if (payCountdown.value <= 0) {
       stopCountdown()
     }
-  }
-  update()
-  countdownTimer = setInterval(update, 1000)
+  }, 1000)
 }
 
 const stopCountdown = () => {
@@ -675,8 +682,10 @@ const handleCreateOrder = async (plan) => {
       // 立即刷新订单列表（实时显示）
       await loadOrders()
 
-      // 启动倒计时
-      if (res.data.expireTime) {
+      // 启动倒计时（优先使用后端返回的remainingSeconds）
+      if (res.data.remainingSeconds != null && res.data.remainingSeconds > 0) {
+        startCountdown(res.data.remainingSeconds)
+      } else if (res.data.expireTime) {
         startCountdown(res.data.expireTime)
       }
 
@@ -739,7 +748,9 @@ const handleRepayOrder = async (order) => {
       payTradeNo.value = ''
       payDialogVisible.value = true
 
-      if (newRes.data.expireTime) {
+      if (newRes.data.remainingSeconds != null && newRes.data.remainingSeconds > 0) {
+        startCountdown(newRes.data.remainingSeconds)
+      } else if (newRes.data.expireTime) {
         startCountdown(newRes.data.expireTime)
       }
       startPayStatusPolling(newRes.data.orderNo)
@@ -761,7 +772,9 @@ const handleRepayOrder = async (order) => {
       payTradeNo.value = ''
       payDialogVisible.value = true
 
-      if (existingOrder.expireTime) {
+      if (existingOrder.remainingSeconds != null && existingOrder.remainingSeconds > 0) {
+        startCountdown(existingOrder.remainingSeconds)
+      } else if (existingOrder.expireTime) {
         startCountdown(existingOrder.expireTime)
       }
       startPayStatusPolling(existingOrder.orderNo)
