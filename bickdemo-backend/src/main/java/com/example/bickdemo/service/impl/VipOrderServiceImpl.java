@@ -113,6 +113,20 @@ public class VipOrderServiceImpl implements VipOrderService {
 
         // 插入数据库
         vipOrderMapper.insert(order);
+
+        // 创建订单时立即生成支付链接并存储，避免后续每次查询都重新生成
+        Map<String, Object> payInfo = generatePayUrl(order);
+        String payUrl = (String) payInfo.get("payUrl");
+        Boolean isHtml = (Boolean) payInfo.get("isHtml");
+
+        // 将支付表单HTML存储到订单记录（仅存储一次）
+        if (payUrl != null && !payUrl.isEmpty()) {
+            vipOrderMapper.update(null, new LambdaUpdateWrapper<VipOrder>()
+                    .eq(VipOrder::getOrderNo, orderNo)
+                    .set(payUrl != null, VipOrder::getPayUrl, payUrl)
+            );
+        }
+
         log.info("创建VIP订单: orderNo={}, userId={}, packageType={}, amount={}",
                 orderNo, userId, packageType, amount);
 
@@ -121,6 +135,20 @@ public class VipOrderServiceImpl implements VipOrderService {
         sendOrderExpireMessage(orderNo, ORDER_EXPIRE_MINUTES);
 
         return order;
+    }
+
+    /**
+     * 保存订单的支付链接
+     * 下单时生成一次支付表单，后续查询直接返回存储的链接，避免重复生成
+     */
+    @Override
+    public void savePayUrl(String orderNo, String payUrl) {
+        if (payUrl == null || payUrl.isEmpty()) return;
+        vipOrderMapper.update(null, new LambdaUpdateWrapper<VipOrder>()
+                .eq(VipOrder::getOrderNo, orderNo)
+                .set(VipOrder::getPayUrl, payUrl)
+        );
+        log.info("保存支付链接: orderNo={}", orderNo);
     }
 
     /**
@@ -175,16 +203,70 @@ public class VipOrderServiceImpl implements VipOrderService {
     /**
      * 根据订单号获取订单
      * 通过唯一订单号查询订单详情
+     * 如果是待支付订单，主动查询支付宝确认是否已支付
      *
      * @param orderNo 订单号
      * @return 订单对象，未找到返回null
      */
     @Override
     public VipOrder getOrderByNo(String orderNo) {
-        return vipOrderMapper.selectOne(
+        VipOrder order = vipOrderMapper.selectOne(
                 new LambdaQueryWrapper<VipOrder>()
                         .eq(VipOrder::getOrderNo, orderNo)
         );
+
+        // 如果是待支付订单，查询支付宝确认是否已支付（解决沙箱环境notify未回调的问题）
+        if (order != null && "PENDING".equals(order.getStatus())) {
+            queryAndUpdateOrderStatus(order);
+            // 重新查询最新状态
+            order = vipOrderMapper.selectOne(
+                    new LambdaQueryWrapper<VipOrder>()
+                            .eq(VipOrder::getOrderNo, orderNo)
+            );
+        }
+
+        return order;
+    }
+
+    /**
+     * 查询支付宝交易状态并自动更新订单
+     * 用于解决沙箱环境notify回调未触发的问题
+     *
+     * @param order 订单对象
+     * @return true=已支付并已更新, false=未支付
+     */
+    private boolean queryAndUpdateOrderStatus(VipOrder order) {
+        // 未配置支付宝时跳过查询
+        if (alipayAppId == null || alipayAppId.isEmpty() || alipayPrivateKey == null || alipayPrivateKey.isEmpty()) {
+            return false;
+        }
+
+        try {
+            com.alipay.easysdk.factory.Factory.setOptions(getAlipayOptions());
+            // 使用 AlipayTradeQuery 接口查询交易状态
+            com.alipay.easysdk.payment.common.models.AlipayTradeQueryResponse queryResp =
+                    com.alipay.easysdk.factory.Factory.Payment.Common().query(order.getOrderNo());
+
+            String tradeStatus = queryResp.tradeStatus;
+            log.info("支付宝交易查询: orderNo={}, tradeStatus={}", order.getOrderNo(), tradeStatus);
+
+            // TRADE_SUCCESS = 支付成功，TRADE_FINISHED = 交易完成
+            if ("TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus) || "TRADE_HAS_SUCCESS".equals(tradeStatus)) {
+                // 防止重复发放VIP（幂等检查）
+                VipOrder current = vipOrderMapper.selectOne(
+                        new LambdaQueryWrapper<VipOrder>().eq(VipOrder::getOrderNo, order.getOrderNo())
+                );
+                if (current != null && !"PAID".equals(current.getStatus())) {
+                    markOrderPaid(order.getOrderNo(), queryResp.tradeNo);
+                    log.info("支付宝查询到已支付，自动更新订单: orderNo={}, tradeNo={}", order.getOrderNo(), queryResp.tradeNo);
+                }
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            log.warn("支付宝交易查询异常: orderNo={}, error={}", order.getOrderNo(), e.getMessage());
+            return false;
+        }
     }
 
     /**

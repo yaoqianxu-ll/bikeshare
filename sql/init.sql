@@ -10302,3 +10302,4 @@ INSERT INTO `vip_plan` (`code`, `name`, `days`, `price_fen`, `enabled`, `descrip
 ALTER TABLE `vip_order` ADD COLUMN `plan_code` varchar(32) DEFAULT NULL COMMENT '套餐编码' AFTER `user_id`;
 ALTER TABLE `vip_order` ADD COLUMN `plan_days` int DEFAULT 0 COMMENT '套餐时长(天)' AFTER `plan_code`;
 ALTER TABLE `vip_order` ADD COLUMN `plan_name` varchar(50) DEFAULT NULL COMMENT '套餐名称' AFTER `plan_days`;
+ALTER TABLE `vip_order` ADD COLUMN `pay_url` text COMMENT '支付宝支付表单HTML，下单时生成一次存储在此' AFTER `trade_no`;

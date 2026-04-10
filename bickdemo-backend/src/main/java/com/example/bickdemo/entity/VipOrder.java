@@ -82,6 +82,12 @@ public class VipOrder {
     private String tradeNo;
 
     /**
+     * 支付表单HTML
+     * 下单时生成一次，后续查询直接返回，避免重复生成
+     */
+    private String payUrl;
+
+    /**
      * 支付时间
      */
     private LocalDateTime paidAt;

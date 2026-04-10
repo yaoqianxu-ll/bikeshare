@@ -237,11 +237,20 @@ public class VipController {
         result.put("expireTime", order.getExpireTime());
         result.put("createdAt", order.getCreatedAt());
 
-        // 如果是待支付订单，生成支付链接
+        // 如果是待支付订单，直接返回存储的支付链接（避免重复生成）
         if ("PENDING".equals(order.getStatus())) {
-            Map<String, Object> payInfo = vipOrderService.generatePayUrl(order);
-            result.put("payUrl", payInfo.get("payUrl"));
-            result.put("isHtml", payInfo.get("isHtml"));
+            if (order.getPayUrl() != null && !order.getPayUrl().isEmpty()) {
+                result.put("payUrl", order.getPayUrl());
+                result.put("isHtml", true);
+            }
+            // 如果没有存储的payUrl（兼容旧订单），则生成一次并存入
+            else {
+                Map<String, Object> payInfo = vipOrderService.generatePayUrl(order);
+                result.put("payUrl", payInfo.get("payUrl"));
+                result.put("isHtml", payInfo.get("isHtml"));
+                // 回存到数据库
+                vipOrderService.savePayUrl(order.getOrderNo(), (String) payInfo.get("payUrl"));
+            }
         }
 
         return ResponseEntity.ok(ApiResponse.success(result));

@@ -91,4 +91,13 @@ public interface VipOrderService {
      * @return 验证通过返回true，否则返回false
      */
     boolean verifyCallback(Map<String, String> params);
+
+    /**
+     * 保存订单的支付链接
+     * 下单时生成一次支付表单，后续查询直接返回存储的链接，避免重复生成
+     *
+     * @param orderNo 订单号
+     * @param payUrl 支付表单HTML
+     */
+    void savePayUrl(String orderNo, String payUrl);
 }
