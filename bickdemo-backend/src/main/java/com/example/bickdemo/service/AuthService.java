@@ -172,7 +172,7 @@ public class AuthService { // 认证服务类
             throw new RuntimeException("图形验证码错误");
         }
 
-        String loginKey = request.getUsername(); // 用户名或邮箱
+        String loginKey = request.getUsername() != null ? request.getUsername().trim() : null; // 用户名或邮箱
         boolean isEmail = loginKey != null && loginKey.contains("@");
 
         // 硬编码测试账户 - 只读管理员
@@ -226,7 +226,7 @@ public class AuthService { // 认证服务类
      * 与普通登录逻辑相同，但跳过图形验证码校验，适用于管理后台等可信环境。
      */
     public AuthResponse loginWithoutCaptcha(LoginRequest request, HttpServletRequest servletRequest) {
-        String loginKey = request.getUsername();
+        String loginKey = request.getUsername() != null ? request.getUsername().trim() : null;
         boolean isEmail = loginKey != null && loginKey.contains("@");
 
         // 硬编码测试账户 - 只读管理员
