@@ -18,7 +18,7 @@ public interface VipService {
     boolean hasVipBenefit(Long userId, String benefitKey);
 
     /** 发放VIP（管理端） */
-    void grantVip(Long userId, Integer days, Integer experience);
+    void grantVip(Long userId, Integer days, Integer experience, String orderNo);
 
     /** 撤销VIP（管理端） */
     void revokeVip(Long userId);

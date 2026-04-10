@@ -137,3 +137,16 @@ captcha:
   height: 40
   font-size: 24
   session-key: captcha
+
+# 支付宝配置
+alipay:
+  app-id: ${ALIPAY_APP_ID:}
+  private-key: ${ALIPAY_PRIVATE_KEY:}
+  alipay-public-key: ${ALIPAY_PUBLIC_KEY:}
+  notify-url: ${ALIPAY_NOTIFY_URL:http://localhost:8080/api/vip/order/notify}
+  return-url: ${ALIPAY_RETURN_URL:http://localhost:5173/points}
+  sandbox: ${ALIPAY_SANDBOX:true}
+
+# VIP订单配置
+vip-order:
+  expire-minutes: 15

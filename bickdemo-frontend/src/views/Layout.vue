@@ -232,6 +232,7 @@
                 <div class="user-avatar" v-if="!userStore.avatar">{{ userStore.username.charAt(0).toUpperCase() }}</div>
                 <el-avatar v-else :src="userStore.avatar" :size="32" class="user-avatar-img" />
                 <span class="user-text">{{ userStore.username }}</span>
+                <span v-if="userVipLevel > 0" class="vip-badge">VIP{{ userVipLevel }}</span>
               </span>
               <template #dropdown>
                 <el-dropdown-menu class="user-dropdown-menu">
@@ -321,6 +322,7 @@ import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleChe
 import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabledBackground, uploadBackground, deleteBackground } from '@/api/background'
 import { getCurrentUser } from '@/api/auth'
 import { getContacts } from '@/api/social'
+import { getVipStatus } from '@/api/vip'
 import { createChatSocket } from '@/utils/chatSocket'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 
@@ -339,6 +341,7 @@ const backgrounds = ref([])
 const bgLoaded = ref(false)
 const uploading = ref(false)
 const isMobile = ref(false)
+const userVipLevel = ref(0)
 
 // 预加载图片
 const preloadImage = (url) => {
@@ -669,6 +672,10 @@ onMounted(() => {
     noticeStore.loadNotices()
     activityStore.loadActivities()
     rentalStore.loadActiveRentals()
+    // 获取VIP状态
+    getVipStatus().then(res => {
+      userVipLevel.value = res?.data?.currentLevel || 0
+    }).catch(() => {})
   }
 })
 
@@ -680,9 +687,13 @@ watch(() => userStore.isLoggedIn, (loggedIn) => {
     noticeStore.loadNotices()
     activityStore.loadActivities()
     rentalStore.loadActiveRentals()
+    getVipStatus().then(res => {
+      userVipLevel.value = res?.data?.currentLevel || 0
+    }).catch(() => {})
   } else {
     contactsStore.reset()
     disconnectSocket()
+    userVipLevel.value = 0
   }
 })
 
@@ -1382,6 +1393,21 @@ watch(
   background: rgba(var(--brand-primary-rgb), 0.08);
 }
 
+.vip-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #d4a43a, #a07c1f);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 6px;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 8px rgba(212, 164, 58, 0.3);
+}
+
 .user-avatar {
   width: 40px;
   height: 40px;
@@ -1689,8 +1715,8 @@ html.dark .mobile-account-link-logout:hover {
   display: none;
 }
 
-/* 大屏幕缩放适配 - 隐藏导航文字只显示图标（932px断点） */
-@media (max-width: 932px) {
+/* 大屏幕缩放适配 - 隐藏导航文字只显示图标（1250px断点） */
+@media (max-width: 1250px) {
   .nav-link > span:last-child {
     display: none;
   }
@@ -1731,8 +1757,8 @@ html.dark .mobile-account-link-logout:hover {
   }
 }
 
-/* 响应式 - 1050px断点：显示汉堡菜单 */
-@media (max-width: 1050px) {
+/* 响应式 - 980px断点：显示汉堡菜单 */
+@media (max-width: 900px) {
   .header-content {
     padding: 0 20px;
     gap: 16px;

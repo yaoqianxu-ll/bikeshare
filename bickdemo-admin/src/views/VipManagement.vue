@@ -1,298 +1,653 @@
 <template>
-  <div class="page-stack">
-    <section class="page-hero">
-      <div class="hero-head">
-        <div class="hero-copy">
-          <span class="hero-tag">VIP</span>
-          <h2>VIP 管理</h2>
-          <p>授予、查看和撤销用户 VIP 会员身份。</p>
-        </div>
+  <div class="vip-page">
+    <!-- 统计卡片 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value">{{ dashboard.activeCount || 0 }}</div>
+        <div class="stat-label">活跃会员</div>
       </div>
-      <div class="hero-chips">
-        <div class="hero-chip">
-          <span>VIP 总数</span>
-          <strong>{{ totalVip }}</strong>
-        </div>
-        <div class="hero-chip">
-          <span>即将过期</span>
-          <strong>{{ expiringSoon }}</strong>
-        </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ dashboard.expiredCount || 0 }}</div>
+        <div class="stat-label">过期会员</div>
       </div>
-    </section>
-
-    <div class="page-toolbar">
-      <div class="toolbar-left">
-        <el-input v-model="query.keyword" clearable placeholder="搜索用户 ID / 用户名" @input="search" />
-        <el-dropdown trigger="click" @command="handleStatusChange">
-          <el-button class="filter-btn">
-            {{ statusLabel }}
-            <el-icon class="el-icon--right"><arrow-down /></el-icon>
-          </el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="">全部</el-dropdown-item>
-              <el-dropdown-item command="ACTIVE">生效中</el-dropdown-item>
-              <el-dropdown-item command="EXPIRED">已过期</el-dropdown-item>
-              <el-dropdown-item command="INACTIVE">未开通</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+      <div class="stat-card warning">
+        <div class="stat-value">{{ dashboard.expiringSoonCount || 0 }}</div>
+        <div class="stat-label">即将到期(7天)</div>
       </div>
-      <div class="table-actions">
-        <el-button @click="resetFilters">重置</el-button>
-        <el-button type="primary" @click="openGrantDialog">授予 VIP</el-button>
+      <div class="stat-card">
+        <div class="stat-value">{{ dashboard.monthOrdersCount || 0 }}</div>
+        <div class="stat-label">本月订单</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">¥{{ dashboard.monthRevenue || 0 }}</div>
+        <div class="stat-label">本月收入</div>
       </div>
     </div>
 
-    <el-card class="page-card" shadow="never">
-      <el-table v-loading="loading" :data="records">
-        <el-table-column prop="userId" label="用户 ID" width="100" />
-        <el-table-column label="用户名" min-width="180">
-          <template #default="{ row }">
-            <div class="user-line">
-              <el-avatar :src="row.avatar" :size="36">{{ (row.username || 'U').slice(0, 1).toUpperCase() }}</el-avatar>
-              <strong>{{ row.username }}</strong>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="VIP 等级" width="120" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.vipLevel > 0 ? 'warning' : 'info'" effect="light">
-              {{ row.vipLevel > 0 ? `VIP ${row.vipLevel}` : '普通' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.vipLevel > 0 && row.vipStatus === 'ACTIVE'" type="success" effect="light">生效中</el-tag>
-            <el-tag v-else-if="row.vipLevel > 0 && row.vipStatus === 'EXPIRED'" type="warning" effect="light">已过期</el-tag>
-            <el-tag v-else type="info" effect="light">未开通</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="过期时间" min-width="170">
-          <template #default="{ row }">
-            <span :class="isExpiringSoon(row.vipExpireTime) ? 'text-warning' : ''">
-              {{ formatDate(row.vipExpireTime) }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column label="剩余天数" width="100" align="center">
-          <template #default="{ row }">
-            <span :class="isExpiringSoon(row.vipExpireTime) ? 'text-warning' : ''">
-              {{ getRemainingDays(row.vipExpireTime) }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" align="center">
-          <template #default="{ row }">
-            <div class="table-actions">
-              <el-button
-                v-if="row.vipLevel > 0"
-                size="small"
-                type="danger"
-                plain
-                @click="handleRevoke(row)"
-              >
-                撤销
+    <!-- 标签页 -->
+    <el-tabs v-model="activeTab" class="page-tabs">
+      <!-- 会员管理 -->
+      <el-tab-pane label="会员管理" name="members">
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <el-input v-model="memberQuery.keyword" clearable placeholder="搜索用户 ID / 用户名" @input="searchMembers" />
+            <el-dropdown trigger="click" @command="(cmd) => { memberQuery.status = cmd; searchMembers(); }">
+              <el-button class="filter-btn">
+                {{ getMemberStatusLabel(memberQuery.status) }}
+                <el-icon class="el-icon--right"><arrow-down /></el-icon>
               </el-button>
-              <el-button
-                v-else
-                size="small"
-                type="primary"
-                plain
-                @click="openGrantDialog(row)"
-              >
-                授予
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="">全部</el-dropdown-item>
+                  <el-dropdown-item command="ACTIVE">生效中</el-dropdown-item>
+                  <el-dropdown-item command="EXPIRED">已过期</el-dropdown-item>
+                  <el-dropdown-item command="NONE">未开通</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+          <div class="toolbar-right">
+            <el-button @click="resetMemberFilters">重置</el-button>
+          </div>
+        </div>
 
-      <div class="pager">
+        <el-table v-loading="memberLoading" :data="memberRecords" class="page-table">
+          <el-table-column prop="userId" label="用户 ID" width="100" />
+          <el-table-column label="用户名" min-width="120">
+            <template #default="{ row }">
+              <span>{{ row.username || '--' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="VIP 等级" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag :type="row.vipLevel > 0 ? 'warning' : 'info'" effect="light">
+                {{ row.vipLevel > 0 ? `VIP ${row.vipLevel}` : '普通' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag v-if="row.status === 'ACTIVE'" type="success" effect="light">生效中</el-tag>
+              <el-tag v-else-if="row.status === 'EXPIRED'" type="warning" effect="light">已过期</el-tag>
+              <el-tag v-else type="info" effect="light">未开通</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="剩余天数" width="100" align="center">
+            <template #default="{ row }">
+              <span :class="row.remainingDays <= 7 && row.remainingDays > 0 ? 'text-warning' : ''">
+                {{ row.remainingDays || '--' }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column label="到期时间" min-width="170">
+            <template #default="{ row }">
+              <span>{{ formatDateTime(row.expireTime) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200" align="center">
+            <template #default="{ row }">
+              <el-button size="small" type="primary" plain @click="openAdjustDialog(row)">调整</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
         <el-pagination
-          v-model:current-page="query.page"
-          v-model:page-size="query.size"
+          v-model:current-page="memberQuery.page"
+          v-model:page-size="memberQuery.size"
           background
           layout="total, prev, pager, next"
-          :total="total"
-          @current-change="load"
+          :total="memberTotal"
+          @current-change="loadMembers"
         />
-      </div>
-    </el-card>
+      </el-tab-pane>
 
-    <!-- 授予 VIP 对话框 -->
-    <el-dialog v-model="grantDialogVisible" title="授予 VIP" width="480px" destroy-on-close>
-      <el-form ref="grantFormRef" :model="grantForm" :rules="grantRules" label-width="100px">
-        <el-form-item label="用户 ID" prop="userId">
-          <el-input-number
-            v-model="grantForm.userId"
-            :min="1"
-            class="full-width"
-            placeholder="请输入用户 ID"
-          />
+      <!-- 订单管理 -->
+      <el-tab-pane label="订单管理" name="orders">
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <el-input v-model="orderQuery.orderNo" clearable placeholder="订单号" @input="searchOrders" />
+            <el-input v-model="orderQuery.userKeyword" clearable placeholder="用户关键词" @input="searchOrders" />
+            <el-dropdown trigger="click" @command="(cmd) => { orderQuery.status = cmd; searchOrders(); }">
+              <el-button class="filter-btn">
+                {{ getOrderStatusLabel(orderQuery.status) }}
+                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="">全部</el-dropdown-item>
+                  <el-dropdown-item command="PENDING">待支付</el-dropdown-item>
+                  <el-dropdown-item command="PAID">已支付</el-dropdown-item>
+                  <el-dropdown-item command="EXPIRED">已过期</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+          <div class="toolbar-right">
+            <el-button @click="resetOrderFilters">重置</el-button>
+          </div>
+        </div>
+
+        <el-table v-loading="orderLoading" :data="orderRecords" class="page-table">
+          <el-table-column prop="orderNo" label="订单号" min-width="200" />
+          <el-table-column label="用户" width="100">
+            <template #default="{ row }">
+              <span>{{ row.username || row.userId }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="套餐" width="120">
+            <template #default="{ row }">
+              <span>{{ formatPlanName(row.packageType) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="金额" width="100" align="center">
+            <template #default="{ row }">
+              <span>¥{{ row.amount }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag v-if="row.status === 'PAID'" type="success" effect="light">已支付</el-tag>
+              <el-tag v-else-if="row.status === 'PENDING'" type="warning" effect="light">待支付</el-tag>
+              <el-tag v-else-if="row.status === 'EXPIRED'" type="info" effect="light">已过期</el-tag>
+              <el-tag v-else-if="row.status === 'CANCELLED'" type="info" effect="light">已取消</el-tag>
+              <el-tag v-else type="info" effect="light">未知</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="交易号" min-width="180">
+            <template #default="{ row }">
+              <span class="text-muted">{{ row.tradeNo || '--' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="创建时间" min-width="170">
+            <template #default="{ row }">
+              <span>{{ formatDateTime(row.createdAt) }}</span>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <el-pagination
+          v-model:current-page="orderQuery.page"
+          v-model:page-size="orderQuery.size"
+          background
+          layout="total, prev, pager, next"
+          :total="orderTotal"
+          @current-change="loadOrders"
+        />
+      </el-tab-pane>
+
+      <!-- 套餐管理 -->
+      <el-tab-pane label="套餐管理" name="plans">
+        <div class="toolbar">
+          <div class="toolbar-right">
+            <el-button type="primary" @click="openPlanEditDialog()">新建套餐</el-button>
+          </div>
+        </div>
+
+        <el-table v-loading="planLoading" :data="planRecords" class="page-table">
+          <el-table-column prop="name" label="套餐名称" min-width="120" />
+          <el-table-column label="天数" width="100" align="center">
+            <template #default="{ row }">
+              <span>{{ row.days }} 天</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="价格" width="120" align="center">
+            <template #default="{ row }">
+              <span class="price">¥{{ row.price || (row.priceFen / 100).toFixed(2) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag v-if="row.enabled" type="success" effect="light">启用</el-tag>
+              <el-tag v-else type="info" effect="light">禁用</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="description" label="描述" min-width="200" />
+          <el-table-column label="操作" width="120" align="center">
+            <template #default="{ row }">
+              <el-button size="small" type="primary" plain @click="openPlanEditDialog(row)">编辑</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-tab-pane>
+    </el-tabs>
+
+    <!-- 调整会员对话框 -->
+    <el-dialog v-model="adjustDialogVisible" title="调整会员" width="480px" destroy-on-close>
+      <el-form ref="adjustFormRef" :model="adjustForm" :rules="adjustRules" label-width="100px">
+        <el-form-item label="用户 ID">
+          <el-input-number v-model="adjustForm.userId" :min="1" disabled class="full-width" />
         </el-form-item>
-        <el-form-item label="VIP 天数" prop="days">
-          <el-input-number v-model="grantForm.days" :min="1" :max="3650" class="full-width" />
+        <el-form-item label="当前状态">
+          <el-tag :type="getStatusType(adjustForm.currentStatus)" effect="light">
+            {{ getStatusLabel(adjustForm.currentStatus) }}
+          </el-tag>
+        </el-form-item>
+        <el-form-item label="操作" prop="action">
+          <el-select v-model="adjustForm.action" placeholder="请选择操作" class="full-width">
+            <el-option label="覆盖激活" value="ACTIVATE" />
+            <el-option label="续期" value="EXTEND" />
+            <el-option label="立即过期" value="EXPIRE_NOW" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="adjustForm.action !== 'EXPIRE_NOW'" label="天数" prop="days">
+          <el-input-number v-model="adjustForm.days" :min="1" :max="3650" class="full-width" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="grantDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="submitGrant">确认授予</el-button>
+        <el-button @click="adjustDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="adjustSaving" @click="submitAdjust">确认调整</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 编辑套餐对话框 -->
+    <el-dialog v-model="planEditDialogVisible" :title="editingPlan?.id ? '编辑套餐' : '新建套餐'" width="480px" destroy-on-close>
+      <el-form ref="planFormRef" :model="planForm" :rules="planRules" label-width="100px">
+        <el-form-item label="套餐编码" prop="code" v-if="!editingPlan?.id">
+          <el-input v-model="planForm.code" placeholder="如 MONTHLY、QUARTERLY、YEARLY" />
+        </el-form-item>
+        <el-form-item label="套餐名称" prop="name">
+          <el-input v-model="planForm.name" placeholder="如 月卡会员" />
+        </el-form-item>
+        <el-form-item label="天数" prop="days">
+          <el-input-number v-model="planForm.days" :min="1" :max="3650" class="full-width" />
+        </el-form-item>
+        <el-form-item label="价格(元)" prop="priceYuan">
+          <el-input-number v-model="planForm.priceYuan" :min="0" :precision="2" class="full-width" />
+        </el-form-item>
+        <el-form-item label="启用状态">
+          <el-switch v-model="planForm.enabled" />
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input v-model="planForm.description" type="textarea" :rows="3" placeholder="套餐描述" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="planEditDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="planSaving" @click="submitPlanEdit">确认</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
-import { getPointsList, adjustPoints } from '@/api/points'
-import { grantVip, revokeVip } from '@/api/vip'
-import { formatDate } from '@/utils/format'
+import { getVipDashboard, getVipMembers, getVipOrders, getVipPlans, adjustVipMember, updateVipPlan } from '@/api/vip'
 
-const loading = ref(false)
-const saving = ref(false)
-const records = ref([])
-const total = ref(0)
-const totalVip = ref(0)
-const expiringSoon = ref(0)
+// 统计数据
+const dashboard = ref({})
+const activeTab = ref('members')
 
-const grantDialogVisible = ref(false)
-const grantFormRef = ref()
-
-const query = reactive({
+// 会员管理
+const memberLoading = ref(false)
+const memberRecords = ref([])
+const memberTotal = ref(0)
+const memberQuery = reactive({
   page: 1,
   size: 10,
   keyword: '',
-  vipOnly: ''
+  status: ''
 })
 
-const grantForm = reactive({
+// 订单管理
+const orderLoading = ref(false)
+const orderRecords = ref([])
+const orderTotal = ref(0)
+const orderQuery = reactive({
+  page: 1,
+  size: 10,
+  orderNo: '',
+  userKeyword: '',
+  planCode: '',
+  status: ''
+})
+
+// 套餐管理
+const planLoading = ref(false)
+const planRecords = ref([])
+const planQuery = reactive({})
+
+// 调整会员
+const adjustDialogVisible = ref(false)
+const adjustSaving = ref(false)
+const adjustFormRef = ref()
+const adjustForm = reactive({
   userId: null,
+  currentStatus: '',
+  action: '',
   days: 30
 })
-
-const grantRules = {
-  userId: [{ required: true, message: '请输入用户 ID', trigger: 'blur' }],
-  days: [{ required: true, message: '请输入 VIP 天数', trigger: 'change' }]
+const adjustRules = {
+  action: [{ required: true, message: '请选择操作', trigger: 'change' }],
+  days: [{ required: true, message: '请输入天数', trigger: 'blur' }]
 }
 
-const statusLabel = computed(() => {
-  const map = { '': '状态', ACTIVE: '生效中', EXPIRED: '已过期', INACTIVE: '未开通' }
-  return map[query.vipOnly] || '状态'
+// 套餐编辑
+const planEditDialogVisible = ref(false)
+const planSaving = ref(false)
+const planFormRef = ref()
+const editingPlan = ref(null)
+const planForm = reactive({
+  code: '',
+  name: '',
+  days: 30,
+  priceYuan: 0,
+  enabled: true,
+  description: ''
 })
-
-const isExpiringSoon = (vipExpireTime) => {
-  if (!vipExpireTime) return false
-  const now = new Date()
-  const expire = new Date(vipExpireTime)
-  const diffDays = (expire - now) / (1000 * 60 * 60 * 24)
-  return diffDays > 0 && diffDays <= 7
+const planRules = {
+  code: [{ required: true, message: '请输入套餐编码', trigger: 'blur' }],
+  name: [{ required: true, message: '请输入套餐名称', trigger: 'blur' }],
+  days: [{ required: true, message: '请输入天数', trigger: 'blur' }],
+  priceYuan: [{ required: true, message: '请输入价格', trigger: 'blur' }]
 }
 
-const getRemainingDays = (vipExpireTime) => {
-  if (!vipExpireTime) return '--'
-  const now = new Date()
-  const expire = new Date(vipExpireTime)
-  const diffDays = Math.ceil((expire - now) / (1000 * 60 * 60 * 24))
-  if (diffDays < 0) return '已过期'
-  return `${diffDays} 天`
-}
-
-const load = async () => {
-  loading.value = true
+// 加载仪表盘
+const loadDashboard = async () => {
   try {
-    const res = await getPointsList({
-      page: query.page,
-      size: query.size,
-      keyword: query.keyword || undefined,
-      vipOnly: query.vipOnly || undefined
-    })
-    records.value = res.data?.records || []
-    total.value = Number(res.data?.total || 0)
-    totalVip.value = res.data?.vipCount || 0
-    expiringSoon.value = res.data?.expiringSoon || 0
+    const res = await getVipDashboard()
+    if (res.code === 200) {
+      dashboard.value = res.data || {}
+    }
+  } catch (e) {
+    console.error('加载仪表盘失败', e)
+  }
+}
+
+// 会员管理
+const loadMembers = async () => {
+  memberLoading.value = true
+  try {
+    const res = await getVipMembers(memberQuery)
+    if (res.code === 200) {
+      memberRecords.value = res.data?.records || []
+      memberTotal.value = Number(res.data?.total || 0)
+    }
+  } catch (e) {
+    console.error('加载会员列表失败', e)
   } finally {
-    loading.value = false
+    memberLoading.value = false
   }
 }
 
-const search = () => {
-  query.page = 1
-  load()
+const searchMembers = () => {
+  memberQuery.page = 1
+  loadMembers()
 }
 
-const resetFilters = () => {
-  query.page = 1
-  query.keyword = ''
-  query.vipOnly = ''
-  load()
+const resetMemberFilters = () => {
+  memberQuery.page = 1
+  memberQuery.keyword = ''
+  memberQuery.status = ''
+  loadMembers()
 }
 
-const handleStatusChange = (command) => {
-  query.vipOnly = command
-  search()
-}
-
-const openGrantDialog = (row) => {
-  grantForm.userId = row?.userId || null
-  grantForm.days = 30
-  grantDialogVisible.value = true
-}
-
-const submitGrant = async () => {
-  await grantFormRef.value?.validate()
-  saving.value = true
+// 订单管理
+const loadOrders = async () => {
+  orderLoading.value = true
   try {
-    await grantVip({
-      userId: grantForm.userId,
-      days: grantForm.days
-    })
-    ElMessage.success('VIP 已授予')
-    grantDialogVisible.value = false
-    await load()
+    const res = await getVipOrders(orderQuery)
+    if (res.code === 200) {
+      orderRecords.value = res.data?.records || []
+      orderTotal.value = Number(res.data?.total || 0)
+    }
+  } catch (e) {
+    console.error('加载订单列表失败', e)
   } finally {
-    saving.value = false
+    orderLoading.value = false
   }
 }
 
-const handleRevoke = async (row) => {
+const searchOrders = () => {
+  orderQuery.page = 1
+  loadOrders()
+}
+
+const resetOrderFilters = () => {
+  orderQuery.page = 1
+  orderQuery.orderNo = ''
+  orderQuery.userKeyword = ''
+  orderQuery.planCode = ''
+  orderQuery.status = ''
+  loadOrders()
+}
+
+// 套餐管理
+const loadPlans = async () => {
+  planLoading.value = true
   try {
-    await ElMessageBox.confirm(`确认撤销用户“${row.username}”的 VIP 身份吗？`, '撤销确认', { type: 'warning' })
-    await revokeVip(row.userId)
-    ElMessage.success('VIP 已撤销')
-    await load()
-  } catch (error) {
-    if (error !== 'cancel') throw error
+    const res = await getVipPlans()
+    if (res.code === 200) {
+      planRecords.value = res.data || []
+    }
+  } catch (e) {
+    console.error('加载套餐列表失败', e)
+  } finally {
+    planLoading.value = false
   }
 }
 
-onMounted(load)
+// 调整会员
+const openAdjustDialog = (row) => {
+  adjustForm.userId = row.userId
+  adjustForm.currentStatus = row.status
+  adjustForm.action = ''
+  adjustForm.days = 30
+  adjustDialogVisible.value = true
+}
+
+const submitAdjust = async () => {
+  await adjustFormRef.value?.validate()
+  adjustSaving.value = true
+  try {
+    await adjustVipMember({
+      userId: adjustForm.userId,
+      action: adjustForm.action,
+      days: adjustForm.action !== 'EXPIRE_NOW' ? adjustForm.days : null
+    })
+    ElMessage.success('调整成功')
+    adjustDialogVisible.value = false
+    await loadMembers()
+    await loadDashboard()
+  } catch (e) {
+    // error
+  } finally {
+    adjustSaving.value = false
+  }
+}
+
+// 套餐编辑
+const openPlanEditDialog = (plan = null) => {
+  editingPlan.value = plan
+  if (plan) {
+    planForm.code = plan.code
+    planForm.name = plan.name
+    planForm.days = plan.days
+    planForm.priceYuan = plan.price || (plan.priceFen / 100)
+    planForm.enabled = plan.enabled
+    planForm.description = plan.description || ''
+  } else {
+    planForm.code = ''
+    planForm.name = ''
+    planForm.days = 30
+    planForm.priceYuan = 0
+    planForm.enabled = true
+    planForm.description = ''
+  }
+  planEditDialogVisible.value = true
+}
+
+const submitPlanEdit = async () => {
+  await planFormRef.value?.validate()
+  planSaving.value = true
+  try {
+    const data = {
+      name: planForm.name,
+      days: planForm.days,
+      priceFen: Math.round(planForm.priceYuan * 100),
+      enabled: planForm.enabled,
+      description: planForm.description
+    }
+    if (editingPlan.value?.id) {
+      await updateVipPlan(editingPlan.value.id, data)
+    } else {
+      // 新建套餐需要code
+      data.code = planForm.code
+      // 这里需要调用创建接口，暂时只支持更新
+      ElMessage.warning('新建套餐功能待实现')
+      return
+    }
+    ElMessage.success('保存成功')
+    planEditDialogVisible.value = false
+    await loadPlans()
+  } catch (e) {
+    // error
+  } finally {
+    planSaving.value = false
+  }
+}
+
+// 工具函数
+const getMemberStatusLabel = (status) => {
+  const map = { '': '状态', ACTIVE: '生效中', EXPIRED: '已过期', NONE: '未开通' }
+  return map[status] || '状态'
+}
+
+const getOrderStatusLabel = (status) => {
+  const map = { '': '状态', PENDING: '待支付', PAID: '已支付', EXPIRED: '已过期' }
+  return map[status] || '状态'
+}
+
+const getStatusType = (status) => {
+  if (status === 'ACTIVE') return 'success'
+  if (status === 'EXPIRED') return 'warning'
+  return 'info'
+}
+
+const getStatusLabel = (status) => {
+  if (status === 'ACTIVE') return '生效中'
+  if (status === 'EXPIRED') return '已过期'
+  if (status === 'NONE') return '未开通'
+  return status
+}
+
+const formatPlanName = (code) => {
+  const map = { MONTHLY: '月卡', QUARTERLY: '季卡', YEARLY: '年卡' }
+  return map[code] || code || '--'
+}
+
+const formatDateTime = (datetime) => {
+  if (!datetime) return '--'
+  const date = new Date(datetime)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}`
+}
+
+onMounted(() => {
+  loadDashboard()
+  loadMembers()
+  loadOrders()
+  loadPlans()
+})
 </script>
 
 <style scoped>
-.filter-btn {
-  min-width: 100px;
-  color: #64748b;
+.vip-page {
+  padding: 20px;
 }
 
-.filter-btn:hover {
-  color: #0f172a;
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
-.user-line {
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.stat-card.warning .stat-value {
+  color: #f59e0b;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.page-tabs {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.toolbar {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  margin-bottom: 16px;
+  gap: 12px;
 }
 
-.user-line strong {
-  color: #0f172a;
+.toolbar-left {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.toolbar-right {
+  display: flex;
+  gap: 8px;
+}
+
+.page-table {
+  margin-bottom: 16px;
 }
 
 .text-warning {
   color: #f59e0b;
+}
+
+.text-muted {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.price {
+  font-weight: 500;
+  color: #f59e0b;
+}
+
+.full-width {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .toolbar-left,
+  .toolbar-right {
+    width: 100%;
+  }
 }
 </style>

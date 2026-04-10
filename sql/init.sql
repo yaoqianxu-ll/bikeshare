@@ -10234,3 +10234,71 @@ INSERT INTO `vip_benefits` (`benefit_key`, `benefit_name`, `description`, `is_ac
 ('visitor_hidden', '隐藏访客记录', '查看个人主页时不留痕迹', 1),
 ('burn_after_read', '阅后即焚', '社交消息阅读后自动销毁', 1),
 ('special_care', '特别关心', '对特定好友的特别关注标记', 1);
+-- VIP订单表
+CREATE TABLE IF NOT EXISTS `vip_order` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `order_no` varchar(50) NOT NULL COMMENT '订单号',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `package_type` varchar(20) NOT NULL COMMENT '套餐类型: MONTHLY/QUARTERLY/YEARLY',
+  `amount` decimal(10,2) NOT NULL COMMENT '支付金额',
+  `status` varchar(20) NOT NULL DEFAULT 'PENDING' COMMENT '订单状态: PENDING/PAID/EXPIRED/CANCELLED',
+  `trade_no` varchar(64) DEFAULT NULL COMMENT '支付宝交易号',
+  `paid_at` datetime DEFAULT NULL COMMENT '支付时间',
+  `expire_time` datetime NOT NULL COMMENT '订单过期时间',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` tinyint(1) DEFAULT 0 COMMENT '逻辑删除标记',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_order_no`(`order_no`),
+  INDEX `idx_user_id`(`user_id`),
+  INDEX `idx_status`(`status`),
+  INDEX `idx_expire_time`(`expire_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='VIP订单表';
+
+-- ----------------------------
+-- VIP Member and Plan Tables (New Architecture)
+-- ----------------------------
+
+-- VIP会员表
+CREATE TABLE IF NOT EXISTS `vip_member` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `status` varchar(20) NOT NULL DEFAULT 'NONE' COMMENT '会员状态 NONE/ACTIVE/EXPIRED',
+  `start_time` datetime DEFAULT NULL COMMENT '会员开始时间',
+  `expire_time` datetime DEFAULT NULL COMMENT '会员到期时间',
+  `last_order_no` varchar(64) DEFAULT NULL COMMENT '最后一次支付订单号',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除 0-未删除 1-已删除',
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `uk_user_id`(`user_id`),
+  INDEX `idx_status_expire_time`(`status`, `expire_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='VIP会员表';
+
+-- VIP套餐表
+CREATE TABLE IF NOT EXISTS `vip_plan` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `code` varchar(32) NOT NULL COMMENT '套餐编码',
+  `name` varchar(50) NOT NULL COMMENT '套餐名称',
+  `days` int NOT NULL COMMENT '会员时长(天)',
+  `price_fen` int NOT NULL COMMENT '套餐金额(分)',
+  `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用 0-禁用 1-启用',
+  `description` varchar(200) DEFAULT NULL COMMENT '套餐描述',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除 0-未删除 1-已删除',
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `uk_code`(`code`),
+  INDEX `idx_enabled_days`(`enabled`, `days`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='VIP套餐表';
+
+-- 初始化VIP套餐数据
+INSERT INTO `vip_plan` (`code`, `name`, `days`, `price_fen`, `enabled`, `description`) VALUES
+('MONTHLY', '月卡会员', 30, 990, 1, '30天VIP会员，享2倍积分加速'),
+('QUARTERLY', '季卡会员', 90, 2500, 1, '90天VIP会员，享2倍积分加速'),
+('YEARLY', '年卡会员', 365, 8800, 1, '365天VIP会员，享2倍积分加速');
+
+-- VIP订单表扩展字段
+ALTER TABLE `vip_order` ADD COLUMN `plan_code` varchar(32) DEFAULT NULL COMMENT '套餐编码' AFTER `user_id`;
+ALTER TABLE `vip_order` ADD COLUMN `plan_days` int DEFAULT 0 COMMENT '套餐时长(天)' AFTER `plan_code`;
+ALTER TABLE `vip_order` ADD COLUMN `plan_name` varchar(50) DEFAULT NULL COMMENT '套餐名称' AFTER `plan_days`;

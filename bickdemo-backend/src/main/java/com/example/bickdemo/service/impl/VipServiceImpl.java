@@ -10,6 +10,7 @@ import com.example.bickdemo.mapper.UserMapper;
 import com.example.bickdemo.mapper.VipBenefitMapper;
 import com.example.bickdemo.service.AdminNotificationPublisher;
 import com.example.bickdemo.service.PointsService;
+import com.example.bickdemo.service.VipMemberService;
 import com.example.bickdemo.service.VipService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -27,6 +28,7 @@ public class VipServiceImpl implements VipService {
     private final VipBenefitMapper vipBenefitMapper;
     private final PointsService pointsService;
     private final AdminNotificationPublisher adminNotificationPublisher;
+    private final VipMemberService vipMemberService;
 
     /** VIP套餐配置 */
     private static final int MONTHLY_DAYS = 30;
@@ -47,7 +49,6 @@ public class VipServiceImpl implements VipService {
     private static final int MAX_VIP_LEVEL = 6;
 
     @Override
-    @Cacheable(value = CacheNames.VIP_STATUS, key = "#userId")
     public VipStatusResponse getVipStatus(Long userId) {
         User user = userMapper.selectById(userId);
         VipStatusResponse response = new VipStatusResponse();
@@ -56,6 +57,7 @@ public class VipServiceImpl implements VipService {
         int level = calculateVipLevel(exp);
 
         response.setVipLevel(level);
+        response.setVipExpireTime(user.getVipExpireTime());
         response.setIsVip(level > 0);
         response.setExperiencePoints(exp);
         response.setCurrentLevel(level);
@@ -96,11 +98,13 @@ public class VipServiceImpl implements VipService {
         int newExp = (user.getExperiencePoints() != null ? user.getExperiencePoints() : 0) + expGain;
         newExp = Math.min(newExp, VIP_LEVEL_THRESHOLDS[MAX_VIP_LEVEL - 1]);
 
-        LocalDateTime newExpireTime = extendVipTime(user, days);
-        user.setVipLevel(calculateVipLevel(newExp));
-        user.setVipExpireTime(newExpireTime);
+        // 更新User表的经验值
         user.setExperiencePoints(newExp);
+        user.setVipLevel(calculateVipLevel(newExp));
         userMapper.updateById(user);
+
+        // 激活VIP会员（同步vip_member表）
+        vipMemberService.activateVip(userId, "CASH_PURCHASE", days);
 
         // 发送管理员通知
         adminNotificationPublisher.notifyVipPurchased(userId, user.getUsername(), request.getPackageType(), "购买");
@@ -126,14 +130,16 @@ public class VipServiceImpl implements VipService {
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
+
+        // 更新经验值
         int newExp = (user.getExperiencePoints() != null ? user.getExperiencePoints() : 0) + expGain;
         newExp = Math.min(newExp, VIP_LEVEL_THRESHOLDS[MAX_VIP_LEVEL - 1]);
-
-        LocalDateTime newExpireTime = extendVipTime(user, days);
-        user.setVipLevel(calculateVipLevel(newExp));
-        user.setVipExpireTime(newExpireTime);
         user.setExperiencePoints(newExp);
+        user.setVipLevel(calculateVipLevel(newExp));
         userMapper.updateById(user);
+
+        // 激活VIP会员（同步vip_member表）
+        vipMemberService.activateVip(userId, "POINTS_REDEEM", days);
 
         // 发送管理员通知
         adminNotificationPublisher.notifyVipPurchased(userId, user.getUsername(), packageType, "兑换");
@@ -156,21 +162,22 @@ public class VipServiceImpl implements VipService {
     @Override
     @Transactional
     @CacheEvict(value = CacheNames.VIP_STATUS, key = "#userId")
-    public void grantVip(Long userId, Integer days, Integer experience) {
+    public void grantVip(Long userId, Integer days, Integer experience, String orderNo) {
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
 
-        int expGain = (experience != null) ? experience : 0;
+        // 如果没有指定经验值，根据套餐获取默认经验值
+        int expGain = (experience != null) ? experience : EXP_MONTHLY; // 默认为月卡经验
         int newExp = (user.getExperiencePoints() != null ? user.getExperiencePoints() : 0) + expGain;
         newExp = Math.min(newExp, VIP_LEVEL_THRESHOLDS[MAX_VIP_LEVEL - 1]);
-
-        LocalDateTime newExpireTime = extendVipTime(user, days);
-        user.setVipLevel(calculateVipLevel(newExp));
-        user.setVipExpireTime(newExpireTime);
         user.setExperiencePoints(newExp);
+        user.setVipLevel(calculateVipLevel(newExp));
         userMapper.updateById(user);
+
+        // 激活VIP会员（使用VipMemberService同步vip_member表和User表）
+        vipMemberService.overwriteVip(userId, days, orderNo);
     }
 
     @Override
@@ -182,10 +189,14 @@ public class VipServiceImpl implements VipService {
             throw new RuntimeException("用户不存在");
         }
 
+        // 清零User表的VIP字段
         user.setVipLevel(0);
         user.setVipExpireTime(null);
-        user.setExperiencePoints(0); // 清零经验值
+        user.setExperiencePoints(0);
         userMapper.updateById(user);
+
+        // 使VIP会员过期（使用VipMemberService同步vip_member表）
+        vipMemberService.expireVipImmediately(userId);
     }
 
     @Override

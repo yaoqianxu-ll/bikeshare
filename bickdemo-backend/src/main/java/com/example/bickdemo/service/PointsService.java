@@ -20,8 +20,8 @@ public interface PointsService {
     /** 分页获取积分记录 */
     Page<PointsRecordResponse> getPointsRecords(Long userId, int page, int size);
 
-    /** 签到 */
-    boolean signIn(Long userId);
+    /** 签到，返回签到后的积分余额 */
+    Integer signIn(Long userId);
 
     /** 检查用户今日是否已签到 */
     boolean hasSignedToday(Long userId);

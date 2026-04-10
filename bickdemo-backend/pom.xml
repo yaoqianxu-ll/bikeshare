@@ -145,6 +145,13 @@
             <artifactId>caffeine</artifactId>
         </dependency>
 
+        <!-- Alipay SDK -->
+        <dependency>
+            <groupId>com.alipay.sdk</groupId>
+            <artifactId>alipay-easysdk</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+
         <!-- 图片压缩 -->
         <dependency>
             <groupId>net.coobird</groupId>

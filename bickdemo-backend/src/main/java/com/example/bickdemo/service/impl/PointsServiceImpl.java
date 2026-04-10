@@ -37,7 +37,6 @@ public class PointsServiceImpl implements PointsService {
     private static final int POINTS_SIGNIN = 3;        // 签到
 
     @Override
-    @Cacheable(value = CacheNames.POINTS_BALANCE, key = "#userId", unless = "#result == null")
     public Integer getPoints(Long userId) {
         User user = userMapper.selectById(userId);
         return user != null && user.getPoints() != null ? user.getPoints() : 0;
@@ -133,19 +132,30 @@ public class PointsServiceImpl implements PointsService {
 
     @Override
     @Transactional
-    public boolean signIn(Long userId) {
+    @CacheEvict(value = CacheNames.POINTS_BALANCE, key = "#userId")
+    public Integer signIn(Long userId) {
         String signKey = String.format("signin:%d:%s", userId, LocalDate.now().format(DateTimeFormatter.ISO_DATE));
         Boolean exists = stringRedisTemplate.hasKey(signKey);
         if (Boolean.TRUE.equals(exists)) {
-            return false; // 今日已签到
+            return null; // 今日已签到，返回null
         }
 
         // 设置签到标记（24小时过期）
         stringRedisTemplate.opsForValue().set(signKey, "1", 24, TimeUnit.HOURS);
 
+        // 检查用户是否是VIP，给予2倍积分
+        User user = userMapper.selectById(userId);
+        boolean isVip = user != null && user.getVipLevel() != null && user.getVipLevel() > 0
+                && (user.getVipExpireTime() == null || user.getVipExpireTime().isAfter(LocalDateTime.now()));
+        int points = isVip ? POINTS_SIGNIN * 2 : POINTS_SIGNIN;
+        String reason = isVip ? "每日签到(VIP 2倍)" : "每日签到";
+
         // 增加积分
-        addPoints(userId, POINTS_SIGNIN, "每日签到", null);
-        return true;
+        addPoints(userId, points, reason, null);
+
+        // 直接返回新的积分余额，不走缓存确保实时
+        user = userMapper.selectById(userId);
+        return user != null && user.getPoints() != null ? user.getPoints() : 0;
     }
 
     @Override

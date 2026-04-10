@@ -80,8 +80,8 @@
               placeholder="请输入验证码"
               size="large"
             />
-            <el-button class="code-btn" :disabled="countdown > 0" @click="handleSendCode">
-              {{ countdown > 0 ? `${countdown}s后重试` : '发送验证码' }}
+            <el-button class="code-btn" :disabled="countdown > 0 || codeLoading" @click="handleSendCode">
+              {{ countdown > 0 ? `${countdown}s后重试` : (codeLoading ? '发送中...' : '发送验证码') }}
             </el-button>
           </div>
         </el-form-item>
@@ -148,6 +148,7 @@ const formRef = ref(null)
 const loading = ref(false)
 const showPassword = ref(false)
 const countdown = ref(0)
+const codeLoading = ref(false)
 let countdownTimer = null
 
 const form = reactive({
@@ -259,7 +260,9 @@ const handleSendCode = async () => {
     message.warning('请先输入邮箱')
     return
   }
+  if (codeLoading.value) return
 
+  codeLoading.value = true
   try {
     await sendEmailCode({
       email: form.email,
@@ -269,6 +272,8 @@ const handleSendCode = async () => {
     startCountdown()
   } catch (error) {
     console.error(error)
+  } finally {
+    codeLoading.value = false
   }
 }
 

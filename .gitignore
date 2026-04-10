@@ -19,6 +19,7 @@ bickdemo-frontend/dist/
 *.log
 logs/
 docs/
+sidifensen_blog/
 
 bikeshare.online_nginx
 *.py

@@ -91,6 +91,21 @@ public class XxxServiceImpl extends ServiceImpl<XxxMapper, XxxEntity> implements
 - 命名：PascalCase（`Home.vue`, `ArticleDetail.vue`）
 - SVG 图标：`<svg-icon name="xxx" />`
 
+### API 调用模式
+```javascript
+// 用户端 API (bickdemo-frontend/src/api/)
+import request from '@/utils/request'
+export const getUserInfo = () => request.get('/api/user/info')
+
+// 管理端 API (bickdemo-admin/src/api/)
+import request from '@/utils/request'
+export const getAdminStats = () => request.get('/api/admin/stats')
+
+// WebSocket 通知 (管理端)
+import { notificationService } from '@/services/notification'
+notificationService.connect()
+```
+
 ### 设计规范（去 AI 味）
 
 核心原则：少即是多，克制比表达更重要
@@ -104,12 +119,26 @@ public class XxxServiceImpl extends ServiceImpl<XxxMapper, XxxEntity> implements
 
 ### 标准色板
 ```scss
---bg-page: #f8fafc;       // 浅色 / #0f172a 深色
---bg-card: #ffffff;       // 浅色 / #1e293b 深色
---text-primary: #1e293b;  // 浅色 / #f1f5f9 深色
---text-regular: #475569; // 浅色 / #cbd5e1 深色
---text-muted: #64748b;    // 浅色 / #94a3b8 深色
---border: #e2e8f0;        // 浅色 / #334155 深色
+// 主题色 (玻璃态)
+--bs-bg: #ffffff;           // 浅色 / #0f172a 深色
+--bs-surface: #f8fafc;      // 浅色 / #1e293b 深色
+--bs-ink: #1e293b;          // 浅色 / #f1f5f9 深色
+
+// 兼容旧变量
+--bg-page: #f8fafc;         // 浅色 / #0f172a 深色
+--bg-card: #ffffff;         // 浅色 / #1e293b 深色
+--text-primary: #1e293b;    // 浅色 / #f1f5f9 深色
+--text-regular: #475569;    // 浅色 / #cbd5e1 深色
+--text-muted: #64748b;     // 浅色 / #94a3b8 深色
+--border: #e2e8f0;         // 浅色 / #334155 深色
+```
+
+### 玻璃态效果
+```scss
+.navbar {
+  background: color-mix(in srgb, var(--bs-surface) 88%, transparent);
+  backdrop-filter: blur(12px) saturate(135%);
+}
 ```
 
 ### 颜色使用规范
@@ -154,6 +183,17 @@ public class XxxServiceImpl extends ServiceImpl<XxxMapper, XxxEntity> implements
 - 未登录/已登录：60 次/分钟
 - 封禁时长：15 分钟
 
+## 实时通知架构
+
+```
+用户操作 → RabbitMQ → AdminNotificationListener → WebSocket → 管理端通知面板
+```
+
+- **消息队列**：RabbitMQ 异步处理通知
+- **WebSocket**：STOMP 协议，管理端实时接收
+- **通知类型**：用户注册、IP黑名单、帖子/评论审核、市场审核
+- **持久化**：数据库存储 + localStorage 隐藏状态
+
 ## 模块详解
 
 ### 活动 (Activity)
@@ -177,6 +217,13 @@ public class XxxServiceImpl extends ServiceImpl<XxxMapper, XxxEntity> implements
 ### 租赁 (Rental)
 - 状态：`ACTIVE, COMPLETED, CANCELLED`
 - 位置校验：检查是否超出最大距离
+
+### 积分与VIP体系
+- **积分获取**：租车(+10)、发帖(+5)、活动参与(+15)、每日签到(+3)
+- **积分消耗**：积分兑换VIP月卡(500)/季卡(1200)/年卡(4000)
+- **VIP购买**：月卡¥9.9/季卡¥25/年卡¥88 现金购买
+- **VIP权益**：积分翻倍、专属客服、优先租赁热门车辆
+- **签到防刷**：Redis 24小时限制
 
 ## 常用命令
 

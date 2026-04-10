@@ -69,6 +69,43 @@ public class RabbitMqConfig {
         }
     }
 
+    /**
+     * 初始化VIP订单交换机和队列
+     */
+    @PostConstruct
+    public void initVipOrderExchangeAndQueue() {
+        log.info("[RabbitMQ] Starting to declare VIP order exchange and queue...");
+        try {
+            RabbitAdmin admin = new RabbitAdmin(connectionFactory);
+
+            // 声明VIP订单交换机
+            admin.declareExchange(new DirectExchange(VIP_ORDER_EXCHANGE, true, false));
+            log.info("[RabbitMQ] VIP order exchange declared: {}", VIP_ORDER_EXCHANGE);
+
+            // 声明VIP订单过期队列（带死信队列配置）
+            admin.declareQueue(QueueBuilder.durable(VIP_ORDER_EXPIRE_QUEUE)
+                    .withArgument("x-dead-letter-exchange", "")
+                    .withArgument("x-dead-letter-routing-key", VIP_ORDER_EXPIRE_QUEUE + ".dlq")
+                    .build());
+            log.info("[RabbitMQ] VIP order expire queue declared: {}", VIP_ORDER_EXPIRE_QUEUE);
+
+            // 声明死信队列
+            admin.declareQueue(new Queue(VIP_ORDER_EXPIRE_QUEUE + ".dlq", true));
+            log.info("[RabbitMQ] VIP order dead letter queue declared: {}", VIP_ORDER_EXPIRE_QUEUE + ".dlq");
+
+            // 绑定交换机和队列
+            admin.declareBinding(BindingBuilder
+                    .bind(new Queue(VIP_ORDER_EXPIRE_QUEUE, true))
+                    .to(new DirectExchange(VIP_ORDER_EXCHANGE, true, false))
+                    .with(VIP_ORDER_EXPIRE_ROUTING_KEY));
+            log.info("[RabbitMQ] VIP order binding declared");
+
+            log.info("[RabbitMQ] VIP order exchange and queue declared successfully");
+        } catch (Exception e) {
+            log.error("[RabbitMQ] Failed to declare VIP order exchange/queue: {} - {}", e.getClass().getName(), e.getMessage(), e);
+        }
+    }
+
     @Bean
     public TopicExchange socialExchange() {
         return new TopicExchange(SocialMessagingConstants.SOCIAL_EXCHANGE, true, false);
@@ -156,5 +193,36 @@ public class RabbitMqConfig {
         factory.setMessageConverter(rabbitMessageConverter);
         factory.setDefaultRequeueRejected(false);
         return factory;
+    }
+
+    // ========== VIP订单过期队列 ==========
+    public static final String VIP_ORDER_EXCHANGE = "vip.order.exchange";
+    public static final String VIP_ORDER_EXPIRE_QUEUE = "vip.order.expire.queue";
+    public static final String VIP_ORDER_EXPIRE_ROUTING_KEY = "vip.order.expire";
+
+    @Bean
+    public DirectExchange vipOrderExchange() {
+        return new DirectExchange(VIP_ORDER_EXCHANGE);
+    }
+
+    @Bean
+    public Queue vipOrderExpireQueue() {
+        return QueueBuilder.durable(VIP_ORDER_EXPIRE_QUEUE)
+                .withArgument("x-dead-letter-exchange", "")
+                .withArgument("x-dead-letter-routing-key", VIP_ORDER_EXPIRE_QUEUE + ".dlq")
+                .build();
+    }
+
+    @Bean
+    public Binding vipOrderExpireBinding() {
+        return BindingBuilder
+                .bind(vipOrderExpireQueue())
+                .to(vipOrderExchange())
+                .with(VIP_ORDER_EXPIRE_ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue vipOrderDeadLetterQueue() {
+        return QueueBuilder.durable(VIP_ORDER_EXPIRE_QUEUE + ".dlq").build();
     }
 }

@@ -56,16 +56,16 @@ public class PointsController {
 
     /** 签到 */
     @PostMapping("/sign-in")
-    public ResponseEntity<ApiResponse<Boolean>> signIn(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<ApiResponse<Integer>> signIn(@AuthenticationPrincipal UserDetails userDetails) {
         Long userId = getCurrentUserId(userDetails);
         if (userId == null) {
-            return ResponseEntity.ok(ApiResponse.success("用户未登录", false));
+            return ResponseEntity.ok(ApiResponse.success(0));
         }
-        boolean success = pointsService.signIn(userId);
-        if (success) {
-            return ResponseEntity.ok(ApiResponse.success("签到成功", true));
+        Integer newBalance = pointsService.signIn(userId);
+        if (newBalance != null) {
+            return ResponseEntity.ok(ApiResponse.success("签到成功", newBalance));
         }
-        return ResponseEntity.ok(ApiResponse.success("今日已签到", false));
+        return ResponseEntity.ok(ApiResponse.success("今日已签到", 0));
     }
 
     /** 检查今日是否已签到 */
