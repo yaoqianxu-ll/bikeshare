@@ -182,7 +182,7 @@ function sendQuickReply(question) {
   justify-content: space-between;
   padding: 16px;
   border-bottom: 1px solid var(--border, #e2e8f0);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bs-primary, #667eea);
   color: #fff;
 }
 
@@ -238,7 +238,7 @@ function sendQuickReply(question) {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bs-primary, #667eea);
   color: #fff;
   display: flex;
   align-items: center;
@@ -319,7 +319,7 @@ function sendQuickReply(question) {
   height: 40px;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bs-primary, #667eea);
   color: #fff;
   cursor: pointer;
   display: flex;
