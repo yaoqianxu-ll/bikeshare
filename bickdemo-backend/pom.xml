@@ -160,11 +160,7 @@
         </dependency>
 
         <!-- Spring AI -->
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
-            <version>1.0.0</version>
-        </dependency>
+        <!-- 暂时使用 RestTemplate 直接调用 OpenAI 兼容 API -->
 
         <!-- Test -->
         <dependency>
@@ -179,7 +175,7 @@
         </dependency>
     </dependencies>
 
-    <!-- JitPack 仓库 (用于 GitHub Packages) -->
+    <!-- JitPack 仓库 (用于 GitHub Packages 和 Spring AI) -->
     <repositories>
         <repository>
             <id>jitpack.io</id>

@@ -17,10 +17,10 @@
         <!-- 欢迎消息 -->
         <div class="ai-chat-message ai-chat-message--welcome" v-if="messages.length === 0">
           <div class="ai-chat-message__avatar">
-            <el-icon><ServiceDocument /></el-icon>
+            <el-icon><Document /></el-icon>
           </div>
           <div class="ai-chat-message__content">
-            <p>您好！我是 BikeShare 的智能助手小林～</p>
+            <p>您好！我是 BikeShare 的智能助手小乐～</p>
             <p>有什么关于自行车租赁系统的问题我可以帮您解答吗？</p>
             <p>也可以和我闲聊哦！</p>
           </div>
@@ -34,7 +34,7 @@
           :class="msg.role === 'user' ? 'ai-chat-message--user' : 'ai-chat-message--assistant'"
         >
           <div class="ai-chat-message__avatar" v-if="msg.role === 'assistant'">
-            <el-icon><ServiceDocument /></el-icon>
+            <el-icon><Document /></el-icon>
           </div>
           <div class="ai-chat-message__content">
             <p v-html="formatMessage(msg.content)"></p>
@@ -78,7 +78,7 @@
 
 <script setup>
 import { ref, nextTick } from 'vue'
-import { ChatDotRound, Close, ServiceDocument, Promotion } from '@element-plus/icons-vue'
+import { ChatDotRound, Close, Document, Promotion } from '@element-plus/icons-vue'
 import { aiChatSSE } from '@/api/ai'
 
 const props = defineProps({
