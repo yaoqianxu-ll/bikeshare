@@ -1,4 +1,8 @@
+<div align="center">
+
 # BikeShare 自行车租赁系统
+
+</div>
 
 <div align="center">
 
@@ -457,6 +461,16 @@ docker compose up -d --build
 | 👁️ 测试   | test   | 123456   | 只读权限，仅供查看数据   |
 
 > ⚠️ **安全提醒**: 首次部署后请立即修改默认密码，生产环境务必使用强密码！
+
+## 💬 QQ 交流群
+
+<div align="center">
+
+**群号**: 1095271275
+
+![QQ 交流群二维码](./image/qrcode_1775916759595.jpg)
+
+</div>
 
 ## ❓ 常见问题
 
