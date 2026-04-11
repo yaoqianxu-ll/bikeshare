@@ -63,6 +63,11 @@ spring:
       timeout: 5s
   cache:
     type: redis
+  ai:
+    openai:
+      base-url: https://api.siliconflow.cn/v1
+      api-key: ${SILICONFLOW_API_KEY:sk-vwkjyjdneikbthnrgejieargpdfqztnwurwlttrylqrbqazc}
+      model: Pro/deepseek-ai/DeepSeek-V3.2
 
 
 mybatis-plus:
