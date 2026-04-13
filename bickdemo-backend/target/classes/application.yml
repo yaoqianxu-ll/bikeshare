@@ -65,9 +65,12 @@ spring:
     type: redis
   ai:
     openai:
-      base-url: https://api.siliconflow.cn/v1
-      api-key: ${SILICONFLOW_API_KEY:sk-vwkjyjdneikbthnrgejieargpdfqztnwurwlttrylqrbqazc}
-      model: Pro/deepseek-ai/DeepSeek-V3.2
+      base-url: https://api.siliconflow.cn
+      api-key: ${SILICONFLOW_API_KEY:change-me-db-password}
+      chat:
+        options:
+          model: ${SPRING_AI_OPENAI_CHAT_OPTIONS_MODEL:Pro/deepseek-ai/DeepSeek-V3.2}
+          temperature: ${SPRING_AI_OPENAI_CHAT_OPTIONS_TEMPERATURE:0.7}
 
 
 mybatis-plus:

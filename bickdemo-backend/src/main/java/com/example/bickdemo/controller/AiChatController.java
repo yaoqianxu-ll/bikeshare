@@ -2,7 +2,6 @@ package com.example.bickdemo.controller;
 
 import com.example.bickdemo.service.AiChatService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
@@ -23,11 +22,13 @@ public class AiChatController {
     /**
      * 流式对话接口
      */
-    @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PostMapping(value = "/chat", produces = "text/plain;charset=UTF-8")
     public Flux<String> chat(@RequestBody Map<String, Object> request) {
         String message = (String) request.get("message");
         @SuppressWarnings("unchecked")
         java.util.List<Map<String, String>> historyList = (java.util.List<Map<String, String>>) request.get("history");
+
+        log.info("AI 对话请求: {}", message);
 
         // 转换历史消息为 JSON 格式
         String historyJson = null;
@@ -45,7 +46,6 @@ public class AiChatController {
             historyJson = sb.toString();
         }
 
-        log.info("AI 对话请求: {}", message);
         return aiChatService.chatStream(message, historyJson);
     }
 }

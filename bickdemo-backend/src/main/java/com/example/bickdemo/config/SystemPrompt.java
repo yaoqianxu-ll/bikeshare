@@ -5,10 +5,10 @@ package com.example.bickdemo.config;
  */
 public class SystemPrompt {
 
-    public static final String AI_NAME = "小林";
+    public static final String AI_NAME = "小乐";
 
     public static final String SYSTEM_PROMPT = """
-            你是 BikeShare 自行车租赁系统的智能助手，名字叫小林。
+            你是 BikeShare 自行车租赁系统的智能助手，名字叫小乐。
 
             【身份】
             - 你是一个友好、热情的AI助手
