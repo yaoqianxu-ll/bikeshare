@@ -165,15 +165,14 @@ public class VipOrderServiceImpl implements VipOrderService {
             message.put("orderNo", orderNo);
             message.put("sendTime", System.currentTimeMillis());
 
-            // 发送延迟消息（用于尝试延迟处理订单过期）
-            // 注意：x-delay头需要RabbitMQ Delayed Message Plugin才能生效
-            // 如果插件未安装，消息会立即投递，依赖定时任务processExpiredOrders()作为兜底
+            // 发送延迟消息（设置消息TTL，消息过期后自动进入死信队列）
+            // expiration表示消息生存时间（毫秒），到期后消息进入x-dead-letter-exchange指定的死信队列
             rabbitTemplate.convertAndSend(
                     RabbitMqConfig.VIP_ORDER_EXCHANGE,
                     RabbitMqConfig.VIP_ORDER_EXPIRE_ROUTING_KEY,
                     message,
                     messagePostProcessor -> {
-                        messagePostProcessor.getMessageProperties().setHeader("x-delay", expireMinutes * 60 * 1000);
+                        messagePostProcessor.getMessageProperties().setExpiration(String.valueOf(expireMinutes * 60 * 1000));
                         return messagePostProcessor;
                     }
             );

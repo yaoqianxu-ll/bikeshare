@@ -468,7 +468,7 @@ const payStatusDesc = computed(() => {
 })
 
 // 启动倒计时
-const startCountdown = (expireTimeOrSeconds) => {
+const startCountdown = (expireTimeOrSeconds, onExpire) => {
   stopCountdown()
   if (!expireTimeOrSeconds) return
   // 如果传入的是数字（剩余秒数），直接使用；否则解析ISO时间字符串
@@ -480,11 +480,17 @@ const startCountdown = (expireTimeOrSeconds) => {
     initialSeconds = Math.floor(diff / 1000)
   }
   payCountdown.value = Math.max(0, initialSeconds)
-  if (payCountdown.value <= 0) return
+  if (payCountdown.value <= 0) {
+    // 立即触发过期回调
+    if (onExpire) onExpire()
+    return
+  }
   countdownTimer = setInterval(() => {
     payCountdown.value = Math.max(0, payCountdown.value - 1)
     if (payCountdown.value <= 0) {
       stopCountdown()
+      // 倒计时结束，触发过期回调
+      if (onExpire) onExpire()
     }
   }, 1000)
 }
@@ -513,8 +519,15 @@ const startPayStatusPolling = (orderNo) => {
         // 刷新页面数据
         await Promise.all([loadVipStatus(), loadOrders(), loadPointsBalance()])
         ElMessage.success('支付成功！VIP已开通，经验值已发放')
+      } else if (order.status === 'EXPIRED') {
+        // 订单已过期，停止轮询并刷新订单列表
+        stopPayStatusPolling()
+        stopCountdown()
+        payStatus.value = 'expired'
+        await loadOrders()
+        ElMessage.warning('订单已过期，请重新下单')
       }
-      // PENDING/CANCELLED/EXPIRED 继续轮询直到超时
+      // PENDING/CANCELLED 继续轮询
     } catch (e) {
       console.error('轮询订单状态失败', e)
     }
@@ -683,10 +696,14 @@ const handleCreateOrder = async (plan) => {
       await loadOrders()
 
       // 启动倒计时（优先使用后端返回的remainingSeconds）
+      // 仅使用remainingSeconds，避免时区解析问题
       if (res.data.remainingSeconds != null && res.data.remainingSeconds > 0) {
-        startCountdown(res.data.remainingSeconds)
-      } else if (res.data.expireTime) {
-        startCountdown(res.data.expireTime)
+        startCountdown(res.data.remainingSeconds, async () => {
+          stopPayStatusPolling()
+          await loadOrders()
+          payStatus.value = 'expired'
+          ElMessage.warning('订单已过期，请重新下单')
+        })
       }
 
       // 立即启动订单状态轮询（每3秒检测一次）
@@ -749,9 +766,12 @@ const handleRepayOrder = async (order) => {
       payDialogVisible.value = true
 
       if (newRes.data.remainingSeconds != null && newRes.data.remainingSeconds > 0) {
-        startCountdown(newRes.data.remainingSeconds)
-      } else if (newRes.data.expireTime) {
-        startCountdown(newRes.data.expireTime)
+        startCountdown(newRes.data.remainingSeconds, async () => {
+          stopPayStatusPolling()
+          await loadOrders()
+          payStatus.value = 'expired'
+          ElMessage.warning('订单已过期，请重新下单')
+        })
       }
       startPayStatusPolling(newRes.data.orderNo)
 
@@ -773,9 +793,12 @@ const handleRepayOrder = async (order) => {
       payDialogVisible.value = true
 
       if (existingOrder.remainingSeconds != null && existingOrder.remainingSeconds > 0) {
-        startCountdown(existingOrder.remainingSeconds)
-      } else if (existingOrder.expireTime) {
-        startCountdown(existingOrder.expireTime)
+        startCountdown(existingOrder.remainingSeconds, async () => {
+          stopPayStatusPolling()
+          await loadOrders()
+          payStatus.value = 'expired'
+          ElMessage.warning('订单已过期，请重新下单')
+        })
       }
       startPayStatusPolling(existingOrder.orderNo)
 
