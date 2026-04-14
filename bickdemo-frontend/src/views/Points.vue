@@ -63,19 +63,6 @@
           <p class="section-desc">支付成功后立即生效，解锁全部会员特权</p>
         </div>
 
-        <!-- VIP用户提示 -->
-        <div class="vip-notice" v-if="vipStatus?.isVip">
-          <div class="notice-card notice-card--cash">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 10h20M6 14h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <span>续费功能暂未开发</span>
-          </div>
-          <div class="notice-card notice-card--points">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="1.5"/></svg>
-            <span>积分功能暂未开发</span>
-          </div>
-        </div>
-
-        <div class="plans-showcase" v-else>
           <!-- 购买方式切换 -->
           <div class="purchase-tabs">
             <button class="tab-btn" :class="{ active: purchaseMode === 'cash' }" @click="purchaseMode = 'cash'">
