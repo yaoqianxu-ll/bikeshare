@@ -476,6 +476,8 @@ const startCountdown = (expireTimeOrSeconds) => {
     payCountdown.value = Math.max(0, payCountdown.value - 1)
     if (payCountdown.value <= 0) {
       stopCountdown()
+      stopPayStatusPolling()
+      payStatus.value = 'expired'
     }
   }, 1000)
 }
@@ -1700,12 +1702,10 @@ onUnmounted(() => {
   transition: all 0.2s ease;
 
   &.btn-cancel {
-    background: rgba(239, 68, 68, 0.25);
-    color: #ffffff;
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--vip-danger);
 
-    &:hover { background: rgba(239, 68, 68, 0.4); }
-
-    span { color: #ffffff; }
+    &:hover { background: rgba(239, 68, 68, 0.25); }
   }
 
   &.btn-repay {
@@ -2255,15 +2255,12 @@ onUnmounted(() => {
       &[type="danger"] {
         background: rgba(239, 68, 68, 0.25);
         border-color: rgba(239, 68, 68, 0.5);
-        color: #ffffff;
+        color: #ef4444;
+        font-weight: 700;
 
         &:hover {
           background: rgba(239, 68, 68, 0.4);
           border-color: rgba(239, 68, 68, 0.7);
-        }
-
-        span {
-          color: #ffffff;
         }
       }
     }
