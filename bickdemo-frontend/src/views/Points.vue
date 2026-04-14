@@ -1700,10 +1700,12 @@ onUnmounted(() => {
   transition: all 0.2s ease;
 
   &.btn-cancel {
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--vip-danger);
+    background: rgba(239, 68, 68, 0.25);
+    color: #ffffff;
 
-    &:hover { background: rgba(239, 68, 68, 0.25); }
+    &:hover { background: rgba(239, 68, 68, 0.4); }
+
+    span { color: #ffffff; }
   }
 
   &.btn-repay {
