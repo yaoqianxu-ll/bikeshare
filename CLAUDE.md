@@ -309,6 +309,13 @@ examples:
   docs(api): update endpoint documentation
 ```
 
+**必须使用中文撰写 commit 信息**，示例：
+```
+feat(auth): 添加邮箱登录支持
+fix(rental): 修正位置校验逻辑
+docs(api): 更新接口文档
+```
+
 ### PR 流程
 1. 从 `main` 创建功能分支
 2. 完成后发起 PR
