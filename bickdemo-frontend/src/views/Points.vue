@@ -291,8 +291,8 @@
         <p>确定要取消该订单吗？取消后可以重新下单。</p>
       </div>
       <template #footer>
-        <el-button @click="cancelDialogVisible = false">不取消</el-button>
-        <el-button type="danger" @click="handleCancelConfirmed">确认取消</el-button>
+        <el-button class="btn-cancel" @click="cancelDialogVisible = false">不取消</el-button>
+        <el-button class="btn-action btn-cancel" @click="handleCancelConfirmed">确认取消</el-button>
       </template>
     </el-dialog>
 

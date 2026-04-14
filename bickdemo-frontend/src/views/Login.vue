@@ -675,7 +675,7 @@ onMounted(() => {
 
 .captcha-img {
   height: 46px;
-  width: 100px;
+  width: 140px;
   border-radius: 10px;
   object-fit: cover;
   cursor: pointer;

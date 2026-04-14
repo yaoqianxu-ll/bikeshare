@@ -28,7 +28,7 @@ public class CaptchaService {
 
     private static final String CAPTCHA_KEY_PREFIX = "captcha:";
     private static final int LENGTH = 4;
-    private static final int WIDTH = 120;
+    private static final int WIDTH = 140;
     private static final int HEIGHT = 40;
     private static final int EXPIRE_SECONDS = 180; // 3分钟过期
 
@@ -114,7 +114,7 @@ public class CaptchaService {
         // 绘制字符
         ThreadLocalRandom random = ThreadLocalRandom.current();
         for (int i = 0; i < code.length(); i++) {
-            int x = 15 + i * 25;
+            int x = 18 + i * 28;
             int y = 28;
 
             // 随机颜色
@@ -124,8 +124,8 @@ public class CaptchaService {
                     50 + random.nextInt(100)
             ));
 
-            // 随机旋转
-            double angle = (random.nextDouble() - 0.5) * 0.3;
+            // 随机旋转（减小角度防止字符超出边界）
+            double angle = (random.nextDouble() - 0.5) * 0.2;
             g.rotate(angle, x, y);
 
             g.drawString(String.valueOf(code.charAt(i)), x, y);
