@@ -2253,12 +2253,15 @@ onUnmounted(() => {
       &[type="danger"] {
         background: rgba(239, 68, 68, 0.25);
         border-color: rgba(239, 68, 68, 0.5);
-        color: #ef4444;
-        font-weight: 700;
+        color: #ffffff;
 
         &:hover {
           background: rgba(239, 68, 68, 0.4);
           border-color: rgba(239, 68, 68, 0.7);
+        }
+
+        span {
+          color: #ffffff;
         }
       }
     }
