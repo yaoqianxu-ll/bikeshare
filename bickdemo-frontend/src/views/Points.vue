@@ -40,7 +40,7 @@
             <div class="card-body">
               <span class="card-label">VIP会员</span>
               <strong class="card-value" :class="vipStatus?.isVip ? 'card-value--active' : 'card-value--muted'">
-                {{ vipStatus?.isVip ? 'VIP' + vipStatus.currentLevel : (vipStatus ? '已过期' : '未开通') }}
+                {{ vipStatus?.isVip ? 'VIP' + vipStatus.currentLevel : (vipStatus?.vipExpireTime ? '已过期' : '未开通') }}
               </strong>
               <span class="card-meta">{{ vipExpireText }}</span>
             </div>
@@ -63,6 +63,7 @@
           <p class="section-desc">支付成功后立即生效，解锁全部会员特权</p>
         </div>
 
+        <div class="plans-showcase">
           <!-- 购买方式切换 -->
           <div class="purchase-tabs">
             <button class="tab-btn" :class="{ active: purchaseMode === 'cash' }" @click="purchaseMode = 'cash'">
@@ -126,6 +127,7 @@
               <span v-else>{{ vipStatus?.isVip ? '立即续费' : '立即开通' }}</span>
             </button>
           </div>
+        </div>
 
         <!-- 沙箱账号提示 -->
         <div class="alipay-hint">
