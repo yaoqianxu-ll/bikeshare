@@ -161,7 +161,7 @@
                     <span class="order-status" :class="'status-' + (order.status || '').toLowerCase()">
                       {{ orderStatusText(order.status) }}
                     </span>
-                    <div class="order-actions" v-if="order.status === 'PENDING'">
+                    <div class="order-actions" v-if="isOrderPayable(order)">
                       <button class="btn-action btn-cancel" @click="handleCancelOrder(order)">取消订单</button>
                       <button class="btn-action btn-repay" @click="handleRepayOrder(order)">去支付</button>
                     </div>
@@ -722,11 +722,19 @@ const handleRepayOrder = async (order) => {
       return
     }
 
-    // 检查原订单是否已过期（超过15分钟）
-    const expired = existingOrder.expireTime && new Date(existingOrder.expireTime) < new Date()
+    // 检查原订单是否已过期（超过15分钟或状态为EXPIRED）
+    const expired = existingOrder.status === 'EXPIRED'
+      || (existingOrder.expireTime && new Date(existingOrder.expireTime) <= new Date())
+      || (existingOrder.remainingSeconds != null && existingOrder.remainingSeconds <= 0)
 
-    if (expired || !existingOrder.payUrl) {
-      // 原订单已过期或无支付链接，创建新订单（旧订单由后端定时任务标记为EXPIRED）
+    if (expired) {
+      ElMessage.warning('订单已过期，请重新下单')
+      await loadOrders()
+      return
+    }
+
+    if (!existingOrder.payUrl) {
+      // 原订单无支付链接，创建新订单
       const newRes = await createVipOrder({ packageType: order.packageType })
       if (!newRes.data) return
 
@@ -894,6 +902,14 @@ const getPackageName = (type) => {
 const orderStatusText = (status) => {
   const map = { PAID: '已支付', PENDING: '待支付', CANCELLED: '已取消', EXPIRED: '已过期' }
   return map[status] || status || '未知'
+}
+
+// 订单是否可支付：状态为PENDING且未过期
+const isOrderPayable = (order) => {
+  if (!order) return false
+  if (order.status !== 'PENDING') return false
+  if (order.expireTime && new Date(order.expireTime) <= new Date()) return false
+  return true
 }
 
 const formatDate = (time) => {
