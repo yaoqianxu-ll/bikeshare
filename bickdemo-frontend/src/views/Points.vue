@@ -250,6 +250,7 @@
             <span v-if="payStatus === 'checking'" class="icon-spin">⟳</span>
             <span v-else-if="payStatus === 'success'" class="icon-check">✓</span>
             <span v-else-if="payStatus === 'failed'" class="icon-x">✕</span>
+            <span v-else-if="payStatus === 'expired'" class="icon-expired">⏰</span>
             <span v-else class="icon-wait">◐</span>
           </div>
           <div class="pay-status-text">
@@ -275,7 +276,7 @@
         <div class="pay-dialog-footer">
           <el-button v-if="payStatus === 'pending'" type="danger" @click="handleCancelOrderInDialog">取消订单</el-button>
           <div class="pay-dialog-footer-right">
-            <el-button v-if="payStatus === 'success' || payStatus === 'failed'" type="primary" @click="handlePayDialogClose">确定</el-button>
+            <el-button v-if="payStatus === 'success' || payStatus === 'failed' || payStatus === 'expired'" type="primary" @click="handlePayDialogClose">确定</el-button>
             <el-button v-if="payStatus === 'pending'" @click="handlePayDialogClose">关闭</el-button>
           </div>
         </div>
@@ -2034,6 +2035,13 @@ onUnmounted(() => {
     .pay-status-icon { color: #3b82f6; }
   }
 
+  &.pay-status-expired {
+    background: rgba(245, 158, 11, 0.07);
+    border-color: rgba(245, 158, 11, 0.2);
+
+    .pay-status-icon { color: var(--vip-warning); }
+  }
+
   .pay-status-icon {
     font-size: 24px;
     width: 44px;
@@ -2241,12 +2249,14 @@ onUnmounted(() => {
 
       &--danger,
       &[type="danger"] {
-        background: rgba(239, 68, 68, 0.12);
-        border-color: rgba(239, 68, 68, 0.25);
-        color: var(--vip-danger);
+        background: rgba(239, 68, 68, 0.25);
+        border-color: rgba(239, 68, 68, 0.5);
+        color: #ef4444;
+        font-weight: 700;
 
         &:hover {
-          background: rgba(239, 68, 68, 0.2);
+          background: rgba(239, 68, 68, 0.4);
+          border-color: rgba(239, 68, 68, 0.7);
         }
       }
     }
