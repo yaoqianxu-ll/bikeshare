@@ -122,11 +122,10 @@
               :disabled="purchaseLoading"
               @click.stop="handlePurchase(plan)">
               <span v-if="purchaseLoading && selectedPlanCode === plan.type">处理中...</span>
-              <span v-else-if="purchaseMode === 'points'">积分兑换</span>
-              <span v-else>立即开通</span>
+              <span v-else-if="purchaseMode === 'points'">{{ vipStatus?.isVip ? '积分续费' : '积分兑换' }}</span>
+              <span v-else>{{ vipStatus?.isVip ? '立即续费' : '立即开通' }}</span>
             </button>
           </div>
-        </div>
 
         <!-- 沙箱账号提示 -->
         <div class="alipay-hint">
@@ -404,7 +403,7 @@ const payCountdownText = computed(() => {
 })
 
 const payDialogTitle = computed(() => {
-  const map = { pending: '完成支付', checking: '支付检测中', success: '支付成功', failed: '支付失败' }
+  const map = { pending: '完成支付', checking: '支付检测中', success: '支付成功', failed: '支付失败', expired: '订单已过期' }
   return map[payStatus.value] || '完成支付'
 })
 
@@ -439,7 +438,8 @@ const payStatusText = computed(() => {
     pending: '等待支付',
     checking: '正在检测支付结果',
     success: '支付成功',
-    failed: '支付失败'
+    failed: '支付失败',
+    expired: '订单已过期'
   }
   return map[payStatus.value] || ''
 })
@@ -449,7 +449,8 @@ const payStatusDesc = computed(() => {
     pending: '请在支付宝页面完成支付，支付成功后状态自动更新',
     checking: '正在核对订单状态，请稍候...',
     success: 'VIP会员已开通，经验值已发放',
-    failed: '未检测到支付记录，请确认是否已完成支付'
+    failed: '未检测到支付记录，请确认是否已完成支付',
+    expired: '订单已过期，请重新下单'
   }
   return map[payStatus.value] || ''
 })
