@@ -478,6 +478,7 @@ const startCountdown = (expireTimeOrSeconds) => {
       stopCountdown()
       stopPayStatusPolling()
       payStatus.value = 'expired'
+      loadOrders()
     }
   }, 1000)
 }
