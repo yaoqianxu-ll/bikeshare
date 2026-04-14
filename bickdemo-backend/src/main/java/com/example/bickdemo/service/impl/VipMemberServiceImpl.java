@@ -46,9 +46,6 @@ public class VipMemberServiceImpl extends ServiceImpl<VipMemberMapper, VipMember
         LocalDateTime now = LocalDateTime.now();
         VipMember vipMember = getVipMemberByUserId(userId);
 
-        Date startTime = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
-        Date expireTime = Date.from(now.plusDays(days).atZone(ZoneId.systemDefault()).toInstant());
-
         if (vipMember == null) {
             // 首次开通
             vipMember = new VipMember();
@@ -60,30 +57,29 @@ public class VipMemberServiceImpl extends ServiceImpl<VipMemberMapper, VipMember
             vipMember.setCreateTime(now); // 显式设置创建时间
             vipMember.setUpdateTime(now);
             vipMemberMapper.insert(vipMember);
+            syncUserVipFields(userId, now.plusDays(days));
         } else {
             // 续期：判断当前是否有效，有效则从当前到期时间延长，无效则从当前时间开始
-            Date currentExpireTime = vipMember.getExpireTime() != null
-                    ? Date.from(vipMember.getExpireTime().atZone(ZoneId.systemDefault()).toInstant())
-                    : null;
+            LocalDateTime currentExpireTime = vipMember.getExpireTime();
 
-            if (currentExpireTime != null && currentExpireTime.after(new Date()) && VipMemberStatus.ACTIVE.name().equals(vipMember.getStatus())) {
+            LocalDateTime newExpireTime;
+            if (currentExpireTime != null && currentExpireTime.isAfter(now) && VipMemberStatus.ACTIVE.name().equals(vipMember.getStatus())) {
                 // 当前VIP有效，从当前到期时间延长
-                expireTime = Date.from(vipMember.getExpireTime().plusDays(days).atZone(ZoneId.systemDefault()).toInstant());
+                newExpireTime = vipMember.getExpireTime().plusDays(days);
             } else {
                 // 当前VIP已过期或不存在，从当前时间开始
-                startTime = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
-                expireTime = Date.from(now.plusDays(days).atZone(ZoneId.systemDefault()).toInstant());
+                newExpireTime = now.plusDays(days);
             }
 
             vipMember.setStatus(VipMemberStatus.ACTIVE.name());
-            vipMember.setStartTime(now);
-            vipMember.setExpireTime(now.plusDays(days));
+            vipMember.setExpireTime(newExpireTime);
             vipMember.setLastOrderNo(orderNo);
+            vipMember.setUpdateTime(now);
             vipMemberMapper.updateById(vipMember);
-        }
 
-        // 同步更新User表的VIP相关字段
-        syncUserVipFields(userId, now.plusDays(days));
+            // 同步更新User表的VIP相关字段
+            syncUserVipFields(userId, newExpireTime);
+        }
     }
 
     @Override
