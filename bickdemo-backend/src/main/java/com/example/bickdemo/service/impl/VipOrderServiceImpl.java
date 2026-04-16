@@ -165,14 +165,14 @@ public class VipOrderServiceImpl implements VipOrderService {
             message.put("orderNo", orderNo);
             message.put("sendTime", System.currentTimeMillis());
 
-            // 发送延迟消息
-            // x-delay header指定延迟时间（毫秒）
+            // 发送延迟消息（设置消息TTL，消息过期后自动进入死信队列）
+            // expiration表示消息生存时间（毫秒），到期后消息进入x-dead-letter-exchange指定的死信队列
             rabbitTemplate.convertAndSend(
                     RabbitMqConfig.VIP_ORDER_EXCHANGE,
                     RabbitMqConfig.VIP_ORDER_EXPIRE_ROUTING_KEY,
                     message,
                     messagePostProcessor -> {
-                        messagePostProcessor.getMessageProperties().setHeader("x-delay", expireMinutes * 60 * 1000);
+                        messagePostProcessor.getMessageProperties().setExpiration(String.valueOf(expireMinutes * 60 * 1000));
                         return messagePostProcessor;
                     }
             );
@@ -367,10 +367,13 @@ public class VipOrderServiceImpl implements VipOrderService {
      * 定时处理过期订单
      * 作为RabbitMQ延迟消息的兜底方案，每分钟执行一次
      * 查询所有待支付且已过期的订单并标记为过期状态
+     * 注意：如果RabbitMQ Delayed Message Plugin未安装，则此定时任务为主要的订单过期处理机制
      */
     @Scheduled(fixedRate = 60000) // 每分钟执行
     @Override
     public void processExpiredOrders() {
+        log.info("[VIP订单过期检查] 开始执行，当前服务器时间: {}", LocalDateTime.now());
+
         // 查询所有待支付且已过期的订单
         List<VipOrder> expiredOrders = vipOrderMapper.selectList(
                 new LambdaQueryWrapper<VipOrder>()
@@ -378,17 +381,22 @@ public class VipOrderServiceImpl implements VipOrderService {
                         .lt(VipOrder::getExpireTime, LocalDateTime.now())
         );
 
+        log.info("[VIP订单过期检查] 查询到 {} 个待处理过期订单", expiredOrders.size());
+
         // 遍历处理每个过期订单
         for (VipOrder order : expiredOrders) {
             try {
+                log.info("[VIP订单过期检查] 准备过期订单: orderNo={}, expireTime={}, 当前时间={}",
+                        order.getOrderNo(), order.getExpireTime(), LocalDateTime.now());
                 markOrderExpired(order.getOrderNo());
+                log.info("[VIP订单过期检查] 订单已标记过期: orderNo={}", order.getOrderNo());
             } catch (Exception e) {
-                log.error("处理过期订单失败: orderNo={}", order.getOrderNo(), e);
+                log.error("[VIP订单过期检查] 处理过期订单失败: orderNo={}", order.getOrderNo(), e);
             }
         }
 
         if (!expiredOrders.isEmpty()) {
-            log.info("处理了 {} 个过期订单", expiredOrders.size());
+            log.info("[VIP订单过期检查] 处理了 {} 个过期订单", expiredOrders.size());
         }
     }
 

@@ -26,12 +26,12 @@ public class VipOrderExpireListener {
 
     /**
      * 处理VIP订单过期消息
-     * 当订单创建时发送的延迟消息到期后自动触发
-     * 标记对应订单为过期状态
+     * 监听死信队列，当订单过期消息到期后自动触发
+     * 消息在VIP_ORDER_EXPIRE_QUEUE中设置TTL过期后，自动进入死信队列此处处理
      *
      * @param message 消息内容，包含orderNo订单号
      */
-    @RabbitListener(queues = RabbitMqConfig.VIP_ORDER_EXPIRE_QUEUE)
+    @RabbitListener(queues = RabbitMqConfig.VIP_ORDER_EXPIRE_QUEUE + ".dlq")
     public void handleOrderExpireMessage(Map<String, Object> message) {
         // 从消息中提取订单号
         String orderNo = (String) message.get("orderNo");

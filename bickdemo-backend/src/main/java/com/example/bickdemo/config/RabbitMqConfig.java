@@ -200,6 +200,11 @@ public class RabbitMqConfig {
     public static final String VIP_ORDER_EXPIRE_QUEUE = "vip.order.expire.queue";
     public static final String VIP_ORDER_EXPIRE_ROUTING_KEY = "vip.order.expire";
 
+    /**
+     * VIP订单交换机
+     * 注意：这里使用DirectExchange，但x-delay头需要RabbitMQ Delayed Message Plugin才能生效
+     * 如果插件未安装，消息会立即投递，依赖定时任务processExpiredOrders()作为兜底
+     */
     @Bean
     public DirectExchange vipOrderExchange() {
         return new DirectExchange(VIP_ORDER_EXCHANGE);
