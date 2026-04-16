@@ -1,16 +1,11 @@
 package com.example.bickdemo.controller;
 
 import com.example.bickdemo.service.AiChatService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.messages.Message;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
 import jakarta.annotation.Resource;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,7 +14,6 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api/ai")
-@Tag(name = "AI 客服")
 public class AiChatController {
 
     @Resource
@@ -28,30 +22,30 @@ public class AiChatController {
     /**
      * 流式对话接口
      */
-    @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    @Operation(summary = "AI 对话")
+    @PostMapping(value = "/chat", produces = "text/plain;charset=UTF-8")
     public Flux<String> chat(@RequestBody Map<String, Object> request) {
         String message = (String) request.get("message");
         @SuppressWarnings("unchecked")
-        List<Map<String, String>> historyList = (List<Map<String, String>>) request.get("history");
-
-        // 转换历史消息
-        List<Message> history = null;
-        if (historyList != null) {
-            history = historyList.stream()
-                    .map(m -> {
-                        String role = m.get("role");
-                        String content = m.get("content");
-                        if ("user".equals(role)) {
-                            return new org.springframework.ai.chat.messages.UserMessage(content);
-                        } else {
-                            return new org.springframework.ai.chat.messages.AssistantMessage(content);
-                        }
-                    })
-                    .toList();
-        }
+        java.util.List<Map<String, String>> historyList = (java.util.List<Map<String, String>>) request.get("history");
 
         log.info("AI 对话请求: {}", message);
-        return aiChatService.chatStream(message, history);
+
+        // 转换历史消息为 JSON 格式
+        String historyJson = null;
+        if (historyList != null && !historyList.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (Map<String, String> m : historyList) {
+                String role = m.get("role");
+                String content = m.get("content");
+                if (sb.length() > 0) {
+                    sb.append(",");
+                }
+                sb.append("{\"role\":\"").append(role == null ? "user" : role)
+                  .append("\",\"content\":\"").append(content == null ? "" : content.replace("\\", "\\\\").replace("\"", "\\\"")).append("\"}");
+            }
+            historyJson = sb.toString();
+        }
+
+        return aiChatService.chatStream(message, historyJson);
     }
 }

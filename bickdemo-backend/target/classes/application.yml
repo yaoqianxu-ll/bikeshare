@@ -63,6 +63,14 @@ spring:
       timeout: 5s
   cache:
     type: redis
+  ai:
+    openai:
+      base-url: https://api.siliconflow.cn
+      api-key: ${SILICONFLOW_API_KEY:}
+      chat:
+        options:
+          model: ${SPRING_AI_OPENAI_CHAT_OPTIONS_MODEL:Pro/deepseek-ai/DeepSeek-V3.2}
+          temperature: ${SPRING_AI_OPENAI_CHAT_OPTIONS_TEMPERATURE:0.7}
 
 
 mybatis-plus:

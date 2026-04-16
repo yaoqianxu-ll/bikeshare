@@ -300,6 +300,12 @@
       </div>
     </main>
 
+    <!-- AI聊天按钮 -->
+    <AiChatButton :is-open="aiChatOpen" @click="aiChatOpen = !aiChatOpen" />
+
+    <!-- AI聊天对话框 -->
+    <AiChatDialog :visible="aiChatOpen" @close="aiChatOpen = false" />
+
     <!-- 底部 -->
     <footer class="app-footer">
       <p>© 2026 BikeShare · 城市骑行计划</p>
@@ -325,6 +331,8 @@ import { getContacts } from '@/api/social'
 import { getVipStatus } from '@/api/vip'
 import { createChatSocket } from '@/utils/chatSocket'
 import ThemeToggle from '@/components/ThemeToggle.vue'
+import AiChatButton from '@/components/AiChatButton.vue'
+import AiChatDialog from '@/components/AiChatDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -336,6 +344,7 @@ const rentalStore = useRentalStore()
 const message = useMessage()
 const navOpen = ref(false)
 const showBgSelector = ref(false)
+const aiChatOpen = ref(false)
 const selectedBgId = ref(null)
 const backgrounds = ref([])
 const bgLoaded = ref(false)
