@@ -38,7 +38,9 @@ public class BickdemoApplication implements CommandLineRunner {
         String[] beanNames = applicationContext.getBeanDefinitionNames();
         boolean hasPointsListener = Arrays.stream(beanNames).anyMatch(name -> name.toLowerCase().contains("pointslistener"));
         boolean hasPointsService = Arrays.stream(beanNames).anyMatch(name -> name.toLowerCase().contains("pointsservice"));
+        boolean hasRabbitListenerProcessor = Arrays.stream(beanNames).anyMatch(name -> name.contains("RabbitListenerAnnotationBeanPostProcessor"));
         log.info("[Bean检查] PointsListener Bean 存在: {}", hasPointsListener);
         log.info("[Bean检查] PointsService Bean 存在: {}", hasPointsService);
+        log.info("[Bean检查] RabbitListenerAnnotationBeanPostProcessor Bean 存在: {}", hasRabbitListenerProcessor);
     }
 }
