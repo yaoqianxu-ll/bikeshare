@@ -80,7 +80,9 @@ request.interceptors.response.use(
               path: '/login',
               query: currentPath && currentPath !== '/login' ? { redirect: currentPath } : undefined
             })
-            authExpiredHandling = false
+            setTimeout(() => {
+              authExpiredHandling = false
+            }, 3000)
           }
         }
       } else if (status === 400) {

@@ -2,6 +2,8 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 
+let authExpiredHandling = false
+
 const request = axios.create({
   baseURL: '/api',
   timeout: 10000
@@ -35,8 +37,8 @@ request.interceptors.response.use(
         const isLoginPage = window.location.pathname === '/login'
         if (isLoginPage) {
           ElMessage.error(data?.message || '用户名或密码错误')
-        } else {
-          // 其他页面则跳转登录
+        } else if (!authExpiredHandling) {
+          authExpiredHandling = true
           const authStore = useAuthStore()
           authStore.logout()
           ElMessage.error(data?.message || '登录已过期，请重新登录')
