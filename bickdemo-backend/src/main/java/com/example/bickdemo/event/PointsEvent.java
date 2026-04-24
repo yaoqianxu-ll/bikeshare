@@ -2,6 +2,7 @@ package com.example.bickdemo.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 积分事件
