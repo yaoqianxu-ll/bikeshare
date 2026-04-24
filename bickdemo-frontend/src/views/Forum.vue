@@ -214,7 +214,8 @@
               </div>
 
               <h3 class="post-title">{{ post.title }}</h3>
-              <div v-if="getImageUrls(post).length" class="post-image-grid" @click.stop>
+              <!-- 图片默认折叠，展开全文后才显示 -->
+              <div v-if="getImageUrls(post).length && expandedPosts.has(post.id)" class="post-image-grid" @click.stop>
                 <div
                   v-for="(imageUrl, index) in getPreviewImages(post, 3)"
                   :key="`${post.id}-${index}`"
@@ -233,7 +234,23 @@
                   </div>
                 </div>
               </div>
-              <p class="post-content">{{ getExcerpt(post.content, 180) }}</p>
+              <!-- 帖子内容区域：超过180字符可展开折叠 -->
+              <div class="post-content-wrapper" @click.stop>
+                <p
+                  class="post-content"
+                  :class="{ 'is-expanded': expandedPosts.has(post.id) }"
+                >
+                  {{ expandedPosts.has(post.id) ? post.content : getExcerpt(post.content, 180) }}
+                </p>
+                <button
+                  v-if="(post.content && String(post.content).length > 180) || getImageUrls(post).length"
+                  type="button"
+                  class="expand-btn"
+                  @click.stop="toggleExpand(post.id)"
+                >
+                  {{ expandedPosts.has(post.id) ? '收起' : (getImageUrls(post).length ? '展开全文（含图片）' : '展开全文') }}
+                </button>
+              </div>
 
               <div class="post-stats">
                 <span class="stat-pill">
@@ -801,6 +818,7 @@ const friendActionLoading = ref(false)
 const searchKeyword = ref('')
 const total = ref(0)
 const posts = ref([])
+const expandedPosts = ref(new Set())
 const pendingPosts = ref([])
 const hotPosts = ref([])
 const myPosts = ref([])
@@ -1358,6 +1376,16 @@ const ensurePostInteractive = (post, action) => {
 
 const getInitial = (name) => {
   return String(name || '?').trim().charAt(0).toUpperCase() || '?'
+}
+
+const toggleExpand = (postId) => {
+  const next = new Set(expandedPosts.value)
+  if (next.has(postId)) {
+    next.delete(postId)
+  } else {
+    next.add(postId)
+  }
+  expandedPosts.value = next
 }
 
 const getExcerpt = (content, max = 160) => {
@@ -2178,10 +2206,39 @@ onMounted(() => {
   word-break: break-word;
 }
 
+.post-content-wrapper {
+  margin-top: 10px;
+}
+
 .post-content {
   margin: 0;
   color: var(--bs-muted);
   line-height: 1.8;
+}
+
+.post-content.is-expanded {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.expand-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--bs-stroke);
+  background: #f9fafb;
+  color: var(--el-color-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.expand-btn:hover {
+  background: rgba(var(--brand-primary-rgb), 0.10);
+  border-color: rgba(var(--brand-primary-rgb), 0.30);
 }
 
 .post-stats,
@@ -3235,6 +3292,16 @@ html.dark .post-content {
   color: #cbd5e1;
 }
 
+html.dark .expand-btn {
+  background: rgba(30, 41, 59, 0.70);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: var(--el-color-primary);
+}
+
+html.dark .expand-btn:hover {
+  background: rgba(var(--brand-primary-rgb), 0.15);
+}
+
 html.dark .post-stats,
 html.dark .detail-stats {
   color: #94a3b8;
@@ -3557,7 +3624,7 @@ html.dark .comment-size-trigger:hover {
 /* 详情抽屉 */
 html.dark :deep(.post-detail-drawer .el-drawer__body),
 html.dark :deep(.author-profile-drawer .el-drawer__body) {
-  background: rgba(15, 23, 42, 0.80);
+  background: #0f172a;
 }
 
 html.dark .detail-title {
@@ -3705,7 +3772,7 @@ html.dark :deep(.el-descriptions-item__cell) {
 
 /* Element Plus 抽屉黑夜模式 */
 html.dark :deep(.el-drawer) {
-  background: rgba(15, 23, 42, 0.98);
+  background: #0f172a;
 }
 
 /* Element Plus 头像黑夜模式 */
@@ -3746,5 +3813,18 @@ html.dark :deep(.el-loading-mask) {
 /* Element Plus 空状态黑夜模式 */
 html.dark :deep(.el-empty__description) {
   color: #64748b;
+}
+</style>
+
+<!-- Drawer 通过 teleport 挂载到 body，scoped 样式无法穿透，需用全局样式覆盖 -->
+<style>
+html.dark .post-detail-drawer.el-drawer,
+html.dark .author-profile-drawer.el-drawer {
+  background: #0f172a;
+}
+
+html.dark .post-detail-drawer.el-drawer .el-drawer__body,
+html.dark .author-profile-drawer.el-drawer .el-drawer__body {
+  background: #0f172a;
 }
 </style>

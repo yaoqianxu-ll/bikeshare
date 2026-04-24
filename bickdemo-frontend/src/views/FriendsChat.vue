@@ -2729,11 +2729,6 @@ html.dark .request-notice {
   background: #3d3d00;
 }
 
-/* 深色模式 - 好友资料 */
-html.dark .profile-drawer :deep(.el-drawer__body) {
-  background: #0a0a0a;
-}
-
 html.dark .profile-header,
 html.dark .profile-card,
 html.dark .profile-section {
@@ -2876,5 +2871,16 @@ html.dark .recall-time {
 
 html.dark .recall-notice :deep(.el-button) {
   color: #6aa8ff !important;
+}
+</style>
+
+<!-- Drawer 通过 teleport 挂载到 body，需用全局样式覆盖 -->
+<style>
+html.dark .profile-drawer.el-drawer {
+  background: #0f172a;
+}
+
+html.dark .profile-drawer.el-drawer .el-drawer__body {
+  background: #0f172a;
 }
 </style>

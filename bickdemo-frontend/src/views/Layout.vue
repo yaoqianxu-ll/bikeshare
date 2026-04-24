@@ -28,6 +28,7 @@
       title="选择背景图片"
       :size="bgDrawerSize"
       :with-header="true"
+      class="bg-selector-drawer"
     >
       <div class="bg-selector">
         <p class="selector-title">点击选择背景</p>
@@ -2036,5 +2037,16 @@ html.dark .mobile-account-link-logout:hover {
 
 :deep(.el-dropdown) {
   outline: none;
+}
+</style>
+
+<!-- Drawer 通过 teleport 挂载到 body，需用全局样式覆盖 -->
+<style>
+html.dark .bg-selector-drawer.el-drawer {
+  background: #0f172a;
+}
+
+html.dark .bg-selector-drawer.el-drawer .el-drawer__body {
+  background: #0f172a;
 }
 </style>
