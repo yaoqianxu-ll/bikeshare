@@ -22,12 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import jakarta.annotation.PostConstruct;
-import org.springframework.amqp.rabbit.annotation.RabbitListenerAnnotationBeanPostProcessor;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.EventListener;
 
 /**
  * RabbitMQ 配置。
@@ -40,13 +35,6 @@ import org.springframework.context.event.EventListener;
 public class RabbitMqConfig {
 
     private final ConnectionFactory connectionFactory;
-    private final RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
-
-    @Bean(name = "org.springframework.amqp.rabbit.annotation.internalRabbitListenerAnnotationProcessor")
-    public RabbitListenerAnnotationBeanPostProcessor rabbitListenerAnnotationBeanPostProcessor() {
-        log.info("[RabbitMQ] 手动注册 RabbitListenerAnnotationBeanPostProcessor");
-        return new RabbitListenerAnnotationBeanPostProcessor();
-    }
 
     @PostConstruct
     public void initAdminExchangeAndQueue() {
