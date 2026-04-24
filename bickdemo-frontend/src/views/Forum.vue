@@ -229,7 +229,7 @@
                   class="expand-btn"
                   @click.stop="toggleExpand(post.id)"
                 >
-                  {{ expandedPosts.has(post.id) ? '收起' : (getImageUrls(post).length ? '展开全文（含图片）' : '展开全文') }}
+                  {{ expandedPosts.has(post.id) ? '收起' : (getImageUrls(post).length ? '展开图片' : '展开全文') }}
                 </button>
               </div>
 

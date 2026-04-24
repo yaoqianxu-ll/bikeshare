@@ -20,10 +20,6 @@ public class PointsEventPublisher {
     public static final String ROUTING_KEY = "points.event";
 
     public void publish(PointsEvent event) {
-        try {
-            rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY, event);
-        } catch (Exception e) {
-            log.error("发布积分事件失败: {}", event, e);
-        }
+        rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY, event);
     }
 }
