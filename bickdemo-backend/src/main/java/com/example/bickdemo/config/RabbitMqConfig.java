@@ -106,6 +106,36 @@ public class RabbitMqConfig {
         }
     }
 
+    /**
+     * 初始化积分事件交换机和队列
+     */
+    @PostConstruct
+    public void initPointsExchangeAndQueue() {
+        log.info("[RabbitMQ] Starting to declare points exchange and queue...");
+        try {
+            RabbitAdmin admin = new RabbitAdmin(connectionFactory);
+
+            // 声明积分交换机
+            admin.declareExchange(new DirectExchange(PointsEventPublisher.EXCHANGE, true, false));
+            log.info("[RabbitMQ] Points exchange declared: {}", PointsEventPublisher.EXCHANGE);
+
+            // 声明积分队列
+            admin.declareQueue(QueueBuilder.durable(PointsEventPublisher.QUEUE).build());
+            log.info("[RabbitMQ] Points queue declared: {}", PointsEventPublisher.QUEUE);
+
+            // 绑定交换机和队列
+            admin.declareBinding(BindingBuilder
+                    .bind(new Queue(PointsEventPublisher.QUEUE, true))
+                    .to(new DirectExchange(PointsEventPublisher.EXCHANGE, true, false))
+                    .with(PointsEventPublisher.ROUTING_KEY));
+            log.info("[RabbitMQ] Points binding declared");
+
+            log.info("[RabbitMQ] Points exchange and queue declared successfully");
+        } catch (Exception e) {
+            log.error("[RabbitMQ] Failed to declare points exchange/queue: {} - {}", e.getClass().getName(), e.getMessage(), e);
+        }
+    }
+
     @Bean
     public TopicExchange socialExchange() {
         return new TopicExchange(SocialMessagingConstants.SOCIAL_EXCHANGE, true, false);
