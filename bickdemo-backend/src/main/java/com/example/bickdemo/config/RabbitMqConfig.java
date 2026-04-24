@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -33,6 +34,7 @@ import org.springframework.context.event.EventListener;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
+@EnableRabbit
 public class RabbitMqConfig {
 
     private final ConnectionFactory connectionFactory;
