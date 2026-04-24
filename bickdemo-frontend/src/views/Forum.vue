@@ -214,6 +214,25 @@
               </div>
 
               <h3 class="post-title">{{ post.title }}</h3>
+
+              <!-- 帖子内容区域：超过180字符可展开折叠 -->
+              <div class="post-content-wrapper" @click.stop>
+                <p
+                  class="post-content"
+                  :class="{ 'is-expanded': expandedPosts.has(post.id) }"
+                >
+                  {{ expandedPosts.has(post.id) ? post.content : getExcerpt(post.content, 180) }}
+                </p>
+                <button
+                  v-if="(post.content && String(post.content).length > 180) || getImageUrls(post).length"
+                  type="button"
+                  class="expand-btn"
+                  @click.stop="toggleExpand(post.id)"
+                >
+                  {{ expandedPosts.has(post.id) ? '收起' : (getImageUrls(post).length ? '展开全文（含图片）' : '展开全文') }}
+                </button>
+              </div>
+
               <!-- 图片默认折叠，展开全文后才显示 -->
               <div v-if="getImageUrls(post).length && expandedPosts.has(post.id)" class="post-image-grid" @click.stop>
                 <div
@@ -233,23 +252,6 @@
                     +{{ getHiddenImageCount(post, 3) }}
                   </div>
                 </div>
-              </div>
-              <!-- 帖子内容区域：超过180字符可展开折叠 -->
-              <div class="post-content-wrapper" @click.stop>
-                <p
-                  class="post-content"
-                  :class="{ 'is-expanded': expandedPosts.has(post.id) }"
-                >
-                  {{ expandedPosts.has(post.id) ? post.content : getExcerpt(post.content, 180) }}
-                </p>
-                <button
-                  v-if="(post.content && String(post.content).length > 180) || getImageUrls(post).length"
-                  type="button"
-                  class="expand-btn"
-                  @click.stop="toggleExpand(post.id)"
-                >
-                  {{ expandedPosts.has(post.id) ? '收起' : (getImageUrls(post).length ? '展开全文（含图片）' : '展开全文') }}
-                </button>
               </div>
 
               <div class="post-stats">
