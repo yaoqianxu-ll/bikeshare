@@ -123,15 +123,15 @@ public class VipMemberServiceImpl extends ServiceImpl<VipMemberMapper, VipMember
             return;
         }
 
+        LocalDateTime now = LocalDateTime.now();
         vipMember.setStatus(VipMemberStatus.EXPIRED.name());
-        vipMember.setExpireTime(LocalDateTime.now());
+        vipMember.setExpireTime(now);
         vipMemberMapper.updateById(vipMember);
 
-        // 同步更新User表
+        // 同步更新User表：保留vipLevel以便管理端列表展示，仅更新过期时间
         User user = userMapper.selectById(userId);
         if (user != null) {
-            user.setVipLevel(0);
-            user.setVipExpireTime(null);
+            user.setVipExpireTime(now);
             userMapper.updateById(user);
         }
     }
@@ -159,11 +159,10 @@ public class VipMemberServiceImpl extends ServiceImpl<VipMemberMapper, VipMember
             member.setStatus(VipMemberStatus.EXPIRED.name());
             vipMemberMapper.updateById(member);
 
-            // 同步更新User表
+            // 同步更新User表：保留vipLevel以便列表展示，过期时间保持真实到期时间
             User user = userMapper.selectById(member.getUserId());
             if (user != null) {
-                user.setVipLevel(0);
-                user.setVipExpireTime(null);
+                user.setVipExpireTime(member.getExpireTime());
                 userMapper.updateById(user);
             }
         }
@@ -204,10 +203,13 @@ public class VipMemberServiceImpl extends ServiceImpl<VipMemberMapper, VipMember
             return;
         }
 
-        // 根据到期时间计算VIP等级（沿用现有经验值系统）
-        // 这里简化处理，实际可以按经验值计算
         int exp = user.getExperiencePoints() != null ? user.getExperiencePoints() : 0;
         int level = calculateVipLevel(exp);
+
+        // 开通VIP后等级至少为1，避免管理端调整后因vipLevel=0而消失在列表中
+        if (level <= 0 && expireTime != null && expireTime.isAfter(LocalDateTime.now())) {
+            level = 1;
+        }
 
         user.setVipLevel(level);
         user.setVipExpireTime(expireTime);

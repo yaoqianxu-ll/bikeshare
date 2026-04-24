@@ -6,6 +6,7 @@ import com.example.bickdemo.dto.VipPurchaseRequest;
 import com.example.bickdemo.dto.VipStatusResponse;
 import com.example.bickdemo.entity.User;
 import com.example.bickdemo.entity.VipBenefit;
+import com.example.bickdemo.entity.VipMember;
 import com.example.bickdemo.mapper.UserMapper;
 import com.example.bickdemo.mapper.VipBenefitMapper;
 import com.example.bickdemo.service.AdminNotificationPublisher;
@@ -56,9 +57,16 @@ public class VipServiceImpl implements VipService {
         int exp = user.getExperiencePoints() != null ? user.getExperiencePoints() : 0;
         int level = calculateVipLevel(exp);
 
+        // 以vip_member表的真实状态为准判断VIP是否有效
+        VipMember vipMember = vipMemberService.getVipMemberByUserId(userId);
+        boolean isActiveVip = vipMember != null
+                && "ACTIVE".equals(vipMember.getStatus())
+                && vipMember.getExpireTime() != null
+                && vipMember.getExpireTime().isAfter(LocalDateTime.now());
+
         response.setVipLevel(level);
         response.setVipExpireTime(user.getVipExpireTime());
-        response.setIsVip(level > 0);
+        response.setIsVip(isActiveVip);
         response.setExperiencePoints(exp);
         response.setCurrentLevel(level);
 
@@ -71,10 +79,10 @@ public class VipServiceImpl implements VipService {
             response.setExperienceToNext(nextExp - exp);
         }
 
-        // VIP权益 - VIP1及以上都有
-        response.setHasVisitorHidden(level > 0);
-        response.setHasBurnAfterRead(level > 0);
-        response.setHasSpecialCare(level > 0);
+        // VIP权益 - 仅当VIP状态有效时才有
+        response.setHasVisitorHidden(isActiveVip);
+        response.setHasBurnAfterRead(isActiveVip);
+        response.setHasSpecialCare(isActiveVip);
 
         return response;
     }
@@ -208,11 +216,14 @@ public class VipServiceImpl implements VipService {
     }
 
     private boolean isVipUser(User user) {
-        if (user == null || user.getVipLevel() == null || user.getVipLevel() == 0) {
+        if (user == null) {
             return false;
         }
-        LocalDateTime expireTime = user.getVipExpireTime();
-        return expireTime == null || expireTime.isAfter(LocalDateTime.now());
+        VipMember vipMember = vipMemberService.getVipMemberByUserId(user.getId());
+        return vipMember != null
+                && "ACTIVE".equals(vipMember.getStatus())
+                && vipMember.getExpireTime() != null
+                && vipMember.getExpireTime().isAfter(LocalDateTime.now());
     }
 
     private LocalDateTime extendVipTime(User user, int days) {

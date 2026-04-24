@@ -223,11 +223,18 @@
           </el-tag>
         </el-form-item>
         <el-form-item label="操作" prop="action">
-          <el-select v-model="adjustForm.action" placeholder="请选择操作" class="full-width">
-            <el-option label="覆盖激活" value="ACTIVATE" />
-            <el-option label="续期" value="EXTEND" />
-            <el-option label="立即过期" value="EXPIRE_NOW" />
-          </el-select>
+          <el-dropdown @command="handleActionCommand" class="full-width">
+            <el-button type="default" class="dropdown-trigger-btn">
+              {{ actionLabel }}<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="ACTIVATE">覆盖激活</el-dropdown-item>
+                <el-dropdown-item command="EXTEND">续期</el-dropdown-item>
+                <el-dropdown-item command="EXPIRE_NOW">立即过期</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </el-form-item>
         <el-form-item v-if="adjustForm.action !== 'EXPIRE_NOW'" label="天数" prop="days">
           <el-input-number v-model="adjustForm.days" :min="1" :max="3650" class="full-width" />
@@ -270,7 +277,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { getVipDashboard, getVipMembers, getVipOrders, getVipPlans, adjustVipMember, updateVipPlan } from '@/api/vip'
@@ -321,6 +328,15 @@ const adjustForm = reactive({
 const adjustRules = {
   action: [{ required: true, message: '请选择操作', trigger: 'change' }],
   days: [{ required: true, message: '请输入天数', trigger: 'blur' }]
+}
+
+const actionLabel = computed(() => {
+  const map = { ACTIVATE: '覆盖激活', EXTEND: '续期', EXPIRE_NOW: '立即过期' }
+  return map[adjustForm.action] || '请选择操作'
+})
+
+const handleActionCommand = (command) => {
+  adjustForm.action = command
 }
 
 // 套餐编辑
