@@ -22,6 +22,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 
 /**
  * RabbitMQ 配置。
@@ -33,6 +36,18 @@ import jakarta.annotation.PostConstruct;
 public class RabbitMqConfig {
 
     private final ConnectionFactory connectionFactory;
+    private final RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
+
+    @EventListener(ContextRefreshedEvent.class)
+    public void onContextRefreshed() {
+        int count = rabbitListenerEndpointRegistry.getListenerContainers().size();
+        log.info("[RabbitMQ] 已注册的监听器容器数量: {}", count);
+        rabbitListenerEndpointRegistry.getListenerContainers().forEach(c -> {
+            if (c instanceof org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer amqpContainer) {
+                log.info("[RabbitMQ] 监听器容器: queueNames={}, running={}", amqpContainer.getQueueNames(), amqpContainer.isRunning());
+            }
+        });
+    }
 
     @PostConstruct
     public void initAdminExchangeAndQueue() {
