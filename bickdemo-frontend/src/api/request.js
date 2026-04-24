@@ -3,8 +3,23 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import router from '@/router'
 
-let authExpiredHandling = false
+const AUTH_EXPIRED_KEY = 'bickdemo:authExpired'
 const VISITOR_ID_STORAGE_KEY = 'bickdemo.visitorId'
+
+function isAuthExpiredHandled() {
+  return sessionStorage.getItem(AUTH_EXPIRED_KEY) === '1'
+}
+
+function markAuthExpiredHandled() {
+  sessionStorage.setItem(AUTH_EXPIRED_KEY, '1')
+  setTimeout(() => {
+    sessionStorage.removeItem(AUTH_EXPIRED_KEY)
+  }, 10000)
+}
+
+window.addEventListener('beforeunload', () => {
+  sessionStorage.removeItem(AUTH_EXPIRED_KEY)
+})
 
 function resolveVisitorId() {
   if (typeof window === 'undefined') {
@@ -68,8 +83,8 @@ request.interceptors.response.use(
         if (isLoginRequest || onLoginPage) {
           ElMessage.error((data && data.message) || '用户名或密码错误')
         } else {
-          if (!authExpiredHandling) {
-            authExpiredHandling = true
+          if (!isAuthExpiredHandled()) {
+            markAuthExpiredHandled()
             const userStore = useUserStore()
             if (userStore.token) {
               userStore.logout()
@@ -80,10 +95,8 @@ request.interceptors.response.use(
               path: '/login',
               query: currentPath && currentPath !== '/login' ? { redirect: currentPath } : undefined
             })
-            setTimeout(() => {
-              authExpiredHandling = false
-            }, 3000)
           }
+          error.isAuthExpired = true
         }
       } else if (status === 400) {
         // 400 错误显示详细验证信息（登录相关请求由调用方自行处理错误提示）
