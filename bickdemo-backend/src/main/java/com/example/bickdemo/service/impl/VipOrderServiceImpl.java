@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * VIP订单服务实现类
@@ -34,6 +36,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class VipOrderServiceImpl implements VipOrderService {
+
+    private static final Pattern ALIPAY_FORM_ACTION_PATTERN = Pattern.compile("action=\"([^\"]+)\"");
 
     /** VIP订单Mapper */
     private final VipOrderMapper vipOrderMapper;
@@ -439,9 +443,10 @@ public class VipOrderServiceImpl implements VipOrderService {
                             returnUrl
                     );
 
-            log.info("生成支付表单成功: orderNo={}, bodyLength={}", order.getOrderNo(), response.getBody().length());
+            String payForm = normalizeAlipayFormAction(response.getBody());
+            log.info("生成支付表单成功: orderNo={}, bodyLength={}", order.getOrderNo(), payForm.length());
             // 返回HTML表单内容，前端需要渲染此HTML
-            result.put("payUrl", response.getBody());
+            result.put("payUrl", payForm);
             result.put("isHtml", true);
             return result;
         } catch (Exception e) {
@@ -455,6 +460,25 @@ public class VipOrderServiceImpl implements VipOrderService {
             log.info("支付异常，使用兜底链接: orderNo={}, url={}", order.getOrderNo(), fallbackUrl);
             return result;
         }
+    }
+
+    /**
+     * 支付宝EasySDK生成的表单action中包含未转义的&，浏览器解析HTML时会把&timestamp误当作实体。
+     * 这里只转义action属性内的参数分隔符，biz_content等隐藏字段保持SDK原始HTML编码。
+     */
+    private String normalizeAlipayFormAction(String formHtml) {
+        if (formHtml == null || formHtml.isEmpty()) {
+            return formHtml;
+        }
+
+        Matcher matcher = ALIPAY_FORM_ACTION_PATTERN.matcher(formHtml);
+        if (!matcher.find()) {
+            return formHtml;
+        }
+
+        String action = matcher.group(1);
+        String normalizedAction = action.replace("&amp;", "&").replace("&", "&amp;");
+        return matcher.replaceFirst("action=\"" + Matcher.quoteReplacement(normalizedAction) + "\"");
     }
 
     /**
