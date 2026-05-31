@@ -215,7 +215,7 @@ const validatePassword = (_rule, value, callback) => {
     return
   }
   if (!passwordPattern.test(value)) {
-    callback(new Error('密码必须为 6 位以上英文和数字组合，且不能包含其他符号'))
+    callback(new Error('密码6位以上英文和数字组合且不能包含其他符号'))
     return
   }
   callback()

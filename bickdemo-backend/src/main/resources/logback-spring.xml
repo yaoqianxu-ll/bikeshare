@@ -34,12 +34,11 @@
     </root>
 
     <!--
-      非 prod 环境保留 MyBatis SQL DEBUG，并同时输出到控制台和独立文件。
-      这样开发时既能直接看到 SQL，也能在文件里回看完整记录。
+      非 prod 环境保留 MyBatis SQL DEBUG，但只写入独立文件。
+      避免开发联调时控制台被 SQL 明细刷屏，同时保留排查问题所需的完整记录。
     -->
     <springProfile name="!prod">
         <logger name="com.example.bickdemo.mapper" level="DEBUG" additivity="false">
-            <appender-ref ref="CONSOLE"/>
             <appender-ref ref="SQL_FILE"/>
         </logger>
     </springProfile>
