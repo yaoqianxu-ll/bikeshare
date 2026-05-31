@@ -29,9 +29,13 @@ status: active
 - Frontend session auth pipeline
   - [模块卡：前端会话认证链路](docs/superpowers/memory/modules/frontend-session-auth.md)
   - [契约：前端会话过期处理](docs/superpowers/memory/contracts/frontend-session-expiry.md)
+- VIP Alipay payment pipeline
+  - [模块卡：VIP 支付宝支付链路](docs/superpowers/memory/modules/vip-alipay-payment.md)
+  - [契约：VIP 支付宝运行环境约束](docs/superpowers/memory/contracts/vip-alipay-runtime-guard.md)
 
 ## Current gaps
 
 - 后端鉴权返回格式尚未形成独立契约文档。
 - WebSocket 连接在 token 过期后的恢复策略尚未沉淀到 memory。
 - 浏览器级别的端到端回归路径暂未形成 runbook。
+- 支付退款、对账与回调字段校验的稳定 runbook 尚未沉淀。

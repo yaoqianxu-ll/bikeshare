@@ -15,6 +15,12 @@ import jakarta.annotation.PostConstruct;
 @Configuration
 public class AlipayConfig {
 
+    private final AlipayRuntimePolicy runtimePolicy;
+
+    public AlipayConfig(AlipayRuntimePolicy runtimePolicy) {
+        this.runtimePolicy = runtimePolicy;
+    }
+
     @Value("${alipay.app-id:}")
     private String appId;
 
@@ -27,15 +33,12 @@ public class AlipayConfig {
     @Value("${alipay.notify-url:}")
     private String notifyUrl;
 
-    @Value("${alipay.sandbox:false}")
-    private boolean sandbox;
-
     @PostConstruct
     public void init() {
         try {
             Config config = new Config();
             config.protocol = "https";
-            config.gatewayHost = sandbox ? "openapi-sandbox.dl.alipaydev.com" : "openapi.alipay.com";
+            config.gatewayHost = runtimePolicy.isSandbox() ? "openapi-sandbox.dl.alipaydev.com" : "openapi.alipay.com";
             config.signType = "RSA2";
             config.appId = appId;
             config.merchantPrivateKey = privateKey;
@@ -43,7 +46,11 @@ public class AlipayConfig {
             config.notifyUrl = notifyUrl;
 
             Factory.setOptions(config);
-            log.info("支付宝SDK初始化完成，运行环境: {}", sandbox ? "沙箱环境" : "生产环境");
+            if (runtimePolicy.isProductionSandboxMisconfigured()) {
+                log.error("检测到 prod 环境仍启用支付宝沙箱，请立即将 ALIPAY_SANDBOX 设置为 false");
+            }
+            log.info("支付宝SDK初始化完成，运行模式: {}, gatewayHost={}",
+                    runtimePolicy.describeRuntimeMode(), config.gatewayHost);
         } catch (Exception e) {
             log.error("支付宝SDK初始化失败: {}", e.getMessage());
         }
