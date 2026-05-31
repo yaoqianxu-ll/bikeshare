@@ -276,7 +276,10 @@
       </div>
       <template #footer>
         <div class="pay-dialog-footer">
-          <el-button v-if="payStatus === 'pending'" type="danger" @click="handleCancelOrderInDialog">取消订单</el-button>
+          <div class="pay-dialog-footer-left">
+            <el-button v-if="payStatus === 'pending'" type="danger" @click="handleCancelOrderInDialog">取消订单</el-button>
+            <el-button v-if="showSandboxPaymentFallback" type="primary" @click="handleSandboxPaymentFallback">沙箱已付款，确认开通</el-button>
+          </div>
           <div class="pay-dialog-footer-right">
             <el-button v-if="payStatus === 'success' || payStatus === 'failed' || payStatus === 'expired'" type="primary" @click="handlePayDialogClose">确定</el-button>
             <el-button v-if="payStatus === 'pending'" @click="handlePayDialogClose">关闭</el-button>
@@ -325,6 +328,7 @@ import { useUserStore } from '@/stores/user'
 import { getPointsBalance, signIn, getSignInStatus } from '@/api/points'
 import { getVipStatus, createVipOrder, getVipOrders, cancelOrder, confirmPayment, getOrderStatus, redeemVip } from '@/api/vip'
 import { submitAlipayForm } from '@/utils/alipayForm'
+import { canUseSandboxPaymentFallback } from '@/utils/vipPayment'
 
 const route = useRoute()
 const router = useRouter()
@@ -417,6 +421,11 @@ const hasPendingOrder = computed(() => {
   return orders.value.some(o => o.status === 'PENDING')
 })
 
+const showSandboxPaymentFallback = computed(() => canUseSandboxPaymentFallback({
+  payStatus: payStatus.value,
+  sandbox: payOrderData.value?.sandbox === true
+}))
+
 const paymentSuccessMessage = '支付成功！VIP已开通，经验值已发放'
 const processedPaidOrders = new Set()
 const pendingConfirmRequests = new Map()
@@ -491,6 +500,17 @@ const confirmPaidOrder = async (orderNo, tradeNo) => {
 
   pendingConfirmRequests.set(orderNo, task)
   await task
+}
+
+const handleSandboxPaymentFallback = async () => {
+  const orderNo = payOrderData.value?.orderNo
+  if (!orderNo) return
+
+  try {
+    await confirmPaidOrder(orderNo, `SANDBOX${Date.now()}`)
+  } catch (e) {
+    console.error('沙箱确认支付失败', e)
+  }
 }
 
 // 处理 popup 窗口通过 postMessage 发来的支付结果（需在 handleAlipayMessage 之前定义）
@@ -2034,6 +2054,12 @@ onUnmounted(() => {
   .pay-dialog-footer-right {
     display: flex;
     gap: 12px;
+  }
+
+  .pay-dialog-footer-left {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
   }
 
   .el-button {
