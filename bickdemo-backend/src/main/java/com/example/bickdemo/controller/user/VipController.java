@@ -12,7 +12,6 @@ import com.example.bickdemo.service.VipPlanService;
 import com.example.bickdemo.service.VipService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -46,10 +45,6 @@ public class VipController {
 
     /** 用户Mapper */
     private final UserMapper userMapper;
-
-    /** 是否使用支付宝沙箱环境 */
-    @Value("${alipay.sandbox:true}")
-    private boolean alipaySandbox;
 
     // ==================== 辅助方法 ====================
 
@@ -178,7 +173,6 @@ public class VipController {
             result.put("orderNo", order.getOrderNo());
             result.put("payUrl", payResult.get("payUrl"));
             result.put("isHtml", payResult.get("isHtml"));
-            result.put("sandbox", alipaySandbox);
             result.put("expireTime", order.getExpireTime().toString());
             // 返回剩余秒数，前端直接使用避免时区解析问题
             long remainingSeconds = java.time.Duration.between(
@@ -244,7 +238,6 @@ public class VipController {
         result.put("amount", order.getAmount());
         result.put("status", order.getStatus());
         result.put("tradeNo", order.getTradeNo());
-        result.put("sandbox", alipaySandbox);
         result.put("paidAt", order.getPaidAt());
         result.put("expireTime", order.getExpireTime());
         result.put("createdAt", order.getCreatedAt());
@@ -345,11 +338,6 @@ public class VipController {
 
         if (!"PENDING".equals(order.getStatus())) {
             return ResponseEntity.ok(ApiResponse.error(400, "订单状态不正确"));
-        }
-
-        if (!alipaySandbox) {
-            log.warn("正式环境拒绝前端直接确认支付: orderNo={}, userId={}", orderNo, userId);
-            return ResponseEntity.ok(ApiResponse.error(400, "正式环境请等待支付宝回调或订单查询确认支付"));
         }
 
         try {

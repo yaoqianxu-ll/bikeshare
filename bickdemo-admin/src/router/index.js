@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { trackSiteVisit } from '@/api/analytics'
-import { getProtectedRouteSessionState } from '@/utils/authSession'
 
 const routes = [
   {
@@ -133,16 +132,6 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  const sessionState = getProtectedRouteSessionState({
-    requiresAuth: Boolean(to.meta.requiresAuth),
-    token: authStore.token
-  })
-
-  if (sessionState === 'expired') {
-    authStore.logout()
-    next('/login')
-    return
-  }
 
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
     next('/login')

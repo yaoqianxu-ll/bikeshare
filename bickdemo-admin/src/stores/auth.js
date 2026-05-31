@@ -1,19 +1,16 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { createExpiryNoticeGate, isTokenExpired } from '@/utils/authSession'
 
 export const useAuthStore = defineStore('admin-auth', () => {
-  const authExpiryGate = createExpiryNoticeGate()
   const token = ref(localStorage.getItem('admin_token') || '')
   const username = ref(localStorage.getItem('admin_username') || '')
   const role = ref(localStorage.getItem('admin_role') || '')
   const userId = ref(localStorage.getItem('admin_user_id') || '')
   const viewer = ref(localStorage.getItem('admin_viewer') === 'true')
 
-  const isLoggedIn = computed(() => !!token.value && !isTokenExpired(token.value))
+  const isLoggedIn = computed(() => !!token.value)
 
   const setAuth = (payload) => {
-    authExpiryGate.reset()
     token.value = payload.token || ''
     username.value = payload.username || ''
     role.value = payload.role || ''

@@ -266,13 +266,9 @@
         <div class="pay-trade" v-if="payTradeNo">
           <span>交易号</span><code>{{ payTradeNo }}</code>
         </div>
-        <div class="pay-alipay-tip" v-if="payStatus === 'pending' && payOrderData.isHtml && !payOrderData.sandbox">
+        <div class="pay-alipay-tip" v-if="payStatus === 'pending' && payOrderData.isHtml">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           支付宝页面已唤起，请在打开的页面完成支付
-        </div>
-        <div class="pay-alipay-tip pay-alipay-tip--sandbox" v-if="payStatus === 'pending' && payOrderData.sandbox">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          支付宝沙箱网关不稳定，可点击下方“沙箱已付款，确认开通”完成测试
         </div>
         <div class="pay-success-box" v-if="payStatus === 'success'">
           <p>VIP会员已开通，经验值已发放！</p>
@@ -280,10 +276,7 @@
       </div>
       <template #footer>
         <div class="pay-dialog-footer">
-          <div class="pay-dialog-footer-left">
-            <el-button v-if="payStatus === 'pending'" type="danger" @click="handleCancelOrderInDialog">取消订单</el-button>
-            <el-button v-if="showSandboxPaymentFallback" type="primary" @click="handleSandboxPaymentFallback">沙箱已付款，确认开通</el-button>
-          </div>
+          <el-button v-if="payStatus === 'pending'" type="danger" @click="handleCancelOrderInDialog">取消订单</el-button>
           <div class="pay-dialog-footer-right">
             <el-button v-if="payStatus === 'success' || payStatus === 'failed' || payStatus === 'expired'" type="primary" @click="handlePayDialogClose">确定</el-button>
             <el-button v-if="payStatus === 'pending'" @click="handlePayDialogClose">关闭</el-button>
@@ -326,15 +319,13 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getPointsBalance, signIn, getSignInStatus } from '@/api/points'
 import { getVipStatus, createVipOrder, getVipOrders, cancelOrder, confirmPayment, getOrderStatus, redeemVip } from '@/api/vip'
-import { canUseSandboxPaymentFallback, shouldOpenAlipayPage, shouldPollPaymentStatus } from '@/utils/vipPayment'
 
 const route = useRoute()
-const router = useRouter()
 const userStore = useUserStore()
 
 // 页面核心状态
@@ -424,103 +415,13 @@ const hasPendingOrder = computed(() => {
   return orders.value.some(o => o.status === 'PENDING')
 })
 
-const showSandboxPaymentFallback = computed(() => canUseSandboxPaymentFallback({
-  payStatus: payStatus.value,
-  sandbox: payOrderData.value?.sandbox === true
-}))
-
-const paymentSuccessMessage = '支付成功！VIP已开通，经验值已发放'
-const processedPaidOrders = new Set()
-const pendingConfirmRequests = new Map()
-
-const clearAlipayReturnQuery = async () => {
-  const nextQuery = { ...route.query }
-  let changed = false
-  for (const key of ['charset', 'out_trade_no', 'method', 'total_amount', 'sign', 'trade_no', 'auth_app_id', 'version', 'app_id', 'sign_type', 'seller_id', 'timestamp', 'trade_status']) {
-    if (key in nextQuery) {
-      delete nextQuery[key]
-      changed = true
-    }
-  }
-
-  if (!changed) return
-
-  try {
-    await router.replace({ path: route.path, query: nextQuery })
-  } catch (e) {
-    console.error('清理支付宝回跳参数失败', e)
-  }
-}
-
-const markOrderPaidSuccess = async (orderNo, tradeNo = '') => {
-  if (!orderNo) return
-
-  const firstSuccess = !processedPaidOrders.has(orderNo)
-  processedPaidOrders.add(orderNo)
-
-  stopPayStatusPolling()
-  stopCountdown()
-  payStatus.value = 'success'
-
-  if (tradeNo) {
-    payTradeNo.value = tradeNo
-  }
-
-  if (!firstSuccess) {
-    return
-  }
-
-  await Promise.all([loadVipStatus(), loadOrders(), loadPointsBalance()])
-  ElMessage.success(paymentSuccessMessage)
-}
-
-const confirmPaidOrder = async (orderNo, tradeNo) => {
-  if (!orderNo) return
-
-  if (processedPaidOrders.has(orderNo)) {
-    await markOrderPaidSuccess(orderNo, tradeNo)
-    return
-  }
-
-  if (pendingConfirmRequests.has(orderNo)) {
-    await pendingConfirmRequests.get(orderNo)
-    return
-  }
-
-  const task = (async () => {
-    stopPayStatusPolling()
-    payStatus.value = 'checking'
-    await confirmPayment(orderNo, tradeNo)
-    await markOrderPaidSuccess(orderNo, tradeNo)
-  })()
-    .catch((e) => {
-      payStatus.value = 'failed'
-      throw e
-    })
-    .finally(() => {
-      pendingConfirmRequests.delete(orderNo)
-    })
-
-  pendingConfirmRequests.set(orderNo, task)
-  await task
-}
-
-const handleSandboxPaymentFallback = async () => {
-  const orderNo = payOrderData.value?.orderNo
-  if (!orderNo) return
-
-  try {
-    await confirmPaidOrder(orderNo, `SANDBOX${Date.now()}`)
-  } catch (e) {
-    console.error('沙箱确认支付失败', e)
-  }
-}
-
 // 处理 popup 窗口通过 postMessage 发来的支付结果（需在 handleAlipayMessage 之前定义）
 const handleAlipayReturnFromMessage = async (outTradeNo, tradeNo, tradeStatus) => {
   if (!['TRADE_SUCCESS', 'TRADE_HAS_SUCCESS', 'TRADE_FINISHED'].includes(tradeStatus)) return
   try {
-    await confirmPaidOrder(outTradeNo, tradeNo)
+    await confirmPayment(outTradeNo, tradeNo)
+    ElMessage.success('支付成功！VIP已开通，经验值已发放')
+    await Promise.all([loadVipStatus(), loadOrders(), loadPointsBalance()])
   } catch (e) {
     console.error('确认支付失败', e)
   }
@@ -547,10 +448,6 @@ const payStatusText = computed(() => {
 })
 
 const payStatusDesc = computed(() => {
-  if (payStatus.value === 'pending' && payOrderData.value?.sandbox === true) {
-    return '支付宝沙箱网关当前不稳定，可直接点击“沙箱已付款，确认开通”完成测试开通'
-  }
-
   const map = {
     pending: '请在支付宝页面完成支付，支付成功后状态自动更新',
     checking: '正在核对订单状态，请稍候...',
@@ -603,23 +500,15 @@ const startPayStatusPolling = (orderNo) => {
       const order = res.data
       if (!order) return
       if (order.status === 'PAID') {
-        await markOrderPaidSuccess(order.orderNo, order.tradeNo || '')
-        return
-      }
-      if (order.status === 'EXPIRED') {
+        // 订单已支付，停止轮询
         stopPayStatusPolling()
-        stopCountdown()
-        payStatus.value = 'expired'
-        await loadOrders()
-        return
+        payStatus.value = 'success'
+        payTradeNo.value = order.tradeNo || ''
+        // 刷新页面数据
+        await Promise.all([loadVipStatus(), loadOrders(), loadPointsBalance()])
+        ElMessage.success('支付成功！VIP已开通，经验值已发放')
       }
-      if (order.status === 'CANCELLED') {
-        stopPayStatusPolling()
-        stopCountdown()
-        payStatus.value = 'failed'
-        await loadOrders()
-        return
-      }
+      // PENDING/CANCELLED/EXPIRED 继续轮询直到超时
     } catch (e) {
       console.error('轮询订单状态失败', e)
     }
@@ -630,24 +519,6 @@ const stopPayStatusPolling = () => {
   if (checkPayTimer) {
     clearInterval(checkPayTimer)
     checkPayTimer = null
-  }
-}
-
-const beginPaymentStatusPolling = (orderData) => {
-  if (!shouldPollPaymentStatus(orderData)) {
-    return
-  }
-  startPayStatusPolling(orderData.orderNo)
-}
-
-const maybeOpenAlipayPage = (orderData) => {
-  if (shouldOpenAlipayPage(orderData)) {
-    openAlipayForm(orderData.payUrl)
-    return
-  }
-
-  if (orderData?.sandbox === true) {
-    ElMessage.warning('支付宝沙箱网关不稳定，可在弹窗中确认开通')
   }
 }
 
@@ -796,7 +667,6 @@ const handleCreateOrder = async (plan) => {
         amount: plan.price,
         payUrl: res.data.payUrl,
         isHtml: res.data.isHtml,
-        sandbox: res.data.sandbox === true,
         expireTime: res.data.expireTime,
       }
       payStatus.value = 'pending'
@@ -813,9 +683,13 @@ const handleCreateOrder = async (plan) => {
         startCountdown(res.data.expireTime)
       }
 
-      // 正式支付轮询订单状态；沙箱环境由手动确认按钮开通，避免反复请求不稳定的沙箱网关。
-      beginPaymentStatusPolling(payOrderData.value)
-      maybeOpenAlipayPage(payOrderData.value)
+      // 立即启动订单状态轮询（每3秒检测一次）
+      startPayStatusPolling(res.data.orderNo)
+
+      // isHtml=true: 支付宝返回HTML表单，需自动提交到新标签页
+      if (res.data.isHtml && res.data.payUrl) {
+        openAlipayForm(res.data.payUrl)
+      }
     }
   } catch (e) {
     console.error(e)
@@ -870,7 +744,6 @@ const handleRepayOrder = async (order) => {
         amount: order.amount,
         payUrl: newRes.data.payUrl,
         isHtml: newRes.data.isHtml,
-        sandbox: newRes.data.sandbox === true,
         expireTime: newRes.data.expireTime,
       }
       payStatus.value = 'pending'
@@ -882,8 +755,11 @@ const handleRepayOrder = async (order) => {
       } else if (newRes.data.expireTime) {
         startCountdown(newRes.data.expireTime)
       }
-      beginPaymentStatusPolling(payOrderData.value)
-      maybeOpenAlipayPage(payOrderData.value)
+      startPayStatusPolling(newRes.data.orderNo)
+
+      if (newRes.data.isHtml && newRes.data.payUrl) {
+        openAlipayForm(newRes.data.payUrl)
+      }
     } else {
       // 复用原订单的支付链接
       payOrderData.value = {
@@ -892,7 +768,6 @@ const handleRepayOrder = async (order) => {
         amount: existingOrder.amount,
         payUrl: existingOrder.payUrl,
         isHtml: existingOrder.isHtml,
-        sandbox: existingOrder.sandbox === true,
         expireTime: existingOrder.expireTime,
       }
       payStatus.value = 'pending'
@@ -904,8 +779,11 @@ const handleRepayOrder = async (order) => {
       } else if (existingOrder.expireTime) {
         startCountdown(existingOrder.expireTime)
       }
-      beginPaymentStatusPolling(payOrderData.value)
-      maybeOpenAlipayPage(payOrderData.value)
+      startPayStatusPolling(existingOrder.orderNo)
+
+      if (existingOrder.isHtml && existingOrder.payUrl) {
+        openAlipayForm(existingOrder.payUrl)
+      }
     }
   } catch (e) {
     console.error(e)
@@ -926,13 +804,10 @@ const openAlipayForm = (payUrl) => {
   paymentWindow.document.write(payUrl)
   paymentWindow.document.close()
   const form = paymentWindow.document.querySelector('form')
-  if (!form) {
-    paymentWindow.close()
-    ElMessage.error('支付宝支付表单解析失败，请稍后重试')
-    return
+  if (form) {
+    form.setAttribute('target', targetName)
+    form.submit()
   }
-  form.setAttribute('target', targetName)
-  form.submit()
 
   // 轮询检测 popup 是否加载了 return_url（支付宝跳转回来）
   const pollReturnUrl = setInterval(() => {
@@ -1108,8 +983,11 @@ const handleAlipayReturn = async () => {
   if (trade_status && !['TRADE_SUCCESS', 'TRADE_HAS_SUCCESS', 'TRADE_FINISHED'].includes(trade_status)) return
 
   try {
-    await confirmPaidOrder(out_trade_no, trade_no)
-    await clearAlipayReturnQuery()
+    // 支付宝返回成功状态，前端直接调用 confirmPayment 让后端标记 PAID 并发放 VIP
+    await confirmPayment(out_trade_no, trade_no)
+    ElMessage.success('支付成功！VIP已开通，经验值已发放')
+    // 刷新页面数据
+    await Promise.all([loadVipStatus(), loadOrders(), loadPointsBalance()])
   } catch (e) {
     console.error('确认支付失败', e)
   }
@@ -2078,12 +1956,6 @@ onUnmounted(() => {
   .pay-dialog-footer-right {
     display: flex;
     gap: 12px;
-  }
-
-  .pay-dialog-footer-left {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
   }
 
   .el-button {

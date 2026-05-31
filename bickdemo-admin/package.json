@@ -6,8 +6,7 @@
   "scripts": {
     "admin": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0 --port 3000",
-    "test:run": "node --test src/utils/*.test.js"
+    "preview": "vite preview --host 0.0.0.0 --port 3000"
   },
   "dependencies": {
     "@antv/g2": "^5.4.8",

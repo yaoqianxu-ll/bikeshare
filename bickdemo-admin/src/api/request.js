@@ -1,53 +1,18 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
-import {
-  createExpiryNoticeGate,
-  getRequestAuthState,
-  shouldHandleAuthFailure
-} from '@/utils/authSession'
 
-const authExpiryGate = createExpiryNoticeGate()
+let authExpiredHandling = false
 
 const request = axios.create({
   baseURL: '/api',
   timeout: 10000
 })
 
-function buildAuthExpiredError(message) {
-  const error = new Error(message || '登录已过期，请重新登录')
-  error.isAuthExpired = true
-  return error
-}
-
-function rejectAsAuthExpired(message) {
-  return Promise.reject(buildAuthExpiredError(message))
-}
-
-function handleAuthExpired(message) {
-  const authStore = useAuthStore()
-
-  if (authExpiryGate.enter()) {
-    authStore.logout()
-    ElMessage.error(message || '登录已过期，请重新登录')
-    window.location.href = '/login'
-  }
-
-  return rejectAsAuthExpired(message)
-}
-
 request.interceptors.request.use(
   (config) => {
     const authStore = useAuthStore()
-    const authState = getRequestAuthState({
-      token: authStore.token
-    })
-
-    if (authState === 'expired') {
-      return handleAuthExpired('登录已过期，请重新登录')
-    }
-
-    if (authState === 'attach') {
+    if (authStore.token) {
       config.headers.Authorization = `Bearer ${authStore.token}`
     }
     return config
@@ -58,16 +23,6 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response) => {
     const res = response.data
-    if (
-      shouldHandleAuthFailure({
-        code: res?.code,
-        requestUrl: response?.config?.url,
-        pathname: typeof window === 'undefined' ? '' : window.location.pathname
-      })
-    ) {
-      return handleAuthExpired(res.message || '登录已过期，请重新登录')
-    }
-
     if (res.code !== 200) {
       ElMessage.error(res.message || '请求失败')
       return Promise.reject(new Error(res.message || '请求失败'))
@@ -77,21 +32,17 @@ request.interceptors.response.use(
   (error) => {
     if (error.response) {
       const { status, data } = error.response
-      if (
-        shouldHandleAuthFailure({
-          status,
-          requestUrl: error?.config?.url,
-          pathname: typeof window === 'undefined' ? '' : window.location.pathname
-        })
-      ) {
-        return handleAuthExpired(data?.message || '登录已过期，请重新登录')
-      }
-
       if (status === 401) {
+        // 如果是在登录页，显示错误信息但不跳转
         const isLoginPage = window.location.pathname === '/login'
-        const isLoginRequest = String(error?.config?.url || '').includes('/auth/login')
-        if (isLoginPage || isLoginRequest) {
+        if (isLoginPage) {
           ElMessage.error(data?.message || '用户名或密码错误')
+        } else if (!authExpiredHandling) {
+          authExpiredHandling = true
+          const authStore = useAuthStore()
+          authStore.logout()
+          ElMessage.error(data?.message || '登录已过期，请重新登录')
+          window.location.href = '/login'
         }
       } else if (data?.message) {
         ElMessage.error(data.message)
