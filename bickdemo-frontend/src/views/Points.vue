@@ -324,6 +324,7 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getPointsBalance, signIn, getSignInStatus } from '@/api/points'
 import { getVipStatus, createVipOrder, getVipOrders, cancelOrder, confirmPayment, getOrderStatus, redeemVip } from '@/api/vip'
+import { submitAlipayForm } from '@/utils/alipayForm'
 
 const route = useRoute()
 const router = useRouter()
@@ -883,13 +884,10 @@ const openAlipayForm = (payUrl) => {
     ElMessage.error('浏览器拦截了支付窗口，请允许弹窗后重试')
     return
   }
-  paymentWindow.document.open()
-  paymentWindow.document.write(payUrl)
-  paymentWindow.document.close()
-  const form = paymentWindow.document.querySelector('form')
-  if (form) {
-    form.setAttribute('target', targetName)
-    form.submit()
+  if (!submitAlipayForm(paymentWindow, payUrl, targetName)) {
+    paymentWindow.close()
+    ElMessage.error('支付宝支付表单解析失败，请稍后重试')
+    return
   }
 
   // 轮询检测 popup 是否加载了 return_url（支付宝跳转回来）
