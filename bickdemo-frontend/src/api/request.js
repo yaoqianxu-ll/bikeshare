@@ -67,7 +67,9 @@ request.interceptors.response.use(
   response => {
     const res = response.data
     if (res.code !== 200) {
-      ElMessage.error(res.message || '请求失败')
+      if (!response.config?.suppressErrorMessage) {
+        ElMessage.error(res.message || '请求失败')
+      }
       return Promise.reject(new Error(res.message || '请求失败'))
     }
     return res
@@ -80,7 +82,7 @@ request.interceptors.response.use(
         const onLoginPage = typeof window !== 'undefined' && window.location && window.location.pathname === '/login'
         const isLoginRequest = reqUrl.includes('/auth/login')
 
-        if (isLoginRequest || onLoginPage) {
+        if ((isLoginRequest || onLoginPage) && !error.config?.suppressErrorMessage) {
           ElMessage.error((data && data.message) || '用户名或密码错误')
         } else {
           if (!isAuthExpiredHandled()) {
@@ -89,7 +91,9 @@ request.interceptors.response.use(
             if (userStore.token) {
               userStore.logout()
             }
-            ElMessage.error((data && data.message) || '登录已过期，正在跳转登录页...')
+            if (!error.config?.suppressErrorMessage) {
+              ElMessage.error((data && data.message) || '登录已过期，正在跳转登录页...')
+            }
             const currentPath = window.location.pathname + window.location.search
             router.replace({
               path: '/login',
@@ -105,18 +109,22 @@ request.interceptors.response.use(
         if (!isLoginRequest) {
           if (data && data.data && typeof data.data === 'object') {
             const messages = Object.values(data.data).join('; ')
-            ElMessage.error(messages)
-          } else if (data && data.message) {
+            if (!error.config?.suppressErrorMessage) {
+              ElMessage.error(messages)
+            }
+          } else if (data && data.message && !error.config?.suppressErrorMessage) {
             ElMessage.error(data.message)
           }
         }
       } else {
-        if (data && data.message) {
+        if (data && data.message && !error.config?.suppressErrorMessage) {
           ElMessage.error(data.message)
         }
       }
     } else {
-      ElMessage.error('网络错误，请稍后重试')
+      if (!error.config?.suppressErrorMessage) {
+        ElMessage.error('网络错误，请稍后重试')
+      }
     }
     return Promise.reject(error)
   }

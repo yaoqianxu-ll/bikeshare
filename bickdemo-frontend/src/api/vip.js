@@ -92,10 +92,11 @@ export function getVipOrders() {
  * @param {string} orderNo - 订单号
  * @returns {Promise} 订单详情
  */
-export function getOrderStatus(orderNo) {
+export function getOrderStatus(orderNo, options = {}) {
   return request({
     url: `/vip/order/${orderNo}/status`,
-    method: 'get'
+    method: 'get',
+    ...options
   })
 }
 

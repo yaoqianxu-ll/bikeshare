@@ -325,6 +325,7 @@ import { useUserStore } from '@/stores/user'
 import { getPointsBalance, signIn, getSignInStatus } from '@/api/points'
 import { getVipStatus, createVipOrder, getVipOrders, cancelOrder, confirmPayment, getOrderStatus, redeemVip } from '@/api/vip'
 import { submitAlipayForm } from '@/utils/alipayForm'
+import { createPaymentFlowState } from '@/utils/paymentFlow'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -353,6 +354,7 @@ const payTradeNo = ref('')
 
 // 轮询状态定时器
 let checkPayTimer = null
+const paymentFlowState = createPaymentFlowState()
 
 // 支付倒计时
 const payCountdown = ref(0)
@@ -417,12 +419,35 @@ const hasPendingOrder = computed(() => {
 })
 
 // 处理 popup 窗口通过 postMessage 发来的支付结果（需在 handleAlipayMessage 之前定义）
+const finalizePaymentSuccess = async (orderNo, tradeNo = '') => {
+  if (!paymentFlowState.markHandled(orderNo)) {
+    return
+  }
+
+  stopPayStatusPolling()
+  payStatus.value = 'success'
+  payTradeNo.value = tradeNo || ''
+  await Promise.all([loadVipStatus(), loadOrders(), loadPointsBalance()])
+  ElMessage.success('支付成功！VIP已开通，经验值已发放')
+}
+
+const confirmPaidOrder = async (orderNo, tradeNo) => {
+  if (!paymentFlowState.beginConfirm(orderNo)) {
+    return
+  }
+
+  try {
+    await confirmPayment(orderNo, tradeNo)
+    await finalizePaymentSuccess(orderNo, tradeNo)
+  } finally {
+    paymentFlowState.endConfirm(orderNo)
+  }
+}
+
 const handleAlipayReturnFromMessage = async (outTradeNo, tradeNo, tradeStatus) => {
   if (!['TRADE_SUCCESS', 'TRADE_HAS_SUCCESS', 'TRADE_FINISHED'].includes(tradeStatus)) return
   try {
-    await confirmPayment(outTradeNo, tradeNo)
-    ElMessage.success('支付成功！VIP已开通，经验值已发放')
-    await Promise.all([loadVipStatus(), loadOrders(), loadPointsBalance()])
+    await confirmPaidOrder(outTradeNo, tradeNo)
   } catch (e) {
     console.error('确认支付失败', e)
   }
@@ -496,22 +521,22 @@ const startPayStatusPolling = (orderNo) => {
   stopPayStatusPolling()
   payStatus.value = 'pending'
   checkPayTimer = setInterval(async () => {
+    if (!paymentFlowState.beginStatusCheck(orderNo)) {
+      return
+    }
     try {
-      const res = await getOrderStatus(orderNo)
+      const res = await getOrderStatus(orderNo, { suppressErrorMessage: true })
       const order = res.data
       if (!order) return
       if (order.status === 'PAID') {
         // 订单已支付，停止轮询
-        stopPayStatusPolling()
-        payStatus.value = 'success'
-        payTradeNo.value = order.tradeNo || ''
-        // 刷新页面数据
-        await Promise.all([loadVipStatus(), loadOrders(), loadPointsBalance()])
-        ElMessage.success('支付成功！VIP已开通，经验值已发放')
+        await finalizePaymentSuccess(orderNo, order.tradeNo || '')
       }
       // PENDING/CANCELLED/EXPIRED 继续轮询直到超时
     } catch (e) {
       console.error('轮询订单状态失败', e)
+    } finally {
+      paymentFlowState.endStatusCheck(orderNo)
     }
   }, 3000)
 }
@@ -982,10 +1007,7 @@ const handleAlipayReturn = async () => {
 
   try {
     // 支付宝返回成功状态，前端直接调用 confirmPayment 让后端标记 PAID 并发放 VIP
-    await confirmPayment(out_trade_no, trade_no)
-    ElMessage.success('支付成功！VIP已开通，经验值已发放')
-    // 刷新页面数据
-    await Promise.all([loadVipStatus(), loadOrders(), loadPointsBalance()])
+    await confirmPaidOrder(out_trade_no, trade_no)
   } catch (e) {
     console.error('确认支付失败', e)
   }
