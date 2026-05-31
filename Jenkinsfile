@@ -31,7 +31,7 @@ pipeline {
         // Git Hook 触发 (需要在 Gitee/GitHub 配置 Webhook)
         pollSCM('*/5 * * * *')  // 每 5 分钟检查一次代码变更
         // 定时构建 (每天凌晨 2 点)
-        cron('0 2 * * *')
+w
     }
 
     stages {

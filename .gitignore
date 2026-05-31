@@ -52,3 +52,7 @@ sql/*.sql
 !sql/init.sql
 
 .mcp.json
+
+.agents
+test
+.codex

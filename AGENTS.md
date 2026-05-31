@@ -1,86 +1,222 @@
-# Agent Notes (bickdemo)
+## Git提交信息规范
 
-This repository is a small monorepo for a BikeShare / bicycle rental demo:
+- 提交信息必须使用中文。
+- 有代码改动就必须提交。
+- 提交信息必须带前缀，格式建议为：`<前缀>: <中文说明>`
+- 允许的前缀：`feat`、`fix`、`docs`、`♻️ refactor`、`test`、`chore`
+- 示例：`feat: 新增职位详情页筛选条件`
+- 完成任务后，默认由助手协助执行提交（`git add` + `git commit`）；
+- 非简单任务（尤其是大功能开发、或前后端同时改动）在完成后必须自动提交，不需要用户额外提醒；
+- 简单任务豁免范围内的小改动默认不提交代码；仅当用户明确要求提交时才执行 `git add` + `git commit`；
+- DEVELOPMENT_LOG.md禁止编写
 
-- `bickdemo-backend/`: Spring Boot 3 (Java 17, Maven), MyBatis-Plus, Spring Security + JWT, MySQL/H2, MinIO, Caffeine.
-- `bickdemo-frontend/`: Vue 3 + Vite + Element Plus + Pinia + Axios + ECharts.
-- `script/prod/docker-compose.yml`: MySQL + backend + frontend deployment.
 
-## Quick Start (Local Dev)
 
-Backend (default port `8080`):
 
-- Config: `bickdemo-backend/src/main/resources/application.yml`
-- Typical commands:
-  - `cd bickdemo-backend`
-  - `mvn -q -DskipTests=false test`
-  - `mvn spring-boot:run`
+> **强制要求：除符合简单任务豁免规则外，开发前必须遵循以下 superpowers-plus 流程，禁止跳过。**
 
-Frontend (default dev port `5173`):
+## 最高优先级原则
 
-- Proxy: `bickdemo-frontend/vite.config.js` proxies `/api` -> `http://localhost:8080`
-- Typical commands:
-  - `cd bickdemo-frontend`
-  - `npm install`
-  - `npm run dev`
+任何编码代理在本项目中工作时，必须遵守以下原则：
 
-Database:
+1. 先读规则，再写代码。
+2. 先确认任务范围，再修改文件。
+3. 小步修改，不做无关大改。
+4. 保护现有功能，不随意删除。
+5. 明确编码方式，禁止产生乱码。
+6. 所有文本文件统一使用 UTF-8。
+7. 读写文本文件必须显式指定编码。
+8. 不把所有逻辑堆进一个大文件。
+9. 不把业务逻辑写进 UI 事件。
+10. 修改后必须验证。
+11. 未验证不得声称完成。
+12. 发现高风险变更必须先说明风险，不得直接执行。
+13. 项目必须可维护、可追踪、可回滚、可继续开发。
+14. 后端log日志必须采用中文
 
-- SQL bootstrap file: `sql/init.sql` and `bickdemo-backend/init-db/` (Docker init folder)
-- Local `application.yml` points to MySQL `bickdemo` on `localhost:3306`.
 
-## Docker
 
-`script/prod/docker-compose.yml` exposes:
 
-- MySQL: `3306`
-- Backend: `8080` (profile `prod`)
-- Frontend (nginx): `80`
+## superpowers-plus 简单任务豁免规则
+- 可豁免：文档/注释/排版/格式化、元信息、局部小修正
+- 可豁免（补充）：日志级别/日志打印调整、错误文案微调（不改变业务行为）
+- 不可豁免：新功能、业务逻辑/接口/缓存变更、UI交互、多模块
 
-Typical commands:
+## 简单任务执行规则
 
-- `docker compose -f script/prod/docker-compose.yml up -d --build`
-- `docker compose -f script/prod/docker-compose.yml logs -f --tail=100`
-- `docker compose -f script/prod/docker-compose.yml down`
+- 简单任务默认直接修改，不要求输出完整计划流程。
+- 简单任务按改动面做最小必要验证，不做无关模块验证。
+- 小改动（符合简单任务豁免范围）如需写计划时，仅需产出一个 `docs/superpowers/plans/` 下的 plan 文档；不强制要求 spec 与 acceptance 文档。
 
-Note: `bickdemo-frontend/nginx.conf` proxies `/api` to `http://bickdemo-app:8080`. Ensure the upstream name matches the backend service/container name defined in the compose setup you use (root compose uses service `app`).
+## superpowers-plus 标准流程
 
-## API Conventions
+1. **brainstorming** — 需求澄清
+2. **writing-plans** — 任务分解
+3. **test-driven-development** — 先写失败测试，再写生产代码，遵循 RED-GREEN-REFACTOR
+4. **executing-plans** — 按计划执行实现，过程严格遵循 TDD，并优先使用子 agent 分工推进
+5. **requesting-code-review** — 关键里程碑完成后、提交前或合并前进行代码评审
+6. **finishing-a-development-branch** — 任务完成后收尾
 
-Frontend Axios wrapper in `bickdemo-frontend/src/api/request.js` expects a unified response shape:
+### 执行约束
 
-- Success: `res.code === 200`
-- Errors: shows `res.message`, and for `400` may render field validation details from `data.data`.
+- 默认情况下，**executing-plans** 阶段不开启分支树/工作树；如确需开启，必须先询问用户并获得明确同意。
+- 如任务可安全拆分，应尽量使用子 agent 并行/分工执行，减少主会话上下文污染。
+- 子 agent 仅用于边界清晰、职责独立、写入范围可控的子任务；若处于关键路径且结果需立即依赖，优先主会话直接处理。
 
-If changing backend responses, keep this contract in sync with the frontend.
+### 核心原则
 
-Base routes (from controllers):
+- **TDD 铁律**：没有失败测试就不写生产代码。
+- **Debug 铁律**：没有根因分析就不修 bug。
+- **流程优于猜测**：先验证再断言。
+- **自我评估**：使用内联检查表自检，不发起子代理 review 循环。
 
-- `/api/auth`
-- `/api/bicycles`
-- `/api/rentals`
-- `/api/statistics`
-- `/api/files`
-- `/api/backgrounds`
+### Hutool 工具规范
 
-## Security / Secrets
+**强制要求：所有手写工具类代码必须优先使用 Hutool 替代，禁止重复造轮子。**
 
-This repo currently contains credentials/secrets in config and compose files. For real deployments:
+## 数据库变更规范
 
-- Move secrets to env vars (e.g. `.env`, CI credentials store) and keep them out of git history.
-- Prefer `application-prod.yml` env overrides for prod-like runs.
+- **强制要求：凡涉及数据库结构变更（建表、删表、字段新增/删除/类型变更、索引/约束变更），必须同时提交迁移脚本与结构定义更新。**
+- 必须新增对应 `docs/sql` 脚本（遵循现有命名规则），确保其他环境可自动补齐。
+- 必须同步更新 `src/main/resources/schema.sql`，保持基线结构与迁移一致。
+- 涉及表字段变更时，必须同步检查并更新对应的 PO/Mapper/DTO 映射，避免“数据库已变更但代码未生效”。
 
-## Tooling Notes (Windows / PowerShell)
+## 文档布局
 
-- If `rg` (ripgrep) is blocked in your environment ("Access denied"), use PowerShell alternatives:
-  - `Get-ChildItem -Recurse -File | Select-String -Pattern "..."` for search.
-- If Chinese text looks garbled in terminal output, prefer explicit UTF-8 reads:
-  - `Get-Content -Encoding UTF8 path/to/file`
+- `docs/superpowers/specs/` — 设计规格文档（`YYYY-MM-DD-HHMMSS-<topic>-design.md`）
+- `docs/superpowers/plans/` — 实现计划（`YYYY-MM-DD-HHMMSS-<feature>.md`）
+- `docs/superpowers/acceptance/` — 验收标准文档（`YYYY-MM-DD-HHMMSS-<feature>-acceptance.md`）
 
-## Database Migrations (Common)
+---
+## 本地 MCP 服务
 
-When pulling newer commits into an existing MySQL volume, you may need to apply schema changes manually.
+- **MySQL** — MySQL 数据库（resume_cicd），用于结构化数据持久化
+- **本地虚拟机服务器** — 192.168.17.135
+- **chrome-devtools** — Chrome DevTools，用于浏览器自动化、页面测试、截图、网络抓包
 
-- Bicycle inventory: `ALTER TABLE bicycles ADD COLUMN quantity INT NOT NULL DEFAULT 1 COMMENT '数量（库存）';`
-- Rental quantity: `ALTER TABLE rentals ADD COLUMN quantity INT NOT NULL DEFAULT 1 COMMENT '租赁数量';`
 
+> **使用场景**: 浏览器自动化 / 前端页面测试 → chrome-devtools；数据库查询 / SQL 调试 → MySQL；
+---
+
+## 常用命令
+
+> **最高优先级**: 启动命令必须用 `run_in_background: true`，启动前自动检查端口占用，若被占用则先终止占用进程
+
+```bash
+# 前端 http://localhost:3000
+cd resume-admin && npm run dev
+
+# 后端 http://localhost:8080
+mvn spring-boot:run
+```
+
+## 
+
+---
+
+## 完成验证要求
+
+提交/合并前按改动面验证：
+
+1. **仅后端改动**：执行 `mvn compile`、`mvn test`
+2. **仅前端改动**：执行 `npm run build`、`npm run test:run`
+3. **前后端都有改动**：四项全部执行
+4. **浏览器验证（/web-access + CDP）**：仅在改动前端页面/交互，或用户明确要求时执行
+
+## 浏览器测试
+
+使用浏览器进行测试时，必须通过 `/web-access` skill，并使用 CDP 打开和操作浏览器；禁止绕过 CDP 直接声称已完成浏览器验证。
+
+
+---
+
+## 1. 文档目标
+
+本文件定义软件项目的强制开发规则，目标包括：
+
+1. 保持项目架构清晰、稳定、可维护。
+2. 防止功能不断堆积到大文件中。
+3. 强制模块化、分层化、接口化开发。
+4. 防止中文、特殊符号、CSV、日志、配置文件出现乱码。
+5. 允许任务中断后基于日志恢复上下文。
+6. 确保所有修改可追踪、可验证、可回滚。
+7. 让人类开发者和编码代理都能长期维护项目。
+8. 降低 Codex / Cursor 等工具“乱改、重构过度、顺手改无关文件”的风险。
+9. 新增的Controller接口必须写入到docs/api/API—用户端.md/API—企业端.md/API—认证模块.md/API—管理端.md ： 按照类型来写入
+
+
+### 前端
+- 页面层负责页面组织与交互编排，不直接吞入所有数据逻辑。
+- API 请求、数据适配、格式转换尽量下沉到 `api/` 或 `services/`。
+- 公共 UI 能力应抽成组件，不在多个页面复制粘贴。
+- 用户端与管理端是两个独立前端，不要混放源码或跨目录随意复制。
+
+## 编码与文本规则
+- 所有源码、配置、脚本、Markdown、JSON、YAML、日志模板统一使用 `UTF-8`。
+- 读取文本文件时必须显式指定 `UTF-8`。
+- 写入文本文件时必须显式指定 `UTF-8`。
+- 任何情况下都不得把中文、特殊符号、接口文档、日志说明写成乱码。
+- 若生成 `CSV` 且目标是给 Excel 直接打开，需明确说明是否需要 `UTF-8 with BOM`。
+- 修改中文文档、接口文档、配置文件后，必须检查是否出现乱码字符或错码。
+
+## 格式与配置规则
+- 以当前 `.editorconfig` 为准：
+  - `charset = utf-8`
+  - `end_of_line = lf`
+  - `indent_style = space`
+  - `indent_size = 4`
+- `*.yml` 文件缩进遵循当前仓库的 `2` 空格设置。
+- 除非任务明确要求，不要擅自把整仓库行尾从 `LF` 改成 `CRLF`。
+- 不要新增与现有工具链冲突的格式化规则。
+
+## 范围控制规则
+- 仅修改当前任务明确涉及的目录和文件。
+- 禁止顺手重命名大量文件、移动目录或调整无关模块。
+- 禁止在一次任务中同时混入后端、用户端、管理端、文档的大范围重构，除非需求明确要求。
+- 工作区已经存在未提交改动时，必须先识别并避免覆盖用户已有修改。
+
+## 大文件与拆分规则
+- 如果一个后端 `Service`、`Controller`、前端页面组件已经明显过大，新增逻辑前优先评估是否拆分。
+- 不把接口调用、状态处理、图表逻辑、弹窗逻辑、表单逻辑全部堆进一个前端页面文件。
+- 不把数据库访问、外部服务调用、业务规则、格式转换全部堆进一个后端类。
+- 若文件已过大，本次任务只做与当前目标直接相关的局部清理，不做无边界重构。
+
+## 验证规则
+- 后端改动后，优先使用 `mvn test`、`mvn verify`、定向测试等方式验证。
+- 用户端改动后，优先使用 `npm run build`、`npm run dev`、必要的页面手工检查验证。
+- 管理端改动后，优先使用 `npm run lint`、`npm run build`、必要的页面手工检查验证。
+- 文档改动后，至少验证：
+  - 文件可按 `UTF-8` 读取
+  - 路径、目录结构、命名规则与当前仓库一致
+  - 未引入乱码
+- 未执行验证时，必须明确写出未验证原因。
+
+## 高风险变更
+- 以下变更视为高风险，必须先说明风险再执行：
+  - 删除或重命名主要目录
+  - 修改 `com.talentspark` 包路径
+  - 调整 `pom.xml` 主依赖与构建流程
+  - 调整 `resume-app` 或 `resume-admin` 的基础构建配置
+  - 变更数据库结构、认证机制、文件存储策略、消息队列行为
+  - 批量移动页面、组件、接口文件
+- 高风险说明至少包含：
+  - 影响范围
+  - 兼容风险
+  - 回滚方式
+  - 验证方案
+
+## 禁止行为
+1. 不读取 `AGENTS.md` 就开始修改仓库。
+2. 不确认范围就顺手修改无关文件。
+3. 用通用模板替代当前仓库真实目录规则。
+4. 在本仓库规范中继续使用占位命名或虚构模块名。
+5. 把明显属于其他技术栈的规则直接套用到当前仓库。
+6. 读写文本文件不显式指定 `UTF-8`。
+7. 把后端、用户端、管理端逻辑混到同一个文件或目录。
+8. 未验证就宣称“已完成”“已修复”“可交付”。
+9. 覆盖用户已有未提交修改。
+
+## 默认执行约定
+- 未被明确覆盖时，本仓库所有新增或修改的文本文件均按 `UTF-8` 处理。
+- 编码代理在本仓库中必须优先遵守当前文件定义的真实项目结构，而不是套用外部通用模板。
+- 若仓库结构未来发生变化，应同步更新本文件，保持规则与项目现状一致。
