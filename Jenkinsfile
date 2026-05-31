@@ -30,8 +30,7 @@ pipeline {
     triggers {
         // Git Hook 触发 (需要在 Gitee/GitHub 配置 Webhook)
         pollSCM('*/5 * * * *')  // 每 5 分钟检查一次代码变更
-        // 定时构建 (每天凌晨 2 点)
-        cron('0 2 * * *')
+        
     }
 
     stages {
@@ -48,7 +47,6 @@ pipeline {
                 script {
                     String envFilePath = null
                     List<String> workspaceEnvCandidates = [
-                        '.env',
                         'script/prod/deploy/.env.jenkins.current',
                         'script/prod/deploy/jenkins.env'
                     ]
@@ -60,17 +58,17 @@ pipeline {
                         "${env.HOME ?: ''}/.bickdemo.env"
                     ].findAll { it?.trim() }
 
-                    for (String candidate : workspaceEnvCandidates) {
-                        if (fileExists(candidate)) {
+                    for (String candidate : externalEnvCandidates) {
+                        int existsStatus = sh(script: "[ -f '${candidate}' ]", returnStatus: true)
+                        if (existsStatus == 0) {
                             envFilePath = candidate
                             break
                         }
                     }
 
                     if (!envFilePath) {
-                        for (String candidate : externalEnvCandidates) {
-                            int existsStatus = sh(script: "[ -f '${candidate}' ]", returnStatus: true)
-                            if (existsStatus == 0) {
+                        for (String candidate : workspaceEnvCandidates) {
+                            if (fileExists(candidate)) {
                                 envFilePath = candidate
                                 break
                             }
@@ -81,6 +79,8 @@ pipeline {
                         String envFileContent = fileExists(envFilePath)
                             ? readFile(envFilePath)
                             : sh(script: "cat '${envFilePath}'", returnStdout: true)
+
+                        writeFile file: '.env', text: envFileContent
 
                         envFileContent
                             .split('\n')
@@ -95,7 +95,7 @@ pipeline {
                         if (!env.MYSQL_PASSWORD?.trim()) {
                             env.MYSQL_PASSWORD = env.MYSQL_ROOT_PASSWORD
                         }
-                        echo "已从环境文件加载部署变量: ${envFilePath}"
+                        echo "已从环境文件加载部署变量并同步工作区 .env: ${envFilePath}"
                     } else {
                         echo "未找到可用环境文件，已检查工作区路径: ${workspaceEnvCandidates}"
                         echo "未找到可用环境文件，已检查节点路径: ${externalEnvCandidates}"
