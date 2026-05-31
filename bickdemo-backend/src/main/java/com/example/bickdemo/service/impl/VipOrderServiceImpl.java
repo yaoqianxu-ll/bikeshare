@@ -2,7 +2,6 @@ package com.example.bickdemo.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.example.bickdemo.config.AlipayRuntimePolicy;
 import com.example.bickdemo.config.RabbitMqConfig;
 import com.example.bickdemo.entity.VipOrder;
 import com.example.bickdemo.entity.VipPlan;
@@ -52,9 +51,6 @@ public class VipOrderServiceImpl implements VipOrderService {
     /** RabbitMQ消息模板，用于发送订单过期延迟消息 */
     private final RabbitTemplate rabbitTemplate;
 
-    /** 支付宝运行环境策略 */
-    private final AlipayRuntimePolicy alipayRuntimePolicy;
-
     /** 订单有效期（分钟）：15分钟 */
     private static final int ORDER_EXPIRE_MINUTES = 15;
 
@@ -63,6 +59,10 @@ public class VipOrderServiceImpl implements VipOrderService {
     /** 支付宝应用ID */
     @Value("${alipay.app-id:}")
     private String alipayAppId;
+
+    /** 是否使用沙箱环境 */
+    @Value("${alipay.sandbox:true}")
+    private boolean alipaySandbox;
 
     /** 支付成功回调地址 */
     @Value("${alipay.return-url:http://localhost:5173/points}")
@@ -240,11 +240,6 @@ public class VipOrderServiceImpl implements VipOrderService {
      * @return true=已支付并已更新, false=未支付
      */
     private boolean queryAndUpdateOrderStatus(VipOrder order) {
-        if (alipayRuntimePolicy.isProductionSandboxMisconfigured()) {
-            log.error("生产环境禁止使用支付宝沙箱网关查询订单: orderNo={}", order.getOrderNo());
-            return false;
-        }
-
         // 未配置支付宝时跳过查询
         if (alipayAppId == null || alipayAppId.isEmpty() || alipayPrivateKey == null || alipayPrivateKey.isEmpty()) {
             return false;
@@ -422,16 +417,9 @@ public class VipOrderServiceImpl implements VipOrderService {
     @Override
     public Map<String, Object> generatePayUrl(VipOrder order) {
         Map<String, Object> result = new HashMap<>();
-        alipayRuntimePolicy.assertServerSidePaymentFlowAllowed();
-        if (!alipayRuntimePolicy.allowSandboxFallback()) {
-            alipayRuntimePolicy.assertRealGatewayCredentialsConfigured(alipayAppId, alipayPrivateKey, alipayPublicKey);
-        }
-
-        boolean missingCoreCredentials = alipayAppId == null || alipayAppId.isEmpty()
-                || alipayPrivateKey == null || alipayPrivateKey.isEmpty();
 
         // 检查是否配置了支付宝（APPID或私钥为空表示未配置）
-        if (missingCoreCredentials) {
+        if (alipayAppId == null || alipayAppId.isEmpty() || alipayPrivateKey == null || alipayPrivateKey.isEmpty()) {
             log.warn("支付宝未配置完整，返回模拟支付链接");
             // 返回沙箱测试链接（模拟支付成功页面）
             // 用户点击后会跳转回 Points 页面，可以查看订单状态
@@ -463,9 +451,6 @@ public class VipOrderServiceImpl implements VipOrderService {
             return result;
         } catch (Exception e) {
             log.error("生成支付链接异常: orderNo={}", order.getOrderNo(), e);
-            if (!alipayRuntimePolicy.allowSandboxFallback()) {
-                throw new IllegalStateException("生成支付宝支付表单失败，请检查正式环境支付宝配置", e);
-            }
             // 返回模拟链接作为兜底
             String fallbackUrl = "https://openapi-sandbox.dl.alipaydev.com/gateway.do?out_trade_no=" + order.getOrderNo()
                     + "&total_amount=" + order.getAmount().toPlainString() + "&subject=" + encodeUrl(getPackageName(order.getPackageType()))
@@ -516,19 +501,10 @@ public class VipOrderServiceImpl implements VipOrderService {
      */
     @Override
     public boolean verifyCallback(Map<String, String> params) {
-        if (alipayRuntimePolicy.isProductionSandboxMisconfigured()) {
-            log.error("生产环境禁止使用支付宝沙箱验签回调");
-            return false;
-        }
-
         // 未配置支付宝时跳过验证（测试环境）
         if (alipayAppId == null || alipayAppId.isEmpty() || alipayPrivateKey == null || alipayPrivateKey.isEmpty()) {
-            if (alipayRuntimePolicy.allowSandboxFallback()) {
-                log.warn("支付宝未配置，跳过回调验证");
-                return true;
-            }
-            log.error("正式环境支付宝配置不完整，拒绝跳过回调验签");
-            return false;
+            log.warn("支付宝未配置，跳过回调验证");
+            return true;
         }
 
         try {
@@ -548,13 +524,11 @@ public class VipOrderServiceImpl implements VipOrderService {
      * @return 支付宝配置对象
      */
     private com.alipay.easysdk.kernel.Config getAlipayOptions() {
-        alipayRuntimePolicy.assertRealGatewayCredentialsConfigured(alipayAppId, alipayPrivateKey, alipayPublicKey);
-
         com.alipay.easysdk.kernel.Config config = new com.alipay.easysdk.kernel.Config();
         // 协议类型
         config.protocol = "https";
         // 网关地址（沙箱或生产）
-        config.gatewayHost = alipayRuntimePolicy.isSandbox() ? "openapi-sandbox.dl.alipaydev.com" : "openapi.alipay.com";
+        config.gatewayHost = alipaySandbox ? "openapi-sandbox.dl.alipaydev.com" : "openapi.alipay.com";
         // 签名算法
         config.signType = "RSA2";
         // 应用ID
