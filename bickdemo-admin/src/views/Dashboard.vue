@@ -171,6 +171,16 @@ const trendRange = ref(7)
 const trendChartRef = ref(null)
 let trendChart = null
 
+const destroyTrendChart = () => {
+  if (!trendChart) return
+
+  if (typeof trendChart.destroy === 'function') {
+    trendChart.destroy()
+  }
+
+  trendChart = null
+}
+
 const overviewCards = computed(() => [
   {
     label: '用户总数',
@@ -276,7 +286,7 @@ const renderTrendChart = async () => {
   if (!container) return
   const { labels, values } = buildTrendSource(trendSource.value, trendRange.value)
 
-  if (trendChart) trendChart.destroy()
+  destroyTrendChart()
 
   trendChart = Highcharts.chart(trendChartRef.value, {
     chart: { type: 'areaspline', height: 320, backgroundColor: 'transparent', style: { fontFamily: 'inherit' } },
@@ -330,7 +340,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
-  trendChart?.dispose()
+  destroyTrendChart()
 })
 </script>
 
