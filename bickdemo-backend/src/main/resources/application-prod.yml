@@ -69,6 +69,7 @@ logging:
   level:
     com.example.bickdemo: INFO
     org.springframework.security: INFO
+    org.springframework.aop.framework.CglibAopProxy: ERROR
 
 # Actuator 配置（用于健康检查）
 management:

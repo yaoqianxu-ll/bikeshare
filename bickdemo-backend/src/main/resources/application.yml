@@ -106,7 +106,8 @@ logging:
     path: logs
   level:
     root: INFO
-    com.example.bickdemo: DEBUG
+    # 本地默认按 INFO 输出应用日志，避免启动阶段的过滤器初始化与框架 DEBUG 噪音刷屏。
+    com.example.bickdemo: INFO
     org.springframework.security: INFO
     # Bean 创建阶段真正刷屏的是 DEBUG，这里保留 INFO，去掉冗余的调试级输出。
     org.springframework.beans.factory.support: INFO
@@ -114,6 +115,8 @@ logging:
     org.mybatis: INFO
     com.baomidou: INFO
     com.zaxxer.hikari: INFO
+    # RabbitMQ 连接工厂被 AOP 代理时会输出无业务影响的告警，这里仅保留 ERROR。
+    org.springframework.aop.framework.CglibAopProxy: ERROR
 
 app:
   mail:

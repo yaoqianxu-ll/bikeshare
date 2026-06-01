@@ -38,34 +38,26 @@ public class RabbitMqConfig {
 
     @PostConstruct
     public void initAdminExchangeAndQueue() {
-        log.info("[RabbitMQ] Starting to declare admin notify exchange and queue...");
         try {
             RabbitAdmin admin = new RabbitAdmin(connectionFactory);
-            log.info("[RabbitMQ] RabbitAdmin created, proceeding with declaration...");
 
             // 强制声明 admin notify exchange
             admin.declareExchange(new TopicExchange(AdminNotificationConstants.ADMIN_NOTIFY_EXCHANGE, true, false));
-            log.info("[RabbitMQ] declareExchange called");
 
             // 声明 queue
             admin.declareQueue(new Queue(AdminNotificationConstants.ADMIN_NOTIFY_QUEUE, true));
-            log.info("[RabbitMQ] declareQueue called");
 
             // 绑定 routing key
             admin.declareBinding(BindingBuilder
                     .bind(new Queue(AdminNotificationConstants.ADMIN_NOTIFY_QUEUE, true))
                     .to(new TopicExchange(AdminNotificationConstants.ADMIN_NOTIFY_EXCHANGE, true, false))
                     .with(AdminNotificationConstants.ADMIN_NOTIFY_ROUTING_KEY));
-            log.info("[RabbitMQ] declareBinding (notify) called");
 
             // 绑定 broadcast routing key
             admin.declareBinding(BindingBuilder
                     .bind(new Queue(AdminNotificationConstants.ADMIN_NOTIFY_QUEUE, true))
                     .to(new TopicExchange(AdminNotificationConstants.ADMIN_NOTIFY_EXCHANGE, true, false))
                     .with(AdminNotificationConstants.ADMIN_NOTIFY_BROADCAST_ROUTING_KEY));
-            log.info("[RabbitMQ] declareBinding (broadcast) called");
-
-            log.info("[RabbitMQ] Admin notify exchange and queue declared successfully");
         } catch (Exception e) {
             log.error("[RabbitMQ] Failed to declare admin notify exchange/queue: {} - {}", e.getClass().getName(), e.getMessage(), e);
         }
@@ -76,33 +68,26 @@ public class RabbitMqConfig {
      */
     @PostConstruct
     public void initVipOrderExchangeAndQueue() {
-        log.info("[RabbitMQ] Starting to declare VIP order exchange and queue...");
         try {
             RabbitAdmin admin = new RabbitAdmin(connectionFactory);
 
             // 声明VIP订单交换机
             admin.declareExchange(new DirectExchange(VIP_ORDER_EXCHANGE, true, false));
-            log.info("[RabbitMQ] VIP order exchange declared: {}", VIP_ORDER_EXCHANGE);
 
             // 声明VIP订单过期队列（带死信队列配置）
             admin.declareQueue(QueueBuilder.durable(VIP_ORDER_EXPIRE_QUEUE)
                     .withArgument("x-dead-letter-exchange", "")
                     .withArgument("x-dead-letter-routing-key", VIP_ORDER_EXPIRE_QUEUE + ".dlq")
                     .build());
-            log.info("[RabbitMQ] VIP order expire queue declared: {}", VIP_ORDER_EXPIRE_QUEUE);
 
             // 声明死信队列
             admin.declareQueue(new Queue(VIP_ORDER_EXPIRE_QUEUE + ".dlq", true));
-            log.info("[RabbitMQ] VIP order dead letter queue declared: {}", VIP_ORDER_EXPIRE_QUEUE + ".dlq");
 
             // 绑定交换机和队列
             admin.declareBinding(BindingBuilder
                     .bind(new Queue(VIP_ORDER_EXPIRE_QUEUE, true))
                     .to(new DirectExchange(VIP_ORDER_EXCHANGE, true, false))
                     .with(VIP_ORDER_EXPIRE_ROUTING_KEY));
-            log.info("[RabbitMQ] VIP order binding declared");
-
-            log.info("[RabbitMQ] VIP order exchange and queue declared successfully");
         } catch (Exception e) {
             log.error("[RabbitMQ] Failed to declare VIP order exchange/queue: {} - {}", e.getClass().getName(), e.getMessage(), e);
         }
@@ -113,26 +98,20 @@ public class RabbitMqConfig {
      */
     @PostConstruct
     public void initPointsExchangeAndQueue() {
-        log.info("[RabbitMQ] Starting to declare points exchange and queue...");
         try {
             RabbitAdmin admin = new RabbitAdmin(connectionFactory);
 
             // 声明积分交换机
             admin.declareExchange(new DirectExchange(PointsEventPublisher.EXCHANGE, true, false));
-            log.info("[RabbitMQ] Points exchange declared: {}", PointsEventPublisher.EXCHANGE);
 
             // 声明积分队列
             admin.declareQueue(QueueBuilder.durable(PointsEventPublisher.QUEUE).build());
-            log.info("[RabbitMQ] Points queue declared: {}", PointsEventPublisher.QUEUE);
 
             // 绑定交换机和队列
             admin.declareBinding(BindingBuilder
                     .bind(new Queue(PointsEventPublisher.QUEUE, true))
                     .to(new DirectExchange(PointsEventPublisher.EXCHANGE, true, false))
                     .with(PointsEventPublisher.ROUTING_KEY));
-            log.info("[RabbitMQ] Points binding declared");
-
-            log.info("[RabbitMQ] Points exchange and queue declared successfully");
         } catch (Exception e) {
             log.error("[RabbitMQ] Failed to declare points exchange/queue: {} - {}", e.getClass().getName(), e.getMessage(), e);
         }

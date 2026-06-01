@@ -56,3 +56,10 @@ sql/*.sql
 .agents
 test
 .codex
+
+# 单元测试文件（前端/后端）
+src/test/
+**/src/test/
+**/__tests__/
+**/*.test.*
+**/*.spec.*
