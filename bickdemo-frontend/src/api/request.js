@@ -1,24 +1,17 @@
 import axios from 'axios'
 import { useUserStore } from '@/stores/user'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import router from '@/router'
+import {
+  clearAuthExpiredState,
+  createResponseErrorHandler,
+  createResponseSuccessHandler
+} from './requestInterceptors'
 
-const AUTH_EXPIRED_KEY = 'bickdemo:authExpired'
 const VISITOR_ID_STORAGE_KEY = 'bickdemo.visitorId'
 
-function isAuthExpiredHandled() {
-  return sessionStorage.getItem(AUTH_EXPIRED_KEY) === '1'
-}
-
-function markAuthExpiredHandled() {
-  sessionStorage.setItem(AUTH_EXPIRED_KEY, '1')
-  setTimeout(() => {
-    sessionStorage.removeItem(AUTH_EXPIRED_KEY)
-  }, 10000)
-}
-
 window.addEventListener('beforeunload', () => {
-  sessionStorage.removeItem(AUTH_EXPIRED_KEY)
+  clearAuthExpiredState(sessionStorage)
 })
 
 function resolveVisitorId() {
@@ -44,6 +37,27 @@ const request = axios.create({
   timeout: 10000
 })
 
+const notifyError = (message) => {
+  ElMessage.error(message)
+}
+
+const logoutUser = () => {
+  const userStore = useUserStore()
+  if (userStore.token) {
+    userStore.logout()
+  }
+}
+
+const redirectToLogin = (path, query) => {
+  router.replace({
+    path,
+    query
+  })
+}
+
+const getCurrentPath = () => window.location.pathname + window.location.search
+const isOnLoginPage = () => typeof window !== 'undefined' && window.location?.pathname === '/login'
+
 request.interceptors.request.use(
   config => {
     config.headers = config.headers || {}
@@ -64,70 +78,24 @@ request.interceptors.request.use(
 )
 
 request.interceptors.response.use(
-  response => {
-    const res = response.data
-    if (res.code !== 200) {
-      if (!response.config?.suppressErrorMessage) {
-        ElMessage.error(res.message || '请求失败')
-      }
-      return Promise.reject(new Error(res.message || '请求失败'))
-    }
-    return res
-  },
-  error => {
-    if (error.response) {
-      const { status, data } = error.response
-      if (status === 401) {
-        const reqUrl = String(error?.config?.url || '')
-        const onLoginPage = typeof window !== 'undefined' && window.location && window.location.pathname === '/login'
-        const isLoginRequest = reqUrl.includes('/auth/login')
-
-        if ((isLoginRequest || onLoginPage) && !error.config?.suppressErrorMessage) {
-          ElMessage.error((data && data.message) || '用户名或密码错误')
-        } else {
-          if (!isAuthExpiredHandled()) {
-            markAuthExpiredHandled()
-            const userStore = useUserStore()
-            if (userStore.token) {
-              userStore.logout()
-            }
-            if (!error.config?.suppressErrorMessage) {
-              ElMessage.error((data && data.message) || '登录已过期，正在跳转登录页...')
-            }
-            const currentPath = window.location.pathname + window.location.search
-            router.replace({
-              path: '/login',
-              query: currentPath && currentPath !== '/login' ? { redirect: currentPath } : undefined
-            })
-          }
-          error.isAuthExpired = true
-        }
-      } else if (status === 400) {
-        // 400 错误显示详细验证信息（登录相关请求由调用方自行处理错误提示）
-        const reqUrl = String(error?.config?.url || '')
-        const isLoginRequest = reqUrl.includes('/auth/login') || reqUrl.includes('/auth/email/login')
-        if (!isLoginRequest) {
-          if (data && data.data && typeof data.data === 'object') {
-            const messages = Object.values(data.data).join('; ')
-            if (!error.config?.suppressErrorMessage) {
-              ElMessage.error(messages)
-            }
-          } else if (data && data.message && !error.config?.suppressErrorMessage) {
-            ElMessage.error(data.message)
-          }
-        }
-      } else {
-        if (data && data.message && !error.config?.suppressErrorMessage) {
-          ElMessage.error(data.message)
-        }
-      }
-    } else {
-      if (!error.config?.suppressErrorMessage) {
-        ElMessage.error('网络错误，请稍后重试')
-      }
-    }
-    return Promise.reject(error)
-  }
+  createResponseSuccessHandler({
+    storage: sessionStorage,
+    notify: notifyError,
+    logout: logoutUser,
+    redirect: redirectToLogin,
+    getCurrentPath,
+    scheduleReset: setTimeout,
+    isOnLoginPage
+  }),
+  createResponseErrorHandler({
+    storage: sessionStorage,
+    notify: notifyError,
+    logout: logoutUser,
+    redirect: redirectToLogin,
+    getCurrentPath,
+    scheduleReset: setTimeout,
+    isOnLoginPage
+  })
 )
 
 export default request

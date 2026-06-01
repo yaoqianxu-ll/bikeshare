@@ -6,7 +6,8 @@
   "scripts": {
     "user": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:run": "node --test \"src/**/*.test.js\""
   },
   "dependencies": {
     "@antv/g2": "^5.4.8",
