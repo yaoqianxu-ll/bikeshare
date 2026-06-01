@@ -3,16 +3,11 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
 import {
-  clearAuthExpiredState,
   createResponseErrorHandler,
   createResponseSuccessHandler
 } from './requestInterceptors'
 
 const VISITOR_ID_STORAGE_KEY = 'bickdemo.visitorId'
-
-window.addEventListener('beforeunload', () => {
-  clearAuthExpiredState(sessionStorage)
-})
 
 function resolveVisitorId() {
   if (typeof window === 'undefined') {
