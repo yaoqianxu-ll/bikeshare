@@ -18,6 +18,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 
@@ -176,6 +177,14 @@ public class VipServiceImpl implements VipService {
             throw new RuntimeException("用户不存在");
         }
 
+        boolean paidOrderGrant = StringUtils.hasText(orderNo);
+        if (paidOrderGrant) {
+            VipMember vipMember = vipMemberService.getVipMemberByUserId(userId);
+            if (vipMember != null && orderNo.equals(vipMember.getLastOrderNo())) {
+                return;
+            }
+        }
+
         // 如果没有指定经验值，根据套餐获取默认经验值
         int expGain = (experience != null) ? experience : EXP_MONTHLY; // 默认为月卡经验
         int newExp = (user.getExperiencePoints() != null ? user.getExperiencePoints() : 0) + expGain;
@@ -184,7 +193,13 @@ public class VipServiceImpl implements VipService {
         user.setVipLevel(calculateVipLevel(newExp));
         userMapper.updateById(user);
 
-        // 激活VIP会员（使用VipMemberService同步vip_member表和User表）
+        if (paidOrderGrant) {
+            // 用户端真实支付订单按续期语义处理，保留原有效期并叠加时长
+            vipMemberService.activateVip(userId, orderNo, days);
+            return;
+        }
+
+        // 管理端手工发放保持覆盖语义，从当前时间重新计算有效期
         vipMemberService.overwriteVip(userId, days, orderNo);
     }
 
