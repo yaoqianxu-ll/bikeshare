@@ -168,6 +168,21 @@
                   </div>
                 </div>
               </div>
+              <div class="order-pagination" v-if="ordersTotal > orderPageSize">
+                <span class="order-pagination-total">共 {{ ordersTotal }} 条</span>
+                <el-pagination
+                  v-model:current-page="orderPage"
+                  v-model:page-size="orderPageSize"
+                  layout="prev, pager, next"
+                  :total="ordersTotal"
+                  @current-change="loadOrders"
+                />
+                <PageSizeDropdown
+                  v-model="orderPageSize"
+                  :page-sizes="[5, 10, 20]"
+                  @change="handleOrderPageSizeChange"
+                />
+              </div>
               <div class="empty-placeholder" v-else>
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" stroke-width="1.5"/></svg>
                 <p>暂无订单记录</p>
@@ -321,6 +336,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import PageSizeDropdown from '@/components/PageSizeDropdown.vue'
 import { useUserStore } from '@/stores/user'
 import { getPointsBalance, signIn, getSignInStatus } from '@/api/points'
 import { getVipStatus, createVipOrder, getVipOrders, cancelOrder, confirmPayment, getOrderStatus, redeemVip } from '@/api/vip'
@@ -335,6 +351,10 @@ const pointsBalance = ref(0)
 const vipStatus = ref(null)
 const signedToday = ref(false)
 const orders = ref([])
+const ordersTotal = ref(0)
+const orderPage = ref(1)
+const orderPageSize = ref(5)
+const hasPendingOrderFlag = ref(false)
 const submitting = ref(false)
 const selectedPlanCode = ref('MONTHLY')
 const purchaseMode = ref('cash') // 'cash' | 'points'
@@ -415,7 +435,7 @@ const payDialogTitle = computed(() => {
 
 // 是否有待支付订单
 const hasPendingOrder = computed(() => {
-  return orders.value.some(o => o.status === 'PENDING')
+  return hasPendingOrderFlag.value
 })
 
 // 处理 popup 窗口通过 postMessage 发来的支付结果（需在 handleAlipayMessage 之前定义）
@@ -427,7 +447,7 @@ const finalizePaymentSuccess = async (orderNo, tradeNo = '') => {
   stopPayStatusPolling()
   payStatus.value = 'success'
   payTradeNo.value = tradeNo || ''
-  await Promise.all([loadVipStatus(), loadOrders(), loadPointsBalance()])
+  await Promise.all([loadVipStatus(), refreshOrderState(), loadPointsBalance()])
   ElMessage.success('支付成功！VIP已开通，经验值已发放')
 }
 
@@ -504,7 +524,7 @@ const startCountdown = (expireTimeOrSeconds) => {
       stopCountdown()
       stopPayStatusPolling()
       payStatus.value = 'expired'
-      loadOrders()
+      refreshOrderState()
     }
   }, 1000)
 }
@@ -605,13 +625,51 @@ const loadVipStatus = async () => {
 }
 
 // 获取订单列表
-const loadOrders = async () => {
+const loadOrders = async (page = orderPage.value) => {
   try {
-    const res = await getVipOrders()
-    orders.value = res.data || []
+    const targetPage = Number(page || 1)
+    const res = await getVipOrders({
+      page: targetPage,
+      size: orderPageSize.value
+    })
+    const records = Array.isArray(res.data) ? res.data : (res.data?.records || [])
+    const total = Array.isArray(res.data) ? records.length : Number(res.data?.total || 0)
+    const current = Array.isArray(res.data) ? targetPage : Number(res.data?.current || targetPage)
+
+    if (current > 1 && total > 0 && records.length === 0) {
+      orderPage.value = current - 1
+      return loadOrders(orderPage.value)
+    }
+
+    orders.value = records
+    ordersTotal.value = total
+    orderPage.value = current
   } catch (e) {
     console.error(e)
   }
+}
+
+const loadPendingOrderFlag = async () => {
+  try {
+    const res = await getVipOrders({
+      page: 1,
+      size: 1,
+      status: 'PENDING'
+    })
+    hasPendingOrderFlag.value = Number(res.data?.total || 0) > 0
+  } catch (e) {
+    console.error(e)
+    hasPendingOrderFlag.value = orders.value.some(o => o.status === 'PENDING')
+  }
+}
+
+const refreshOrderState = async () => {
+  await Promise.all([loadOrders(), loadPendingOrderFlag()])
+}
+
+const handleOrderPageSizeChange = async () => {
+  orderPage.value = 1
+  await loadOrders(1)
 }
 
 // 统一购买入口（现金 or 积分）
@@ -651,7 +709,7 @@ const doPurchase = async (plan) => {
       }
       await redeemVip(plan.type)
       ElMessage.success(`${selectedPlan.name}兑换成功！VIP已开通，经验值已发放`)
-      await Promise.all([loadVipStatus(), loadOrders(), loadPointsBalance()])
+      await Promise.all([loadVipStatus(), refreshOrderState(), loadPointsBalance()])
     } else {
       // 现金购买
       await handleCreateOrder(plan)
@@ -700,7 +758,7 @@ const handleCreateOrder = async (plan) => {
       payDialogVisible.value = true
 
       // 立即刷新订单列表（实时显示）
-      await loadOrders()
+      await refreshOrderState()
 
       // 启动倒计时（优先使用后端返回的remainingSeconds）
       if (res.data.remainingSeconds != null && res.data.remainingSeconds > 0) {
@@ -744,7 +802,7 @@ const handleRepayOrder = async (order) => {
 
     if (existingOrder.status === 'PAID') {
       ElMessage.warning('该订单已支付')
-      await loadOrders()
+      await refreshOrderState()
       return
     }
 
@@ -755,7 +813,7 @@ const handleRepayOrder = async (order) => {
 
     if (expired) {
       ElMessage.warning('订单已过期，请重新下单')
-      await loadOrders()
+      await refreshOrderState()
       return
     }
 
@@ -892,7 +950,7 @@ const handleCancelOrderInDialog = async () => {
     payDialogVisible.value = false
     payOrderData.value = null
     payTradeNo.value = ''
-    await loadOrders()
+    await refreshOrderState()
   } catch (e) {
     console.error(e)
     ElMessage.error('取消订单失败')
@@ -911,7 +969,7 @@ const handleCancelConfirmed = async () => {
     await cancelOrder(cancelOrderNo.value)
     ElMessage.success('订单已取消')
     cancelDialogVisible.value = false
-    await loadOrders()
+    await refreshOrderState()
   } catch (e) {
     console.error(e)
   }
@@ -977,7 +1035,7 @@ onMounted(async () => {
     loadPointsBalance(),
     loadSignInStatus(),
     loadVipStatus(),
-    loadOrders()
+    refreshOrderState()
   ])
   // 默认选中第一个套餐
   if (plans.length) {
@@ -1666,6 +1724,20 @@ onUnmounted(() => {
   gap: 0;
 }
 
+.order-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 18px;
+}
+
+.order-pagination-total {
+  font-size: 12px;
+  color: var(--vip-muted);
+}
+
 .order-row {
   display: flex;
   align-items: center;
@@ -1751,6 +1823,26 @@ onUnmounted(() => {
 
     &:hover { opacity: 0.88; }
   }
+}
+
+.order-pagination :deep(.el-pagination button),
+.order-pagination :deep(.el-pagination li) {
+  background: var(--vip-surface);
+  border: 1px solid var(--vip-border2);
+  color: var(--vip-text);
+  border-radius: 8px;
+}
+
+.order-pagination :deep(.el-pagination button:hover),
+.order-pagination :deep(.el-pagination li:hover) {
+  color: var(--vip-gold2);
+  border-color: var(--vip-border);
+}
+
+.order-pagination :deep(.el-pagination li.is-active) {
+  background: linear-gradient(135deg, var(--vip-gold), var(--vip-gold3));
+  border-color: transparent;
+  color: #0a0a0f;
 }
 
 /* 空状态 */

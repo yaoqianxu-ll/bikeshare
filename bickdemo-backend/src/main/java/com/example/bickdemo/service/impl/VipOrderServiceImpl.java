@@ -2,6 +2,7 @@ package com.example.bickdemo.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.bickdemo.config.RabbitMqConfig;
 import com.example.bickdemo.entity.VipOrder;
 import com.example.bickdemo.entity.VipPlan;
@@ -189,19 +190,23 @@ public class VipOrderServiceImpl implements VipOrderService {
     }
 
     /**
-     * 获取用户订单列表
-     * 查询指定用户的所有VIP订单，按创建时间倒序排列
+     * 分页获取用户订单列表
+     * 查询指定用户的VIP订单，按创建时间倒序排列
      *
      * @param userId 用户ID
-     * @return 用户的VIP订单列表
+     * @param page 页码
+     * @param size 每页条数
+     * @param status 订单状态，可选
+     * @return 用户的VIP订单分页列表
      */
     @Override
-    public List<VipOrder> getUserOrders(Long userId) {
-        return vipOrderMapper.selectList(
-                new LambdaQueryWrapper<VipOrder>()
-                        .eq(VipOrder::getUserId, userId)
-                        .orderByDesc(VipOrder::getCreatedAt)
-        );
+    public Page<VipOrder> getUserOrdersPage(Long userId, int page, int size, String status) {
+        LambdaQueryWrapper<VipOrder> queryWrapper = new LambdaQueryWrapper<VipOrder>()
+                .eq(VipOrder::getUserId, userId)
+                .eq(status != null && !status.isBlank(), VipOrder::getStatus, status)
+                .orderByDesc(VipOrder::getCreatedAt);
+
+        return vipOrderMapper.selectPage(new Page<>(page, size), queryWrapper);
     }
 
     /**

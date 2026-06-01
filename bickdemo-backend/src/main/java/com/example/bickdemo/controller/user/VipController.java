@@ -1,5 +1,6 @@
 package com.example.bickdemo.controller.user;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.bickdemo.dto.ApiResponse;
 import com.example.bickdemo.dto.VipConfirmRequest;
 import com.example.bickdemo.dto.VipPurchaseRequest;
@@ -18,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -189,20 +191,26 @@ public class VipController {
 
     /**
      * 获取用户VIP订单列表
-     * 返回当前用户的所有VIP订单记录
+     * 分页返回当前用户的VIP订单记录
      *
      * @param userDetails 当前登录用户
-     * @return 订单列表
+     * @return 订单分页列表
      */
     @GetMapping("/orders")
-    public ResponseEntity<ApiResponse<List<VipOrder>>> getOrders(
-            @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<ApiResponse<Page<VipOrder>>> getOrders(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status) {
         Long userId = getCurrentUserId(userDetails);
         if (userId == null) {
-            return ResponseEntity.ok(ApiResponse.success(List.of()));
+            Page<VipOrder> emptyPage = new Page<>(page, size);
+            emptyPage.setTotal(0);
+            emptyPage.setRecords(Collections.emptyList());
+            return ResponseEntity.ok(ApiResponse.success(emptyPage));
         }
 
-        List<VipOrder> orders = vipOrderService.getUserOrders(userId);
+        Page<VipOrder> orders = vipOrderService.getUserOrdersPage(userId, page, size, status);
         return ResponseEntity.ok(ApiResponse.success(orders));
     }
 

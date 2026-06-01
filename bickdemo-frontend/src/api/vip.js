@@ -76,13 +76,18 @@ export function createVipOrder(data) {
 
 /**
  * 获取VIP订单列表
- * 获取当前用户的所有VIP订单记录
- * @returns {Promise} 订单列表
+ * 分页获取当前用户的VIP订单记录
+ * @param {Object} params - 查询参数
+ * @param {number} params.page - 页码
+ * @param {number} params.size - 每页条数
+ * @param {string} params.status - 订单状态，可选
+ * @returns {Promise} 分页订单列表
  */
-export function getVipOrders() {
+export function getVipOrders(params = {}) {
   return request({
     url: '/vip/orders',
-    method: 'get'
+    method: 'get',
+    params
   })
 }
 
