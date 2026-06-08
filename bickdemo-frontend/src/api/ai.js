@@ -40,28 +40,38 @@ export function aiChatSSE(message, history = [], onMessage, onError, onComplete)
         }
 
         const chunk = decoder.decode(value)
-        // text/plain 模式：直接返回原始文本块
-        // SSE 格式：data: 内容\n\n
-        const lines = chunk.split('\n')
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed) continue
-          if (trimmed === '[DONE]') {
-            onComplete && onComplete()
-            return
-          }
-          // SSE 格式检测
-          if (trimmed.startsWith('data: ')) {
-            const content = trimmed.slice(6)
-            if (content === '[DONE]') {
-              onComplete && onComplete()
-              return
+
+        // 检查结束标记
+        if (chunk.trim() === '[DONE]') {
+          onComplete && onComplete()
+          return
+        }
+
+        // SSE 格式检测（data: 前缀）
+        if (chunk.includes('data: ')) {
+          const lines = chunk.split('\n')
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed || trimmed === '[DONE]') {
+              if (trimmed === '[DONE]') {
+                onComplete && onComplete()
+                return
+              }
+              continue
             }
-            onMessage && onMessage(content)
-          } else {
-            // text/plain 模式：直接使用原始文本
-            onMessage && onMessage(trimmed)
+            if (trimmed.startsWith('data: ')) {
+              const content = trimmed.slice(6)
+              if (content === '[DONE]') {
+                onComplete && onComplete()
+                return
+              }
+              onMessage && onMessage(content)
+            }
           }
+        } else {
+          // text/plain 模式：直接传递原始文本块
+          // 完整保留换行符、缩进和空行，确保 Markdown 渲染正确
+          onMessage && onMessage(chunk)
         }
         read()
       })

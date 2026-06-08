@@ -233,7 +233,7 @@
                 <div class="user-avatar" v-if="!userStore.avatar">{{ userStore.username.charAt(0).toUpperCase() }}</div>
                 <el-avatar v-else :src="userStore.avatar" :size="32" class="user-avatar-img" />
                 <span class="user-text">{{ userStore.username }}</span>
-                <span v-if="userVipLevel > 0" class="vip-badge">VIP{{ userVipLevel }}</span>
+                <span v-if="userStore.vipLevel > 0" class="vip-badge">VIP{{ userStore.vipLevel }}</span>
               </span>
               <template #dropdown>
                 <el-dropdown-menu class="user-dropdown-menu">
@@ -352,7 +352,6 @@ const backgrounds = ref([])
 const bgLoaded = ref(false)
 const uploading = ref(false)
 const isMobile = ref(false)
-const userVipLevel = ref(0)
 
 // 预加载图片
 const preloadImage = (url) => {
@@ -686,7 +685,7 @@ onMounted(() => {
     rentalStore.loadActiveRentals()
     // 获取VIP状态
     getVipStatus().then(res => {
-      userVipLevel.value = res?.data?.currentLevel || 0
+      userStore.setVipLevel(res?.data?.currentLevel || 0)
     }).catch(() => {})
   }
 })
@@ -700,12 +699,12 @@ watch(() => userStore.isLoggedIn, (loggedIn) => {
     activityStore.loadActivities()
     rentalStore.loadActiveRentals()
     getVipStatus().then(res => {
-      userVipLevel.value = res?.data?.currentLevel || 0
+      userStore.setVipLevel(res?.data?.currentLevel || 0)
     }).catch(() => {})
   } else {
     contactsStore.reset()
     disconnectSocket()
-    userVipLevel.value = 0
+    userStore.setVipLevel(0)
   }
 })
 
@@ -1418,6 +1417,18 @@ watch(
   margin-left: 6px;
   letter-spacing: 0.03em;
   box-shadow: 0 2px 8px rgba(212, 164, 58, 0.3);
+  animation: vip-badge-in 0.25s ease both;
+}
+
+@keyframes vip-badge-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .user-avatar {
