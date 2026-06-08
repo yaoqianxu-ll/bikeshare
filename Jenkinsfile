@@ -271,19 +271,16 @@ pipeline {
                 sh """
                     cd ${WORKSPACE}
 
-                    echo "加载 .env 中的关键变量..."
+                    echo "加载 .env 中的 AI 密钥..."
                     if [ -f .env ]; then
-                        # 显式导出 .env 中所有变量到当前 shell
-                        set -a
-                        . ./.env
-                        set +a
+                        export SILICONFLOW_API_KEY=\$(grep '^SILICONFLOW_API_KEY=' .env | cut -d= -f2)
                         echo "SILICONFLOW_API_KEY 长度: \${#SILICONFLOW_API_KEY}"
                     else
                         echo "警告：.env 文件不存在！尝试从备用路径恢复..."
                         for f in /opt/bickdemo/.env /var/jenkins_home/.bickdemo.env; do
                             if [ -f "\$f" ]; then
                                 cp "\$f" .env
-                                set -a; . ./.env; set +a
+                                export SILICONFLOW_API_KEY=\$(grep '^SILICONFLOW_API_KEY=' .env | cut -d= -f2)
                                 echo "已从 \$f 恢复 .env"
                                 break
                             fi
@@ -299,11 +296,9 @@ pipeline {
                     echo "校验 AI 密钥..."
                     AI_KEY=\$(docker exec ${COMPOSE_PROJECT_NAME}-app-1 printenv SILICONFLOW_API_KEY 2>/dev/null)
                     if [ -z "\${AI_KEY}" ]; then
-                        echo "!! SILICONFLOW_API_KEY 未注入容器，强制通过 docker run 注入..."
-                        docker stop ${COMPOSE_PROJECT_NAME}-app-1 2>/dev/null || true
-                        docker rm ${COMPOSE_PROJECT_NAME}-app-1 2>/dev/null || true
-                        SILICONFLOW_API_KEY=\$(grep '^SILICONFLOW_API_KEY=' .env | cut -d= -f2) \\
-                            docker-compose up -d app
+                        echo "!! SILICONFLOW_API_KEY 未注入容器，强制重新部署 app..."
+                        export SILICONFLOW_API_KEY=\$(grep '^SILICONFLOW_API_KEY=' .env | cut -d= -f2)
+                        docker-compose up -d app
                     else
                         echo "SILICONFLOW_API_KEY 已注入 (长度: \${#AI_KEY})"
                     fi
