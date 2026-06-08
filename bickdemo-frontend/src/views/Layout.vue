@@ -330,7 +330,8 @@ import { getBackgrounds, getSelectableBackgrounds, getAllBackgrounds, setEnabled
 import { getCurrentUser } from '@/api/auth'
 import { getContacts } from '@/api/social'
 import { getVipStatus } from '@/api/vip'
-import { createChatSocket } from '@/utils/chatSocket'
+// chatSocket 改为动态导入，仅在需要连接时才加载（节省 87KB）
+// import { createChatSocket } from '@/utils/chatSocket'  // 移入 connectSocket 内部
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import AiChatButton from '@/components/AiChatButton.vue'
 import AiChatDialog from '@/components/AiChatDialog.vue'
@@ -465,10 +466,11 @@ const goToFriends = () => {
   }
 }
 
-// 连接 WebSocket
-const connectSocket = () => {
+// 连接 WebSocket（动态导入 chatSocket 模块）
+const connectSocket = async () => {
   if (!userStore.isLoggedIn || socketClient) return
 
+  const { createChatSocket } = await import('@/utils/chatSocket')
   socketClient = createChatSocket(userStore.token, {
     onConnect: () => {
       console.log('[Layout] WebSocket 已连接')

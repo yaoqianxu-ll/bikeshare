@@ -10,13 +10,10 @@
     "test:run": "node --test \"src/**/*.test.js\""
   },
   "dependencies": {
-    "@antv/g2": "^5.4.8",
-    "@antv/g2plot": "^2.4.35",
     "@element-plus/icons-vue": "^2.3.1",
     "@stomp/stompjs": "^7.2.0",
     "axios": "^1.6.2",
     "browser-image-compression": "^2.0.2",
-    "echarts": "^6.0.0",
     "element-plus": "^2.5.0",
     "highcharts": "^12.5.0",
     "naive-ui": "^2.44.1",
@@ -28,6 +25,8 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
     "sass": "^1.97.3",
+    "unplugin-auto-import": "^21.0.0",
+    "unplugin-vue-components": "^32.1.0",
     "vite": "^5.0.0"
   },
   "packageManager": "npm@11.12.1"
