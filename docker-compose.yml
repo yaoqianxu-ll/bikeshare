@@ -63,8 +63,7 @@ services:
       - ALIPAY_PUBLIC_KEY=${ALIPAY_PUBLIC_KEY:-}
       - ALIPAY_SANDBOX=${ALIPAY_SANDBOX:-true}
       - ALIPAY_RETURN_URL=${ALIPAY_RETURN_URL:-https://bikeshare.online/points}
-      # SILICONFLOW_API_KEY 不在此处声明，由 env_file: .env 直接注入
-      # 避免 Jenkins shell 环境变量为空时覆盖 .env 中的真实值
+      - SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY:-}
       - TZ=Asia/Shanghai
     volumes:
       - ./logs:/app/logs

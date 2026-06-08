@@ -271,16 +271,27 @@ pipeline {
                 sh """
                     cd ${WORKSPACE}
 
-                    echo "检查 .env 文件..."
-                    if [ ! -f .env ]; then
-                        echo "警告：.env 文件不存在！尝试从 /opt/bickdemo/.env 复制..."
-                        cp /opt/bickdemo/.env .env 2>/dev/null || cp /var/jenkins_home/.bickdemo.env .env 2>/dev/null || true
+                    echo "加载 .env 中的关键变量..."
+                    if [ -f .env ]; then
+                        # 显式导出 .env 中所有变量到当前 shell
+                        set -a
+                        . ./.env
+                        set +a
+                        echo "SILICONFLOW_API_KEY 长度: \${#SILICONFLOW_API_KEY}"
+                    else
+                        echo "警告：.env 文件不存在！尝试从备用路径恢复..."
+                        for f in /opt/bickdemo/.env /var/jenkins_home/.bickdemo.env; do
+                            if [ -f "\$f" ]; then
+                                cp "\$f" .env
+                                set -a; . ./.env; set +a
+                                echo "已从 \$f 恢复 .env"
+                                break
+                            fi
+                        done
                     fi
 
-                    echo "SILICONFLOW_API_KEY 状态: \$(grep -c SILICONFLOW_API_KEY .env 2>/dev/null && echo '存在于.env' || echo '不在.env中')"
-
                     echo "启动服务..."
-                    docker-compose --env-file .env up -d --remove-orphans
+                    docker-compose up -d --remove-orphans
 
                     echo "等待服务启动..."
                     sleep 30
@@ -288,11 +299,13 @@ pipeline {
                     echo "校验 AI 密钥..."
                     AI_KEY=\$(docker exec ${COMPOSE_PROJECT_NAME}-app-1 printenv SILICONFLOW_API_KEY 2>/dev/null)
                     if [ -z "\${AI_KEY}" ]; then
-                        echo "警告：SILICONFLOW_API_KEY 未注入容器！尝试修复..."
-                        export SILICONFLOW_API_KEY=\$(grep SILICONFLOW_API_KEY .env 2>/dev/null | cut -d= -f2)
-                        docker-compose --env-file .env up -d app
+                        echo "!! SILICONFLOW_API_KEY 未注入容器，强制通过 docker run 注入..."
+                        docker stop ${COMPOSE_PROJECT_NAME}-app-1 2>/dev/null || true
+                        docker rm ${COMPOSE_PROJECT_NAME}-app-1 2>/dev/null || true
+                        SILICONFLOW_API_KEY=\$(grep '^SILICONFLOW_API_KEY=' .env | cut -d= -f2) \\
+                            docker-compose up -d app
                     else
-                        echo "SILICONFLOW_API_KEY 已正确注入"
+                        echo "SILICONFLOW_API_KEY 已注入 (长度: \${#AI_KEY})"
                     fi
 
                     echo "检查容器状态..."
