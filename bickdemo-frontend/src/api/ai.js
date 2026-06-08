@@ -47,31 +47,28 @@ export function aiChatSSE(message, history = [], onMessage, onError, onComplete)
           return
         }
 
-        // SSE 格式检测（data: 前缀）
-        if (chunk.includes('data: ')) {
-          const lines = chunk.split('\n')
-          for (const line of lines) {
-            const trimmed = line.trim()
-            if (!trimmed || trimmed === '[DONE]') {
-              if (trimmed === '[DONE]') {
-                onComplete && onComplete()
-                return
-              }
-              continue
-            }
-            if (trimmed.startsWith('data: ')) {
-              const content = trimmed.slice(6)
-              if (content === '[DONE]') {
-                onComplete && onComplete()
-                return
-              }
-              onMessage && onMessage(content)
-            }
+        // 逐行处理：兼容 SSE 格式（data: 前缀）和纯 text/plain
+        const lines = chunk.split('\n')
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed) continue
+          if (trimmed === '[DONE]') {
+            onComplete && onComplete()
+            return
           }
-        } else {
-          // text/plain 模式：直接传递原始文本块
-          // 完整保留换行符、缩进和空行，确保 Markdown 渲染正确
-          onMessage && onMessage(chunk)
+          // SSE 格式：提取 data: 后的实际内容
+          if (trimmed.startsWith('data: ')) {
+            const content = trimmed.slice(6)
+            if (content === '[DONE]') {
+              onComplete && onComplete()
+              return
+            }
+            onMessage && onMessage(content)
+          } else {
+            // text/plain 模式：保留原始行内容和换行符
+            // 确保 Markdown 的标题、列表、段落分隔不被破坏
+            onMessage && onMessage(line + '\n')
+          }
         }
         read()
       })
