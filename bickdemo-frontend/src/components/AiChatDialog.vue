@@ -75,8 +75,8 @@
               </div>
 
               <div class="ai-msg__row">
-                <div class="ai-msg__bubble" :class="msg.role === 'user' ? 'ai-msg__bubble--user' : 'ai-msg__bubble--bot'">
-                  <div v-html="formatMessage(msg.content)"></div>
+                <div class="ai-msg__bubble" :class="[msg.role === 'user' ? 'ai-msg__bubble--user' : 'ai-msg__bubble--bot', msg.role === 'assistant' ? 'ai-msg__bubble--md' : '']">
+                  <div v-html="formatMessage(msg.content, msg.role)"></div>
                 </div>
                 <!-- 打字指示器 -->
                 <div class="ai-msg__typing" v-if="isTyping && index === messages.length - 1 && msg.role === 'assistant'">
@@ -117,6 +117,13 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import { aiChatSSE } from '@/api/ai'
+import { marked } from 'marked'
+
+// 配置 marked：开启转义防止 XSS，关闭 mangle 避免破坏邮箱等文本
+marked.setOptions({
+  breaks: true,
+  gfm: true
+})
 
 const props = defineProps({
   visible: {
@@ -154,16 +161,18 @@ function buildAvatarStyle(avatar) {
   return { background: '#94a3b8' }
 }
 
-function formatMessage(content) {
+function formatMessage(content, role) {
   if (!content) return ''
-  return content
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\n\n+/g, '<br><br>')
-    .replace(/\n/g, '<br>')
-    .replace(/\*\*(.*?)\*\*/g, '<br><strong>$1</strong><br>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
+  // 用户消息：纯文本，只做 HTML 转义 + 换行
+  if (role === 'user') {
+    return content
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>')
+  }
+  // AI 消息：用 marked 渲染标准 markdown
+  return marked.parse(content)
 }
 
 function scrollToBottom() {
@@ -450,13 +459,13 @@ function clearMessages() {
   font-size: 14px;
   line-height: 1.55;
   word-break: break-word;
-  white-space: pre-wrap;
 }
 
 .ai-msg__bubble--user {
   background: var(--brand-primary, #ff6b35);
   color: #fff;
   border-bottom-right-radius: 4px;
+  white-space: pre-wrap;
 }
 
 .ai-msg__bubble--bot {
@@ -466,7 +475,71 @@ function clearMessages() {
   border-bottom-left-radius: 4px;
 }
 
-.ai-msg__bubble code {
+/* === Markdown 内容样式（bot 消息） === */
+/* 使用 :deep() 穿透 scoped，确保 v-html 渲染的子元素也能匹配样式 */
+.ai-msg__bubble--md :deep(:first-child) { margin-top: 0; }
+.ai-msg__bubble--md :deep(:last-child) { margin-bottom: 0; }
+
+.ai-msg__bubble--md :deep(h1),
+.ai-msg__bubble--md :deep(h2),
+.ai-msg__bubble--md :deep(h3),
+.ai-msg__bubble--md :deep(h4) {
+  margin: 10px 0 5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: inherit;
+}
+.ai-msg__bubble--md :deep(h1) { font-size: 1.15em; }
+.ai-msg__bubble--md :deep(h2) { font-size: 1.08em; }
+.ai-msg__bubble--md :deep(h3) { font-size: 1em; }
+.ai-msg__bubble--md :deep(h4) { font-size: 0.95em; }
+
+.ai-msg__bubble--md :deep(p) {
+  margin: 0 0 8px;
+}
+
+.ai-msg__bubble--md :deep(ul),
+.ai-msg__bubble--md :deep(ol) {
+  padding-left: 1.4em;
+  margin: 4px 0 8px;
+}
+
+.ai-msg__bubble--md :deep(li) {
+  margin-bottom: 3px;
+}
+
+.ai-msg__bubble--md :deep(li > p) {
+  margin-bottom: 2px;
+}
+
+.ai-msg__bubble--md :deep(blockquote) {
+  margin: 6px 0;
+  padding: 4px 12px;
+  border-left: 3px solid var(--brand-primary, #ff6b35);
+  color: var(--bs-muted, #64748b);
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 0 6px 6px 0;
+}
+
+.ai-msg__bubble--md :deep(pre) {
+  margin: 6px 0;
+  padding: 10px 12px;
+  background: #1e293b;
+  color: #e2e8f0;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ai-msg__bubble--md :deep(pre code) {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+.ai-msg__bubble--md :deep(code) {
   background: rgba(0, 0, 0, 0.07);
   padding: 1px 5px;
   border-radius: 4px;
@@ -474,8 +547,43 @@ function clearMessages() {
   font-family: 'SFMono-Regular', Consolas, monospace;
 }
 
-.ai-msg__bubble--user code {
-  background: rgba(255, 255, 255, 0.2);
+.ai-msg__bubble--md :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 6px 0;
+  font-size: 13px;
+}
+
+.ai-msg__bubble--md :deep(th),
+.ai-msg__bubble--md :deep(td) {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  padding: 5px 8px;
+  text-align: left;
+}
+
+.ai-msg__bubble--md :deep(th) {
+  background: rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+}
+
+.ai-msg__bubble--md :deep(hr) {
+  border: none;
+  border-top: 1px solid rgba(15, 23, 42, 0.1);
+  margin: 10px 0;
+}
+
+.ai-msg__bubble--md :deep(a) {
+  color: var(--brand-primary, #ff6b35);
+  text-decoration: underline;
+}
+
+.ai-msg__bubble--md :deep(img) {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.ai-msg__bubble--md :deep(strong) {
+  font-weight: 600;
 }
 
 .ai-msg__time {
@@ -619,7 +727,12 @@ html.dark .ai-modal__welcome-desc { color: #64748b; }
 html.dark .ai-modal__quick-btn { border-color: rgba(255, 255, 255, 0.12); color: #e2e8f0; }
 html.dark .ai-modal__quick-btn:hover { background: var(--brand-primary, #ff6b35); border-color: var(--brand-primary, #ff6b35); color: #fff; }
 html.dark .ai-msg__bubble--bot { background: rgba(30, 41, 59, 0.8); border-color: rgba(255, 255, 255, 0.08); color: #e2e8f0; }
-html.dark .ai-msg__bubble code { background: rgba(255, 255, 255, 0.1); }
+html.dark .ai-msg__bubble :deep(code) { background: rgba(255, 255, 255, 0.1); }
+html.dark .ai-msg__bubble--md :deep(blockquote) { background: rgba(255, 255, 255, 0.04); color: #94a3b8; }
+html.dark .ai-msg__bubble--md :deep(th) { background: rgba(255, 255, 255, 0.06); }
+html.dark .ai-msg__bubble--md :deep(th),
+html.dark .ai-msg__bubble--md :deep(td) { border-color: rgba(255, 255, 255, 0.1); }
+html.dark .ai-msg__bubble--md :deep(hr) { border-color: rgba(255, 255, 255, 0.1); }
 html.dark .ai-modal__footer { border-color: rgba(255, 255, 255, 0.08); }
 html.dark .ai-modal__input { background: rgba(30, 41, 59, 0.6); border-color: rgba(255, 255, 255, 0.1); color: #f1f5f9; }
 html.dark .ai-modal__input:focus { border-color: var(--brand-primary, #ff6b35); box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2); }

@@ -16,6 +16,7 @@
     "browser-image-compression": "^2.0.2",
     "element-plus": "^2.5.0",
     "highcharts": "^12.5.0",
+    "marked": "^18.0.5",
     "naive-ui": "^2.44.1",
     "pinia": "^2.1.7",
     "sockjs-client": "^1.6.1",
