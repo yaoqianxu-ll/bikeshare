@@ -270,11 +270,30 @@ pipeline {
                 echo '🚀 部署应用...'
                 sh """
                     cd ${WORKSPACE}
+
+                    echo "检查 .env 文件..."
+                    if [ ! -f .env ]; then
+                        echo "警告：.env 文件不存在！尝试从 /opt/bickdemo/.env 复制..."
+                        cp /opt/bickdemo/.env .env 2>/dev/null || cp /var/jenkins_home/.bickdemo.env .env 2>/dev/null || true
+                    fi
+
+                    echo "SILICONFLOW_API_KEY 状态: \$(grep -c SILICONFLOW_API_KEY .env 2>/dev/null && echo '存在于.env' || echo '不在.env中')"
+
                     echo "启动服务..."
-                    docker-compose up -d --remove-orphans
+                    docker-compose --env-file .env up -d --remove-orphans
 
                     echo "等待服务启动..."
                     sleep 30
+
+                    echo "校验 AI 密钥..."
+                    AI_KEY=\$(docker exec ${COMPOSE_PROJECT_NAME}-app-1 printenv SILICONFLOW_API_KEY 2>/dev/null)
+                    if [ -z "\${AI_KEY}" ]; then
+                        echo "警告：SILICONFLOW_API_KEY 未注入容器！尝试修复..."
+                        export SILICONFLOW_API_KEY=\$(grep SILICONFLOW_API_KEY .env 2>/dev/null | cut -d= -f2)
+                        docker-compose --env-file .env up -d app
+                    else
+                        echo "SILICONFLOW_API_KEY 已正确注入"
+                    fi
 
                     echo "检查容器状态..."
                     docker-compose ps
