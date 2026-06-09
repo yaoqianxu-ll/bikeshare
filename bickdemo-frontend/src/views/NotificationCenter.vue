@@ -232,7 +232,7 @@ const switchTab = (tabKey) => {
 const loadNotices = async () => {
   noticeLoading.value = true
   try {
-    await noticeStore.loadNoticesPaged(1, 10)
+    await noticeStore.loadNoticesPaged(1, 5)
     noticeStore.markAllAsRead()
   } catch (error) {
     console.error(error)

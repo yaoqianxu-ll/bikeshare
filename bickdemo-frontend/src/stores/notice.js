@@ -10,7 +10,7 @@ export const useNoticeStore = defineStore('notice', () => {
   // 分页状态
   const totalCount = ref(0)
   const currentPage = ref(1)
-  const pageSize = ref(10)
+  const pageSize = ref(5)
 
   // 从 localStorage 获取上次看到的最新公告ID
   const lastSeenNoticeId = ref(localStorage.getItem('lastSeenNoticeId') || null)
@@ -48,7 +48,7 @@ export const useNoticeStore = defineStore('notice', () => {
   }
 
   // 加载已发布的公告（分页）
-  const loadNoticesPaged = async (page = 1, size = 10) => {
+  const loadNoticesPaged = async (page = 1, size = 5) => {
     loading.value = true
     currentPage.value = page
     pageSize.value = size
