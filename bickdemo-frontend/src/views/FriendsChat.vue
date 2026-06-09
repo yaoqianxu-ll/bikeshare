@@ -6,7 +6,12 @@
       <aside v-show="showSidebarPane" class="sidebar">
         <!-- 侧边栏头部 -->
         <div class="sidebar-header">
-          <h1 class="sidebar-title">消息</h1>
+          <div class="sidebar-header-left">
+            <div class="back-btn" @click="$router.back()">
+              <el-icon><ArrowLeft /></el-icon>
+            </div>
+            <h1 class="sidebar-title">消息</h1>
+          </div>
           <el-button circle size="small" @click="showNewChatDialog">
             <el-icon><Plus /></el-icon>
           </el-button>
@@ -185,9 +190,6 @@
         <template v-if="activeContact">
           <!-- 聊天头部 -->
           <div class="chat-header">
-            <div class="back-btn" @click="$router.back()">
-              <el-icon><ArrowLeft /></el-icon>
-            </div>
             <div class="chat-user" @click="openFriendProfile(activeContact)">
               <div class="avatar" :style="buildAvatarStyle(activeContact.avatar)">
                 <img v-if="activeContact.avatar" :src="activeContact.avatar" :alt="activeContact.username" />
@@ -1780,6 +1782,28 @@ onBeforeUnmount(async () => {
   justify-content: space-between;
   padding: 20px 16px 16px;
   border-bottom: 1px solid #f0f0f0;
+}
+
+.sidebar-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-header-left .back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #666;
+  transition: background 0.15s;
+}
+
+.sidebar-header-left .back-btn:hover {
+  background: #f0f0f0;
 }
 
 .sidebar-title {
