@@ -8,6 +8,7 @@ export const useUserStore = defineStore('user', () => {
   const userId = ref(localStorage.getItem('userId') || '')
   const avatar = ref(localStorage.getItem('avatar') || '')
   const vipLevel = ref(Number(localStorage.getItem('vipLevel')) || 0)
+  const vipActive = ref(localStorage.getItem('vipActive') === '1')
 
   const isLoggedIn = computed(() => !!token.value)
   const isAdmin = computed(() => role.value === 'ADMIN')
@@ -29,6 +30,11 @@ export const useUserStore = defineStore('user', () => {
   function setVipLevel(level) {
     vipLevel.value = level || 0
     localStorage.setItem('vipLevel', String(vipLevel.value))
+  }
+
+  function setVipActive(active) {
+    vipActive.value = !!active
+    localStorage.setItem('vipActive', vipActive.value ? '1' : '0')
   }
 
   function setAvatar(url) {
@@ -56,6 +62,7 @@ export const useUserStore = defineStore('user', () => {
     userId.value = ''
     avatar.value = ''
     vipLevel.value = 0
+    vipActive.value = false
 
     localStorage.removeItem('token')
     localStorage.removeItem('username')
@@ -63,6 +70,7 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('userId')
     localStorage.removeItem('avatar')
     localStorage.removeItem('vipLevel')
+    localStorage.removeItem('vipActive')
   }
 
   return {
@@ -72,12 +80,14 @@ export const useUserStore = defineStore('user', () => {
     userId,
     avatar,
     vipLevel,
+    vipActive,
     isLoggedIn,
     isAdmin,
     setUser,
     setAvatar,
     setUsername,
     setVipLevel,
+    setVipActive,
     logout
   }
 })

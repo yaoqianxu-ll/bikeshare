@@ -233,7 +233,7 @@
                 <div class="user-avatar" v-if="!userStore.avatar">{{ userStore.username.charAt(0).toUpperCase() }}</div>
                 <el-avatar v-else :src="userStore.avatar" :size="32" class="user-avatar-img" />
                 <span class="user-text">{{ userStore.username }}</span>
-                <span v-if="userStore.vipLevel > 0" class="vip-badge">VIP{{ userStore.vipLevel }}</span>
+                <span v-if="userStore.vipLevel > 0" class="vip-badge" :class="{ 'vip-badge--expired': !userStore.vipActive }">VIP{{ userStore.vipLevel }}</span>
               </span>
               <template #dropdown>
                 <el-dropdown-menu class="user-dropdown-menu">
@@ -686,6 +686,7 @@ onMounted(() => {
     // 获取VIP状态
     getVipStatus().then(res => {
       userStore.setVipLevel(res?.data?.currentLevel || 0)
+      userStore.setVipActive(res?.data?.isVip)
     }).catch(() => {})
   }
 })
@@ -700,11 +701,13 @@ watch(() => userStore.isLoggedIn, (loggedIn) => {
     rentalStore.loadActiveRentals()
     getVipStatus().then(res => {
       userStore.setVipLevel(res?.data?.currentLevel || 0)
+      userStore.setVipActive(res?.data?.isVip)
     }).catch(() => {})
   } else {
     contactsStore.reset()
     disconnectSocket()
     userStore.setVipLevel(0)
+    userStore.setVipActive(false)
   }
 })
 
@@ -1418,6 +1421,12 @@ watch(
   letter-spacing: 0.03em;
   box-shadow: 0 2px 8px rgba(212, 164, 58, 0.3);
   animation: vip-badge-in 0.25s ease both;
+}
+
+.vip-badge--expired {
+  background: linear-gradient(135deg, #3a3a3a, #1a1a1a);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  color: #999;
 }
 
 @keyframes vip-badge-in {
