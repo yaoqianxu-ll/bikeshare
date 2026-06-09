@@ -1,11 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getNotices, getNoticeById } from '@/api/notice'
+import { getNotices, getNoticesPaged, getNoticeById } from '@/api/notice'
 
 export const useNoticeStore = defineStore('notice', () => {
   const notices = ref([])
   const currentNotice = ref(null)
   const loading = ref(false)
+
+  // 分页状态
+  const totalCount = ref(0)
+  const currentPage = ref(1)
+  const pageSize = ref(10)
 
   // 从 localStorage 获取上次看到的最新公告ID
   const lastSeenNoticeId = ref(localStorage.getItem('lastSeenNoticeId') || null)
@@ -29,7 +34,7 @@ export const useNoticeStore = defineStore('notice', () => {
     }
   }
 
-  // 加载所有已发布的公告
+  // 加载所有已发布的公告（全量，用于导航栏未读判断等）
   const loadNotices = async () => {
     loading.value = true
     try {
@@ -37,6 +42,23 @@ export const useNoticeStore = defineStore('notice', () => {
       notices.value = res.data || []
     } catch (error) {
       console.error('加载公告列表失败:', error)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 加载已发布的公告（分页）
+  const loadNoticesPaged = async (page = 1, size = 10) => {
+    loading.value = true
+    currentPage.value = page
+    pageSize.value = size
+    try {
+      const res = await getNoticesPaged({ page, size })
+      const data = res.data
+      notices.value = data.records || []
+      totalCount.value = data.total || 0
+    } catch (error) {
+      console.error('加载公告分页列表失败:', error)
     } finally {
       loading.value = false
     }
@@ -84,6 +106,8 @@ export const useNoticeStore = defineStore('notice', () => {
   const reset = () => {
     notices.value = []
     currentNotice.value = null
+    totalCount.value = 0
+    currentPage.value = 1
   }
 
   return {
@@ -91,7 +115,11 @@ export const useNoticeStore = defineStore('notice', () => {
     currentNotice,
     loading,
     hasUnread,
+    totalCount,
+    currentPage,
+    pageSize,
     loadNotices,
+    loadNoticesPaged,
     loadNoticeById,
     loadNoticesByType,
     markAsRead,

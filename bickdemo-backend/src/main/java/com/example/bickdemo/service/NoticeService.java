@@ -115,6 +115,30 @@ public class NoticeService {
     }
 
     /**
+     * 获取已发布公告的分页列表（用户端）
+     * @param page 页码，从 1 开始
+     * @param size 每页显示的公告数量
+     * @return 分页结果
+     */
+    public com.baomidou.mybatisplus.extension.plugins.pagination.Page<NoticeResponse> getPublishedNoticesPage(int page, int size) {
+        log.debug("分页查询已发布公告：page={}, size={}", page, size);
+        LambdaQueryWrapper<Notice> wrapper = new LambdaQueryWrapper<Notice>()
+                .eq(Notice::getStatus, NoticeStatus.PUBLISHED)
+                .eq(Notice::getDeleted, 0)
+                .orderByDesc(Notice::getPriority)
+                .orderByDesc(Notice::getPublishTime);
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<Notice> noticePage =
+                noticeMapper.selectPage(new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(page, size), wrapper);
+        // 转换为 Response DTO 分页
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<NoticeResponse> resultPage =
+                new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(noticePage.getCurrent(), noticePage.getSize(), noticePage.getTotal());
+        resultPage.setRecords(noticePage.getRecords().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList()));
+        return resultPage;
+    }
+
+    /**
      * 获取所有公告（管理员）
      * 使用缓存存储所有公告列表，缓存名为 CacheNames.NOTICES_ALL
      * 管理员可以查看包括已删除在内的所有公告

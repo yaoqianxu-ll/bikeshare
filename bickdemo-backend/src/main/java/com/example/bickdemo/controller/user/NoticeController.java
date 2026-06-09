@@ -31,6 +31,17 @@ public class NoticeController {
     }
 
     /**
+     * 获取已发布公告（分页）
+     */
+    @GetMapping("/paged")
+    public ResponseEntity<ApiResponse<com.baomidou.mybatisplus.extension.plugins.pagination.Page<NoticeResponse>>> getPublishedNoticesPaged(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        var result = noticeService.getPublishedNoticesPage(page, size);
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    /**
      * 获取公告详情
      */
     @GetMapping("/{id}")

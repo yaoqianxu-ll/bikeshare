@@ -82,6 +82,17 @@
           </div>
         </div>
         <el-empty v-if="!noticeLoading && notices.length === 0" description="暂无公告" :image-size="120" />
+
+        <!-- 公告分页 -->
+        <div class="pagination-wrapper" v-if="noticeStore.totalCount > 0">
+          <el-pagination
+            v-model:current-page="noticeStore.currentPage"
+            v-model:page-size="noticeStore.pageSize"
+            :total="noticeStore.totalCount"
+            layout="total, prev, pager, next"
+            @current-change="handleNoticePageChange"
+          />
+        </div>
       </div>
 
       <!-- 系统/评论/点赞/收藏 Tab -->
@@ -216,12 +227,12 @@ const switchTab = (tabKey) => {
 }
 
 /**
- * 加载公告列表
+ * 加载公告列表（分页）
  */
 const loadNotices = async () => {
   noticeLoading.value = true
   try {
-    await noticeStore.loadNotices()
+    await noticeStore.loadNoticesPaged(1, 10)
     noticeStore.markAllAsRead()
   } catch (error) {
     console.error(error)
@@ -251,13 +262,20 @@ const handleMarkAllRead = () => {
 }
 
 /**
- * 分页切换
+ * 分页切换（通知列表）
  */
 const handlePageChange = (page) => {
   const tab = tabs.value.find(t => t.key === activeTab.value)
   if (tab) {
     notificationStore.loadNotifications(tab.type, page)
   }
+}
+
+/**
+ * 公告分页切换
+ */
+const handleNoticePageChange = (page) => {
+  noticeStore.loadNoticesPaged(page, noticeStore.pageSize)
 }
 
 /**
