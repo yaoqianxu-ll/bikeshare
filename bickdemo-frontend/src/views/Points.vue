@@ -707,7 +707,7 @@ const doPurchase = async (plan) => {
         purchaseLoading.value = false
         return
       }
-      await redeemVip(plan.type)
+      await redeemVip({ packageType: plan.type })
       ElMessage.success(`${selectedPlan.name}兑换成功！VIP已开通，经验值已发放`)
       await Promise.all([loadVipStatus(), refreshOrderState(), loadPointsBalance()])
     } else {
