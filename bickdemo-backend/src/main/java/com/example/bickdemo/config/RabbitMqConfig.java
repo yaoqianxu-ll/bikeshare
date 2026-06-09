@@ -245,7 +245,8 @@ public class RabbitMqConfig {
 
     /**
      * 邮件发送重试拦截器。
-     * 最多重试 3 次，退避策略：1s → 2s → 4s。
+     * 最多重试 3 次，退避策略：5s → 15s → 30s。
+     * QQ 邮箱 SMTP 被限流后需要较长恢复时间，短间隔重试只会加剧封禁。
      * 重试耗尽后将消息转发到死信队列，便于排查和手动重发。
      */
     @Bean
@@ -254,7 +255,7 @@ public class RabbitMqConfig {
     ) {
         return RetryInterceptorBuilder.stateless()
                 .maxAttempts(3)
-                .backOffOptions(1000, 2.0, 5000)
+                .backOffOptions(5000, 3.0, 30000)
                 .recoverer(new RepublishMessageRecoverer(rabbitTemplate, EMAIL_ERROR_EXCHANGE, EMAIL_DLQ))
                 .build();
     }

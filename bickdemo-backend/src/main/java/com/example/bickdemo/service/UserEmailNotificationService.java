@@ -192,14 +192,27 @@ public class UserEmailNotificationService {
             log.info("邮件通知已发送，type={}, userId={}, to={}", type, userId, toEmail);
         } catch (MailSendException e) {
             log.error("邮件发送失败，userId={}, to={}: {}", userId, toEmail, e.getMessage());
+            delayOnFailure();
             throw e;
         } catch (Exception e) {
             log.error("邮件通知异常，userId={}, to={}: {}", userId, toEmail, e.getMessage());
+            delayOnFailure();
             throw new RuntimeException("邮件发送异常: " + e.getMessage(), e);
         }
     }
 
     // ========== HTML 模板构建 ==========
+
+    /**
+     * 发送失败后等待一段时间，避免密集重试加剧 SMTP 服务器封禁。
+     */
+    private void delayOnFailure() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
 
     private String buildPrivateMessageHtml(String senderName, String messagePreview) {
         return """
