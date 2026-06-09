@@ -31,10 +31,13 @@ export function aiChatSSE(message, history = [], onMessage, onError, onComplete)
 
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
+    // 跨 chunk 的行缓冲区，用于处理网络分包导致的换行拆分
+    let lineBuffer = ''
 
     function read() {
       reader.read().then(({ done, value }) => {
         if (done) {
+          if (lineBuffer.trim()) onMessage && onMessage(lineBuffer)
           onComplete && onComplete()
           return
         }
@@ -47,11 +50,14 @@ export function aiChatSSE(message, history = [], onMessage, onError, onComplete)
           return
         }
 
-        // 逐行处理：兼容 SSE 格式（data: 前缀）和纯 text/plain
-        const lines = chunk.split('\n')
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed) continue
+        // 拼接缓冲区数据后按换行拆分
+        const text = lineBuffer + chunk
+        const parts = text.split('\n')
+        // 最后一段可能不完整（chunk 未以 \n 结尾），留待下次处理
+        lineBuffer = parts.pop()
+
+        for (const part of parts) {
+          const trimmed = part.trim()
           if (trimmed === '[DONE]') {
             onComplete && onComplete()
             return
@@ -64,10 +70,12 @@ export function aiChatSSE(message, history = [], onMessage, onError, onComplete)
               return
             }
             onMessage && onMessage(content)
+          } else if (trimmed === '') {
+            // 空行：保留换行符，确保 Markdown 段落分隔（\n\n）不被破坏
+            onMessage && onMessage('\n')
           } else {
             // text/plain 模式：保留原始行内容和换行符
-            // 确保 Markdown 的标题、列表、段落分隔不被破坏
-            onMessage && onMessage(line + '\n')
+            onMessage && onMessage(part + '\n')
           }
         }
         read()

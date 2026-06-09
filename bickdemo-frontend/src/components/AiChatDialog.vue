@@ -119,9 +119,9 @@ import { ref, nextTick } from 'vue'
 import { aiChatSSE } from '@/api/ai'
 import { marked } from 'marked'
 
-// 配置 marked：开启转义防止 XSS，关闭 mangle 避免破坏邮箱等文本
+// 配置 marked：GFM 标准 Markdown，不开启 breaks（避免在列表/段落内插入多余 <br>）
 marked.setOptions({
-  breaks: true,
+  breaks: false,
   gfm: true
 })
 
