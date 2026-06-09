@@ -10303,3 +10303,24 @@ ALTER TABLE `vip_order` ADD COLUMN `plan_code` varchar(32) DEFAULT NULL COMMENT 
 ALTER TABLE `vip_order` ADD COLUMN `plan_days` int DEFAULT 0 COMMENT '套餐时长(天)' AFTER `plan_code`;
 ALTER TABLE `vip_order` ADD COLUMN `plan_name` varchar(50) DEFAULT NULL COMMENT '套餐名称' AFTER `plan_days`;
 ALTER TABLE `vip_order` ADD COLUMN `pay_url` text COMMENT '支付宝支付表单HTML，下单时生成一次存储在此' AFTER `trade_no`;
+
+-- VIP积分兑换记录表
+CREATE TABLE IF NOT EXISTS `vip_exchange_record` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `exchange_no` varchar(50) NOT NULL COMMENT '兑换单号，格式：EXC + 时间戳 + 随机字符串',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `package_type` varchar(20) NOT NULL COMMENT '套餐类型：MONTHLY/QUARTERLY/YEARLY',
+  `plan_name` varchar(50) DEFAULT NULL COMMENT '套餐名称快照',
+  `plan_days` int NOT NULL DEFAULT 0 COMMENT '套餐天数',
+  `points_cost` int NOT NULL COMMENT '消耗积分数',
+  `exp_gain` int NOT NULL DEFAULT 0 COMMENT '获得经验值',
+  `status` varchar(20) NOT NULL DEFAULT 'SUCCESS' COMMENT '兑换状态：SUCCESS=成功/FAILED=失败',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `deleted` tinyint(1) DEFAULT 0 COMMENT '逻辑删除：0=未删除，1=已删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_exchange_no` (`exchange_no`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='VIP积分兑换记录表';
