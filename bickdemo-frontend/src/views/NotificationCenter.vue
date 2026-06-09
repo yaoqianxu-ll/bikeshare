@@ -149,8 +149,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   Bell, ArrowRight, Refresh, Check,
   Setting, ChatDotRound, Star, StarFilled
@@ -158,7 +158,6 @@ import {
 import { useNotificationStore } from '@/stores/notification'
 import { useNoticeStore } from '@/stores/notice'
 
-const route = useRoute()
 const router = useRouter()
 const notificationStore = useNotificationStore()
 const noticeStore = useNoticeStore()
@@ -197,8 +196,6 @@ const loading = computed(() => {
  */
 const switchTab = (tabKey) => {
   activeTab.value = tabKey
-  // 同步到 URL query 参数，刷新可恢复
-  router.replace({ query: { ...route.query, tab: tabKey } })
   if (tabKey === 'announcement') {
     loadNotices()
   } else {
@@ -347,25 +344,13 @@ const getTypeIconClass = (type) => {
   return classes[type] || 'icon-system'
 }
 
-// 合法的 Tab key 列表
-const validTabs = ['announcement', 'system', 'comment', 'like', 'favorite']
-
 onMounted(() => {
   // 加载未读数量
   notificationStore.loadUnreadCount()
-  // 从 URL 恢复当前 Tab，默认 system
-  const tabFromUrl = route.query.tab
-  const initialTab = validTabs.includes(tabFromUrl) ? tabFromUrl : 'system'
-  switchTab(initialTab)
+  // 加载默认 Tab（系统通知）数据
+  switchTab('system')
   // 预加载公告列表（用于导航栏未读角标）
   noticeStore.loadNotices()
-})
-
-// 监听浏览器前进/后退时恢复 Tab
-watch(() => route.query.tab, (newTab) => {
-  if (newTab && validTabs.includes(newTab) && newTab !== activeTab.value) {
-    switchTab(newTab)
-  }
 })
 </script>
 
