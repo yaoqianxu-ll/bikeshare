@@ -294,7 +294,7 @@ const viewDetail = (row) => {
 }
 
 // 轮询：当有进行中的租赁时，每 15 秒自动刷新数据以更新实时价格
-const POLL_INTERVAL = 1500
+const POLL_INTERVAL = 15000
 let pollTimer = null
 
 const hasActiveRentals = computed(() => {
