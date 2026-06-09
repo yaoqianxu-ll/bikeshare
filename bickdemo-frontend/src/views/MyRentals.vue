@@ -18,7 +18,7 @@
 
       <div class="table-scroll">
       <el-table :data="rentals" style="width: 100%" v-loading="loading" stripe>
-        <el-table-column prop="id" label="订单号" width="80" />
+        <el-table-column prop="id" label="订单号" width="100" />
         <el-table-column prop="bicycleName" label="自行车" min-width="170" show-overflow-tooltip />
         <el-table-column label="类型" width="100" align="center">
           <template #default="{ row }">
@@ -122,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useMessage, useDialog } from 'naive-ui'
 import { getMyRentals, endRental, cancelRental } from '@/api/rental'
 import PageSizeDropdown from '@/components/PageSizeDropdown.vue'
@@ -173,6 +173,7 @@ const formatDateTime = (value) => {
 const handleFilterChange = async () => {
   currentPage.value = 1
   await loadRentals()
+  startPolling()
 }
 
 const loadRentals = async () => {
@@ -251,6 +252,7 @@ const handleEndRental = async (row) => {
         await endRental(row.id)
         message.success('结束租赁成功')
         await loadRentals()
+        startPolling()
       } catch (error) {
         console.error(error)
       }
@@ -276,6 +278,7 @@ const handleCancelRental = async (row) => {
         await cancelRental(row.id)
         message.success('取消租赁成功')
         await loadRentals()
+        startPolling()
       } catch (error) {
         console.error(error)
       }
@@ -290,8 +293,58 @@ const viewDetail = (row) => {
   detailDialogVisible.value = true
 }
 
+// 轮询：当有进行中的租赁时，每 15 秒自动刷新数据以更新实时价格
+const POLL_INTERVAL = 1500
+let pollTimer = null
+
+const hasActiveRentals = computed(() => {
+  return rentals.value.some(r => r.status === 'ACTIVE')
+})
+
+const startPolling = () => {
+  stopPolling()
+  if (hasActiveRentals.value) {
+    pollTimer = setInterval(async () => {
+      // 仅在仍有进行中租赁时才请求，否则停止轮询
+      if (!hasActiveRentals.value) {
+        stopPolling()
+        return
+      }
+      try {
+        const res = await getMyRentals({
+          page: currentPage.value,
+          size: pageSize.value
+        })
+        if (res.data.records) {
+          rentals.value = res.data.records
+          total.value = res.data.total
+        } else {
+          rentals.value = res.data
+          total.value = rentals.value.length
+        }
+        if (filterStatus.value && res.data.records) {
+          rentals.value = rentals.value.filter(r => r.status === filterStatus.value)
+        }
+      } catch (error) {
+        console.error('轮询刷新租赁数据失败:', error)
+      }
+    }, POLL_INTERVAL)
+  }
+}
+
+const stopPolling = () => {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
 onMounted(() => {
-  loadRentals()
+  loadRentals().then(() => startPolling())
+})
+
+onUnmounted(() => {
+  stopPolling()
 })
 </script>
 

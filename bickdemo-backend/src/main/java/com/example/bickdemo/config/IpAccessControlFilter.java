@@ -15,6 +15,9 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
@@ -112,15 +115,20 @@ public class IpAccessControlFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        IpBlacklistService.AccessDecision decision = ipBlacklistService.evaluateAccess(
-                com.example.bickdemo.util.IpAddressUtils.resolveClientIp(request),
-                request.getUserPrincipal() != null
-        );
-        if (decision.blocked()) {
-            // 被拦截的请求不会进入后续业务链路，但仍然要记一条访问日志方便审计。
-            writeBlockedResponse(response, decision.reason());
-            systemLogService.recordVisit(request, 429, 0L, decision.reason());
-            return;
+        // 管理员用户跳过限流和黑名单检查，但仍然记录访问日志用于审计
+        boolean admin = isAdminUser();
+
+        if (!admin) {
+            IpBlacklistService.AccessDecision decision = ipBlacklistService.evaluateAccess(
+                    com.example.bickdemo.util.IpAddressUtils.resolveClientIp(request),
+                    request.getUserPrincipal() != null
+            );
+            if (decision.blocked()) {
+                // 被拦截的请求不会进入后续业务链路，但仍然要记一条访问日志方便审计。
+                writeBlockedResponse(response, decision.reason());
+                systemLogService.recordVisit(request, 429, 0L, decision.reason());
+                return;
+            }
         }
 
         // 未被拦截则继续向后放行，同时统计整个请求处理耗时。
@@ -155,5 +163,18 @@ public class IpAccessControlFilter extends OncePerRequestFilter {
         response.getWriter().write(objectMapper.writeValueAsString(
                 ApiResponse.error(429, message != null ? message : "访问过于频繁，请稍后再试")
         ));
+    }
+
+    /**
+     * 判断当前请求者是否为管理员。
+     * 管理员不受 IP 限流和黑名单约束，直接放行。
+     */
+    private boolean isAdminUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getAuthorities() == null) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 }

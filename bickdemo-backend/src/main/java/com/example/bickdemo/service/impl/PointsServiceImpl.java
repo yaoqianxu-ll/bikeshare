@@ -114,6 +114,27 @@ public class PointsServiceImpl implements PointsService {
     }
 
     @Override
+    @Transactional
+    @CacheEvict(value = CacheNames.POINTS_BALANCE, key = "#userId")
+    public void adminAddPoints(Long userId, Integer points, String reason) {
+        if (points == null || points <= 0) throw new RuntimeException("积分必须为正整数");
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new RuntimeException("用户不存在");
+
+        int currentPoints = user.getPoints() == null ? 0 : user.getPoints();
+        user.setPoints(currentPoints + points);
+        userMapper.updateById(user);
+
+        // 记录管理员增加积分
+        PointsRecord record = new PointsRecord();
+        record.setUserId(userId);
+        record.setType("ADMIN_ADD");
+        record.setPoints(points);
+        record.setReason(reason);
+        pointsRecordMapper.insert(record);
+    }
+
+    @Override
     public Page<PointsRecordResponse> getPointsRecords(Long userId, int page, int size) {
         Page<PointsRecord> recordPage = pointsRecordMapper.selectPage(
                 new Page<>(page, size),

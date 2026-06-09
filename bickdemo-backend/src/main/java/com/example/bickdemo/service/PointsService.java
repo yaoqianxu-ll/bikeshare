@@ -17,6 +17,9 @@ public interface PointsService {
     /** 管理端扣减积分 */
     void deductPoints(Long userId, Integer points, String reason);
 
+    /** 管理端增加积分 */
+    void adminAddPoints(Long userId, Integer points, String reason);
+
     /** 分页获取积分记录 */
     Page<PointsRecordResponse> getPointsRecords(Long userId, int page, int size);
 

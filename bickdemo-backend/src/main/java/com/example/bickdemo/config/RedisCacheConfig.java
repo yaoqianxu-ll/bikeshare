@@ -43,10 +43,13 @@ public class RedisCacheConfig {
                 .entryTtl(Duration.ofMinutes(5));
 
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        cacheConfigurations.put(CacheNames.STATISTICS_OVERVIEW, defaultConfig.entryTtl(Duration.ofSeconds(45)));
-        cacheConfigurations.put(CacheNames.BACKGROUND_ENABLED, defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        cacheConfigurations.put(CacheNames.BACKGROUND_SELECTABLE, defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        cacheConfigurations.put(CacheNames.BACKGROUND_ALL, defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigurations.put(CacheNames.STATISTICS_OVERVIEW, defaultConfig.entryTtl(Duration.ofDays(90)));
+        cacheConfigurations.put(CacheNames.BACKGROUND_ENABLED, defaultConfig.entryTtl(Duration.ofDays(90)));
+        cacheConfigurations.put(CacheNames.BACKGROUND_SELECTABLE, defaultConfig.entryTtl(Duration.ofDays(90)));
+        cacheConfigurations.put(CacheNames.BACKGROUND_ALL, defaultConfig.entryTtl(Duration.ofDays(90)));
+        cacheConfigurations.put(CacheNames.NOTICES_PUBLISHED, defaultConfig.entryTtl(Duration.ofDays(90)));
+        cacheConfigurations.put(CacheNames.NOTICES_ALL, defaultConfig.entryTtl(Duration.ofDays(90)));
+        cacheConfigurations.put(CacheNames.NOTICE_DETAIL, defaultConfig.entryTtl(Duration.ofDays(90)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

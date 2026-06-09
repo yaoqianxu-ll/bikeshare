@@ -151,6 +151,20 @@ public class AdminPointsController {
     }
 
     /**
+     * 增加用户积分
+     */
+    @PostMapping("/add")
+    @AdminOperationLog(module = "积分管理", action = "增加用户积分", type = "管理")
+    public ResponseEntity<ApiResponse<String>> addPoints(
+            @RequestBody Map<String, Object> params) {
+        Long userId = Long.valueOf(params.get("userId").toString());
+        Integer points = Integer.valueOf(params.get("points").toString());
+        String reason = params.get("reason").toString();
+        pointsService.adminAddPoints(userId, points, reason);
+        return ResponseEntity.ok(ApiResponse.success("积分增加成功"));
+    }
+
+    /**
      * 调整用户经验值
      */
     @PostMapping("/adjust-exp")

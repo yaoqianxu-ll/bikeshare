@@ -16,6 +16,14 @@ export function adjustPoints(data) {
   })
 }
 
+export function addPoints(data) {
+  return request({
+    url: '/admin/points/add',
+    method: 'post',
+    data
+  })
+}
+
 export function getPointsRecords(userId, params) {
   return request({
     url: `/admin/points/records/${userId}`,

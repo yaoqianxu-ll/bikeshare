@@ -5,7 +5,7 @@
         <div class="hero-copy">
           <span class="hero-tag">Points</span>
           <h2>积分管理</h2>
-          <p>查看用户积分余额，扣除积分，追踪积分变动记录。</p>
+          <p>查看用户积分余额，增加或扣除积分，追踪积分变动记录。</p>
         </div>
       </div>
       <div class="hero-chips">
@@ -61,9 +61,10 @@
         <el-table-column label="注册时间" min-width="170">
           <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center">
+        <el-table-column label="操作" width="290" align="center">
           <template #default="{ row }">
             <div class="table-actions">
+              <el-button size="small" type="success" plain @click="openAddDialog(row)">增加积分</el-button>
               <el-button size="small" type="primary" plain @click="openAdjustDialog(row)">扣除积分</el-button>
               <el-button size="small" type="info" plain @click="openRecordsDialog(row)">记录</el-button>
             </div>
@@ -108,6 +109,28 @@
       </template>
     </el-dialog>
 
+    <!-- 增加积分对话框 -->
+    <el-dialog v-model="addDialogVisible" title="增加积分" width="480px" destroy-on-close>
+      <el-form ref="addFormRef" :model="addForm" :rules="addRules" label-width="100px">
+        <el-form-item label="用户">
+          <el-input :model-value="selectedUser.username" disabled />
+        </el-form-item>
+        <el-form-item label="当前积分">
+          <el-input :model-value="selectedUser.points" disabled />
+        </el-form-item>
+        <el-form-item label="增加积分" prop="points">
+          <el-input-number v-model="addForm.points" :min="1" class="full-width" />
+        </el-form-item>
+        <el-form-item label="原因" prop="reason">
+          <el-input v-model="addForm.reason" type="textarea" :rows="3" resize="none" maxlength="255" show-word-limit placeholder="请输入增加原因" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="addDialogVisible = false">取消</el-button>
+        <el-button type="success" :loading="addSaving" @click="submitAdd">确认增加</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 积分记录对话框 -->
     <el-dialog v-model="recordsDialogVisible" title="积分记录" width="700px" destroy-on-close>
       <el-table v-loading="recordsLoading" :data="pointRecords" max-height="400">
@@ -121,8 +144,8 @@
         </el-table-column>
         <el-table-column label="类型" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.type === 'DEDUCT' ? 'danger' : 'success'" effect="light" size="small">
-              {{ row.type === 'DEDUCT' ? '扣除' : '奖励' }}
+            <el-tag :type="getTypeTagType(row.type)" effect="light" size="small">
+              {{ getTypeLabel(row.type) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -148,7 +171,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getPointsList, adjustPoints, getPointsRecords, adjustExperience } from '@/api/points'
+import { getPointsList, adjustPoints, addPoints, getPointsRecords, adjustExperience } from '@/api/points'
 import { formatDate } from '@/utils/format'
 
 const loading = ref(false)
@@ -161,6 +184,9 @@ const totalPoints = ref(0)
 const adjustDialogVisible = ref(false)
 const recordsDialogVisible = ref(false)
 const adjustFormRef = ref()
+const addDialogVisible = ref(false)
+const addFormRef = ref()
+const addSaving = ref(false)
 
 const selectedUser = reactive({
   id: null,
@@ -183,6 +209,16 @@ const adjustForm = reactive({
 const adjustRules = {
   points: [{ required: true, message: '请输入扣除积分数量', trigger: 'change' }],
   reason: [{ required: true, message: '请输入扣除原因', trigger: 'blur' }]
+}
+
+const addForm = reactive({
+  points: 0,
+  reason: ''
+})
+
+const addRules = {
+  points: [{ required: true, message: '请输入增加积分数量', trigger: 'change' }],
+  reason: [{ required: true, message: '请输入增加原因', trigger: 'blur' }]
 }
 
 const pointRecords = ref([])
@@ -256,6 +292,36 @@ const submitAdjust = async () => {
   }
 }
 
+const resetAddForm = () => {
+  addForm.points = 0
+  addForm.reason = ''
+}
+
+const openAddDialog = (row) => {
+  selectedUser.id = row.userId
+  selectedUser.username = row.username
+  selectedUser.points = row.points
+  resetAddForm()
+  addDialogVisible.value = true
+}
+
+const submitAdd = async () => {
+  await addFormRef.value?.validate()
+  addSaving.value = true
+  try {
+    await addPoints({
+      userId: selectedUser.id,
+      points: addForm.points,
+      reason: addForm.reason
+    })
+    ElMessage.success('积分增加成功')
+    addDialogVisible.value = false
+    await load()
+  } finally {
+    addSaving.value = false
+  }
+}
+
 const openRecordsDialog = async (row) => {
   selectedUser.id = row.userId
   selectedUser.username = row.username
@@ -276,6 +342,26 @@ const loadRecords = async () => {
   } finally {
     recordsLoading.value = false
   }
+}
+
+const getTypeTagType = (type) => {
+  const map = {
+    EARN: 'success',
+    ADMIN_ADD: 'success',
+    SPEND: 'warning',
+    DEDUCT: 'danger'
+  }
+  return map[type] || 'info'
+}
+
+const getTypeLabel = (type) => {
+  const map = {
+    EARN: '奖励',
+    ADMIN_ADD: '管理员增加',
+    SPEND: '消费',
+    DEDUCT: '扣除'
+  }
+  return map[type] || type
 }
 
 onMounted(load)
