@@ -13,25 +13,6 @@
       </div>
     </div>
 
-    <!-- 统计卡片 -->
-    <div class="stats-cards">
-      <div class="stat-card">
-        <div class="stat-value">{{ notificationStore.unreadTotal }}</div>
-        <div class="stat-label">全部未读</div>
-        <div class="stat-desc">跨分类汇总</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ currentTabUnread }}</div>
-        <div class="stat-label">{{ currentTabLabel }}未读</div>
-        <div class="stat-desc">当前筛选</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ notificationStore.totalCount }}</div>
-        <div class="stat-label">当前列表</div>
-        <div class="stat-desc">已同步通知</div>
-      </div>
-    </div>
-
     <!-- Tab 分类导航 + 通知列表 -->
     <el-card shadow="never" class="notification-card">
       <template #header>
@@ -204,7 +185,6 @@ const currentTabLabel = computed(() => {
   if (activeTab.value === 'announcement') return '公告'
   return currentTabConfig.value.label
 })
-const currentTabUnread = computed(() => currentTabConfig.value.unread)
 
 // 页面加载状态
 const loading = computed(() => {
@@ -423,50 +403,6 @@ onMounted(() => {
   display: flex;
   gap: 10px;
   flex-shrink: 0;
-}
-
-/* ===== 统计卡片 ===== */
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 16px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10);
-}
-
-.stat-value {
-  font-size: 32px;
-  font-weight: 800;
-  color: var(--bs-ink, #1a1a2e);
-  line-height: 1.2;
-}
-
-.stat-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
-  margin-top: 4px;
-}
-
-.stat-desc {
-  font-size: 12px;
-  color: #9ca3af;
-  margin-top: 2px;
 }
 
 /* ===== 通知卡片 ===== */
@@ -897,19 +833,6 @@ onMounted(() => {
 }
 
 /* ===== 暗色模式 ===== */
-html.dark .stat-card {
-  background: rgba(15, 23, 42, 0.88);
-  border-color: rgba(148, 163, 184, 0.15);
-}
-
-html.dark .stat-value {
-  color: #f8fafc;
-}
-
-html.dark .stat-label {
-  color: #e2e8f0;
-}
-
 html.dark .notification-card {
   background: rgba(15, 23, 42, 0.88);
   border-color: rgba(148, 163, 184, 0.20);
@@ -1025,19 +948,6 @@ html.dark .detail-time {
 
   .header-title {
     font-size: 22px;
-  }
-
-  .stats-cards {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .stat-card {
-    padding: 14px;
-  }
-
-  .stat-value {
-    font-size: 24px;
   }
 
   .tabs-header {
