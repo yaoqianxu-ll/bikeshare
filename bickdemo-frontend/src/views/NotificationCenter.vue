@@ -93,7 +93,9 @@
           <div class="notification-icon" :class="getTypeIconClass(item.type)">
             <el-icon v-if="item.type === 'SYSTEM'"><Setting /></el-icon>
             <el-icon v-else-if="item.type === 'COMMENT'"><ChatDotRound /></el-icon>
-            <el-icon v-else-if="item.type === 'LIKE'"><Star /></el-icon>
+            <span v-else-if="item.type === 'LIKE'" class="like-icon-svg">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H7V10l4.34-8.66A1.93 1.93 0 0 1 13 1a2 2 0 0 1 2 2v2.88Z"/></svg>
+            </span>
             <el-icon v-else-if="item.type === 'FAVORITE'"><StarFilled /></el-icon>
           </div>
           <div class="notification-body">
@@ -153,7 +155,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Bell, ArrowRight, Refresh, Check,
-  Setting, ChatDotRound, Star, StarFilled
+  Setting, ChatDotRound, StarFilled
 } from '@element-plus/icons-vue'
 import { useNotificationStore } from '@/stores/notification'
 import { useNoticeStore } from '@/stores/notice'
@@ -528,6 +530,17 @@ onMounted(() => {
   justify-content: center;
   flex-shrink: 0;
   font-size: 18px;
+}
+
+.like-icon-svg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.like-icon-svg svg {
+  width: 18px;
+  height: 18px;
 }
 
 .icon-system {
