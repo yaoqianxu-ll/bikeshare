@@ -88,17 +88,17 @@
             </div>
 
             <div class="plan-pricing">
-              <template v-if="purchaseMode === 'cash'">
+              <span v-show="purchaseMode === 'cash'" class="plan-pricing-inner">
                 <span class="plan-currency">¥</span>
                 <span class="plan-amount">{{ plan.price }}</span>
-              </template>
-              <template v-else>
+              </span>
+              <span v-show="purchaseMode === 'points'" class="plan-pricing-inner">
                 <span class="plan-points-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="1.5"/></svg>
                 </span>
                 <span class="plan-amount">{{ plan.pointsCost }}</span>
                 <span class="plan-points-label">积分</span>
-              </template>
+              </span>
             </div>
 
             <div class="plan-divider"></div>
@@ -123,8 +123,8 @@
               :disabled="purchaseLoading"
               @click.stop="handlePurchase(plan)">
               <span v-if="purchaseLoading && selectedPlanCode === plan.type">处理中...</span>
-              <span v-else-if="purchaseMode === 'points'">{{ vipStatus?.isVip ? '积分续费' : '积分兑换' }}</span>
-              <span v-else>{{ vipStatus?.isVip ? '立即续费' : '立即开通' }}</span>
+              <span v-show="!purchaseLoading && purchaseMode === 'points'">{{ vipStatus?.isVip ? '积分续费' : '积分兑换' }}</span>
+              <span v-show="!purchaseLoading && purchaseMode === 'cash'">{{ vipStatus?.isVip ? '立即续费' : '立即开通' }}</span>
             </button>
           </div>
         </div>
@@ -144,7 +144,7 @@
           <div class="main-col">
 
             <!-- 现金购买模式：订单记录 -->
-            <div class="glass-card content-card" v-if="purchaseMode === 'cash'">
+            <div class="glass-card content-card" v-show="purchaseMode === 'cash'">
               <div class="content-card-header">
                 <h3>订单记录</h3>
                 <p>支付成功后会员资格即时发放，请保存好交易凭证</p>
@@ -168,7 +168,7 @@
                   </div>
                 </div>
               </div>
-              <div class="order-pagination" v-if="ordersTotal > orderPageSize">
+              <div class="order-pagination" v-show="orders.length && ordersTotal > orderPageSize">
                 <span class="order-pagination-total">共 {{ ordersTotal }} 条</span>
                 <el-pagination
                   v-model:current-page="orderPage"
@@ -183,14 +183,14 @@
                   @change="handleOrderPageSizeChange"
                 />
               </div>
-              <div class="empty-placeholder" v-else>
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" stroke-width="1.5"/></svg>
+              <div class="empty-placeholder" v-if="!orders.length">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2.001 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" stroke-width="1.5"/></svg>
                 <p>暂无订单记录</p>
               </div>
             </div>
 
             <!-- 积分兑换模式：兑换记录 -->
-            <div class="glass-card content-card" v-else>
+            <div class="glass-card content-card" v-show="purchaseMode === 'points'">
               <div class="content-card-header">
                 <h3>兑换记录</h3>
                 <p>积分兑换VIP会员的历史记录，兑换成功后会员资格即时发放</p>
@@ -210,7 +210,7 @@
                   </div>
                 </div>
               </div>
-              <div class="order-pagination" v-if="exchangeTotal > exchangePageSize">
+              <div class="order-pagination" v-show="exchangeRecords.length && exchangeTotal > exchangePageSize">
                 <span class="order-pagination-total">共 {{ exchangeTotal }} 条</span>
                 <el-pagination
                   v-model:current-page="exchangePage"
@@ -225,7 +225,7 @@
                   @change="handleExchangePageSizeChange"
                 />
               </div>
-              <div class="empty-placeholder" v-else>
+              <div class="empty-placeholder" v-if="!exchangeRecords.length">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" stroke-width="1.5"/></svg>
                 <p>暂无兑换记录</p>
               </div>
@@ -376,7 +376,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import PageSizeDropdown from '@/components/PageSizeDropdown.vue'
 import { useUserStore } from '@/stores/user'
@@ -386,7 +386,6 @@ import { submitAlipayForm } from '@/utils/alipayForm'
 import { createPaymentFlowState } from '@/utils/paymentFlow'
 
 const route = useRoute()
-const router = useRouter()
 const userStore = useUserStore()
 
 // 页面核心状态
@@ -400,7 +399,7 @@ const orderPageSize = ref(5)
 const hasPendingOrderFlag = ref(false)
 const submitting = ref(false)
 const selectedPlanCode = ref('MONTHLY')
-const purchaseMode = ref(['cash', 'points'].includes(route.query.mode) ? route.query.mode : 'cash') // 'cash' | 'points'
+const purchaseMode = ref('cash') // 'cash' | 'points'
 const purchaseLoading = ref(false)
 
 // 积分兑换记录
@@ -1133,9 +1132,8 @@ watch(
   }
 )
 
-// 监听购买模式切换，刷新对应数据并同步到 URL
+// 监听购买模式切换，刷新对应数据
 watch(purchaseMode, (mode) => {
-  router.replace({ query: { ...route.query, mode } })
   if (mode === 'cash') {
     refreshOrderState()
   } else {
@@ -1587,6 +1585,10 @@ onUnmounted(() => {
     align-items: baseline;
     gap: 4px;
     margin-bottom: 18px;
+
+    .plan-pricing-inner {
+      display: contents;
+    }
 
     .plan-currency {
       font-size: 18px;
