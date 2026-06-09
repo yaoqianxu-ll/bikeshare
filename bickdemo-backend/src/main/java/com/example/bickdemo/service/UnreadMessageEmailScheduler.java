@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 /**
  * 私信未读邮件提醒定时任务。
- * 每 30 秒扫描一次，查找最近 10 分钟内产生、且超过 2 分钟仍未被阅读的私信，
+ * 每 2 分钟扫描一次，查找最近 10 分钟内产生、且超过 2 分钟仍未被阅读的私信，
  * 通过邮件提醒接收者。同一发送者对同一接收者 1 小时内只提醒一次。
  */
 @Slf4j
@@ -29,7 +29,7 @@ public class UnreadMessageEmailScheduler {
     private final UserMapper userMapper;
     private final UserEmailNotificationService emailNotificationService;
 
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 120000)
     public void checkUnreadMessages() {
         try {
             LocalDateTime threshold = LocalDateTime.now().minusMinutes(2);
