@@ -1,7 +1,7 @@
 <template>
   <div class="layout-container" :style="containerStyle">
     <!-- 背景图片选择按钮 -->
-    <div class="bg-toggle" @click="showBgSelector = !showBgSelector">
+    <div v-if="!isFullScreen" class="bg-toggle" @click="showBgSelector = !showBgSelector">
       <el-icon><Picture /></el-icon>
     </div>
 

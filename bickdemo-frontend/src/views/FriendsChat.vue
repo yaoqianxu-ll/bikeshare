@@ -185,7 +185,7 @@
         <template v-if="activeContact">
           <!-- 聊天头部 -->
           <div class="chat-header">
-            <div v-if="isMobile" class="back-btn" @click="showConversationList">
+            <div class="back-btn" @click="$router.push('/')">
               <el-icon><ArrowLeft /></el-icon>
             </div>
             <div class="chat-user" @click="openFriendProfile(activeContact)">
@@ -2116,10 +2116,17 @@ onBeforeUnmount(async () => {
 }
 
 .back-btn {
-  display: none;
+  display: flex;
   cursor: pointer;
   color: #666;
   padding: 4px;
+  margin-right: 4px;
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+
+.back-btn:hover {
+  background: #f0f0f0;
 }
 
 .chat-user {
