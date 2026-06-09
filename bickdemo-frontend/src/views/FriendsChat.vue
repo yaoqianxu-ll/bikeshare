@@ -1743,23 +1743,24 @@ onBeforeUnmount(async () => {
 /* 整体布局 */
 .friends-page {
   height: calc(100vh - 60px);
-  background: #f5f7fa;
+  background: #f0f2f5;
   overflow: hidden;
 }
 
 .chat-layout {
   display: flex;
   height: 100%;
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   background: #fff;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  border-radius: 0;
 }
 
 /* 左侧边栏 */
 .sidebar {
-  width: 300px;
-  min-width: 300px;
+  width: 320px;
+  min-width: 320px;
   border-right: 1px solid #e4e7ed;
   display: flex;
   flex-direction: column;
@@ -1770,15 +1771,16 @@ onBeforeUnmount(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #e4e7ed;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #f0f2f5;
 }
 
 .sidebar-title {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
   margin: 0;
-  color: #303133;
+  color: #1a1a1a;
+  letter-spacing: -0.5px;
 }
 
 /* 搜索框 */
@@ -1788,7 +1790,19 @@ onBeforeUnmount(async () => {
 }
 
 .search-box :deep(.el-input__wrapper) {
-  box-shadow: 0 0 0 1px #dcdfe6 inset;
+  box-shadow: 0 0 0 1px #e4e7ed inset;
+  border-radius: 20px;
+  background: #f5f7fa;
+  transition: all 0.2s ease;
+}
+
+.search-box :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #c0c4cc inset;
+}
+
+.search-box :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #409eff inset;
+  background: #fff;
 }
 
 /* 搜索结果 */
@@ -1871,13 +1885,14 @@ onBeforeUnmount(async () => {
 
 .tab-item {
   flex: 1;
-  padding: 12px 8px;
+  padding: 14px 8px;
   text-align: center;
   font-size: 13px;
   color: #606266;
   cursor: pointer;
   position: relative;
-  transition: color 0.2s;
+  transition: all 0.2s ease;
+  font-weight: 500;
 }
 
 .tab-item:hover {
@@ -1886,32 +1901,34 @@ onBeforeUnmount(async () => {
 
 .tab-item.active {
   color: #409eff;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .tab-item.active::after {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 20%;
-  right: 20%;
-  height: 2px;
-  background: #409eff;
-  border-radius: 2px;
+  left: 30%;
+  right: 30%;
+  height: 3px;
+  background: linear-gradient(90deg, #409eff, #66b1ff);
+  border-radius: 3px;
 }
 
 .tab-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
   margin-left: 4px;
-  background: #f56c6c;
+  background: linear-gradient(135deg, #ff4d6a, #ff2d55);
   color: #fff;
   font-size: 11px;
-  border-radius: 8px;
+  font-weight: 700;
+  border-radius: 9px;
+  box-shadow: 0 2px 4px rgba(255, 45, 85, 0.3);
 }
 
 /* 列表内容 */
@@ -1936,16 +1953,18 @@ onBeforeUnmount(async () => {
   gap: 12px;
   padding: 12px 16px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  position: relative;
 }
 
-.contact-item:hover,
-.contact-item.active {
+.contact-item:hover {
   background: #f5f7fa;
 }
 
 .contact-item.active {
   background: #ecf5ff;
+  border-left-color: #409eff;
 }
 
 .contact-info {
@@ -1962,12 +1981,12 @@ onBeforeUnmount(async () => {
 
 .contact-name {
   font-size: 14px;
-  font-weight: 500;
-  color: #303133;
+  font-weight: 600;
+  color: #1a1a1a;
 }
 
 .contact-time {
-  font-size: 12px;
+  font-size: 11px;
   color: #909399;
   flex-shrink: 0;
 }
@@ -1990,6 +2009,10 @@ onBeforeUnmount(async () => {
 
 .unread-dot :deep(.el-badge__content) {
   transform: translate(0, 0);
+  background: linear-gradient(135deg, #ff4d6a, #ff2d55);
+  font-weight: 700;
+  font-size: 11px;
+  box-shadow: 0 2px 4px rgba(255, 45, 85, 0.3);
 }
 
 /* 好友申请项 */
@@ -2126,12 +2149,13 @@ onBeforeUnmount(async () => {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 4px;
+  background: #f5f7fa;
 }
 
 .load-more {
   text-align: center;
-  padding: 8px 0;
+  padding: 12px 0;
 }
 
 .message-item {
@@ -2139,6 +2163,7 @@ onBeforeUnmount(async () => {
   gap: 12px;
   max-width: 70%;
   align-items: flex-start;
+  margin-bottom: 16px;
 }
 
 .message-item.self {
@@ -2164,6 +2189,7 @@ onBeforeUnmount(async () => {
   gap: 8px;
   font-size: 12px;
   color: #909399;
+  margin-bottom: 2px;
 }
 
 .sender-name {
@@ -2176,14 +2202,15 @@ onBeforeUnmount(async () => {
   border-radius: 12px;
   font-size: 14px;
   line-height: 1.5;
-  color: #303133;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  color: #1a1a1a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   word-break: break-word;
+  position: relative;
 }
 
 .message-item.self .message-bubble {
-  background: #409eff;
-  color: #fff;
+  background: linear-gradient(135deg, #95ec69, #85d65a);
+  color: #1a1a1a;
 }
 
 .message-bubble.emoji {
@@ -2226,30 +2253,32 @@ onBeforeUnmount(async () => {
 
 /* 输入区域 */
 .input-area {
-  padding: 12px 20px 20px;
+  padding: 12px 20px 16px;
   background: #fff;
   border-top: 1px solid #e4e7ed;
 }
 
 .input-toolbar {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   margin-bottom: 8px;
 }
 
 .input-toolbar :deep(.el-button) {
   color: #606266;
+  border-radius: 8px;
 }
 
 .input-toolbar :deep(.el-button:hover) {
   color: #409eff;
+  background: #f5f7fa;
 }
 
 .emoji-picker {
   margin-bottom: 8px;
   padding: 12px;
   background: #f5f7fa;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .emoji-grid {
@@ -2264,12 +2293,13 @@ onBeforeUnmount(async () => {
   border: none;
   background: transparent;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background 0.2s;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
 .emoji-btn:hover {
   background: #e4e7ed;
+  transform: scale(1.1);
 }
 
 .input-box {
@@ -2279,15 +2309,26 @@ onBeforeUnmount(async () => {
 }
 
 .input-box :deep(.el-textarea__inner) {
-  min-height: 44px !important;
+  min-height: 48px !important;
   max-height: 120px !important;
-  border-radius: 8px;
+  border-radius: 12px;
   resize: none;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: 0 0 0 1px #e4e7ed inset;
+  transition: all 0.2s ease;
+}
+
+.input-box :deep(.el-textarea__inner:focus) {
+  box-shadow: 0 0 0 1px #409eff inset;
 }
 
 .input-box :deep(.el-button) {
-  height: 44px;
-  padding: 0 24px;
+  height: 48px;
+  padding: 0 28px;
+  border-radius: 12px;
+  font-weight: 600;
 }
 
 /* 空状态 */
@@ -2338,19 +2379,25 @@ onBeforeUnmount(async () => {
 
 /* 头像 */
 .avatar {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   border-radius: 50%;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #94a3b8;
+  background: linear-gradient(135deg, #94a3b8, #64748b);
   color: #fff;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
 }
 
 .avatar img {
@@ -2375,9 +2422,9 @@ onBeforeUnmount(async () => {
   position: absolute;
   bottom: 2px;
   right: 2px;
-  width: 10px;
-  height: 10px;
-  background: #67c23a;
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(135deg, #67c23a, #85d65a);
   border-radius: 50%;
   border: 2px solid #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
@@ -2678,43 +2725,44 @@ onBeforeUnmount(async () => {
 
 /* 深色模式适配 */
 html.dark .friends-page {
-  background: #141414;
+  background: #0f172a;
 }
 
 html.dark .chat-layout {
-  background: #1f1f1f;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  background: #1e293b;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 html.dark .sidebar,
 html.dark .chat-header,
 html.dark .input-area {
-  background: #1f1f1f;
-  border-color: #303133;
+  background: #1e293b;
+  border-color: #334155;
 }
 
 html.dark .sidebar-title,
 html.dark .user-name,
 html.dark .contact-name,
 html.dark .message-bubble {
-  color: #e0e0e0;
+  color: #e2e8f0;
 }
 
 html.dark .message-bubble {
-  background: #2a2a2a;
+  background: #334155;
 }
 
 html.dark .contact-item:hover,
 html.dark .search-item:hover {
-  background: #2a2a2a;
+  background: #334155;
 }
 
 html.dark .contact-item.active {
-  background: #1a3a5c;
+  background: #1e3a5c;
+  border-left-color: #60a5fa;
 }
 
 html.dark .chat-area {
-  background: #141414;
+  background: #0f172a;
 }
 
 html.dark .message-bubble.image {
@@ -2722,7 +2770,7 @@ html.dark .message-bubble.image {
 }
 
 html.dark .emoji-picker {
-  background: #2a2a2a;
+  background: #334155;
 }
 
 html.dark .request-notice {
@@ -2732,50 +2780,91 @@ html.dark .request-notice {
 html.dark .profile-header,
 html.dark .profile-card,
 html.dark .profile-section {
-  background: #1a1a1a;
-  border-color: #2a2a2a;
+  background: #1e293b;
+  border-color: #334155;
 }
 
 html.dark .profile-header {
-  border-bottom-color: #2a2a2a;
+  border-bottom-color: #334155;
 }
 
 html.dark .header-title,
 html.dark .username,
 html.dark .info-value,
 html.dark .stat-value {
-  color: #e0e0e0;
+  color: #e2e8f0;
 }
 
 html.dark .section-title {
-  color: #a0a0a0;
+  color: #94a3b8;
 }
 
 html.dark .section-title .el-icon {
-  color: #808080;
+  color: #64748b;
 }
 
 html.dark .info-label,
 html.dark .stat-label {
-  color: #808080;
+  color: #64748b;
 }
 
 html.dark .info-row {
-  border-bottom-color: #2a2a2a;
+  border-bottom-color: #334155;
 }
 
 html.dark .bio-content,
 html.dark .stat-card {
-  background: #252525;
-  color: #c0c0c0;
+  background: #1e293b;
+  color: #94a3b8;
 }
 
 html.dark .info-value.copyable {
-  color: #5b8cff;
+  color: #60a5fa;
 }
 
 html.dark .user-item:hover {
-  background: #2a2a2a;
+  background: #334155;
+}
+
+html.dark .avatar {
+  background: linear-gradient(135deg, #475569, #334155);
+}
+
+html.dark .online-indicator {
+  border-color: #1e293b;
+}
+
+html.dark .message-item.self .message-bubble {
+  background: linear-gradient(135deg, #059669, #10b981);
+}
+
+html.dark .tab-item.active::after {
+  background: linear-gradient(90deg, #60a5fa, #93c5fd);
+}
+
+html.dark .empty-content h3,
+html.dark .empty-content p,
+html.dark .empty-chat {
+  color: #94a3b8;
+}
+
+html.dark .search-box :deep(.el-input__wrapper) {
+  background: #334155;
+  box-shadow: 0 0 0 1px #475569 inset;
+}
+
+html.dark .search-box :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #60a5fa inset;
+}
+
+html.dark .input-box :deep(.el-textarea__inner) {
+  background: #334155;
+  color: #e2e8f0;
+  box-shadow: 0 0 0 1px #475569 inset;
+}
+
+html.dark .input-box :deep(.el-textarea__inner:focus) {
+  box-shadow: 0 0 0 1px #60a5fa inset;
 }
 
 /* ========== 消息撤回相关样式 ========== */
