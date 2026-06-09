@@ -58,7 +58,8 @@
 - 🎁 **积分VIP体系**: 积分获取/消耗/签到、VIP会员购买与兑换
 - 🔔 **红点提醒**: 公告、活动、租赁、消息多维度未读提醒
 - 🎨 **现代化 UI**: Element Plus 组件库、玻璃态设计、响应式布局，暗色模式
-- 🚀 **开箱即用**: Docker 一键部署、快速上线
+- 📧 **邮件通知**: RabbitMQ 队列化发送、QQ+163 双邮箱轮换、指数退避重试、私信/评论/系统多类型通知
+- 🚀 **开箱即用**: Docker 一键部署、Jenkins CI/CD 自动构建、快速上线
 
 ## 🛠️ 技术架构
 
@@ -75,7 +76,7 @@
 - **消息队列**: RabbitMQ
 - **文件存储**: MinIO 对象存储
 - **实时通信**: Spring WebSocket
-- **邮件服务**: Spring Mail
+- **邮件服务**: Spring Mail + QQ/163 双邮箱轮换
 - **工具库**:
   - Lombok (代码简化)
   - Hutool (Java 工具库)
@@ -127,7 +128,10 @@ bikelease/
 │       │   ├── JwtAuthenticationFilter           #     JWT 认证过滤器
 │       │   ├── IpAccessControlFilter             #     IP 访问控制
 │       │   ├── ReadOnlyAdminFilter               #     只读管理员过滤
-│       │   └── WebSocketConfig                   #     WebSocket 配置
+│       │   ├── WebSocketConfig                   #     WebSocket 配置
+│       │   ├── MailSenderConfig                  #     双邮箱 MailSender 配置
+│       │   ├── RabbitMqConfig                    #     RabbitMQ 队列配置
+│       │   └── AsyncConfig                       #     异步线程池配置
 │       ├── controller/                            #   REST API 控制器
 │       │   ├── AuthController                    #     认证模块 (登录/注册)
 │       │   ├── BicycleController                 #     车辆模块
@@ -142,10 +146,14 @@ bikelease/
 │       ├── entity/                                #   实体类
 │       ├── exception/                            #   全局异常处理
 │       ├── listener/                            #   事件监听器
-│       │   └── AdminNotificationListener.java  #     通知监听器 (RabbitMQ → WebSocket)
+│       │   ├── AdminNotificationListener.java  #     管理端通知监听器 (RabbitMQ → WebSocket)
+│       │   ├── EmailQueueListener.java         #     邮件队列消费者 (重试 + DLQ)
+│       │   └── PointsListener.java             #     积分变动监听器
 │       ├── mapper/                                #   MyBatis-Plus Mapper
 │       ├── service/                               #   业务逻辑服务
-│       │   └── AdminNotificationPublisher.java #     通知发布服务
+│       │   ├── AdminNotificationPublisher.java #     管理端通知发布服务
+│       │   ├── UserEmailNotificationService.java #  用户邮件通知服务 (轮换 + 频控)
+│       │   └── UnreadMessageEmailScheduler.java #   未读私信邮件提醒定时任务
 │       └── util/                                  #   工具类
 │
 ├── bickdemo-frontend/                           # 用户端前台 (Vue 3)
@@ -216,7 +224,8 @@ bikelease/
 - **多种登录**: 账号密码 + 邮箱验证码登录
 - **权限管理**: 基于角色的访问控制 (USER/ADMIN)
 - **安全防护**: JWT 认证 + Spring Security
-- **邮件验证**: 注册验证码 + 密码重置
+- **邮件验证**: 注册验证码 + 密码重置，RabbitMQ 队列化发送
+- **邮件通知**: 私信未读提醒、评论通知、系统公告、审核结果，同一用户 1 小时频控
 - **个人资料**: 头像上传、简介编辑
 - **会员等级**: 根据骑行时长计算会员等级
 
@@ -434,6 +443,7 @@ docker compose up -d --build
 | 后端 API   | 8080     | Spring Boot   |
 | MySQL     | 3306     | 数据库        |
 | Redis     | 6379     | 缓存          |
+| RabbitMQ  | 5672     | 消息队列       |
 
 ### 环境变量
 
@@ -451,6 +461,14 @@ docker compose up -d --build
 | `MINIO_ACCESS_KEY`| -                     | MinIO 访问密钥 |
 | `MINIO_SECRET_KEY`| -                     | MinIO 密钥     |
 | `MINIO_BUCKET`    | bicycles               | MinIO 存储桶   |
+| `MAIL_HOST`       | smtp.qq.com            | 主邮箱 SMTP    |
+| `MAIL_PORT`       | 587                    | 主邮箱端口      |
+| `MAIL_USERNAME`   | -                      | 主邮箱账号      |
+| `MAIL_PASSWORD`   | -                      | 主邮箱授权码    |
+| `MAIL_SECONDARY_HOST`     | smtp.163.com   | 副邮箱 SMTP    |
+| `MAIL_SECONDARY_PORT`     | 465            | 副邮箱端口      |
+| `MAIL_SECONDARY_USERNAME` | -              | 副邮箱账号      |
+| `MAIL_SECONDARY_PASSWORD` | -              | 副邮箱授权码    |
 
 ## 🔑 演示账号
 
@@ -571,23 +589,69 @@ html.dark {
 
 ## 📜 更新日志
 
+### [v1.4.0] - 2026-06
+
+- ✅ **消息中心**: 新增用户消息中心页面，聚合公告、评论、点赞、系统通知等
+- ✅ **邮件通知系统**: RabbitMQ 队列化发送，单消费者串行处理，避免 SMTP 并发封禁
+- ✅ **双邮箱轮换**: QQ + 163 双 SMTP 账号轮替发送，降低单账号限流风险
+- ✅ **失败重试**: 指数退避重试 (5s/15s/30s)，死信队列 (DLQ) 兜底
+- ✅ **通知类型**: 注册验证码、私信未读提醒、帖子评论通知、系统公告、审核结果
+- ✅ **频控机制**: 同一发送者对同一用户 1 小时内最多推送 1 次
+- ✅ **未读私信定时扫描**: 2 分钟周期扫描，超时未读自动邮件提醒
+- ✅ **消息页面重构**: 微信风格全屏沉浸式聊天体验，好友与消息移至导航栏
+- ✅ **帖子详情页**: 支持 `/forum/:id` 路由直接访问独立帖子页
+- ✅ **VIP 积分兑换记录**: 新增兑换记录列表（用户端 + 管理端）
+- ✅ **AI 流式输出优化**: 修复逐字输出失效问题，Markdown 渲染格式修复
+- ✅ **管理员特权**: 管理员免限流/黑名单限制，租赁列表实时轮询
+- ✅ **VIP 徽标**: 过期后显示暗色样式，订单记录支持分页查询
+
+### [v1.3.0] - 2026-05
+
+- ✅ **支付宝集成**: 支付宝沙箱支付对接，VIP 会员现金购买
+- ✅ **VIP 续费与兑换**: 新增续费功能和积分兑换 VIP 功能
+- ✅ **支付安全**: 修复表单转义验签失败、订单过期后仍可支付等问题
+- ✅ **订单实时状态**: 支付倒计时过期实时更新，防止过期后误操作
+- ✅ **部署优化**: Jenkins 环境文件优先级修复，env_file 显式指定
+
+### [v1.2.0] - 2026-04
+
+- ✅ **积分 VIP 体系**: 积分获取/消耗/签到、VIP 月卡/季卡/年卡购买与兑换
+- ✅ **VIP 经验值**: 经验值成长体系，支持管理端调整，兼容旧版数据
+- ✅ **AI 智能客服**: 基于硅基流动 API 的 AI 对话助手，悬浮按钮一键唤起
+- ✅ **红点提醒**: 公告、活动、租赁、消息多维度未读红点提醒
+- ✅ **消息撤回/重发**: 聊天消息右键菜单撤回，支持重新编辑发送
+- ✅ **活动管理**: 报名截止功能、管理员留言回复、状态流程优化
+- ✅ **工单系统**: 用户反馈提交、进度跟踪、满意度评价
+- ✅ **管理端增强**: 公告管理、工单管理、活动管理、积分/会员管理页面
+- ✅ **论坛增强**: 帖子内容展开折叠、评论审核功能
+- ✅ **移动端适配**: 管理端响应式设计，抽屉式导航、表格自适应
+- ✅ **管理端登录改造**: Naive UI 沉浸式玻璃卡片风格
+- ✅ **N+1 查询优化**: 数据库查询性能优化，添加自行车热点缓存
+- ✅ **头像裁剪**: 新增头像裁剪上传功能
+
 ### [v1.1.0] - 2026-03
 
 - ✅ **管理端实时通知**: WebSocket + RabbitMQ 实时推送
 - ✅ **通知类型**: 用户注册、IP黑名单、帖子/评论审核、挂牌审核
 - ✅ **通知面板**: 铃铛图标、未读计数、下拉详情面板
 - ✅ **通知持久化**: 数据库存储 + localStorage 隐藏状态
+- ✅ **邮箱登录**: 邮箱验证码登录/注册，移除手机号字段
+- ✅ **社交聊天**: 好友申请、WebSocket 实时聊天、已读状态、查看好友资料
+- ✅ **论坛社区**: 图文发帖、评论、审核机制
+- ✅ **车辆管理**: 增加车辆数量、租金实时展示
+- ✅ **IP 黑名单**: IP 限流封禁功能
+- ✅ **个人信息**: 头像上传、个人资料修改
+- ✅ **SSL 部署**: HTTPS 证书配置
+- ✅ **Jenkins CI/CD**: 自动化构建与部署流水线
 
 ### [v1.0.0] - 2026-03
 
-- ✅ 用户系统(注册/登录/JWT认证)
-- ✅ 租车服务(浏览/租用/归还)
-- ✅ 社交聊天(WebSocket实时消息)
-- ✅ 论坛社区(发帖/评论/点赞)
-- ✅ 活动管理(省市区选择器/报名签到)
-- ✅ 后台管理(数据看板/用户/车辆管理)
-- ✅ UI 玻璃态效果
-- ✅ 暗色模式支持
+- ✅ 项目初始化，前后端分离架构搭建
+- ✅ 用户系统 (注册/登录/JWT 认证/Spring Security)
+- ✅ 租车服务 (浏览/租用/归还/实时计费)
+- ✅ 管理后台 (数据看板/用户/车辆管理)
+- ✅ UI 玻璃态效果 + 暗色模式支持
+- ✅ Docker Compose 一键部署
 
 ---
 
