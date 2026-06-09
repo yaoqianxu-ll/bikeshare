@@ -261,11 +261,9 @@ const load = async () => {
       type: query.type || undefined,
       status: query.status || undefined
     })
-    // Sort by priority (descending)
-    const data = res.data || []
-    data.sort((a, b) => (b.priority || 0) - (a.priority || 0))
-    records.value = data
-    total.value = data.length
+    const pageData = res.data || {}
+    records.value = pageData.records || []
+    total.value = pageData.total || 0
   } finally {
     loading.value = false
   }

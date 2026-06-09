@@ -165,25 +165,26 @@ public class NoticeService {
      * 获取公告分页列表（管理员）
      * @param page 页码，从 1 开始
      * @param size 每页显示的公告数量
-     * @return 当前页的公告响应列表
+     * @param type 公告类型（可选，为空则不过滤）
+     * @param status 公告状态（可选，为空则不过滤）
+     * @return 分页结果（包含 records 和 total）
      */
-    public List<NoticeResponse> getNoticesPage(int page, int size) {
-        // 记录调试日志，包含分页参数
-        log.debug("分页查询公告：page={}, size={}", page, size);
-        // 创建 Lambda 查询条件包装器，设置查询条件为未删除的公告
-        // 按优先级和发布时间降序排列
+    public com.baomidou.mybatisplus.extension.plugins.pagination.Page<NoticeResponse> getNoticesPage(int page, int size, NoticeType type, NoticeStatus status) {
+        log.debug("分页查询公告：page={}, size={}, type={}, status={}", page, size, type, status);
         LambdaQueryWrapper<Notice> wrapper = new LambdaQueryWrapper<Notice>()
                 .eq(Notice::getDeleted, 0)
+                .eq(type != null, Notice::getType, type)
+                .eq(status != null, Notice::getStatus, status)
                 .orderByDesc(Notice::getPriority)
                 .orderByDesc(Notice::getPublishTime);
-        // 创建 MyBatis-Plus 分页对象，传入当前页码和每页大小
-        // 调用 noticeMapper 的 selectPage 方法进行分页查询
         com.baomidou.mybatisplus.extension.plugins.pagination.Page<Notice> noticePage =
                 noticeMapper.selectPage(new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(page, size), wrapper);
-        // 获取分页结果中的公告记录列表，并转换为响应列表返回
-        return noticePage.getRecords().stream()
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<NoticeResponse> resultPage =
+                new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(noticePage.getCurrent(), noticePage.getSize(), noticePage.getTotal());
+        resultPage.setRecords(noticePage.getRecords().stream()
                 .map(this::convertToResponse)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
+        return resultPage;
     }
 
     /**

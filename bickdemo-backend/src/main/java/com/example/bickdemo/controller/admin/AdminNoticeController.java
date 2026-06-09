@@ -4,6 +4,8 @@ import com.example.bickdemo.annotation.AdminOperationLog;
 import com.example.bickdemo.dto.ApiResponse;
 import com.example.bickdemo.dto.NoticeRequest;
 import com.example.bickdemo.dto.NoticeResponse;
+import com.example.bickdemo.entity.NoticeStatus;
+import com.example.bickdemo.entity.NoticeType;
 import com.example.bickdemo.service.NoticeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,11 +44,13 @@ public class AdminNoticeController {
      */
     @GetMapping("/page")
     @AdminOperationLog(module = "公告管理", action = "分页获取公告列表", type = "查询")
-    public ResponseEntity<ApiResponse<List<NoticeResponse>>> getNoticesPage(
+    public ResponseEntity<ApiResponse<com.baomidou.mybatisplus.extension.plugins.pagination.Page<NoticeResponse>>> getNoticesPage(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        List<NoticeResponse> notices = noticeService.getNoticesPage(page, size);
-        return ResponseEntity.ok(ApiResponse.success(notices));
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) NoticeType type,
+            @RequestParam(required = false) NoticeStatus status) {
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<NoticeResponse> result = noticeService.getNoticesPage(page, size, type, status);
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     /**
