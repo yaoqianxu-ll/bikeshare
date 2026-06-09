@@ -185,7 +185,7 @@
         <template v-if="activeContact">
           <!-- 聊天头部 -->
           <div class="chat-header">
-            <div class="back-btn" @click="$router.push('/')">
+            <div class="back-btn" @click="$router.back()">
               <el-icon><ArrowLeft /></el-icon>
             </div>
             <div class="chat-user" @click="openFriendProfile(activeContact)">
