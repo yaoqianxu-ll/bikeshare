@@ -390,7 +390,7 @@ public class VipOrderServiceImpl implements VipOrderService {
                         .lt(VipOrder::getExpireTime, LocalDateTime.now())
         );
 
-        log.info("[VIP订单过期检查] 查询到 {} 个待处理过期订单", expiredOrders.size());
+        //log.info("[VIP订单过期检查] 查询到 {} 个待处理过期订单", expiredOrders.size());
 
         // 遍历处理每个过期订单
         for (VipOrder order : expiredOrders) {
