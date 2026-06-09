@@ -84,7 +84,7 @@
     </el-drawer>
 
     <!-- 固定导航栏 -->
-    <header class="app-header" :class="{ 'is-home-header': isHomePage }">
+    <header v-if="!isFullScreen" class="app-header" :class="{ 'is-home-header': isHomePage }">
       <div class="header-content">
         <div class="logo-section">
           <router-link to="/" class="logo-wrapper logo-link" @click="closeNav">
@@ -293,20 +293,20 @@
     ></div>
 
     <!-- 主内容区 -->
-    <main class="main-content" :class="{ 'is-home-main': isHomePage }">
-      <div class="page-content-wrapper">
+    <main class="main-content" :class="{ 'is-home-main': isHomePage, 'is-fullscreen': isFullScreen }">
+      <div class="page-content-wrapper" :class="{ 'fullscreen-content': isFullScreen }">
         <router-view />
       </div>
     </main>
 
     <!-- AI聊天按钮 -->
-    <AiChatButton :is-open="aiChatOpen" @click="aiChatOpen = !aiChatOpen" />
+    <AiChatButton v-if="!isFullScreen" :is-open="aiChatOpen" @click="aiChatOpen = !aiChatOpen" />
 
     <!-- AI聊天对话框 -->
-    <AiChatDialog :visible="aiChatOpen" @close="aiChatOpen = false" />
+    <AiChatDialog v-if="!isFullScreen" :visible="aiChatOpen" @close="aiChatOpen = false" />
 
     <!-- 底部 -->
-    <footer class="app-footer">
+    <footer v-if="!isFullScreen" class="app-footer">
       <p>© 2026 BikeShare · 城市骑行计划</p>
       <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer" class="icp-link">赣ICP备2026005377号-1</a>
     </footer>
@@ -376,6 +376,7 @@ const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
 const openSourceGiteeUrl = 'https://gitee.com/loopeasen/bikelease'
 const openSourceGithubUrl = 'https://github.com/yaoqianxu-ll/bikeshare'
 const isHomePage = computed(() => route.name === 'Home')
+const isFullScreen = computed(() => route.meta?.fullScreen === true)
 const dropdownTrigger = computed(() => (isMobile.value ? 'click' : 'hover'))
 const bgDrawerSize = computed(() => (isMobile.value ? '100%' : '400px'))
 
@@ -1787,8 +1788,17 @@ html.dark .mobile-account-link-logout:hover {
   }
 }
 
-.main-content.is-home-main {
+.main-content.is-fullscreen {
   margin-top: 0;
+  padding: 0;
+}
+
+.page-content-wrapper.fullscreen-content {
+  animation: none;
+}
+
+.page-content-wrapper.fullscreen-content > *:not(.app-header):not(.app-footer) {
+  animation: none;
 }
 
 /* 底部 */

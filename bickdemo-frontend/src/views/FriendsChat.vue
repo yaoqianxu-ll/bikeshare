@@ -1746,7 +1746,7 @@ onBeforeUnmount(async () => {
 
 /* ---------- 整体布局 ---------- */
 .friends-page {
-  height: calc(100vh - 60px);
+  height: 100vh;
   background: #f5f5f5;
   overflow: hidden;
   display: flex;
@@ -1757,10 +1757,11 @@ onBeforeUnmount(async () => {
   display: flex;
   height: 100%;
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
   background: #fff;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: none;
+  border-radius: 0;
 }
 
 /* ---------- 左侧边栏 ---------- */

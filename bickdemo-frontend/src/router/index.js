@@ -32,7 +32,7 @@ const routes = [
         path: '/friends',
         name: 'Friends',
         component: () => import('@/views/FriendsChat.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, fullScreen: true }
       },
       {
         path: '/statistics',
