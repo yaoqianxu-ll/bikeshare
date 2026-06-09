@@ -252,22 +252,6 @@
               </div>
             </div>
 
-            <!-- VIP权益 -->
-            <div class="glass-card benefits-card">
-              <h4>会员特权</h4>
-              <div class="benefits-list">
-                <div class="benefit-row" v-for="b in vipBenefits" :key="b.key">
-                  <div class="benefit-icon" :style="{ background: b.bg }">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" v-html="b.icon"></svg>
-                  </div>
-                  <div class="benefit-text">
-                    <strong>{{ b.title }}</strong>
-                    <span>{{ b.desc }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <!-- 积分规则 -->
             <div class="glass-card rules-card">
               <h4>积分规则</h4>
@@ -427,38 +411,6 @@ const paymentFlowState = createPaymentFlowState()
 // 支付倒计时
 const payCountdown = ref(0)
 let countdownTimer = null
-
-// VIP权益配置
-const vipBenefits = [
-  {
-    key: 'points2x',
-    title: '积分双倍',
-    desc: '消费获得2倍积分奖励',
-    bg: 'rgba(251,191,36,0.15)',
-    icon: '<path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-  },
-  {
-    key: 'support',
-    title: '专属客服',
-    desc: '7×24小时优先服务通道',
-    bg: 'rgba(99,102,241,0.15)',
-    icon: '<path d="M3 18v-6a9 9 0 0118 0v6M3 18a3 3 0 003 3h12a3 3 0 003-3M9 14a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="2"/>'
-  },
-  {
-    key: 'priority',
-    title: '优先租赁',
-    desc: '热门车辆优先预约权',
-    bg: 'rgba(16,185,129,0.15)',
-    icon: '<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-  },
-  {
-    key: 'birthday',
-    title: '生日礼包',
-    desc: '生日当月专属好礼一份',
-    bg: 'rgba(236,72,153,0.15)',
-    icon: '<path d="M20 12a8 8 0 10-16 0M12 3v1m0 16v1M4.22 4.22l.7.7m12.16 12.16.7.7M3 12h1m16 0h1M4.22 19.78l.7-.7M18.36 5.64l.7-.7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
-  }
-]
 
 // VIP进度百分比
 const vipProgressPercent = computed(() => {
@@ -2016,59 +1968,6 @@ onUnmounted(() => {
       border: 1px solid rgba(16, 185, 129, 0.2);
       color: var(--vip-success);
       cursor: default;
-    }
-  }
-}
-
-/* 特权卡 */
-.benefits-card {
-  padding: 24px;
-
-  h4 {
-    font-family: 'Playfair Display', 'Noto Serif SC', serif;
-    font-size: 18px;
-    color: var(--vip-text);
-    margin: 0 0 18px;
-    font-weight: 700;
-  }
-
-  .benefits-list {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .benefit-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-
-    .benefit-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--vip-gold);
-      flex-shrink: 0;
-    }
-
-    .benefit-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-
-      strong {
-        font-size: 14px;
-        color: var(--vip-text);
-        font-weight: 600;
-      }
-
-      span {
-        font-size: 12px;
-        color: var(--vip-muted);
-      }
     }
   }
 }
