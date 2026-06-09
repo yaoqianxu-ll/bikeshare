@@ -1,12 +1,15 @@
 package com.example.bickdemo.service;
 
+import com.example.bickdemo.config.RabbitMqConfig;
 import com.example.bickdemo.entity.EmailNotificationLog;
 import com.example.bickdemo.entity.EmailNotificationType;
 import com.example.bickdemo.entity.User;
+import com.example.bickdemo.event.EmailEvent;
 import com.example.bickdemo.mapper.EmailNotificationLogMapper;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -30,6 +33,7 @@ public class UserEmailNotificationService {
     private final JavaMailSender mailSender;
     private final EmailNotificationLogMapper notificationLogMapper;
     private final UserNotificationSettingsService settingsService;
+    private final RabbitTemplate rabbitTemplate;
 
     @Value("${spring.mail.username:}")
     private String fromEmail;
@@ -63,7 +67,7 @@ public class UserEmailNotificationService {
 
         String subject = "BikeShare 您收到了一条私信";
         String html = buildPrivateMessageHtml(senderName, messagePreview);
-        doSend(receiver.getEmail(), subject, html, receiver.getId(), EmailNotificationType.MESSAGE.name(), senderId);
+        publishToQueue(receiver.getEmail(), subject, html, receiver.getId(), EmailNotificationType.MESSAGE.name(), senderId);
     }
 
     /**
@@ -86,7 +90,7 @@ public class UserEmailNotificationService {
 
         String subject = "BikeShare 您的帖子收到了新评论";
         String html = buildCommentHtml(commenterName, postTitle, commentContent, postId);
-        doSend(postAuthor.getEmail(), subject, html, postAuthor.getId(), EmailNotificationType.COMMENT.name(), postId);
+        publishToQueue(postAuthor.getEmail(), subject, html, postAuthor.getId(), EmailNotificationType.COMMENT.name(), postId);
     }
 
     /**
@@ -110,7 +114,7 @@ public class UserEmailNotificationService {
 
         String fullSubject = "BikeShare " + subject;
         String html = buildSystemHtml(title, content, actionUrl);
-        doSend(user.getEmail(), fullSubject, html, user.getId(), EmailNotificationType.SYSTEM.name(), null);
+        publishToQueue(user.getEmail(), fullSubject, html, user.getId(), EmailNotificationType.SYSTEM.name(), null);
     }
 
     /**
@@ -128,7 +132,7 @@ public class UserEmailNotificationService {
         String statusText = approved ? "已通过" : "已驳回";
         String subject = "BikeShare 您的" + targetType + "审核" + statusText;
         String html = buildReviewResultHtml(targetType, targetTitle, approved, targetId);
-        doSend(user.getEmail(), subject, html, user.getId(), EmailNotificationType.SYSTEM.name(), targetId);
+        publishToQueue(user.getEmail(), subject, html, user.getId(), EmailNotificationType.SYSTEM.name(), targetId);
     }
 
     /**
@@ -141,6 +145,23 @@ public class UserEmailNotificationService {
         LocalDateTime since = LocalDateTime.now().minusMinutes(cooldownMinutes);
         int count = notificationLogMapper.countRecentByUserAndTypeAndRef(userId, type, refId, since);
         return count > 0;
+    }
+
+    /**
+     * 将邮件事件发布到 RabbitMQ 队列，由消费者逐条处理，避免并发压垮 SMTP 服务器
+     */
+    private void publishToQueue(String toEmail, String subject, String html, Long userId, String type, Long refId) {
+        EmailEvent event = new EmailEvent(toEmail, subject, html, userId, type, refId);
+        rabbitTemplate.convertAndSend(RabbitMqConfig.EMAIL_EXCHANGE, RabbitMqConfig.EMAIL_ROUTING_KEY, event);
+        log.debug("邮件事件已入队，type={}, userId={}, to={}", type, userId, toEmail);
+    }
+
+    /**
+     * 处理邮件队列事件，由 EmailQueueListener 调用，执行实际的邮件发送
+     */
+    public void processEmailEvent(EmailEvent event) {
+        doSend(event.getToEmail(), event.getSubject(), event.getHtml(),
+                event.getUserId(), event.getType(), event.getRefId());
     }
 
     /**

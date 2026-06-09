@@ -206,6 +206,46 @@ public class RabbitMqConfig {
         return factory;
     }
 
+    // ========== 邮件发送队列 ==========
+    public static final String EMAIL_EXCHANGE = "email.notification.exchange";
+    public static final String EMAIL_QUEUE = "email.notification.queue";
+    public static final String EMAIL_ROUTING_KEY = "email.notification.send";
+
+    /**
+     * 初始化邮件通知交换机和队列
+     */
+    @PostConstruct
+    public void initEmailExchangeAndQueue() {
+        try {
+            RabbitAdmin admin = new RabbitAdmin(connectionFactory);
+            admin.declareExchange(new DirectExchange(EMAIL_EXCHANGE, true, false));
+            admin.declareQueue(new Queue(EMAIL_QUEUE, true));
+            admin.declareBinding(BindingBuilder
+                    .bind(new Queue(EMAIL_QUEUE, true))
+                    .to(new DirectExchange(EMAIL_EXCHANGE, true, false))
+                    .with(EMAIL_ROUTING_KEY));
+        } catch (Exception e) {
+            log.error("[RabbitMQ] Failed to declare email notification exchange/queue: {} - {}", e.getClass().getName(), e.getMessage(), e);
+        }
+    }
+
+    // ========== 邮件队列专用监听器工厂（单消费者，逐条处理） ==========
+
+    @Bean("emailListenerContainerFactory")
+    public SimpleRabbitListenerContainerFactory emailListenerContainerFactory(
+            ConnectionFactory connectionFactory,
+            MessageConverter rabbitMessageConverter
+    ) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setMessageConverter(rabbitMessageConverter);
+        factory.setConcurrentConsumers(1);
+        factory.setMaxConcurrentConsumers(1);
+        factory.setPrefetchCount(1);
+        factory.setDefaultRequeueRejected(false);
+        return factory;
+    }
+
     // ========== VIP订单过期队列 ==========
     public static final String VIP_ORDER_EXCHANGE = "vip.order.exchange";
     public static final String VIP_ORDER_EXPIRE_QUEUE = "vip.order.expire.queue";

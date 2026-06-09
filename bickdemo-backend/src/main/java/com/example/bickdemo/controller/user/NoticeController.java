@@ -36,7 +36,7 @@ public class NoticeController {
     @GetMapping("/paged")
     public ResponseEntity<ApiResponse<com.baomidou.mybatisplus.extension.plugins.pagination.Page<NoticeResponse>>> getPublishedNoticesPaged(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "5") int size) {
         var result = noticeService.getPublishedNoticesPage(page, size);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
