@@ -227,6 +227,10 @@
             </template>
           </el-dropdown>
           <ThemeToggle variant="inline" :tone="isHomePage ? 'ghost' : 'solid'" />
+          <router-link to="/friends" class="header-friends-btn" v-if="userStore.isLoggedIn">
+            <el-icon><ChatDotRound /></el-icon>
+            <el-badge v-if="contactsStore.totalUnreadCount > 0" :value="contactsStore.totalUnreadCount" :max="99" class="friends-badge" />
+          </router-link>
           <div class="user-section" v-if="userStore.isLoggedIn">
             <el-dropdown :trigger="dropdownTrigger" placement="bottom-end" :show-timeout="120" :hide-timeout="180">
               <span class="user-name">
@@ -247,12 +251,6 @@
                     <el-dropdown-item>
                       <el-icon><Bell /></el-icon> 公告
                       <el-badge v-if="noticeStore.hasUnread" is-dot class="dropdown-badge" />
-                    </el-dropdown-item>
-                  </router-link>
-                  <router-link to="/friends">
-                    <el-dropdown-item>
-                      <el-icon><ChatDotRound /></el-icon> 好友与消息
-                      <el-badge v-if="contactsStore.totalUnreadCount > 0" :value="contactsStore.totalUnreadCount" :max="99" class="dropdown-badge" />
                     </el-dropdown-item>
                   </router-link>
                   <router-link to="/tickets">
@@ -1190,6 +1188,21 @@ watch(
   background: rgba(255, 255, 255, 0.10);
 }
 
+.app-header.is-home-header .header-friends-btn {
+  color: rgba(248, 251, 255, 0.96);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: none;
+}
+
+.app-header.is-home-header .header-friends-btn:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.app-header.is-home-header .header-friends-btn .el-icon {
+  color: #f8fbff;
+}
+
 /* 导航链接 */
 .nav-links {
   display: flex;
@@ -1337,6 +1350,67 @@ watch(
 .header-support-link .el-icon {
   font-size: 15px;
   color: #f4b400;
+}
+
+/* 好友与消息头部按钮 */
+.header-friends-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--bs-ink);
+  background: color-mix(in srgb, var(--bs-surface-solid) 78%, transparent);
+  border: 1px solid var(--bs-stroke);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(12px) saturate(135%);
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.header-friends-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+  background: color-mix(in srgb, var(--bs-surface-solid) 86%, transparent);
+}
+
+.header-friends-btn .el-icon {
+  font-size: 16px;
+  color: var(--brand-primary);
+}
+
+.friends-badge {
+  margin-left: 4px;
+}
+
+.friends-badge :deep(.el-badge__content) {
+  background: linear-gradient(135deg, #ff4d6a 0%, #ff2d55 50%, #e0103d 100%);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  box-shadow:
+    0 2px 8px rgba(255, 45, 85, 0.45),
+    0 0 0 0 rgba(255, 45, 85, 0.4);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: -0.02em;
+  animation: badge-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% {
+    box-shadow:
+      0 2px 8px rgba(255, 45, 85, 0.45),
+      0 0 0 0 rgba(255, 45, 85, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 2px 12px rgba(255, 45, 85, 0.55),
+      0 0 0 6px rgba(255, 45, 85, 0);
+  }
 }
 
 /* 开源链接容器 */
@@ -1787,6 +1861,15 @@ html.dark .mobile-account-link-logout:hover {
     padding: 0 12px;
     min-height: 40px;
   }
+
+  .header-friends-btn > span {
+    display: none;
+  }
+
+  .header-friends-btn {
+    padding: 0 12px;
+    min-height: 40px;
+  }
 }
 
 /* 响应式 - 980px断点：显示汉堡菜单 */
@@ -1841,6 +1924,12 @@ html.dark .mobile-account-link-logout:hover {
   .theme-toggle--inline .theme-toggle__button {
     width: 44px;
     height: 44px;
+    border-radius: 12px;
+  }
+
+  .header-friends-btn {
+    min-height: 44px;
+    padding: 0 14px;
     border-radius: 12px;
   }
 
@@ -2029,6 +2118,15 @@ html.dark .mobile-account-link-logout:hover {
   }
 
   .header-support-link span {
+    display: none;
+  }
+
+  .header-friends-btn {
+    min-height: 38px;
+    padding: 0 10px;
+  }
+
+  .header-friends-btn > span {
     display: none;
   }
 }
