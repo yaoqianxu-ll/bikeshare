@@ -508,7 +508,7 @@
 
 <script setup>
 import { onMounted, onUnmounted, nextTick, reactive, ref, watch, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, ElIcon } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
@@ -517,8 +517,15 @@ import { uploadImage } from '@/api/file'
 import { chinaRegionOptions } from '@/data/chinaRegionOptions'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
-const activeTab = ref('discover')
+const marketplaceValidTabs = ['discover', 'listings', 'applications']
+const activeTab = ref(marketplaceValidTabs.includes(route.query.tab) ? route.query.tab : 'discover')
+
+// 标签页切换时同步到 URL query，刷新页面可保持当前标签
+watch(activeTab, (tab) => {
+  router.replace({ query: { ...route.query, tab } })
+})
 const discoverLoading = ref(false)
 const marketLoading = ref(false)
 const locating = ref(false)
