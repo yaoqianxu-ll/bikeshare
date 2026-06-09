@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 /**
  * 私信未读邮件提醒定时任务。
- * 每 30 秒扫描一次，查找发送超过 2 分钟仍未被阅读的私信，
+ * 每 30 秒扫描一次，查找最近 10 分钟内产生、且超过 2 分钟仍未被阅读的私信，
  * 通过邮件提醒接收者。同一发送者对同一接收者 1 小时内只提醒一次。
  */
 @Slf4j
@@ -33,13 +33,16 @@ public class UnreadMessageEmailScheduler {
     public void checkUnreadMessages() {
         try {
             LocalDateTime threshold = LocalDateTime.now().minusMinutes(2);
+            // 只看最近 10 分钟内产生的消息，避免反复扫描历史旧消息
+            LocalDateTime windowStart = LocalDateTime.now().minusMinutes(10);
 
-            // 查询所有超过 2 分钟未读的消息
+            // 查询最近 10 分钟内、超过 2 分钟仍未读的消息
             LambdaQueryWrapper<ChatMessage> wrapper = new LambdaQueryWrapper<>();
             wrapper.and(w -> w.eq(ChatMessage::getRead, false).or().isNull(ChatMessage::getRead))
                     .isNull(ChatMessage::getReadAt)
                     .eq(ChatMessage::getDeleted, 0)
-                    .le(ChatMessage::getCreatedAt, threshold);
+                    .le(ChatMessage::getCreatedAt, threshold)
+                    .ge(ChatMessage::getCreatedAt, windowStart);
 
             List<ChatMessage> unreadMessages = chatMessageMapper.selectList(wrapper);
 
