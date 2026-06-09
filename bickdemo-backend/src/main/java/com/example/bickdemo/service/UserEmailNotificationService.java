@@ -10,6 +10,8 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -20,6 +22,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 用户邮件通知服务。
@@ -35,14 +38,24 @@ public class UserEmailNotificationService {
     private final UserNotificationSettingsService settingsService;
     private final RabbitTemplate rabbitTemplate;
 
+    @Autowired(required = false)
+    @Qualifier("secondaryMailSender")
+    private JavaMailSender secondaryMailSender;
+
     @Value("${spring.mail.username:}")
     private String fromEmail;
 
     @Value("${app.mail.from-name:BikeShare}")
     private String fromName;
 
+    @Value("${app.mail.secondary.username:}")
+    private String secondaryFromEmail;
+
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
+
+    /** 轮换计数器：偶数用主邮箱，奇数用副邮箱 */
+    private final AtomicLong sendCounter = new AtomicLong(0);
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -166,39 +179,99 @@ public class UserEmailNotificationService {
 
     /**
      * 实际发送邮件并记录日志。
+     * 双邮箱轮换：偶数用主邮箱 (QQ)，奇数用副邮箱 (163)，降低单个 SMTP 被限流的风险。
+     * 当前邮箱发送失败时，自动尝试另一个邮箱。
      */
     private void doSend(String toEmail, String subject, String html, Long userId, String type, Long refId) {
-        if (!StringUtils.hasText(fromEmail)) {
-            log.warn("邮件发送账号未配置 (spring.mail.username)，跳过发送");
+        boolean secondaryAvailable = secondaryMailSender != null
+                && StringUtils.hasText(secondaryFromEmail);
+
+        // 没有可用的发送账号
+        if (!StringUtils.hasText(fromEmail) && !secondaryAvailable) {
+            log.warn("邮件发送账号未配置，跳过发送");
             return;
         }
 
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(fromEmail, fromName);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(html, true);
-            mailSender.send(message);
+        // 决定首选 sender：轮换选择
+        long count = sendCounter.getAndIncrement();
+        boolean preferSecondary = secondaryAvailable && (count % 2 == 1);
 
-            // 记录发送日志
-            EmailNotificationLog logEntry = new EmailNotificationLog();
-            logEntry.setUserId(userId);
-            logEntry.setType(type);
-            logEntry.setRefId(refId);
-            notificationLogMapper.insert(logEntry);
+        JavaMailSender primaryChoice = preferSecondary ? secondaryMailSender : mailSender;
+        String primaryFrom = preferSecondary ? secondaryFromEmail : fromEmail;
+        JavaMailSender fallbackChoice = preferSecondary ? mailSender : secondaryMailSender;
+        String fallbackFrom = preferSecondary ? fromEmail : secondaryFromEmail;
 
-            log.info("邮件通知已发送，type={}, userId={}, to={}", type, userId, toEmail);
-        } catch (MailSendException e) {
-            log.error("邮件发送失败，userId={}, to={}: {}", userId, toEmail, e.getMessage());
-            delayOnFailure();
-            throw e;
-        } catch (Exception e) {
-            log.error("邮件通知异常，userId={}, to={}: {}", userId, toEmail, e.getMessage());
-            delayOnFailure();
-            throw new RuntimeException("邮件发送异常: " + e.getMessage(), e);
+        // 如果首选不可用（主邮箱未配置或副邮箱为 null），切到另一个
+        if (preferSecondary && primaryChoice == null) {
+            primaryChoice = fallbackChoice;
+            primaryFrom = fallbackFrom;
+            fallbackChoice = null;
+            fallbackFrom = null;
         }
+        if (!StringUtils.hasText(primaryFrom)) {
+            primaryChoice = fallbackChoice;
+            primaryFrom = fallbackFrom;
+            fallbackChoice = null;
+            fallbackFrom = null;
+        }
+
+        String provider = primaryFrom != null && primaryFrom.contains("@163.com") ? "163" : "QQ";
+        log.info("邮件发送选择: provider={}, from=[{}], fromEmail=[{}], secondaryAvailable={}, count={}",
+                provider, primaryFrom, fromEmail, secondaryAvailable, count);
+
+        try {
+            sendWithSender(primaryChoice, primaryFrom, toEmail, subject, html);
+            recordSendLog(userId, type, refId);
+            log.info("邮件通知已发送 [{}], type={}, userId={}, to={}", provider, type, userId, toEmail);
+        } catch (Exception primaryEx) {
+            log.warn("[{}] 发送失败, userId={}, to={}: {}", provider, userId, toEmail, primaryEx.getMessage());
+            delayOnFailure();
+
+            // 尝试备选邮箱
+            if (fallbackChoice != null && StringUtils.hasText(fallbackFrom)) {
+                String fallbackProvider = fallbackFrom.contains("@163.com") ? "163" : "QQ";
+                try {
+                    sendWithSender(fallbackChoice, fallbackFrom, toEmail, subject, html);
+                    recordSendLog(userId, type, refId);
+                    log.info("邮件通知已发送 [{} fallback], type={}, userId={}, to={}", fallbackProvider, type, userId, toEmail);
+                    return; // fallback 成功，不再抛异常
+                } catch (Exception fallbackEx) {
+                    log.error("[{}] fallback 也失败, userId={}, to={}: {}", fallbackProvider, userId, toEmail, fallbackEx.getMessage());
+                    delayOnFailure();
+                    throw new RuntimeException("双邮箱均发送失败", fallbackEx);
+                }
+            }
+
+            // 没有备选邮箱，直接抛出首选的异常
+            if (primaryEx instanceof MailSendException) {
+                throw (MailSendException) primaryEx;
+            }
+            throw new RuntimeException("邮件发送异常: " + primaryEx.getMessage(), primaryEx);
+        }
+    }
+
+    /**
+     * 使用指定的 sender 和发件地址发送邮件
+     */
+    private void sendWithSender(JavaMailSender sender, String from, String toEmail, String subject, String html) throws Exception {
+        MimeMessage message = sender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        helper.setFrom(from, fromName);
+        helper.setTo(toEmail);
+        helper.setSubject(subject);
+        helper.setText(html, true);
+        sender.send(message);
+    }
+
+    /**
+     * 记录发送日志
+     */
+    private void recordSendLog(Long userId, String type, Long refId) {
+        EmailNotificationLog logEntry = new EmailNotificationLog();
+        logEntry.setUserId(userId);
+        logEntry.setType(type);
+        logEntry.setRefId(refId);
+        notificationLogMapper.insert(logEntry);
     }
 
     // ========== HTML 模板构建 ==========

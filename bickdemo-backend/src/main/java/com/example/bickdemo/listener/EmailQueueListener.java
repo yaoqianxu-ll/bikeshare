@@ -24,7 +24,7 @@ public class EmailQueueListener {
 
     private final UserEmailNotificationService emailNotificationService;
 
-    @Value("${app.mail.send-interval-ms:3000}")
+    @Value("${app.mail.send-interval-ms:5000}")
     private long sendIntervalMs;
 
     @RabbitListener(

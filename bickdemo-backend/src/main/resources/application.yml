@@ -41,6 +41,7 @@ spring:
     port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
+    from: ${MAIL_USERNAME:}
     default-encoding: UTF-8
     properties:
       mail:
@@ -123,6 +124,12 @@ app:
   mail:
     from-name: ${MAIL_FROM_NAME:BikeShare}
     code-expire-minutes: 10
+    # 副邮箱配置（163），与主邮箱 (QQ) 轮换发送，降低单个 SMTP 被限流的风险
+    secondary:
+      host: ${MAIL_SECONDARY_HOST:}
+      port: ${MAIL_SECONDARY_PORT:465}
+      username: ${MAIL_SECONDARY_USERNAME:}
+      password: ${MAIL_SECONDARY_PASSWORD:}
   # 高德地图 API 配置（用于根据经纬度反查地区信息）
   # 申请地址：https://lbs.amap.com/api/webservice/guide/api/georegeo
   gaode:
