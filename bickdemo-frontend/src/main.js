@@ -1,6 +1,13 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import 'element-plus/theme-chalk/dark/css-vars.css'
+
+// 手动导入 ElMessage / ElMessageBox 等服务组件的样式
+// unplugin-vue-components 只能自动导入模板组件的 CSS，无法覆盖 JS 调用的服务组件
+import 'element-plus/theme-chalk/el-message.css'
+import 'element-plus/theme-chalk/el-message-box.css'
+import 'element-plus/theme-chalk/el-overlay.css'
+
 import './styles/global.css'
 
 import App from './App.vue'
