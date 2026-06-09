@@ -1740,28 +1740,34 @@ onBeforeUnmount(async () => {
 </script>
 
 <style scoped>
-/* 整体布局 */
+/* ============================================
+   微信风格 - 消息页面全局样式
+   ============================================ */
+
+/* ---------- 整体布局 ---------- */
 .friends-page {
   height: calc(100vh - 60px);
-  background: #f0f2f5;
+  background: #f5f5f5;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
 }
 
 .chat-layout {
   display: flex;
   height: 100%;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   background: #fff;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  border-radius: 0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-/* 左侧边栏 */
+/* ---------- 左侧边栏 ---------- */
 .sidebar {
-  width: 320px;
-  min-width: 320px;
-  border-right: 1px solid #e4e7ed;
+  width: 300px;
+  min-width: 300px;
+  border-right: 1px solid #e6e6e6;
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -1771,38 +1777,38 @@ onBeforeUnmount(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 20px 16px;
-  border-bottom: 1px solid #f0f2f5;
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .sidebar-title {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
   margin: 0;
   color: #1a1a1a;
-  letter-spacing: -0.5px;
 }
 
 /* 搜索框 */
 .search-box {
   padding: 12px 16px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .search-box :deep(.el-input__wrapper) {
-  box-shadow: 0 0 0 1px #e4e7ed inset;
-  border-radius: 20px;
-  background: #f5f7fa;
+  box-shadow: none;
+  border-radius: 6px;
+  background: #f5f5f5;
+  border: none;
   transition: all 0.2s ease;
 }
 
 .search-box :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px #c0c4cc inset;
+  background: #eeeeee;
 }
 
 .search-box :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px #409eff inset;
   background: #fff;
+  box-shadow: 0 0 0 1px #07c160;
 }
 
 /* 搜索结果 */
@@ -1820,14 +1826,14 @@ onBeforeUnmount(async () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
 
 .search-item:hover {
-  background: #f5f7fa;
+  background: #f5f5f5;
 }
 
 .user-info {
@@ -1841,13 +1847,13 @@ onBeforeUnmount(async () => {
   gap: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
+  color: #333;
   margin-bottom: 4px;
 }
 
 .user-bio {
   font-size: 12px;
-  color: #909399;
+  color: #999;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1858,14 +1864,14 @@ onBeforeUnmount(async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 10px 16px;
   margin: 8px 12px;
   background: #fff5e6;
-  border-radius: 8px;
+  border-radius: 6px;
   color: #e6a23c;
   font-size: 13px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
 
 .request-notice:hover {
@@ -1879,28 +1885,28 @@ onBeforeUnmount(async () => {
 /* 会话标签页 */
 .conversation-tabs {
   display: flex;
-  border-bottom: 1px solid #e4e7ed;
-  padding: 0 12px;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 16px;
 }
 
 .tab-item {
   flex: 1;
-  padding: 14px 8px;
+  padding: 12px 8px;
   text-align: center;
   font-size: 13px;
-  color: #606266;
+  color: #999;
   cursor: pointer;
   position: relative;
-  transition: all 0.2s ease;
+  transition: all 0.15s;
   font-weight: 500;
 }
 
 .tab-item:hover {
-  color: #409eff;
+  color: #07c160;
 }
 
 .tab-item.active {
-  color: #409eff;
+  color: #07c160;
   font-weight: 600;
 }
 
@@ -1910,25 +1916,24 @@ onBeforeUnmount(async () => {
   bottom: 0;
   left: 30%;
   right: 30%;
-  height: 3px;
-  background: linear-gradient(90deg, #409eff, #66b1ff);
-  border-radius: 3px;
+  height: 2px;
+  background: #07c160;
+  border-radius: 2px;
 }
 
 .tab-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
   margin-left: 4px;
-  background: linear-gradient(135deg, #ff4d6a, #ff2d55);
+  background: #fa5151;
   color: #fff;
   font-size: 11px;
-  font-weight: 700;
-  border-radius: 9px;
-  box-shadow: 0 2px 4px rgba(255, 45, 85, 0.3);
+  font-weight: 600;
+  border-radius: 8px;
 }
 
 /* 列表内容 */
@@ -1944,27 +1949,27 @@ onBeforeUnmount(async () => {
 
 .contact-items,
 .request-items {
-  padding: 8px 0;
+  padding: 4px 0;
 }
 
+/* 会话项 - 微信风格 */
 .contact-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s;
   border-left: 3px solid transparent;
-  position: relative;
 }
 
 .contact-item:hover {
-  background: #f5f7fa;
+  background: #f5f5f5;
 }
 
 .contact-item.active {
-  background: #ecf5ff;
-  border-left-color: #409eff;
+  background: #e8f5e9;
+  border-left-color: #07c160;
 }
 
 .contact-info {
@@ -1976,18 +1981,18 @@ onBeforeUnmount(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .contact-name {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #333;
 }
 
 .contact-time {
   font-size: 11px;
-  color: #909399;
+  color: #999;
   flex-shrink: 0;
 }
 
@@ -2001,7 +2006,7 @@ onBeforeUnmount(async () => {
 .message-text {
   flex: 1;
   font-size: 13px;
-  color: #909399;
+  color: #999;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2009,10 +2014,9 @@ onBeforeUnmount(async () => {
 
 .unread-dot :deep(.el-badge__content) {
   transform: translate(0, 0);
-  background: linear-gradient(135deg, #ff4d6a, #ff2d55);
-  font-weight: 700;
+  background: #fa5151;
+  font-weight: 600;
   font-size: 11px;
-  box-shadow: 0 2px 4px rgba(255, 45, 85, 0.3);
 }
 
 /* 好友申请项 */
@@ -2021,7 +2025,7 @@ onBeforeUnmount(async () => {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .request-info {
@@ -2032,13 +2036,13 @@ onBeforeUnmount(async () => {
 .request-name {
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
+  color: #333;
   margin-bottom: 4px;
 }
 
 .request-remark {
   font-size: 12px;
-  color: #909399;
+  color: #999;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2056,32 +2060,32 @@ onBeforeUnmount(async () => {
   justify-content: center;
   gap: 6px;
   padding: 8px;
-  border-top: 1px solid #e4e7ed;
+  border-top: 1px solid #f0f0f0;
   font-size: 12px;
-  color: #909399;
+  color: #999;
 }
 
 .socket-status .status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #909399;
+  background: #999;
 }
 
 .socket-status.online .status-dot {
-  background: #67c23a;
+  background: #07c160;
 }
 
 .socket-status.online {
-  color: #67c23a;
+  color: #07c160;
 }
 
 .socket-status.error .status-dot {
-  background: #f56c6c;
+  background: #fa5151;
 }
 
 .socket-status.error {
-  color: #f56c6c;
+  color: #fa5151;
 }
 
 .socket-status.offline .status-dot {
@@ -2092,28 +2096,28 @@ onBeforeUnmount(async () => {
   color: #e6a23c;
 }
 
-/* 右侧聊天区域 */
+/* ---------- 右侧聊天区域 ---------- */
 .chat-area {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: #f5f7fa;
+  background: #f5f5f5;
 }
 
 .chat-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 20px;
+  padding: 14px 20px;
   background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid #e6e6e6;
 }
 
 .back-btn {
   display: none;
   cursor: pointer;
-  color: #606266;
+  color: #666;
   padding: 4px;
 }
 
@@ -2132,36 +2136,36 @@ onBeforeUnmount(async () => {
 
 .user-meta .user-name {
   font-size: 16px;
-  font-weight: 500;
-  color: #303133;
+  font-weight: 600;
+  color: #333;
   margin-bottom: 2px;
 }
 
 .user-meta .user-status {
   font-size: 12px;
-  color: #909399;
+  color: #999;
 }
 
 /* 消息列表 */
 .message-list {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  background: #f5f7fa;
+  gap: 2px;
 }
 
 .load-more {
   text-align: center;
-  padding: 12px 0;
+  padding: 8px 0;
 }
 
+/* 消息项 - 微信风格 */
 .message-item {
   display: flex;
   gap: 12px;
-  max-width: 70%;
+  max-width: 75%;
   align-items: flex-start;
   margin-bottom: 16px;
 }
@@ -2174,7 +2178,7 @@ onBeforeUnmount(async () => {
 .message-content {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   align-items: flex-start;
   position: relative;
 }
@@ -2188,38 +2192,45 @@ onBeforeUnmount(async () => {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: #909399;
+  color: #999;
   margin-bottom: 2px;
+  padding: 0 4px;
 }
 
 .sender-name {
   font-weight: 500;
+  color: #666;
 }
 
+/* 消息气泡 - 微信风格 */
 .message-bubble {
   padding: 10px 14px;
   background: #fff;
-  border-radius: 12px;
+  border-radius: 6px;
   font-size: 14px;
   line-height: 1.5;
-  color: #1a1a1a;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  color: #333;
   word-break: break-word;
   position: relative;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  max-width: 100%;
 }
 
+/* 自己的消息 - 绿色气泡 */
 .message-item.self .message-bubble {
-  background: linear-gradient(135deg, #95ec69, #85d65a);
+  background: #95ec69;
   color: #1a1a1a;
 }
 
+/* 表情消息 */
 .message-bubble.emoji {
   font-size: 32px;
-  padding: 8px 12px;
+  padding: 4px 8px;
   background: transparent !important;
   box-shadow: none;
 }
 
+/* 图片消息 */
 .message-bubble.image {
   padding: 4px;
   background: transparent !important;
@@ -2227,7 +2238,7 @@ onBeforeUnmount(async () => {
 }
 
 .message-bubble.image :deep(.el-image) {
-  border-radius: 8px;
+  border-radius: 6px;
   max-width: 200px;
   max-height: 200px;
 }
@@ -2235,50 +2246,53 @@ onBeforeUnmount(async () => {
 .image-caption {
   margin: 8px 4px 4px;
   font-size: 12px;
-  color: #909399;
+  color: #999;
 }
 
 .emoji-content {
   line-height: 1;
 }
 
+/* 已读状态 */
 .read-status {
   font-size: 11px;
-  color: #909399;
+  color: #999;
+  margin-top: 2px;
 }
 
 .read-status.read {
-  color: #67c23a;
+  color: #07c160;
 }
 
-/* 输入区域 */
+/* ---------- 输入区域 ---------- */
 .input-area {
   padding: 12px 20px 16px;
   background: #fff;
-  border-top: 1px solid #e4e7ed;
+  border-top: 1px solid #e6e6e6;
 }
 
 .input-toolbar {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
 .input-toolbar :deep(.el-button) {
-  color: #606266;
-  border-radius: 8px;
+  color: #666;
+  border-radius: 6px;
 }
 
 .input-toolbar :deep(.el-button:hover) {
-  color: #409eff;
-  background: #f5f7fa;
+  color: #07c160;
+  background: #f5f5f5;
 }
 
+/* 表情选择器 */
 .emoji-picker {
   margin-bottom: 8px;
   padding: 12px;
-  background: #f5f7fa;
-  border-radius: 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
 }
 
 .emoji-grid {
@@ -2293,15 +2307,16 @@ onBeforeUnmount(async () => {
   border: none;
   background: transparent;
   cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  border-radius: 6px;
+  transition: all 0.15s;
 }
 
 .emoji-btn:hover {
-  background: #e4e7ed;
+  background: #e0e0e0;
   transform: scale(1.1);
 }
 
+/* 输入框 */
 .input-box {
   display: flex;
   gap: 12px;
@@ -2311,27 +2326,29 @@ onBeforeUnmount(async () => {
 .input-box :deep(.el-textarea__inner) {
   min-height: 48px !important;
   max-height: 120px !important;
-  border-radius: 12px;
+  border-radius: 6px;
   resize: none;
   padding: 12px 16px;
   font-size: 14px;
   line-height: 1.5;
-  box-shadow: 0 0 0 1px #e4e7ed inset;
-  transition: all 0.2s ease;
+  box-shadow: none;
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s;
 }
 
 .input-box :deep(.el-textarea__inner:focus) {
-  box-shadow: 0 0 0 1px #409eff inset;
+  border-color: #07c160;
+  box-shadow: 0 0 0 2px rgba(7, 193, 96, 0.1);
 }
 
 .input-box :deep(.el-button) {
   height: 48px;
-  padding: 0 28px;
-  border-radius: 12px;
+  padding: 0 24px;
+  border-radius: 6px;
   font-weight: 600;
 }
 
-/* 空状态 */
+/* ---------- 空状态 ---------- */
 .empty-state {
   flex: 1;
   display: flex;
@@ -2341,19 +2358,19 @@ onBeforeUnmount(async () => {
 
 .empty-content {
   text-align: center;
-  color: #909399;
+  color: #999;
 }
 
 .empty-icon {
   font-size: 64px;
   margin-bottom: 16px;
-  color: #c0c4cc;
+  color: #ddd;
 }
 
 .empty-content h3 {
   font-size: 18px;
   font-weight: 500;
-  color: #606266;
+  color: #666;
   margin: 0 0 8px;
 }
 
@@ -2368,16 +2385,16 @@ onBeforeUnmount(async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #909399;
+  color: #999;
   gap: 12px;
 }
 
 .empty-chat .el-icon {
   font-size: 48px;
-  color: #c0c4cc;
+  color: #ddd;
 }
 
-/* 头像 */
+/* ---------- 头像 ---------- */
 .avatar {
   width: 44px;
   height: 44px;
@@ -2387,13 +2404,12 @@ onBeforeUnmount(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #94a3b8, #64748b);
+  background: #ddd;
   color: #fff;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease;
+  transition: transform 0.15s;
 }
 
 .avatar:hover {
@@ -2422,18 +2438,18 @@ onBeforeUnmount(async () => {
   position: absolute;
   bottom: 2px;
   right: 2px;
-  width: 12px;
-  height: 12px;
-  background: linear-gradient(135deg, #67c23a, #85d65a);
+  width: 10px;
+  height: 10px;
+  background: #07c160;
   border-radius: 50%;
   border: 2px solid #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-/* 好友资料抽屉 */
+/* ---------- 好友资料抽屉 ---------- */
 .profile-drawer :deep(.el-drawer__body) {
   padding: 0;
-  background: #f5f7fa;
+  background: #f5f5f5;
 }
 
 .friend-profile {
@@ -2447,22 +2463,22 @@ onBeforeUnmount(async () => {
   align-items: center;
   padding: 16px 20px;
   background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .header-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: #333;
 }
 
 /* 资料卡片 */
 .profile-card {
   background: #fff;
   margin: 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .profile-hero {
@@ -2488,7 +2504,7 @@ onBeforeUnmount(async () => {
 .username {
   font-size: 22px;
   font-weight: 600;
-  color: #303133;
+  color: #333;
   margin: 0;
 }
 
@@ -2503,9 +2519,9 @@ onBeforeUnmount(async () => {
 .profile-section {
   background: #fff;
   margin: 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 16px 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .section-title {
@@ -2514,13 +2530,13 @@ onBeforeUnmount(async () => {
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #606266;
+  color: #666;
   margin: 0 0 16px 0;
 }
 
 .section-title .el-icon {
   font-size: 16px;
-  color: #909399;
+  color: #999;
 }
 
 /* 信息网格 */
@@ -2535,7 +2551,7 @@ onBeforeUnmount(async () => {
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .info-row:last-child {
@@ -2544,12 +2560,12 @@ onBeforeUnmount(async () => {
 
 .info-label {
   font-size: 13px;
-  color: #909399;
+  color: #999;
 }
 
 .info-value {
   font-size: 14px;
-  color: #303133;
+  color: #333;
   font-weight: 500;
 }
 
@@ -2558,8 +2574,8 @@ onBeforeUnmount(async () => {
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  color: #409eff;
-  transition: opacity 0.2s;
+  color: #07c160;
+  transition: opacity 0.15s;
 }
 
 .info-value.copyable:hover {
@@ -2574,10 +2590,10 @@ onBeforeUnmount(async () => {
 .bio-content {
   font-size: 14px;
   line-height: 1.8;
-  color: #606266;
+  color: #666;
   padding: 12px;
-  background: #f5f7fa;
-  border-radius: 8px;
+  background: #f5f5f5;
+  border-radius: 6px;
   min-height: 60px;
 }
 
@@ -2591,9 +2607,9 @@ onBeforeUnmount(async () => {
 .stat-card {
   text-align: center;
   padding: 16px 8px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  transition: transform 0.2s;
+  background: #f5f5f5;
+  border-radius: 6px;
+  transition: transform 0.15s;
 }
 
 .stat-card:hover {
@@ -2603,13 +2619,13 @@ onBeforeUnmount(async () => {
 .stat-value {
   font-size: 20px;
   font-weight: 600;
-  color: #303133;
+  color: #333;
   margin-bottom: 4px;
 }
 
 .stat-label {
   font-size: 12px;
-  color: #909399;
+  color: #999;
 }
 
 /* 操作按钮 */
@@ -2645,18 +2661,18 @@ onBeforeUnmount(async () => {
   align-items: center;
   gap: 12px;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
 
 .user-item:hover {
-  background: #f5f7fa;
+  background: #f5f5f5;
 }
 
 .user-relation {
   font-size: 12px;
-  color: #909399;
+  color: #999;
 }
 
 .search-tip {
@@ -2665,12 +2681,12 @@ onBeforeUnmount(async () => {
   align-items: center;
   gap: 12px;
   padding: 40px;
-  color: #909399;
+  color: #999;
 }
 
 .search-tip .el-icon {
   font-size: 48px;
-  color: #c0c4cc;
+  color: #ddd;
 }
 
 /* 加载状态 */
@@ -2681,17 +2697,17 @@ onBeforeUnmount(async () => {
   justify-content: center;
   gap: 12px;
   padding: 40px;
-  color: #909399;
+  color: #999;
 }
 
 .loading-messages {
   display: flex;
   justify-content: center;
   padding: 40px;
-  color: #909399;
+  color: #999;
 }
 
-/* 响应式 */
+/* ---------- 响应式 ---------- */
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;
@@ -2723,14 +2739,14 @@ onBeforeUnmount(async () => {
   }
 }
 
-/* 深色模式适配 */
+/* ---------- 深色模式适配 ---------- */
 html.dark .friends-page {
   background: #0f172a;
 }
 
 html.dark .chat-layout {
   background: #1e293b;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
 html.dark .sidebar,
@@ -2758,7 +2774,7 @@ html.dark .search-item:hover {
 
 html.dark .contact-item.active {
   background: #1e3a5c;
-  border-left-color: #60a5fa;
+  border-left-color: #07c160;
 }
 
 html.dark .chat-area {
@@ -2819,7 +2835,7 @@ html.dark .stat-card {
 }
 
 html.dark .info-value.copyable {
-  color: #60a5fa;
+  color: #34d399;
 }
 
 html.dark .user-item:hover {
@@ -2827,7 +2843,7 @@ html.dark .user-item:hover {
 }
 
 html.dark .avatar {
-  background: linear-gradient(135deg, #475569, #334155);
+  background: #475569;
 }
 
 html.dark .online-indicator {
@@ -2835,11 +2851,12 @@ html.dark .online-indicator {
 }
 
 html.dark .message-item.self .message-bubble {
-  background: linear-gradient(135deg, #059669, #10b981);
+  background: #059669;
+  color: #fff;
 }
 
 html.dark .tab-item.active::after {
-  background: linear-gradient(90deg, #60a5fa, #93c5fd);
+  background: #34d399;
 }
 
 html.dark .empty-content h3,
@@ -2850,21 +2867,23 @@ html.dark .empty-chat {
 
 html.dark .search-box :deep(.el-input__wrapper) {
   background: #334155;
-  box-shadow: 0 0 0 1px #475569 inset;
+  box-shadow: none;
 }
 
 html.dark .search-box :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px #60a5fa inset;
+  background: #1e293b;
+  box-shadow: 0 0 0 1px #34d399;
 }
 
 html.dark .input-box :deep(.el-textarea__inner) {
   background: #334155;
   color: #e2e8f0;
-  box-shadow: 0 0 0 1px #475569 inset;
+  border-color: #475569;
 }
 
 html.dark .input-box :deep(.el-textarea__inner:focus) {
-  box-shadow: 0 0 0 1px #60a5fa inset;
+  border-color: #34d399;
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.1);
 }
 
 /* ========== 消息撤回相关样式 ========== */
@@ -2874,8 +2893,8 @@ html.dark .input-box :deep(.el-textarea__inner:focus) {
   position: fixed;
   z-index: 9999;
   background: #fff;
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
+  border: 1px solid #e6e6e6;
+  border-radius: 6px;
   padding: 4px 0;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   min-width: 100px;
@@ -2889,13 +2908,13 @@ html.dark .context-menu {
 .context-menu-item {
   padding: 8px 16px;
   font-size: 14px;
-  color: #303133;
+  color: #333;
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .context-menu-item:hover {
-  background: #f5f7fa;
+  background: #f5f5f5;
 }
 
 html.dark .context-menu-item {
@@ -2941,12 +2960,12 @@ html.dark .context-menu-item:hover {
 
 /* "你撤回了一条消息"：灰色普通文字 */
 .recall-text {
-  color: #909399;
+  color: #999;
 }
 
 /* 撤回提示中的时间：浅灰色 */
 .recall-time {
-  color: #c0c4cc;
+  color: #ccc;
 }
 
 /* ========== 深色模式 - 撤回提示 ========== */
