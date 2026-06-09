@@ -10353,3 +10353,25 @@ CREATE TABLE IF NOT EXISTS `email_notification_log` (
   PRIMARY KEY (`id`),
   KEY `idx_log_user_type_created` (`user_id`, `type`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='邮件通知发送记录';
+
+-- ----------------------------
+-- Table structure for user_notifications
+-- ----------------------------
+DROP TABLE IF EXISTS `user_notifications`;
+CREATE TABLE `user_notifications` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '通知ID',
+  `user_id` bigint NOT NULL COMMENT '接收通知的用户ID',
+  `type` varchar(20) NOT NULL COMMENT '通知类型: SYSTEM/COMMENT/LIKE/FAVORITE',
+  `title` varchar(255) NOT NULL COMMENT '通知标题',
+  `content` text NULL COMMENT '通知内容',
+  `ref_id` bigint DEFAULT NULL COMMENT '关联业务ID（帖子ID/评论ID）',
+  `ref_type` varchar(50) DEFAULT NULL COMMENT '关联类型: POST/COMMENT',
+  `actor_id` bigint DEFAULT NULL COMMENT '触发通知的用户ID',
+  `actor_username` varchar(50) DEFAULT NULL COMMENT '触发通知的用户名',
+  `is_read` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否已读',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_user_id_type`(`user_id` ASC, `type` ASC) USING BTREE,
+  INDEX `idx_user_id_read`(`user_id` ASC, `is_read` ASC) USING BTREE,
+  INDEX `idx_created_at`(`created_at` ASC) USING BTREE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户通知表' ROW_FORMAT = Dynamic;
