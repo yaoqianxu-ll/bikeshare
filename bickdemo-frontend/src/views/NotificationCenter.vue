@@ -511,15 +511,7 @@ watch(() => route.query.tab, (newTab) => {
   cursor: pointer;
   transition: all 0.2s ease;
   border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-  opacity: 0;
-  animation: fadeIn 0.4s ease forwards;
 }
-
-.notification-item:nth-child(1) { animation-delay: 0.03s; }
-.notification-item:nth-child(2) { animation-delay: 0.06s; }
-.notification-item:nth-child(3) { animation-delay: 0.09s; }
-.notification-item:nth-child(4) { animation-delay: 0.12s; }
-.notification-item:nth-child(5) { animation-delay: 0.15s; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateX(-8px); }
@@ -643,13 +635,7 @@ watch(() => route.query.tab, (newTab) => {
   cursor: pointer;
   transition: all 0.3s ease;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  opacity: 0;
-  animation: fadeIn 0.4s ease forwards;
 }
-
-.notice-item:nth-child(1) { animation-delay: 0.05s; }
-.notice-item:nth-child(2) { animation-delay: 0.1s; }
-.notice-item:nth-child(3) { animation-delay: 0.15s; }
 
 .notice-item:last-child {
   border-bottom: none;
