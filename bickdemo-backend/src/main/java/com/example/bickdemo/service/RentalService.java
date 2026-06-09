@@ -223,8 +223,11 @@ public class RentalService {
         // 更新租赁记录到数据库
         rentalMapper.updateById(rental);
 
-        // 发布积分事件
-        pointsEventPublisher.publish(new PointsEvent("RENTAL_COMPLETE", rental.getUserId(), 10, rental.getId()));
+        // 发布积分事件：按消费金额（取整）奖励积分
+        int earnedPoints = (int) Math.floor(totalPrice);
+        if (earnedPoints > 0) {
+            pointsEventPublisher.publish(new PointsEvent("RENTAL_COMPLETE", rental.getUserId(), earnedPoints, rental.getId()));
+        }
 
         // 查询最新的自行车信息
         Bicycle latest = bicycleMapper.selectById(rental.getBicycleId());

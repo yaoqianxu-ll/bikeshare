@@ -28,7 +28,7 @@ public class PointsListener {
         try {
             switch (event.getEventType()) {
                 case "RENTAL_COMPLETE" -> pointsService.addPoints(
-                        event.getUserId(), 10, "租车完成", event.getBizId());
+                        event.getUserId(), event.getPoints(), "租车完成", event.getBizId());
                 case "POST_CREATED" -> pointsService.addPoints(
                         event.getUserId(), 5, "发布帖子/回帖", event.getBizId());
                 case "ACTIVITY_JOINED" -> pointsService.addPoints(
