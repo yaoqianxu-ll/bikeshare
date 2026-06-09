@@ -121,6 +121,7 @@ pipeline {
                     env.JENKINS_PUBLIC_HOST = env.JENKINS_PUBLIC_HOST?.trim() ? env.JENKINS_PUBLIC_HOST.trim() : 'http://localhost:8081'
                     env.GITEA_PUBLIC_HOST = env.GITEA_PUBLIC_HOST?.trim() ? env.GITEA_PUBLIC_HOST.trim() : 'http://localhost:3000'
                     env.SILICONFLOW_API_KEY = env.SILICONFLOW_API_KEY?.trim() ? env.SILICONFLOW_API_KEY.trim() : ''
+                    env.APP_FRONTEND_URL = env.APP_FRONTEND_URL?.trim() ? env.APP_FRONTEND_URL.trim() : 'http://localhost:5173'
 
                     // 如果 .env 加载未成功，尝试从备用路径直接读取 AI 密钥
                     if (!env.SILICONFLOW_API_KEY?.trim()) {

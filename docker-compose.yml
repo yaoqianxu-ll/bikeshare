@@ -64,6 +64,7 @@ services:
       - ALIPAY_SANDBOX=${ALIPAY_SANDBOX:-true}
       - ALIPAY_RETURN_URL=${ALIPAY_RETURN_URL:-https://bikeshare.online/points}
       - SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY:-}
+      - APP_FRONTEND_URL=${APP_FRONTEND_URL:-https://bikeshare.online}
       - TZ=Asia/Shanghai
     volumes:
       - ./logs:/app/logs
