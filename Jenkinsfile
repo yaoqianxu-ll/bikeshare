@@ -120,6 +120,24 @@ pipeline {
                     env.BACKEND_PUBLIC_HOST = env.BACKEND_PUBLIC_HOST?.trim() ? env.BACKEND_PUBLIC_HOST.trim() : 'http://localhost:8080'
                     env.JENKINS_PUBLIC_HOST = env.JENKINS_PUBLIC_HOST?.trim() ? env.JENKINS_PUBLIC_HOST.trim() : 'http://localhost:8081'
                     env.GITEA_PUBLIC_HOST = env.GITEA_PUBLIC_HOST?.trim() ? env.GITEA_PUBLIC_HOST.trim() : 'http://localhost:3000'
+                    env.SILICONFLOW_API_KEY = env.SILICONFLOW_API_KEY?.trim() ? env.SILICONFLOW_API_KEY.trim() : ''
+
+                    // 如果 .env 加载未成功，尝试从备用路径直接读取 AI 密钥
+                    if (!env.SILICONFLOW_API_KEY?.trim()) {
+                        for (String fallback : ['/opt/bickdemo/.env', "${env.JENKINS_HOME ?: ''}/workspace/bike-deploy/.env", '/var/jenkins_home/workspace/bike-deploy/.env']) {
+                            if (fallback?.trim()) {
+                                int rc = sh(script: "[ -r '${fallback}' ]", returnStatus: true)
+                                if (rc == 0) {
+                                    String val = sh(script: "grep '^SILICONFLOW_API_KEY=' '${fallback}' | cut -d= -f2", returnStdout: true).trim()
+                                    if (val) {
+                                        env.SILICONFLOW_API_KEY = val
+                                        echo "已从备用路径 ${fallback} 读取 SILICONFLOW_API_KEY (长度: ${val.length()})"
+                                        break
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     def invalidSecrets = []
                     ['MYSQL_ROOT_PASSWORD', 'MYSQL_PASSWORD', 'JWT_SECRET'].each { key ->
@@ -271,21 +289,7 @@ pipeline {
                 sh """
                     cd ${WORKSPACE}
 
-                    echo "加载 .env 中的 AI 密钥..."
-                    if [ -f .env ]; then
-                        export SILICONFLOW_API_KEY=\$(grep '^SILICONFLOW_API_KEY=' .env | cut -d= -f2)
-                        echo "SILICONFLOW_API_KEY 长度: \${#SILICONFLOW_API_KEY}"
-                    else
-                        echo "警告：.env 文件不存在！尝试从备用路径恢复..."
-                        for f in /opt/bickdemo/.env /var/jenkins_home/.bickdemo.env; do
-                            if [ -f "\$f" ]; then
-                                cp "\$f" .env
-                                export SILICONFLOW_API_KEY=\$(grep '^SILICONFLOW_API_KEY=' .env | cut -d= -f2)
-                                echo "已从 \$f 恢复 .env"
-                                break
-                            fi
-                        done
-                    fi
+                    echo "SILICONFLOW_API_KEY 已由 Checkout 阶段加载 (pipeline env 长度: \${#SILICONFLOW_API_KEY})"
 
                     echo "启动服务..."
                     docker-compose up -d --remove-orphans
@@ -294,13 +298,11 @@ pipeline {
                     sleep 30
 
                     echo "校验 AI 密钥..."
-                    AI_KEY=\$(docker exec ${COMPOSE_PROJECT_NAME}-app-1 printenv SILICONFLOW_API_KEY 2>/dev/null)
-                    if [ -z "\${AI_KEY}" ]; then
-                        echo "!! SILICONFLOW_API_KEY 未注入容器，强制重新部署 app..."
-                        export SILICONFLOW_API_KEY=\$(grep '^SILICONFLOW_API_KEY=' .env | cut -d= -f2)
-                        docker-compose up -d app
+                    AI_KEY=\$(docker exec ${COMPOSE_PROJECT_NAME}-app-1 printenv SILICONFLOW_API_KEY 2>/dev/null || true)
+                    if [ -n "\${AI_KEY}" ]; then
+                        echo "SILICONFLOW_API_KEY 已注入容器 (长度: \${#AI_KEY})"
                     else
-                        echo "SILICONFLOW_API_KEY 已注入 (长度: \${#AI_KEY})"
+                        echo "!! 警告：SILICONFLOW_API_KEY 未注入容器，请检查 .env 文件和 pipeline 环境变量"
                     fi
 
                     echo "检查容器状态..."
