@@ -11,8 +11,10 @@ import com.example.bickdemo.dto.VipAdminMemberPageDto;
 import com.example.bickdemo.dto.VipAdminOrderPageDto;
 import com.example.bickdemo.entity.VipBenefit;
 import com.example.bickdemo.entity.VipPlan;
+import com.example.bickdemo.dto.VipExchangeRecordResponse;
 import com.example.bickdemo.mapper.VipBenefitMapper;
 import com.example.bickdemo.service.VipAdminService;
+import com.example.bickdemo.service.VipExchangeRecordService;
 import com.example.bickdemo.service.VipPlanService;
 import com.example.bickdemo.service.VipService;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,7 @@ public class AdminVipController {
     private final VipBenefitMapper vipBenefitMapper;
     private final VipAdminService vipAdminService;
     private final VipPlanService vipPlanService;
+    private final VipExchangeRecordService vipExchangeRecordService;
 
     /**
      * 发放VIP
@@ -209,5 +212,34 @@ public class AdminVipController {
 
         vipAdminService.updatePlan(id, name, days, priceFen, enabled, description);
         return ResponseEntity.ok(ApiResponse.success("套餐更新成功"));
+    }
+
+    // ==================== 兑换记录管理 ====================
+
+    /**
+     * 分页查询积分兑换记录
+     */
+    @GetMapping("/exchange-records")
+    @AdminOperationLog(module = "VIP管理", action = "查看兑换记录", type = "查询")
+    public ResponseEntity<ApiResponse<Page<VipExchangeRecordResponse>>> pageExchangeRecords(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) String exchangeNo,
+            @RequestParam(required = false) String userKeyword,
+            @RequestParam(required = false) String packageType,
+            @RequestParam(required = false) String status) {
+        Page<VipExchangeRecordResponse> result = vipExchangeRecordService.adminPageRecords(
+                page, size, exchangeNo, userKeyword, packageType, status);
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    /**
+     * 删除兑换记录（逻辑删除）
+     */
+    @DeleteMapping("/exchange-records/{id}")
+    @AdminOperationLog(module = "VIP管理", action = "删除兑换记录", type = "删除")
+    public ResponseEntity<ApiResponse<String>> deleteExchangeRecord(@PathVariable Long id) {
+        vipExchangeRecordService.deleteRecord(id);
+        return ResponseEntity.ok(ApiResponse.success("删除成功"));
     }
 }

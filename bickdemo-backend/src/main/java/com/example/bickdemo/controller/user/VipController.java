@@ -7,10 +7,12 @@ import com.example.bickdemo.dto.VipPurchaseRequest;
 import com.example.bickdemo.dto.VipStatusResponse;
 import com.example.bickdemo.entity.VipOrder;
 import com.example.bickdemo.entity.VipPlan;
+import com.example.bickdemo.entity.VipExchangeRecord;
 import com.example.bickdemo.mapper.UserMapper;
 import com.example.bickdemo.service.VipOrderService;
 import com.example.bickdemo.service.VipPlanService;
 import com.example.bickdemo.service.VipService;
+import com.example.bickdemo.service.VipExchangeRecordService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +46,9 @@ public class VipController {
 
     /** VIP套餐服务 */
     private final VipPlanService vipPlanService;
+
+    /** VIP兑换记录服务 */
+    private final VipExchangeRecordService vipExchangeRecordService;
 
     /** 用户Mapper */
     private final UserMapper userMapper;
@@ -140,6 +145,32 @@ public class VipController {
     @GetMapping("/benefits")
     public ResponseEntity<ApiResponse<?>> getBenefits() {
         return ResponseEntity.ok(ApiResponse.success(vipService.getAllBenefits()));
+    }
+
+    // ==================== 兑换记录接口 ====================
+
+    /**
+     * 获取用户积分兑换记录
+     * 分页返回当前用户的VIP积分兑换历史
+     *
+     * @param userDetails 当前登录用户
+     * @return 兑换记录分页列表
+     */
+    @GetMapping("/exchange-records")
+    public ResponseEntity<ApiResponse<Page<VipExchangeRecord>>> getExchangeRecords(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Long userId = getCurrentUserId(userDetails);
+        if (userId == null) {
+            Page<VipExchangeRecord> emptyPage = new Page<>(page, size);
+            emptyPage.setTotal(0);
+            emptyPage.setRecords(Collections.emptyList());
+            return ResponseEntity.ok(ApiResponse.success(emptyPage));
+        }
+
+        Page<VipExchangeRecord> records = vipExchangeRecordService.getUserRecords(userId, page, size);
+        return ResponseEntity.ok(ApiResponse.success(records));
     }
 
     // ==================== 订单相关接口 ====================

@@ -11,6 +11,7 @@ import com.example.bickdemo.mapper.UserMapper;
 import com.example.bickdemo.mapper.VipBenefitMapper;
 import com.example.bickdemo.service.AdminNotificationPublisher;
 import com.example.bickdemo.service.PointsService;
+import com.example.bickdemo.service.VipExchangeRecordService;
 import com.example.bickdemo.service.VipMemberService;
 import com.example.bickdemo.service.VipService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class VipServiceImpl implements VipService {
     private final PointsService pointsService;
     private final AdminNotificationPublisher adminNotificationPublisher;
     private final VipMemberService vipMemberService;
+    private final VipExchangeRecordService vipExchangeRecordService;
 
     /** VIP套餐配置 */
     private static final int MONTHLY_DAYS = 30;
@@ -149,6 +151,9 @@ public class VipServiceImpl implements VipService {
 
         // 激活VIP会员（同步vip_member表）
         vipMemberService.activateVip(userId, "POINTS_REDEEM", days);
+
+        // 写入积分兑换记录
+        vipExchangeRecordService.createRecord(userId, packageType, getPackageName(packageType), days, pointsCost, expGain);
 
         // 发送管理员通知
         adminNotificationPublisher.notifyVipPurchased(userId, user.getUsername(), packageType, "兑换");
