@@ -5,8 +5,8 @@
         <n-dialog-provider>
           <router-view :key="route.fullPath" />
           <ThemeToggle v-if="showFloatingToggle" />
-          <AiChatButton :is-open="aiDialogVisible" @click="aiDialogVisible = true" />
-          <AiChatDialog :visible="aiDialogVisible" @close="aiDialogVisible = false" />
+          <AiChatButton v-if="!isFullScreen" :is-open="aiDialogVisible" @click="aiDialogVisible = true" />
+          <AiChatDialog v-if="!isFullScreen" :visible="aiDialogVisible" @close="aiDialogVisible = false" />
         </n-dialog-provider>
       </n-message-provider>
     </n-config-provider>
@@ -25,6 +25,7 @@ import AiChatDialog from '@/components/AiChatDialog.vue'
 
 const route = useRoute()
 const showFloatingToggle = computed(() => route.name === 'Login' || route.name === 'Register')
+const isFullScreen = computed(() => route.meta?.fullScreen === true)
 const aiDialogVisible = ref(false)
 
 // 检测暗色模式
