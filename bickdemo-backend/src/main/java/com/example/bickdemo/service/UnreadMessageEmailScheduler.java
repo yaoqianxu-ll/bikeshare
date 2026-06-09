@@ -52,12 +52,12 @@ public class UnreadMessageEmailScheduler {
 
             log.info("发现 {} 条超时未读私信，开始处理邮件提醒", unreadMessages.size());
 
-            // 按 (receiverId, senderId) 分组，每组只取最早的一条消息作为提醒内容
+            // 按 (receiverId, senderId) 分组，每组只取最新的一条消息作为提醒内容
             Map<String, ChatMessage> groupedMessages = unreadMessages.stream()
                     .collect(Collectors.toMap(
                             msg -> msg.getReceiverId() + "_" + msg.getSenderId(),
                             msg -> msg,
-                            (existing, replacement) -> existing.getCreatedAt().isBefore(replacement.getCreatedAt()) ? existing : replacement
+                            (existing, replacement) -> existing.getCreatedAt().isAfter(replacement.getCreatedAt()) ? existing : replacement
                     ));
 
             for (ChatMessage msg : groupedMessages.values()) {
