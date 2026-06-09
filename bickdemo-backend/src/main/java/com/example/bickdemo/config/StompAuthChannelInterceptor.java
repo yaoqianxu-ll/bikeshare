@@ -60,7 +60,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
                     user.getAuthorities()
             );
             accessor.setUser(authentication);
-            log.info("[WebSocket] 用户 {} 连接成功", username);
+        //    log.info("[WebSocket] 用户 {} 连接成功", username);
         }
 
         return message;

@@ -381,7 +381,7 @@ public class VipOrderServiceImpl implements VipOrderService {
     @Scheduled(fixedRate = 60000) // 每分钟执行
     @Override
     public void processExpiredOrders() {
-        log.info("[VIP订单过期检查] 开始执行，当前服务器时间: {}", LocalDateTime.now());
+        //log.info("[VIP订单过期检查] 开始执行，当前服务器时间: {}", LocalDateTime.now());
 
         // 查询所有待支付且已过期的订单
         List<VipOrder> expiredOrders = vipOrderMapper.selectList(
