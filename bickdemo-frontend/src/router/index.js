@@ -51,6 +51,11 @@ const routes = [
         component: () => import('@/views/Forum.vue')
       },
       {
+        path: '/forum/:id',
+        name: 'ForumPostDetail',
+        component: () => import('@/views/ForumPostDetail.vue')
+      },
+      {
         path: '/profile',
         name: 'Profile',
         component: () => import('@/views/Profile.vue'),

@@ -958,24 +958,8 @@ const loadPendingPosts = async () => {
   }
 }
 
-const openPost = async (postId) => {
-  detailOpen.value = true
-  detailLoading.value = true
-  commentPage.value = 1
-  try {
-    const res = await getForumPostDetail(postId, { commentPage: 1, commentSize: commentSize.value })
-    selectedPost.value = res.data.post
-    detailComments.value = res.data.comments || []
-    commentTotal.value = Number(res.data.commentTotal || 0)
-    commentDraft.value = ''
-    replyTarget.value = null
-    syncPostState(res.data.post.id, res.data.post)
-  } catch (error) {
-    detailOpen.value = false
-    console.error(error)
-  } finally {
-    detailLoading.value = false
-  }
+const openPost = (postId) => {
+  router.push(`/forum/${postId}`)
 }
 
 const submitPost = async () => {
