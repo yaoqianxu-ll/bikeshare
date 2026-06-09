@@ -266,7 +266,7 @@
                 </div>
                 <div class="rule-row">
                   <span class="rule-tag earn">赚</span>
-                  <span>VIP消费 = 2倍积分</span>
+                  <span>VIP签到 = 2倍积分</span>
                 </div>
                 <div class="rule-row">
                   <span class="rule-tag spend">花</span>
