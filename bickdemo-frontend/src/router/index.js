@@ -72,6 +72,12 @@ const routes = [
         component: () => import('@/views/Notices.vue')
       },
       {
+        path: '/notifications',
+        name: 'NotificationCenter',
+        component: () => import('@/views/NotificationCenter.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: '/tickets',
         name: 'Tickets',
         component: () => import('@/views/Tickets.vue'),

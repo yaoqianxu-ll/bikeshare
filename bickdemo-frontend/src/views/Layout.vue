@@ -116,10 +116,10 @@
                 <span>我的租赁</span>
                 <el-badge v-if="rentalStore.hasActiveRentals" is-dot />
               </router-link>
-              <router-link to="/notices" class="mobile-account-link" @click="closeNav">
+              <router-link to="/notifications" class="mobile-account-link" @click="closeNav">
                 <el-icon><Bell /></el-icon>
-                <span>公告</span>
-                <el-badge v-if="noticeStore.hasUnread" is-dot />
+                <span>消息中心</span>
+                <el-badge v-if="notificationStore.hasUnread || noticeStore.hasUnread" is-dot />
               </router-link>
               <router-link to="/friends" class="mobile-account-link" @click="closeNav">
                 <el-icon><ChatDotRound /></el-icon>
@@ -227,6 +227,10 @@
             </template>
           </el-dropdown>
           <ThemeToggle variant="inline" :tone="isHomePage ? 'ghost' : 'solid'" />
+          <router-link to="/notifications" class="header-notification-btn" v-if="userStore.isLoggedIn">
+            <img src="@/assets/icons/bell-notification.svg" alt="消息中心" class="bell-icon-svg" :class="{ 'has-unread': notificationStore.hasUnread || noticeStore.hasUnread }" />
+            <el-badge v-if="notificationStore.totalUnread > 0" :value="notificationStore.totalUnread" :max="99" class="notification-badge" />
+          </router-link>
           <router-link to="/friends" class="header-friends-btn" v-if="userStore.isLoggedIn">
             <el-icon><ChatDotRound /></el-icon>
             <el-badge v-if="contactsStore.totalUnreadCount > 0" :value="contactsStore.totalUnreadCount" :max="99" class="friends-badge" />
@@ -247,10 +251,10 @@
                       <el-badge v-if="rentalStore.hasActiveRentals" is-dot class="dropdown-badge" />
                     </el-dropdown-item>
                   </router-link>
-                  <router-link to="/notices">
+                  <router-link to="/notifications">
                     <el-dropdown-item>
-                      <el-icon><Bell /></el-icon> 公告
-                      <el-badge v-if="noticeStore.hasUnread" is-dot class="dropdown-badge" />
+                      <el-icon><Bell /></el-icon> 消息中心
+                      <el-badge v-if="notificationStore.hasUnread || noticeStore.hasUnread" is-dot class="dropdown-badge" />
                     </el-dropdown-item>
                   </router-link>
                   <router-link to="/tickets">
@@ -321,6 +325,7 @@ import { useContactsStore } from '@/stores/contacts'
 import { useNoticeStore } from '@/stores/notice'
 import { useActivityStore } from '@/stores/activity'
 import { useRentalStore } from '@/stores/rental'
+import { useNotificationStore } from '@/stores/notification'
 import { useMessage } from 'naive-ui'
 import { ElMessageBox } from 'element-plus'
 import { User, SwitchButton, Bicycle, DataAnalysis, Document, Picture, CircleCheck, Delete, UploadFilled, ChatDotRound, House, LocationInformation, StarFilled, Close, Calendar, Bell, Ticket, ArrowDown, Coin } from '@element-plus/icons-vue'
@@ -341,6 +346,7 @@ const contactsStore = useContactsStore()
 const noticeStore = useNoticeStore()
 const activityStore = useActivityStore()
 const rentalStore = useRentalStore()
+const notificationStore = useNotificationStore()
 const message = useMessage()
 const navOpen = ref(false)
 const showBgSelector = ref(false)
@@ -680,6 +686,7 @@ onMounted(() => {
     loadContacts()
     connectSocket()
     noticeStore.loadNotices()
+    notificationStore.loadUnreadCount()
     activityStore.loadActivities()
     rentalStore.loadActiveRentals()
     // 获取VIP状态
@@ -696,6 +703,7 @@ watch(() => userStore.isLoggedIn, (loggedIn) => {
     loadContacts()
     connectSocket()
     noticeStore.loadNotices()
+    notificationStore.loadUnreadCount()
     activityStore.loadActivities()
     rentalStore.loadActiveRentals()
     getVipStatus().then(res => {
@@ -1204,6 +1212,21 @@ watch(
   color: #f8fbff;
 }
 
+.app-header.is-home-header .header-notification-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: none;
+}
+
+.app-header.is-home-header .header-notification-btn:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.app-header.is-home-header .bell-icon-svg {
+  filter: invert(1);
+  opacity: 0.9;
+}
+
 /* 导航链接 */
 .nav-links {
   display: flex;
@@ -1412,6 +1435,74 @@ watch(
       0 2px 12px rgba(255, 45, 85, 0.55),
       0 0 0 6px rgba(255, 45, 85, 0);
   }
+}
+
+/* 消息中心铃铛按钮 */
+.header-notification-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  text-decoration: none;
+  background: color-mix(in srgb, var(--bs-surface-solid) 78%, transparent);
+  border: 1px solid var(--bs-stroke);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(12px) saturate(135%);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  position: relative;
+}
+
+.header-notification-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+  background: color-mix(in srgb, var(--bs-surface-solid) 86%, transparent);
+}
+
+.bell-icon-svg {
+  width: 20px;
+  height: 20px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+html.dark .bell-icon-svg {
+  filter: invert(1);
+}
+
+.bell-icon-svg.has-unread {
+  opacity: 1;
+  animation: bell-ring 0.6s ease;
+}
+
+.header-notification-btn:hover .bell-icon-svg {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+}
+
+.notification-badge :deep(.el-badge__content) {
+  background: linear-gradient(135deg, #ff8c42 0%, #ff6b35 50%, #e85d26 100%);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.45);
+  font-weight: 700;
+  font-size: 11px;
+}
+
+@keyframes bell-ring {
+  0% { transform: rotate(0); }
+  15% { transform: rotate(12deg); }
+  30% { transform: rotate(-10deg); }
+  45% { transform: rotate(8deg); }
+  60% { transform: rotate(-6deg); }
+  75% { transform: rotate(3deg); }
+  100% { transform: rotate(0); }
 }
 
 /* 开源链接容器 */
@@ -1879,6 +1970,11 @@ html.dark .mobile-account-link-logout:hover {
   .header-friends-btn {
     padding: 0 12px;
     min-height: 40px;
+  }
+
+  .header-notification-btn {
+    width: 40px;
+    height: 40px;
   }
 }
 

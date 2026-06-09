@@ -158,6 +158,8 @@ public class ForumService {
     private final AdminNotificationPublisher adminNotificationPublisher;
     // 用户邮件通知服务
     private final UserEmailNotificationService userEmailNotificationService;
+    // 用户通知服务
+    private final UserNotificationService userNotificationService;
 
     /**
      * 获取帖子列表方法。
@@ -539,6 +541,13 @@ public class ForumService {
             adminNotificationPublisher.notifyForumCommentResult(commentId, comment.getContent(), author.getUsername(), true);
             // 邮件通知评论作者审核结果
             userEmailNotificationService.sendReviewResultEmail(author, "评论", comment.getContent(), true, commentId);
+            // 创建用户端系统通知（评论审核通过）
+            String commentPreview = comment.getContent().length() > 50
+                    ? comment.getContent().substring(0, 50) + "..." : comment.getContent();
+            userNotificationService.createNotification(
+                    author.getId(), "SYSTEM", "评论审核通过",
+                    "你的评论「" + commentPreview + "」已通过管理员审核",
+                    commentId, "COMMENT", currentUser.getId(), currentUser.getUsername());
         }
 
         // 评论审核通过后，邮件通知帖子作者有新评论
@@ -554,6 +563,13 @@ public class ForumService {
                             comment.getContent(),
                             comment.getPostId()
                     );
+                    // 创建用户端评论通知（帖子作者收到新评论）
+                    String commentPreview = comment.getContent().length() > 50
+                            ? comment.getContent().substring(0, 50) + "..." : comment.getContent();
+                    userNotificationService.createNotification(
+                            postAuthor.getId(), "COMMENT", "收到新评论",
+                            author.getUsername() + " 评论了你的帖子《" + post.getTitle() + "」：" + commentPreview,
+                            comment.getPostId(), "POST", author.getId(), author.getUsername());
                 }
             }
         }
@@ -595,6 +611,13 @@ public class ForumService {
             adminNotificationPublisher.notifyForumCommentResult(commentId, comment.getContent(), author.getUsername(), false);
             // 邮件通知评论作者审核结果（驳回）
             userEmailNotificationService.sendReviewResultEmail(author, "评论", comment.getContent(), false, commentId);
+            // 创建用户端系统通知（评论审核驳回）
+            String commentPreview = comment.getContent().length() > 50
+                    ? comment.getContent().substring(0, 50) + "..." : comment.getContent();
+            userNotificationService.createNotification(
+                    author.getId(), "SYSTEM", "评论审核未通过",
+                    "你的评论「" + commentPreview + "」未通过管理员审核",
+                    commentId, "COMMENT", currentUser.getId(), currentUser.getUsername());
         }
 
         // 构建并返回评论响应DTO
@@ -828,6 +851,13 @@ public class ForumService {
                             comment.getContent(),
                             postId
                     );
+                    // 创建用户端评论通知（帖子作者收到新评论）
+                    String commentPreview = comment.getContent().length() > 50
+                            ? comment.getContent().substring(0, 50) + "..." : comment.getContent();
+                    userNotificationService.createNotification(
+                            postAuthor.getId(), "COMMENT", "收到新评论",
+                            currentUser.getUsername() + " 评论了你的帖子《" + post.getTitle() + "」：" + commentPreview,
+                            postId, "POST", currentUser.getId(), currentUser.getUsername());
                 }
             }
         }
@@ -962,6 +992,17 @@ public class ForumService {
             // 增加帖子的互动计数
             incrementReactionCount(postId, type, 1L);
             active = true;
+            // 通知帖子作者（不通知自己）
+            User postAuthor = userMapper.selectById(post.getUserId());
+            if (postAuthor != null && !Objects.equals(postAuthor.getId(), currentUser.getId())) {
+                String notifyType = type == ForumReactionType.LIKE ? "LIKE" : "FAVORITE";
+                String notifyTitle = type == ForumReactionType.LIKE ? "收到点赞" : "收到收藏";
+                String actionText = type == ForumReactionType.LIKE ? "赞了" : "收藏了";
+                userNotificationService.createNotification(
+                        postAuthor.getId(), notifyType, notifyTitle,
+                        currentUser.getUsername() + " " + actionText + "你的帖子《" + post.getTitle() + "》",
+                        postId, "POST", currentUser.getId(), currentUser.getUsername());
+            }
         } else {
             // 已有记录则视为取消互动
             // 删除互动记录
@@ -1516,6 +1557,14 @@ public class ForumService {
             adminNotificationPublisher.notifyForumPostResult(postId, post.getTitle(), author.getUsername(), approved);
             // 邮件通知帖子作者审核结果
             userEmailNotificationService.sendReviewResultEmail(author, "帖子", post.getTitle(), approved, postId);
+            // 创建用户端系统通知（审核结果）
+            String notifyTitle = approved ? "帖子审核通过" : "帖子审核未通过";
+            String notifyContent = approved
+                    ? "你的帖子《" + post.getTitle() + "》已通过管理员审核"
+                    : "你的帖子《" + post.getTitle() + "》未通过管理员审核，原因：" + remark;
+            userNotificationService.createNotification(
+                    author.getId(), "SYSTEM", notifyTitle, notifyContent,
+                    postId, "POST", currentUser.getId(), currentUser.getUsername());
         }
 
         // 构建并返回响应
