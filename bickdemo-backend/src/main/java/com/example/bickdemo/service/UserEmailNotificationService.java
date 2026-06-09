@@ -192,8 +192,10 @@ public class UserEmailNotificationService {
             log.info("邮件通知已发送，type={}, userId={}, to={}", type, userId, toEmail);
         } catch (MailSendException e) {
             log.error("邮件发送失败，userId={}, to={}: {}", userId, toEmail, e.getMessage());
+            throw e;
         } catch (Exception e) {
             log.error("邮件通知异常，userId={}, to={}: {}", userId, toEmail, e.getMessage());
+            throw new RuntimeException("邮件发送异常: " + e.getMessage(), e);
         }
     }
 

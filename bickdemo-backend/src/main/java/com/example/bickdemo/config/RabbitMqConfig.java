@@ -11,10 +11,12 @@ import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.boot.autoconfigure.amqp.SimpleRabbitListenerContainerFactoryConfigurer;
@@ -22,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import jakarta.annotation.PostConstruct;
+import org.aopalliance.intercept.MethodInterceptor;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 
 /**
@@ -210,9 +213,11 @@ public class RabbitMqConfig {
     public static final String EMAIL_EXCHANGE = "email.notification.exchange";
     public static final String EMAIL_QUEUE = "email.notification.queue";
     public static final String EMAIL_ROUTING_KEY = "email.notification.send";
+    public static final String EMAIL_DLQ = "email.notification.queue.dlq";
+    public static final String EMAIL_ERROR_EXCHANGE = "email.notification.error.exchange";
 
     /**
-     * 初始化邮件通知交换机和队列
+     * 初始化邮件通知交换机、队列和死信队列
      */
     @PostConstruct
     public void initEmailExchangeAndQueue() {
@@ -224,17 +229,41 @@ public class RabbitMqConfig {
                     .bind(new Queue(EMAIL_QUEUE, true))
                     .to(new DirectExchange(EMAIL_EXCHANGE, true, false))
                     .with(EMAIL_ROUTING_KEY));
+            // 死信队列：重试耗尽后消息落到这里，便于排查和手动重发
+            admin.declareExchange(new DirectExchange(EMAIL_ERROR_EXCHANGE, true, false));
+            admin.declareQueue(new Queue(EMAIL_DLQ, true));
+            admin.declareBinding(BindingBuilder
+                    .bind(new Queue(EMAIL_DLQ, true))
+                    .to(new DirectExchange(EMAIL_ERROR_EXCHANGE, true, false))
+                    .with(EMAIL_DLQ));
         } catch (Exception e) {
             log.error("[RabbitMQ] Failed to declare email notification exchange/queue: {} - {}", e.getClass().getName(), e.getMessage(), e);
         }
     }
 
-    // ========== 邮件队列专用监听器工厂（单消费者，逐条处理） ==========
+    // ========== 邮件队列专用监听器工厂（单消费者，逐条处理，带重试） ==========
+
+    /**
+     * 邮件发送重试拦截器。
+     * 最多重试 3 次，退避策略：1s → 2s → 4s。
+     * 重试耗尽后将消息转发到死信队列，便于排查和手动重发。
+     */
+    @Bean
+    public MethodInterceptor emailRetryInterceptor(
+            RabbitTemplate rabbitTemplate
+    ) {
+        return RetryInterceptorBuilder.stateless()
+                .maxAttempts(3)
+                .backOffOptions(1000, 2.0, 5000)
+                .recoverer(new RepublishMessageRecoverer(rabbitTemplate, EMAIL_ERROR_EXCHANGE, EMAIL_DLQ))
+                .build();
+    }
 
     @Bean("emailListenerContainerFactory")
     public SimpleRabbitListenerContainerFactory emailListenerContainerFactory(
             ConnectionFactory connectionFactory,
-            MessageConverter rabbitMessageConverter
+            MessageConverter rabbitMessageConverter,
+            MethodInterceptor emailRetryInterceptor
     ) {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
@@ -243,6 +272,7 @@ public class RabbitMqConfig {
         factory.setMaxConcurrentConsumers(1);
         factory.setPrefetchCount(1);
         factory.setDefaultRequeueRejected(false);
+        factory.setAdviceChain(emailRetryInterceptor);
         return factory;
     }
 
