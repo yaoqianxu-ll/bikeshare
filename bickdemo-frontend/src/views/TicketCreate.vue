@@ -185,7 +185,11 @@ const handleSubmit = async () => {
 }
 
 const goBack = () => {
-  router.back()
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/')
+  }
 }
 
 onMounted(() => {

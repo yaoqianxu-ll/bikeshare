@@ -103,6 +103,11 @@ public class UserEmailNotificationService {
             return;
         }
 
+        // 如果 actionUrl 是相对路径，补全为完整的前端域名
+        if (StringUtils.hasText(actionUrl) && actionUrl.startsWith("/")) {
+            actionUrl = frontendUrl + actionUrl;
+        }
+
         String fullSubject = "BikeShare " + subject;
         String html = buildSystemHtml(title, content, actionUrl);
         doSend(user.getEmail(), fullSubject, html, user.getId(), EmailNotificationType.SYSTEM.name(), null);
@@ -212,7 +217,7 @@ public class UserEmailNotificationService {
                       <p style="margin: 0; font-size: 15px; color: #334155; line-height: 1.6;">%s</p>
                     </div>
                     <p style="margin: 0 0 20px; font-size: 13px; color: #94a3b8;">%s</p>
-                    <a href="%s/forum/%d" style="display: inline-block; padding: 12px 28px; background: #4A90E2; color: #ffffff; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 14px;">查看评论</a>
+                    <a href="%s/forum?postId=%d" style="display: inline-block; padding: 12px 28px; background: #4A90E2; color: #ffffff; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 14px;">查看评论</a>
                   </div>
                   <p style="text-align: center; margin-top: 24px; font-size: 12px; color: #94a3b8;">此邮件由 BikeShare 系统自动发送，请勿回复。</p>
                 </div>
@@ -261,7 +266,7 @@ public class UserEmailNotificationService {
         String statusColor = approved ? "#16a34a" : "#dc2626";
         String statusBg = approved ? "#f0fdf4" : "#fef2f2";
         String statusBorder = approved ? "#bbf7d0" : "#fecaca";
-        String actionUrl = "forum".equals(targetType) ? frontendUrl + "/forum/" + targetId : frontendUrl + "/forum";
+        String actionUrl = "forum".equals(targetType) ? frontendUrl + "/forum?postId=" + targetId : frontendUrl + "/forum";
 
         return """
                 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; background: #f8fafc; border-radius: 16px;">

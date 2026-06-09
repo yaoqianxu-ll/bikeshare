@@ -778,7 +778,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useMessage, useDialog } from 'naive-ui'
 import { Picture, Refresh, Search, HotWater, Star, ChatDotRound, View, User, Top, ArrowDown, ArrowUp, Close, Comment } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
@@ -802,6 +802,7 @@ import {
 import { createFriendRequest } from '@/api/social'
 import { deleteImage, uploadImage } from '@/api/file'
 
+const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const message = useMessage()
@@ -1473,11 +1474,17 @@ const isPostApproved = (post) => {
   return !!post && post.status === 'APPROVED'
 }
 
-onMounted(() => {
-  loadPosts()
+onMounted(async () => {
+  await loadPosts()
   loadPendingPosts()
   loadHotPosts()
   loadMyPosts()
+
+  // 从邮件链接跳转时，通过 postId 查询参数自动打开帖子详情
+  const postId = route.query.postId
+  if (postId) {
+    await openPost(Number(postId))
+  }
 })
 </script>
 

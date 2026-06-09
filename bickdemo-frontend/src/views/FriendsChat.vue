@@ -7,7 +7,7 @@
         <!-- 侧边栏头部 -->
         <div class="sidebar-header">
           <div class="sidebar-header-left">
-            <div class="back-btn" @click="$router.back()">
+            <div class="back-btn" @click="goBack">
               <el-icon><ArrowLeft /></el-icon>
             </div>
             <h1 class="sidebar-title">消息</h1>
@@ -1381,6 +1381,14 @@ const handleImageSelected = async (event) => {
 }
 
 // 添加好友
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/')
+  }
+}
+
 const showNewChatDialog = () => {
   newChatDialogVisible.value = true
   newChatKeyword.value = ''
