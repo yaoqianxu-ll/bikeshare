@@ -125,7 +125,6 @@ public class NoticeService {
         LambdaQueryWrapper<Notice> wrapper = new LambdaQueryWrapper<Notice>()
                 .eq(Notice::getStatus, NoticeStatus.PUBLISHED)
                 .eq(Notice::getDeleted, 0)
-                .orderByDesc(Notice::getPriority)
                 .orderByDesc(Notice::getPublishTime);
         com.baomidou.mybatisplus.extension.plugins.pagination.Page<Notice> noticePage =
                 noticeMapper.selectPage(new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(page, size), wrapper);
