@@ -208,7 +208,7 @@ public class UserEmailNotificationService {
      */
     private void delayOnFailure() {
         try {
-            Thread.sleep(5000);
+            Thread.sleep(10000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
