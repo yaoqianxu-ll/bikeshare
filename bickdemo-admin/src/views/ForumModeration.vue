@@ -172,11 +172,15 @@ const load = async () => {
   try {
     const postsRes = await getForumPosts({ page: currentPage.value, size: pageSize.value })
     const pendingRes = await getPendingForumPosts({ limit: 1000 })
-    // 合并已发布帖子和待审核帖子
-    const publishedPosts = postsRes.data?.records || []
+    // 待审核帖子单独展示，需从通用列表中排除 PENDING 状态以避免重复
     const pendingPosts = pendingRes.data || []
+    const pendingIds = new Set(pendingPosts.map(p => p.id))
+    const publishedPosts = (postsRes.data?.records || []).filter(p => !pendingIds.has(p.id))
     records.value = [...pendingPosts, ...publishedPosts]
-    total.value = (postsRes.data?.total || 0) + pendingPosts.length
+    // 后端 total 包含了 PENDING 帖子，需减去以保持分页准确
+    const backendTotal = postsRes.data?.total || 0
+    const pendingInPage = (postsRes.data?.records || []).length - publishedPosts.length
+    total.value = (backendTotal - pendingInPage) + pendingPosts.length
   } finally {
     loading.value = false
   }
