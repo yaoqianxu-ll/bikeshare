@@ -5,6 +5,7 @@ import com.example.bickdemo.dto.SocialWsEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -15,6 +16,7 @@ import org.springframework.util.StringUtils;
  */
 @Slf4j
 @Component
+@Lazy(false)
 @RequiredArgsConstructor
 public class SocialEventListener {
 

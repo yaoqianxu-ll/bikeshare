@@ -8,6 +8,7 @@ import com.example.bickdemo.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ import java.util.List;
  */
 @Slf4j
 @Service
+@Lazy(false)
 @RequiredArgsConstructor
 public class AdminNotificationListener {
 

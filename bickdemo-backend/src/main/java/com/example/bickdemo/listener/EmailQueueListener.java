@@ -6,6 +6,7 @@ import com.example.bickdemo.service.UserEmailNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
  * 避免批量操作时并发连接 SMTP 服务器导致认证失败。
  */
 @Component
+@Lazy(false)
 @RequiredArgsConstructor
 @Slf4j
 public class EmailQueueListener {

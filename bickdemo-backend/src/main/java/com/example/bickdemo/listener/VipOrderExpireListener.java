@@ -5,6 +5,7 @@ import com.example.bickdemo.service.VipOrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -18,6 +19,7 @@ import java.util.Map;
  */
 @Slf4j
 @Component
+@Lazy(false)
 @RequiredArgsConstructor
 public class VipOrderExpireListener {
 
