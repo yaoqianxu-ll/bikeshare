@@ -143,8 +143,8 @@
           <!-- 主面板 -->
           <div class="main-col">
 
-            <!-- 订单记录 -->
-            <div class="glass-card content-card">
+            <!-- 现金购买模式：订单记录 -->
+            <div class="glass-card content-card" v-if="purchaseMode === 'cash'">
               <div class="content-card-header">
                 <h3>订单记录</h3>
                 <p>支付成功后会员资格即时发放，请保存好交易凭证</p>
@@ -186,6 +186,48 @@
               <div class="empty-placeholder" v-else>
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" stroke-width="1.5"/></svg>
                 <p>暂无订单记录</p>
+              </div>
+            </div>
+
+            <!-- 积分兑换模式：兑换记录 -->
+            <div class="glass-card content-card" v-else>
+              <div class="content-card-header">
+                <h3>兑换记录</h3>
+                <p>积分兑换VIP会员的历史记录，兑换成功后会员资格即时发放</p>
+              </div>
+              <div class="order-list" v-if="exchangeRecords.length">
+                <div class="order-row" v-for="record in exchangeRecords" :key="record.exchangeNo">
+                  <div class="order-info">
+                    <span class="order-name">{{ record.planName || getPackageName(record.packageType) }}</span>
+                    <span class="order-no">{{ record.exchangeNo }}</span>
+                    <span class="order-time">{{ formatDate(record.createdAt) }}</span>
+                  </div>
+                  <div class="order-right">
+                    <span class="order-amount order-amount--points">-{{ record.pointsCost }} 积分</span>
+                    <span class="order-status" :class="record.status === 'SUCCESS' ? 'status-paid' : 'status-cancelled'">
+                      {{ record.status === 'SUCCESS' ? '兑换成功' : '兑换失败' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="order-pagination" v-if="exchangeTotal > exchangePageSize">
+                <span class="order-pagination-total">共 {{ exchangeTotal }} 条</span>
+                <el-pagination
+                  v-model:current-page="exchangePage"
+                  v-model:page-size="exchangePageSize"
+                  layout="prev, pager, next"
+                  :total="exchangeTotal"
+                  @current-change="loadExchangeRecords"
+                />
+                <PageSizeDropdown
+                  v-model="exchangePageSize"
+                  :page-sizes="[5, 10, 20]"
+                  @change="handleExchangePageSizeChange"
+                />
+              </div>
+              <div class="empty-placeholder" v-else>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" stroke-width="1.5"/></svg>
+                <p>暂无兑换记录</p>
               </div>
             </div>
 
@@ -334,16 +376,17 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import PageSizeDropdown from '@/components/PageSizeDropdown.vue'
 import { useUserStore } from '@/stores/user'
 import { getPointsBalance, signIn, getSignInStatus } from '@/api/points'
-import { getVipStatus, createVipOrder, getVipOrders, cancelOrder, confirmPayment, getOrderStatus, redeemVip } from '@/api/vip'
+import { getVipStatus, createVipOrder, getVipOrders, cancelOrder, confirmPayment, getOrderStatus, redeemVip, getExchangeRecords } from '@/api/vip'
 import { submitAlipayForm } from '@/utils/alipayForm'
 import { createPaymentFlowState } from '@/utils/paymentFlow'
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 
 // 页面核心状态
@@ -357,8 +400,14 @@ const orderPageSize = ref(5)
 const hasPendingOrderFlag = ref(false)
 const submitting = ref(false)
 const selectedPlanCode = ref('MONTHLY')
-const purchaseMode = ref('cash') // 'cash' | 'points'
+const purchaseMode = ref(['cash', 'points'].includes(route.query.mode) ? route.query.mode : 'cash') // 'cash' | 'points'
 const purchaseLoading = ref(false)
+
+// 积分兑换记录
+const exchangeRecords = ref([])
+const exchangeTotal = ref(0)
+const exchangePage = ref(1)
+const exchangePageSize = ref(5)
 
 // 对话框
 const payDialogVisible = ref(false)
@@ -672,6 +721,36 @@ const handleOrderPageSizeChange = async () => {
   await loadOrders(1)
 }
 
+// 加载积分兑换记录
+const loadExchangeRecords = async (page = exchangePage.value) => {
+  try {
+    const targetPage = Number(page || 1)
+    const res = await getExchangeRecords({
+      page: targetPage,
+      size: exchangePageSize.value
+    })
+    const records = Array.isArray(res.data) ? res.data : (res.data?.records || [])
+    const total = Array.isArray(res.data) ? records.length : Number(res.data?.total || 0)
+    const current = Array.isArray(res.data) ? targetPage : Number(res.data?.current || targetPage)
+
+    if (current > 1 && total > 0 && records.length === 0) {
+      exchangePage.value = current - 1
+      return loadExchangeRecords(exchangePage.value)
+    }
+
+    exchangeRecords.value = records
+    exchangeTotal.value = total
+    exchangePage.value = current
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const handleExchangePageSizeChange = async () => {
+  exchangePage.value = 1
+  await loadExchangeRecords(1)
+}
+
 // 统一购买入口（现金 or 积分）
 const handlePurchase = async (plan) => {
   // 防重复点击：检查是否在冷却期内（2秒）
@@ -709,7 +788,7 @@ const doPurchase = async (plan) => {
       }
       await redeemVip({ packageType: plan.type })
       ElMessage.success(`${selectedPlan.name}兑换成功！VIP已开通，经验值已发放`)
-      await Promise.all([loadVipStatus(), refreshOrderState(), loadPointsBalance()])
+      await Promise.all([loadVipStatus(), refreshOrderState(), loadPointsBalance(), loadExchangeRecords()])
     } else {
       // 现金购买
       await handleCreateOrder(plan)
@@ -1035,7 +1114,8 @@ onMounted(async () => {
     loadPointsBalance(),
     loadSignInStatus(),
     loadVipStatus(),
-    refreshOrderState()
+    refreshOrderState(),
+    loadExchangeRecords()
   ])
   // 默认选中第一个套餐
   if (plans.length) {
@@ -1052,6 +1132,16 @@ watch(
     }
   }
 )
+
+// 监听购买模式切换，刷新对应数据并同步到 URL
+watch(purchaseMode, (mode) => {
+  router.replace({ query: { ...route.query, mode } })
+  if (mode === 'cash') {
+    refreshOrderState()
+  } else {
+    loadExchangeRecords()
+  }
+})
 
 // 处理支付宝同步返回
 const handleAlipayReturn = async () => {
@@ -1782,6 +1872,10 @@ onUnmounted(() => {
     font-size: 16px;
     font-weight: 700;
     color: var(--vip-gold2);
+
+    &--points {
+      color: #10b981;
+    }
   }
 
   .order-status {

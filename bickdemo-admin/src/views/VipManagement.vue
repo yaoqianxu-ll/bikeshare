@@ -175,6 +175,88 @@
         />
       </el-tab-pane>
 
+      <!-- 兑换记录 -->
+      <el-tab-pane label="兑换记录" name="exchange">
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <el-input v-model="exchangeQuery.exchangeNo" clearable placeholder="兑换单号" @input="searchExchangeRecords" />
+            <el-input v-model="exchangeQuery.userKeyword" clearable placeholder="用户关键词" @input="searchExchangeRecords" />
+            <el-dropdown trigger="click" @command="(cmd) => { exchangeQuery.packageType = cmd; searchExchangeRecords(); }">
+              <el-button class="filter-btn">
+                {{ getExchangePlanLabel(exchangeQuery.packageType) }}
+                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="">全部套餐</el-dropdown-item>
+                  <el-dropdown-item command="MONTHLY">月卡</el-dropdown-item>
+                  <el-dropdown-item command="QUARTERLY">季卡</el-dropdown-item>
+                  <el-dropdown-item command="YEARLY">年卡</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+          <div class="toolbar-right">
+            <el-button @click="resetExchangeFilters">重置</el-button>
+          </div>
+        </div>
+
+        <el-table v-loading="exchangeLoading" :data="exchangeRecords" class="page-table">
+          <el-table-column prop="exchangeNo" label="兑换单号" min-width="200" />
+          <el-table-column label="用户" width="120">
+            <template #default="{ row }">
+              <span>{{ row.username || row.userId }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="套餐" width="100">
+            <template #default="{ row }">
+              <span>{{ formatPlanName(row.packageType) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="天数" width="80" align="center">
+            <template #default="{ row }">
+              <span>{{ row.planDays }} 天</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="消耗积分" width="110" align="center">
+            <template #default="{ row }">
+              <span class="points-cost">{{ row.pointsCost }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="获得经验" width="100" align="center">
+            <template #default="{ row }">
+              <span class="exp-gain">+{{ row.expGain }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag v-if="row.status === 'SUCCESS'" type="success" effect="light">成功</el-tag>
+              <el-tag v-else-if="row.status === 'FAILED'" type="danger" effect="light">失败</el-tag>
+              <el-tag v-else type="info" effect="light">{{ row.status }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="兑换时间" min-width="170">
+            <template #default="{ row }">
+              <span>{{ formatDateTime(row.createdAt) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="100" align="center">
+            <template #default="{ row }">
+              <el-button size="small" type="danger" plain @click="handleDeleteExchangeRecord(row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <el-pagination
+          v-model:current-page="exchangeQuery.page"
+          v-model:page-size="exchangeQuery.size"
+          background
+          layout="total, prev, pager, next"
+          :total="exchangeTotal"
+          @current-change="loadExchangeRecords"
+        />
+      </el-tab-pane>
+
       <!-- 套餐管理 -->
       <el-tab-pane label="套餐管理" name="plans">
         <div class="toolbar">
@@ -277,14 +359,23 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
-import { getVipDashboard, getVipMembers, getVipOrders, getVipPlans, adjustVipMember, updateVipPlan } from '@/api/vip'
+import { getVipDashboard, getVipMembers, getVipOrders, getVipPlans, adjustVipMember, updateVipPlan, getExchangeRecords, deleteExchangeRecord } from '@/api/vip'
 
 // 统计数据
 const dashboard = ref({})
-const activeTab = ref('members')
+const route = useRoute()
+const router = useRouter()
+const validTabs = ['members', 'orders', 'exchange', 'plans']
+const activeTab = ref(validTabs.includes(route.query.tab) ? route.query.tab : 'members')
+
+// 标签页切换时同步到 URL query，刷新页面可保持当前标签
+watch(activeTab, (tab) => {
+  router.replace({ query: { ...route.query, tab } })
+})
 
 // 会员管理
 const memberLoading = ref(false)
@@ -314,6 +405,19 @@ const orderQuery = reactive({
 const planLoading = ref(false)
 const planRecords = ref([])
 const planQuery = reactive({})
+
+// 兑换记录管理
+const exchangeLoading = ref(false)
+const exchangeRecords = ref([])
+const exchangeTotal = ref(0)
+const exchangeQuery = reactive({
+  page: 1,
+  size: 10,
+  exchangeNo: '',
+  userKeyword: '',
+  packageType: '',
+  status: ''
+})
 
 // 调整会员
 const adjustDialogVisible = ref(false)
@@ -429,6 +533,55 @@ const resetOrderFilters = () => {
   loadOrders()
 }
 
+// 兑换记录管理
+const loadExchangeRecords = async () => {
+  exchangeLoading.value = true
+  try {
+    const res = await getExchangeRecords(exchangeQuery)
+    if (res.code === 200) {
+      exchangeRecords.value = res.data?.records || []
+      exchangeTotal.value = Number(res.data?.total || 0)
+    }
+  } catch (e) {
+    console.error('加载兑换记录失败', e)
+  } finally {
+    exchangeLoading.value = false
+  }
+}
+
+const searchExchangeRecords = () => {
+  exchangeQuery.page = 1
+  loadExchangeRecords()
+}
+
+const resetExchangeFilters = () => {
+  exchangeQuery.page = 1
+  exchangeQuery.exchangeNo = ''
+  exchangeQuery.userKeyword = ''
+  exchangeQuery.packageType = ''
+  exchangeQuery.status = ''
+  loadExchangeRecords()
+}
+
+const handleDeleteExchangeRecord = async (row) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除兑换单号 ${row.exchangeNo} 的记录吗？删除后不可恢复。`,
+      '确认删除',
+      { confirmButtonText: '确认删除', cancelButtonText: '取消', type: 'warning' }
+    )
+    const res = await deleteExchangeRecord(row.id)
+    if (res.code === 200) {
+      ElMessage.success('删除成功')
+      await loadExchangeRecords()
+    }
+  } catch (e) {
+    if (e !== 'cancel') {
+      console.error('删除失败', e)
+    }
+  }
+}
+
 // 套餐管理
 const loadPlans = async () => {
   planLoading.value = true
@@ -535,6 +688,11 @@ const getOrderStatusLabel = (status) => {
   return map[status] || '状态'
 }
 
+const getExchangePlanLabel = (packageType) => {
+  const map = { '': '全部套餐', MONTHLY: '月卡', QUARTERLY: '季卡', YEARLY: '年卡' }
+  return map[packageType] || '全部套餐'
+}
+
 const getStatusType = (status) => {
   if (status === 'ACTIVE') return 'success'
   if (status === 'EXPIRED') return 'warning'
@@ -569,6 +727,7 @@ onMounted(() => {
   loadMembers()
   loadOrders()
   loadPlans()
+  loadExchangeRecords()
 })
 </script>
 
@@ -650,6 +809,16 @@ onMounted(() => {
 .price {
   font-weight: 500;
   color: #f59e0b;
+}
+
+.points-cost {
+  font-weight: 600;
+  color: #10b981;
+}
+
+.exp-gain {
+  font-weight: 500;
+  color: #6366f1;
 }
 
 .full-width {

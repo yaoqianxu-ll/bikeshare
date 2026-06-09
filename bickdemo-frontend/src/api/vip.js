@@ -132,3 +132,19 @@ export function cancelOrder(orderNo) {
     params: { orderNo }
   })
 }
+
+/**
+ * 获取积分兑换记录
+ * 分页获取当前用户的VIP积分兑换历史
+ * @param {Object} params - 查询参数
+ * @param {number} params.page - 页码
+ * @param {number} params.size - 每页条数
+ * @returns {Promise} 分页兑换记录列表
+ */
+export function getExchangeRecords(params = {}) {
+  return request({
+    url: '/vip/exchange-records',
+    method: 'get',
+    params
+  })
+}

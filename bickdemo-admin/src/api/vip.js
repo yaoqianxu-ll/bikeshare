@@ -99,3 +99,26 @@ export function updateVipPlan(id, data) {
     data
   })
 }
+
+/**
+ * 分页查询积分兑换记录（管理端）
+ * @param {Object} params - { page, size, exchangeNo, userKeyword, packageType, status }
+ */
+export function getExchangeRecords(params) {
+  return request({
+    url: '/admin/vip/exchange-records',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 删除兑换记录（逻辑删除）
+ * @param {Long} id - 记录ID
+ */
+export function deleteExchangeRecord(id) {
+  return request({
+    url: `/admin/vip/exchange-records/${id}`,
+    method: 'delete'
+  })
+}
