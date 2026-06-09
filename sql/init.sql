@@ -10324,3 +10324,32 @@ CREATE TABLE IF NOT EXISTS `vip_exchange_record` (
   KEY `idx_status` (`status`),
   KEY `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='VIP积分兑换记录表';
+
+-- 用户通知偏好设置表
+CREATE TABLE IF NOT EXISTS `user_notification_settings` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `enable_message_email` tinyint(1) NOT NULL DEFAULT 1 COMMENT '私信邮件通知开关',
+  `enable_comment_email` tinyint(1) NOT NULL DEFAULT 1 COMMENT '评论邮件通知开关',
+  `enable_system_email` tinyint(1) NOT NULL DEFAULT 1 COMMENT '系统邮件通知开关',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户通知偏好设置';
+
+-- 为已有用户初始化默认通知设置
+INSERT INTO `user_notification_settings` (`user_id`, `enable_message_email`, `enable_comment_email`, `enable_system_email`)
+SELECT `id`, 1, 1, 1 FROM `users` WHERE `deleted` = 0
+ON DUPLICATE KEY UPDATE `user_id` = `user_id`;
+
+-- 邮件通知发送记录表（用于频控防重复）
+CREATE TABLE IF NOT EXISTS `email_notification_log` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint NOT NULL COMMENT '接收通知的用户ID',
+  `type` varchar(30) NOT NULL COMMENT '通知类型: MESSAGE/COMMENT/SYSTEM',
+  `ref_id` bigint DEFAULT NULL COMMENT '关联业务ID',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '发送时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_log_user_type_created` (`user_id`, `type`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='邮件通知发送记录';
