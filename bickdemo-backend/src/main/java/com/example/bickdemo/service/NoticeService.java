@@ -50,6 +50,12 @@ public class NoticeService {
     // 公告 Mapper 接口，通过构造函数注入，用于数据库操作
     private final NoticeMapper noticeMapper;
 
+    // 用户 Mapper 接口，用于查询用户列表
+    private final com.example.bickdemo.mapper.UserMapper userMapper;
+
+    // 用户邮件通知服务
+    private final UserEmailNotificationService userEmailNotificationService;
+
     /**
      * 获取所有已发布的公告（用户可见）
      * 使用缓存存储已发布公告列表，缓存名为 CacheNames.NOTICES_PUBLISHED
@@ -293,6 +299,14 @@ public class NoticeService {
         notice.setPublishTime(LocalDateTime.now());
         // 将更新后的公告数据保存到数据库
         noticeMapper.updateById(notice);
+
+        // 公告发布后，给开启系统邮件通知的用户发送通知邮件
+        notifyAllSystemEmailUsers(
+                "新公告：" + notice.getTitle(),
+                "管理员发布了一则新公告：" + notice.getTitle(),
+                "/notices"
+        );
+
         // 将更新后的公告实体转换为响应 DTO 并返回
         return convertToResponse(notice);
     }
@@ -355,5 +369,21 @@ public class NoticeService {
         response.setUpdatedAt(notice.getUpdatedAt());
         // 返回填充好的响应对象
         return response;
+    }
+
+    /**
+     * 给所有开启系统邮件通知的用户发送系统通知邮件。
+     */
+    private void notifyAllSystemEmailUsers(String subject, String content, String actionUrl) {
+        try {
+            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<com.example.bickdemo.entity.User> wrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
+            wrapper.eq("deleted", 0).eq("enabled", 1);
+            List<com.example.bickdemo.entity.User> allUsers = userMapper.selectList(wrapper);
+            for (com.example.bickdemo.entity.User user : allUsers) {
+                userEmailNotificationService.sendSystemEmail(user, subject, subject, content, actionUrl);
+            }
+        } catch (Exception e) {
+            log.error("批量发送系统邮件通知失败: {}", e.getMessage());
+        }
     }
 }

@@ -5,6 +5,7 @@ import com.example.bickdemo.entity.User;
 import com.example.bickdemo.service.AuthService;
 import com.example.bickdemo.service.JwtService;
 import com.example.bickdemo.service.CaptchaService;
+import com.example.bickdemo.service.UserNotificationSettingsService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class AuthController {
     private final AuthService authService;
     private final JwtService jwtService;
     private final CaptchaService captchaService;
+    private final UserNotificationSettingsService notificationSettingsService;
 
     /**
      * 获取图形验证码。
@@ -245,5 +247,38 @@ public class AuthController {
             return authorization.substring(7);
         }
         return null;
+    }
+
+    /**
+     * 获取当前用户的通知偏好设置。
+     */
+    @GetMapping("/notification-settings")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<NotificationSettingsResponse>> getNotificationSettings(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User user = authService.getCurrentUser(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        NotificationSettingsResponse response = notificationSettingsService.getSettings(user.getId());
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 更新当前用户的通知偏好设置。
+     */
+    @PutMapping("/notification-settings")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<NotificationSettingsResponse>> updateNotificationSettings(
+            @RequestBody NotificationSettingsUpdateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        try {
+            User user = authService.getCurrentUser(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            NotificationSettingsResponse response = notificationSettingsService.updateSettings(user.getId(), request);
+            return ResponseEntity.ok(ApiResponse.success("通知设置已更新", response));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        }
     }
 }

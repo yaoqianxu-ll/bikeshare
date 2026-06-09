@@ -99,3 +99,20 @@ export function checkUsername(username) {
     params: { username }
   })
 }
+
+// 获取通知偏好设置
+export function getNotificationSettings() {
+  return request({
+    url: '/auth/notification-settings',
+    method: 'get'
+  })
+}
+
+// 更新通知偏好设置
+export function updateNotificationSettings(data) {
+  return request({
+    url: '/auth/notification-settings',
+    method: 'put',
+    data
+  })
+}

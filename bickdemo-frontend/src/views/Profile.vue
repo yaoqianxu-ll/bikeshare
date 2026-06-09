@@ -190,6 +190,49 @@
             </el-form-item>
           </el-form>
         </section>
+
+        <section class="profile-panel profile-panel-wide">
+          <div class="panel-title">通知设置</div>
+          <p class="panel-desc">管理你的邮件通知偏好，关闭后将不再收到对应类型的邮件提醒。</p>
+
+          <div class="notification-list">
+            <div class="notification-item">
+              <div class="notification-item__info">
+                <div class="notification-item__title">私信邮件通知</div>
+                <div class="notification-item__desc">收到新私信时（第一条未读消息），通过邮件通知你。</div>
+              </div>
+              <el-switch
+                v-model="notificationSettings.enableMessageEmail"
+                :loading="notificationLoading"
+                @change="() => handleNotificationToggle('enableMessageEmail')"
+              />
+            </div>
+
+            <div class="notification-item">
+              <div class="notification-item__info">
+                <div class="notification-item__title">评论邮件通知</div>
+                <div class="notification-item__desc">收到新评论时，通过邮件通知你。</div>
+              </div>
+              <el-switch
+                v-model="notificationSettings.enableCommentEmail"
+                :loading="notificationLoading"
+                @change="() => handleNotificationToggle('enableCommentEmail')"
+              />
+            </div>
+
+            <div class="notification-item">
+              <div class="notification-item__info">
+                <div class="notification-item__title">系统邮件通知</div>
+                <div class="notification-item__desc">收到系统通知时（审核结果、系统公告等），通过邮件通知你。</div>
+              </div>
+              <el-switch
+                v-model="notificationSettings.enableSystemEmail"
+                :loading="notificationLoading"
+                @change="() => handleNotificationToggle('enableSystemEmail')"
+              />
+            </div>
+          </div>
+        </section>
       </div>
     </el-card>
   </div>
@@ -200,7 +243,7 @@ import { ref, reactive, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useUserStore } from '@/stores/user'
 import { useRoute, useRouter } from 'vue-router'
-import { getCurrentUser, updateUser, uploadAvatar, deleteAvatar, changePassword, sendEmailCode } from '@/api/auth'
+import { getCurrentUser, updateUser, uploadAvatar, deleteAvatar, changePassword, sendEmailCode, getNotificationSettings, updateNotificationSettings } from '@/api/auth'
 
 const userStore = useUserStore()
 const message = useMessage()
@@ -222,6 +265,14 @@ const avatarDeleting = ref(false)
 const emailEditorVisible = ref(false)
 const fromChat = ref(false)
 const REMEMBER_KEY = 'bickdemo:rememberLogin'
+
+// 通知偏好设置
+const notificationSettings = reactive({
+  enableMessageEmail: true,
+  enableCommentEmail: true,
+  enableSystemEmail: true
+})
+const notificationLoading = ref(false)
 let countdownTimer = null
 let passwordCountdownTimer = null
 
@@ -668,6 +719,35 @@ const handlePasswordUpdate = async () => {
   }
 }
 
+const loadNotificationSettings = async () => {
+  try {
+    const res = await getNotificationSettings()
+    if (res.data) {
+      notificationSettings.enableMessageEmail = res.data.enableMessageEmail
+      notificationSettings.enableCommentEmail = res.data.enableCommentEmail
+      notificationSettings.enableSystemEmail = res.data.enableSystemEmail
+    }
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const handleNotificationToggle = async (field) => {
+  notificationLoading.value = true
+  try {
+    const payload = {}
+    payload[field] = notificationSettings[field]
+    await updateNotificationSettings(payload)
+    message.success('通知设置已更新')
+  } catch (error) {
+    // 恢复切换前的状态
+    notificationSettings[field] = !notificationSettings[field]
+    console.error(error)
+  } finally {
+    notificationLoading.value = false
+  }
+}
+
 const goBackToChat = () => {
   router.push('/friends')
 }
@@ -675,6 +755,7 @@ const goBackToChat = () => {
 onMounted(() => {
   fromChat.value = route.query.from === 'chat'
   loadUserInfo()
+  loadNotificationSettings()
 })
 
 onBeforeUnmount(() => {
@@ -766,6 +847,48 @@ onBeforeUnmount(() => {
 
 .profile-panel-wide {
   grid-column: 1 / -1;
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.notification-item:first-child {
+  padding-top: 0;
+}
+
+.notification-item__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-item__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--bs-ink);
+  margin-bottom: 4px;
+}
+
+.notification-item__desc {
+  font-size: 13px;
+  color: var(--bs-muted);
+  line-height: 1.5;
 }
 
 .avatar-actions {
@@ -1139,6 +1262,18 @@ html.dark .email-card__value {
 html.dark .email-editor {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+html.dark .notification-item {
+  border-bottom-color: rgba(148, 163, 184, 0.15);
+}
+
+html.dark .notification-item__title {
+  color: #ffffff;
+}
+
+html.dark .notification-item__desc {
+  color: #cbd5e1;
 }
 
 html.dark :deep(.el-form-item__label) {

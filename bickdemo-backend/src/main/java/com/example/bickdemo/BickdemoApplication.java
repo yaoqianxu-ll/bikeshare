@@ -6,6 +6,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.ApplicationContext;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,6 +20,7 @@ import java.util.Arrays;
 @SpringBootApplication
 @EnableCaching
 @EnableScheduling
+@EnableAsync
 @EnableRabbit
 @Slf4j
 public class BickdemoApplication implements CommandLineRunner {

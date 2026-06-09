@@ -156,6 +156,8 @@ public class ForumService {
     private final UserMapper userMapper;
     // 管理端通知发布器
     private final AdminNotificationPublisher adminNotificationPublisher;
+    // 用户邮件通知服务
+    private final UserEmailNotificationService userEmailNotificationService;
 
     /**
      * 获取帖子列表方法。
@@ -535,6 +537,25 @@ public class ForumService {
         // 发送审核结果通知给作者
         if (author != null) {
             adminNotificationPublisher.notifyForumCommentResult(commentId, comment.getContent(), author.getUsername(), true);
+            // 邮件通知评论作者审核结果
+            userEmailNotificationService.sendReviewResultEmail(author, "评论", comment.getContent(), true, commentId);
+        }
+
+        // 评论审核通过后，邮件通知帖子作者有新评论
+        if (author != null) {
+            ForumPost post = forumPostMapper.selectById(comment.getPostId());
+            if (post != null && !Objects.equals(post.getUserId(), author.getId())) {
+                User postAuthor = userMapper.selectById(post.getUserId());
+                if (postAuthor != null) {
+                    userEmailNotificationService.sendCommentEmail(
+                            postAuthor,
+                            author.getUsername(),
+                            post.getTitle(),
+                            comment.getContent(),
+                            comment.getPostId()
+                    );
+                }
+            }
         }
 
         // 构建并返回评论响应DTO
@@ -572,6 +593,8 @@ public class ForumService {
         // 发送审核结果通知给作者
         if (author != null) {
             adminNotificationPublisher.notifyForumCommentResult(commentId, comment.getContent(), author.getUsername(), false);
+            // 邮件通知评论作者审核结果（驳回）
+            userEmailNotificationService.sendReviewResultEmail(author, "评论", comment.getContent(), false, commentId);
         }
 
         // 构建并返回评论响应DTO
@@ -790,6 +813,23 @@ public class ForumService {
         // 如果是非管理员用户评论，发送待审核通知给管理员
         if (!isAdmin(currentUser)) {
             adminNotificationPublisher.notifyForumCommentPending(comment.getId(), comment.getContent(), currentUser.getUsername());
+        }
+
+        // 给帖子作者发送邮件评论通知（管理员评论直接通过审核时立即通知，普通用户评论待审核通过后通知）
+        if (ForumPostStatus.APPROVED.name().equals(comment.getReviewStatus())) {
+            ForumPost post = forumPostMapper.selectById(postId);
+            if (post != null && !Objects.equals(post.getUserId(), currentUser.getId())) {
+                User postAuthor = userMapper.selectById(post.getUserId());
+                if (postAuthor != null) {
+                    userEmailNotificationService.sendCommentEmail(
+                            postAuthor,
+                            currentUser.getUsername(),
+                            post.getTitle(),
+                            comment.getContent(),
+                            postId
+                    );
+                }
+            }
         }
 
         // 构建并返回评论响应DTO
@@ -1474,6 +1514,8 @@ public class ForumService {
         if (author != null) {
             boolean approved = (nextStatus == ForumPostStatus.APPROVED);
             adminNotificationPublisher.notifyForumPostResult(postId, post.getTitle(), author.getUsername(), approved);
+            // 邮件通知帖子作者审核结果
+            userEmailNotificationService.sendReviewResultEmail(author, "帖子", post.getTitle(), approved, postId);
         }
 
         // 构建并返回响应

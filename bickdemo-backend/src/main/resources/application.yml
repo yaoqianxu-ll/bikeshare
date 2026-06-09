@@ -119,6 +119,7 @@ logging:
     org.springframework.aop.framework.CglibAopProxy: ERROR
 
 app:
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:5173}
   mail:
     from-name: ${MAIL_FROM_NAME:BikeShare}
     code-expire-minutes: 10

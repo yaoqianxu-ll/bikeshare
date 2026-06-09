@@ -119,6 +119,9 @@ public class ActivityService {
     // 用户数据访问层 Mapper，用于对用户表进行数据库操作
     private final UserMapper userMapper;
 
+    // 用户邮件通知服务
+    private final UserEmailNotificationService userEmailNotificationService;
+
     /**
      * 获取所有已发布的活动列表
      * 查询未删除且状态为已发布的未来活动
@@ -281,6 +284,14 @@ public class ActivityService {
 
         // 将活动记录插入数据库
         activityMapper.insert(activity);
+
+        // 管理员发布活动后，给开启系统邮件通知的用户发送通知邮件
+        notifyAllSystemEmailUsers(
+                "新活动发布：" + activity.getTitle(),
+                "管理员发布了一项新活动：" + activity.getTitle() + "，快来报名参加吧！",
+                "/activities/" + activity.getId()
+        );
+
         // 返回创建的活动响应对象（包含报名人数统计）
         return convertToResponseWithCount(activity);
     }
@@ -525,6 +536,15 @@ public class ActivityService {
         signup.setStatus(SignupStatus.APPROVED);
         // 执行更新操作
         signupMapper.updateById(signup);
+
+        // 邮件通知报名用户审核结果（通过）
+        User signupUser = userMapper.selectById(signup.getUserId());
+        if (signupUser != null && activity != null) {
+            userEmailNotificationService.sendReviewResultEmail(
+                    signupUser, "活动报名", activity.getTitle(), true, activityId
+            );
+        }
+
         // 返回更新后的报名响应对象
         return convertSignupToResponse(signup);
     }
@@ -547,6 +567,18 @@ public class ActivityService {
         signup.setStatus(SignupStatus.REJECTED);
         // 执行更新操作
         signupMapper.updateById(signup);
+
+        // 邮件通知报名用户审核结果（拒绝）
+        User signupUser = userMapper.selectById(signup.getUserId());
+        if (signupUser != null) {
+            Activity activity = activityMapper.selectById(activityId);
+            if (activity != null) {
+                userEmailNotificationService.sendReviewResultEmail(
+                        signupUser, "活动报名", activity.getTitle(), false, activityId
+                );
+            }
+        }
+
         // 返回更新后的报名响应对象
         return convertSignupToResponse(signup);
     }
@@ -895,5 +927,21 @@ public class ActivityService {
             // 返回响应对象
             return response;
         }).collect(Collectors.toList());
+    }
+
+    /**
+     * 给所有开启系统邮件通知的用户发送系统通知邮件。
+     */
+    private void notifyAllSystemEmailUsers(String subject, String content, String actionUrl) {
+        try {
+            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<User> wrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
+            wrapper.eq("deleted", 0).eq("enabled", 1);
+            List<User> allUsers = userMapper.selectList(wrapper);
+            for (User user : allUsers) {
+                userEmailNotificationService.sendSystemEmail(user, subject, subject, content, actionUrl);
+            }
+        } catch (Exception e) {
+            log.error("批量发送系统邮件通知失败: {}", e.getMessage());
+        }
     }
 }
