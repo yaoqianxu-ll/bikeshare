@@ -122,6 +122,13 @@ pipeline {
                     env.GITEA_PUBLIC_HOST = env.GITEA_PUBLIC_HOST?.trim() ? env.GITEA_PUBLIC_HOST.trim() : 'http://localhost:3000'
                     env.SILICONFLOW_API_KEY = env.SILICONFLOW_API_KEY?.trim() ? env.SILICONFLOW_API_KEY.trim() : ''
                     env.APP_FRONTEND_URL = env.APP_FRONTEND_URL?.trim() ? env.APP_FRONTEND_URL.trim() : 'http://localhost:5173'
+                    env.MAIL_HOST = env.MAIL_HOST?.trim() ? env.MAIL_HOST.trim() : 'smtp.qq.com'
+                    env.MAIL_PORT = env.MAIL_PORT?.trim() ? env.MAIL_PORT.trim() : '587'
+                    env.MAIL_FROM_NAME = env.MAIL_FROM_NAME?.trim() ? env.MAIL_FROM_NAME.trim() : 'BikeShare'
+                    env.MAIL_SECONDARY_HOST = env.MAIL_SECONDARY_HOST?.trim() ? env.MAIL_SECONDARY_HOST.trim() : ''
+                    env.MAIL_SECONDARY_PORT = env.MAIL_SECONDARY_PORT?.trim() ? env.MAIL_SECONDARY_PORT.trim() : '465'
+                    env.MAIL_SECONDARY_USERNAME = env.MAIL_SECONDARY_USERNAME?.trim() ? env.MAIL_SECONDARY_USERNAME.trim() : ''
+                    env.MAIL_SECONDARY_PASSWORD = env.MAIL_SECONDARY_PASSWORD?.trim() ? env.MAIL_SECONDARY_PASSWORD.trim() : ''
 
                     // 如果 .env 加载未成功，尝试从备用路径直接读取 AI 密钥
                     if (!env.SILICONFLOW_API_KEY?.trim()) {
@@ -290,6 +297,14 @@ pipeline {
                 sh """
                     cd ${WORKSPACE}
 
+                    # 强制从 .env 文件加载所有变量并 export，确保覆盖 pipeline 中的旧值
+                    if [ -f .env ]; then
+                        set -a
+                        . ./.env
+                        set +a
+                        echo "已从 .env 文件强制加载环境变量 (MAIL_SECONDARY_HOST=\${MAIL_SECONDARY_HOST:-空})"
+                    fi
+
                     echo "SILICONFLOW_API_KEY 已由 Checkout 阶段加载 (pipeline env 长度: \${#SILICONFLOW_API_KEY})"
 
                     echo "启动服务..."
@@ -304,6 +319,14 @@ pipeline {
                         echo "SILICONFLOW_API_KEY 已注入容器 (长度: \${#AI_KEY})"
                     else
                         echo "!! 警告：SILICONFLOW_API_KEY 未注入容器，请检查 .env 文件和 pipeline 环境变量"
+                    fi
+
+                    echo "校验邮件配置..."
+                    MAIL_SEC=\$(docker exec ${COMPOSE_PROJECT_NAME}-app-1 printenv MAIL_SECONDARY_HOST 2>/dev/null || true)
+                    if [ -n "\${MAIL_SEC}" ]; then
+                        echo "MAIL_SECONDARY_HOST 已注入容器: \${MAIL_SEC}"
+                    else
+                        echo "!! 警告：MAIL_SECONDARY_HOST 未注入容器，163 副邮箱将不可用"
                     fi
 
                     echo "检查容器状态..."
