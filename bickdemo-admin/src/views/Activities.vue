@@ -328,7 +328,7 @@
             </el-table-column>
             <el-table-column label="签到" width="150" align="center">
               <template #default="{ row }">
-                <el-tag v-if="row.signedAt" type="success" effect="light">{{ formatTime(row.signedAt) }}</el-tag>
+                <span v-if="row.signedAt">{{ formatTime(row.signedAt) }}</span>
                 <span v-else class="text-muted">-</span>
               </template>
             </el-table-column>
