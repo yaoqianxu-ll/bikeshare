@@ -1123,24 +1123,24 @@ onUnmounted(() => {
    VIP 会员中心 - Luxury Dark Gold Edition
    =================================================== */
 
-/* CSS 变量 */
+/* CSS 变量 - 统一浅色橙色系风格 */
 .vip-page {
-  --vip-bg:        #09090f;
-  --vip-surface:   rgba(255, 255, 255, 0.04);
-  --vip-surface2:  rgba(255, 255, 255, 0.07);
-  --vip-border:    rgba(251, 191, 36, 0.18);
-  --vip-border2:   rgba(251, 191, 36, 0.08);
-  --vip-gold:      #d4a43a;
-  --vip-gold2:     #f0c55e;
-  --vip-gold3:     #a07c1f;
-  --vip-text:      #e8e0cc;
-  --vip-muted:     rgba(232, 224, 204, 0.45);
-  --vip-muted2:    rgba(232, 224, 204, 0.25);
+  --vip-bg:        #f8fafc;
+  --vip-surface:   #ffffff;
+  --vip-surface2:  #f1f5f9;
+  --vip-border:    rgba(0, 0, 0, 0.08);
+  --vip-border2:   rgba(0, 0, 0, 0.06);
+  --vip-gold:      #ff6b35;
+  --vip-gold2:     #ff8c5a;
+  --vip-gold3:     #e55a2b;
+  --vip-text:      #1e293b;
+  --vip-muted:     rgba(30, 41, 59, 0.55);
+  --vip-muted2:    rgba(30, 41, 59, 0.35);
   --vip-success:   #10b981;
   --vip-danger:    #ef4444;
   --vip-warning:   #f59e0b;
-  --vip-radius:    20px;
-  --vip-shadow:    0 24px 64px rgba(0, 0, 0, 0.5);
+  --vip-radius:    16px;
+  --vip-shadow:    0 8px 32px rgba(0, 0, 0, 0.08);
 
   min-height: 100vh;
   background: var(--vip-bg);
@@ -1160,7 +1160,7 @@ onUnmounted(() => {
   &--1 {
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(212, 164, 58, 0.12), transparent 70%);
+    background: radial-gradient(circle, rgba(255, 107, 53, 0.08), transparent 70%);
     top: -200px;
     right: -100px;
     animation: orbFloat 12s ease-in-out infinite;
@@ -1169,7 +1169,7 @@ onUnmounted(() => {
   &--2 {
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.08), transparent 70%);
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.06), transparent 70%);
     bottom: 100px;
     left: -100px;
     animation: orbFloat 16s ease-in-out infinite reverse;
@@ -1180,8 +1180,8 @@ onUnmounted(() => {
   position: fixed;
   inset: 0;
   background-image:
-    linear-gradient(rgba(251, 191, 36, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(251, 191, 36, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(255, 107, 53, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 107, 53, 0.02) 1px, transparent 1px);
   background-size: 64px 64px;
   pointer-events: none;
   z-index: 0;
@@ -1222,7 +1222,7 @@ onUnmounted(() => {
 /* 品牌区 */
 .hero-brand {
   .hero-eyebrow {
-    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
     font-size: 11px;
     letter-spacing: 0.3em;
     color: var(--vip-gold);
@@ -1232,7 +1232,7 @@ onUnmounted(() => {
   }
 
   .hero-title {
-    font-family: 'Playfair Display', 'Noto Serif SC', serif;
+    font-weight: 700;
     font-size: clamp(56px, 6vw, 88px);
     line-height: 0.92;
     color: var(--vip-text);
@@ -1262,10 +1262,11 @@ onUnmounted(() => {
   border-radius: var(--vip-radius);
   backdrop-filter: blur(20px) saturate(160%);
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 
   &:hover {
-    border-color: rgba(251, 191, 36, 0.3);
-    box-shadow: 0 0 32px rgba(251, 191, 36, 0.06);
+    border-color: rgba(255, 107, 53, 0.25);
+    box-shadow: 0 8px 32px rgba(255, 107, 53, 0.08);
   }
 }
 
@@ -1276,8 +1277,8 @@ onUnmounted(() => {
   padding: 22px 26px;
 
   &--vip.is-active {
-    border-color: rgba(212, 164, 58, 0.5);
-    box-shadow: 0 0 40px rgba(212, 164, 58, 0.08), inset 0 0 20px rgba(212, 164, 58, 0.04);
+    border-color: rgba(255, 107, 53, 0.4);
+    box-shadow: 0 0 40px rgba(255, 107, 53, 0.06), inset 0 0 20px rgba(255, 107, 53, 0.03);
   }
 
   .card-icon {
@@ -1376,7 +1377,7 @@ onUnmounted(() => {
   }
 
   .section-title {
-    font-family: 'Playfair Display', 'Noto Serif SC', serif;
+    font-weight: 700;
     font-size: 36px;
     color: var(--vip-text);
     margin: 0 0 12px;
@@ -1477,7 +1478,7 @@ onUnmounted(() => {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(160deg, rgba(251, 191, 36, 0.06), transparent 60%);
+    background: linear-gradient(160deg, rgba(255, 107, 53, 0.05), transparent 60%);
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -1485,15 +1486,15 @@ onUnmounted(() => {
 
   &:hover,
   &.is-selected {
-    border-color: rgba(251, 191, 36, 0.45);
+    border-color: rgba(255, 107, 53, 0.35);
     transform: translateY(-6px);
-    box-shadow: 0 32px 64px rgba(0, 0, 0, 0.4), 0 0 40px rgba(251, 191, 36, 0.08);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1), 0 0 30px rgba(255, 107, 53, 0.06);
 
     &::before { opacity: 1; }
   }
 
   &.is-popular {
-    border-color: rgba(251, 191, 36, 0.35);
+    border-color: rgba(255, 107, 53, 0.25);
   }
 
   .plan-ribbon {
@@ -1501,7 +1502,7 @@ onUnmounted(() => {
     top: 16px;
     right: -8px;
     background: linear-gradient(135deg, var(--vip-gold), var(--vip-gold3));
-    color: #0a0a0f;
+    color: #ffffff;
     font-size: 10px;
     font-weight: 700;
     padding: 3px 16px 3px 10px;
@@ -1601,7 +1602,7 @@ onUnmounted(() => {
     border: none;
     border-radius: 14px;
     background: linear-gradient(135deg, var(--vip-gold), var(--vip-gold3));
-    color: #0a0a0f;
+    color: #ffffff;
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
@@ -1680,7 +1681,7 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #0a0a0f;
+    color: #ffffff;
     flex-shrink: 0;
   }
 
@@ -1688,7 +1689,7 @@ onUnmounted(() => {
     flex: 1;
 
     h3 {
-      font-family: 'Playfair Display', 'Noto Serif SC', serif;
+      font-weight: 700;
       font-size: 26px;
       color: var(--vip-gold2);
       margin: 0 0 6px;
@@ -1746,7 +1747,7 @@ onUnmounted(() => {
     margin-bottom: 24px;
 
     h3 {
-      font-family: 'Playfair Display', 'Noto Serif SC', serif;
+      font-weight: 700;
       font-size: 22px;
       color: var(--vip-text);
       margin: 0 0 8px;
@@ -1867,7 +1868,7 @@ onUnmounted(() => {
 
   &.btn-repay {
     background: linear-gradient(135deg, var(--vip-gold), var(--vip-gold3));
-    color: #0a0a0f;
+    color: #ffffff;
 
     &:hover { opacity: 0.88; }
   }
@@ -1915,7 +1916,7 @@ onUnmounted(() => {
   padding: 24px;
 
   h4 {
-    font-family: 'Playfair Display', 'Noto Serif SC', serif;
+    font-weight: 700;
     font-size: 18px;
     color: var(--vip-text);
     margin: 0 0 18px;
@@ -1958,7 +1959,7 @@ onUnmounted(() => {
 
     &.is-ready {
       background: linear-gradient(135deg, var(--vip-gold), var(--vip-gold3));
-      color: #0a0a0f;
+      color: #ffffff;
 
       &:hover { opacity: 0.88; transform: scale(1.02); }
     }
@@ -1977,7 +1978,7 @@ onUnmounted(() => {
   padding: 24px;
 
   h4 {
-    font-family: 'Playfair Display', 'Noto Serif SC', serif;
+    font-weight: 700;
     font-size: 18px;
     color: var(--vip-text);
     margin: 0 0 18px;
@@ -2018,7 +2019,7 @@ onUnmounted(() => {
    支付对话框
    =================================================== */
 :deep(.pay-dialog) {
-  --el-dialog-bg-color: #12121a;
+  --el-dialog-bg-color: #ffffff;
   border: 1px solid var(--vip-border);
   border-radius: 24px !important;
 
@@ -2029,7 +2030,6 @@ onUnmounted(() => {
 
     .el-dialog__title {
       color: var(--vip-text);
-      font-family: 'Playfair Display', 'Noto Serif SC', serif;
       font-size: 20px;
       font-weight: 700;
     }
@@ -2038,13 +2038,13 @@ onUnmounted(() => {
   .el-dialog__body {
     padding: 28px;
     color: var(--vip-text);
-    background: #12121a;
+    background: #ffffff;
   }
 
   .el-dialog__footer {
     border-top: 1px solid var(--vip-border2);
     padding: 18px 28px;
-    background: #12121a;
+    background: #ffffff;
   }
 }
 
@@ -2072,20 +2072,20 @@ onUnmounted(() => {
     font-size: 14px;
     font-weight: 600;
     border: 1px solid var(--vip-border2);
-    background: var(--vip-surface);
+    background: var(--vip-surface2);
     color: var(--vip-muted);
     transition: all 0.25s ease;
 
     &:hover {
-      border-color: rgba(251, 191, 36, 0.3);
+      border-color: rgba(255, 107, 53, 0.25);
       color: var(--vip-text);
     }
 
     &[type="primary"] {
       background: linear-gradient(135deg, var(--vip-gold), var(--vip-gold3));
       border-color: transparent;
-      color: #0a0a0f;
-      box-shadow: 0 4px 16px rgba(212, 164, 58, 0.25);
+      color: #ffffff;
+      box-shadow: 0 4px 16px rgba(255, 107, 53, 0.25);
 
       &:hover {
         opacity: 0.9;
@@ -2094,12 +2094,12 @@ onUnmounted(() => {
     }
 
     &[type="danger"] {
-      background: rgba(239, 68, 68, 0.12);
-      border-color: rgba(239, 68, 68, 0.25);
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.2);
       color: var(--vip-danger);
 
       &:hover {
-        background: rgba(239, 68, 68, 0.2);
+        background: rgba(239, 68, 68, 0.15);
       }
     }
   }
@@ -2110,7 +2110,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  background: rgba(251, 191, 36, 0.08);
+  background: rgba(255, 107, 53, 0.06);
   border: 1px solid var(--vip-border2);
   border-radius: 14px;
 
@@ -2304,18 +2304,18 @@ onUnmounted(() => {
    全局对话框遮罩（Element Plus 渲染在 body 末端）
    =================================================== */
 :deep(.el-overlay-dialog) {
-  background: rgba(0, 0, 0, 0.75) !important;
+  background: rgba(0, 0, 0, 0.5) !important;
 }
 
 :deep(.el-dialog) {
-  --el-dialog-bg-color: #12121a;
-  background: #12121a !important;
+  --el-dialog-bg-color: #ffffff;
+  background: #ffffff !important;
   border: 1px solid var(--vip-border);
   border-radius: 24px;
 
   .el-dialog__header {
     border-bottom: 1px solid var(--vip-border2);
-    background: #12121a;
+    background: #ffffff;
 
     .el-dialog__title {
       color: var(--vip-text);
@@ -2323,18 +2323,18 @@ onUnmounted(() => {
   }
 
   .el-dialog__body {
-    background: #12121a;
+    background: #ffffff;
     color: var(--vip-text);
   }
 
   .el-dialog__footer {
     border-top: 1px solid var(--vip-border2);
-    background: #12121a;
+    background: #ffffff;
   }
 }
 
 :deep(.cancel-dialog) {
-  --el-dialog-bg-color: #12121a;
+  --el-dialog-bg-color: #ffffff;
 }
 
 /* 通用对话框底部按钮样式 */
@@ -2353,12 +2353,12 @@ onUnmounted(() => {
       font-size: 14px;
       font-weight: 600;
       border: 1px solid var(--vip-border2);
-      background: var(--vip-surface);
+      background: var(--vip-surface2);
       color: var(--vip-muted);
       transition: all 0.25s ease;
 
       &:hover {
-        border-color: rgba(251, 191, 36, 0.3);
+        border-color: rgba(255, 107, 53, 0.25);
         color: var(--vip-text);
       }
 
@@ -2366,8 +2366,8 @@ onUnmounted(() => {
       &[type="primary"] {
         background: linear-gradient(135deg, var(--vip-gold), var(--vip-gold3));
         border-color: transparent;
-        color: #0a0a0f;
-        box-shadow: 0 4px 16px rgba(212, 164, 58, 0.25);
+        color: #ffffff;
+        box-shadow: 0 4px 16px rgba(255, 107, 53, 0.2);
 
         &:hover {
           opacity: 0.9;
@@ -2377,14 +2377,14 @@ onUnmounted(() => {
 
       &--danger,
       &[type="danger"] {
-        background: rgba(239, 68, 68, 0.25);
-        border-color: rgba(239, 68, 68, 0.5);
+        background: rgba(239, 68, 68, 0.08);
+        border-color: rgba(239, 68, 68, 0.2);
         color: #ef4444;
         font-weight: 700;
 
         &:hover {
-          background: rgba(239, 68, 68, 0.4);
-          border-color: rgba(239, 68, 68, 0.7);
+          background: rgba(239, 68, 68, 0.15);
+          border-color: rgba(239, 68, 68, 0.4);
         }
       }
     }
@@ -2457,6 +2457,5 @@ onUnmounted(() => {
   }
 }
 
-/* 字体加载 */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+/* 积分会员页面 - 统一浅色橙色系风格 */
 </style>

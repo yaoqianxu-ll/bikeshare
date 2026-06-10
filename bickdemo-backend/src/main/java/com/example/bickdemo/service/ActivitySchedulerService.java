@@ -1,10 +1,15 @@
 package com.example.bickdemo.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.example.bickdemo.config.CacheNames;
 import com.example.bickdemo.entity.Activity;
 import com.example.bickdemo.entity.ActivityStatus;
+import com.example.bickdemo.entity.User;
 import com.example.bickdemo.mapper.ActivityMapper;
+import com.example.bickdemo.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +31,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ActivitySchedulerService {
 
     private final ActivityMapper activityMapper;
+    private final UserMapper userMapper;
+    private final UserEmailNotificationService userEmailNotificationService;
 
     /**
      * 时间格式化器，用于日志输出
@@ -47,22 +54,47 @@ public class ActivitySchedulerService {
     private static final int BATCH_SIZE = 50;
 
     /**
-     * 每分钟检查一次活动，自动结束已过期的活动
-     * 采用增量处理：只查询上次检查到这次之间新过期的活动
-     * 规则：如果活动结束时间已过，且状态为已发布(PUBLISHED)，则自动改为已完成(COMPLETED)
+     * 每分钟检查一次活动，自动处理状态变更
+     * 规则1：DRAFT 活动如果开始时间已到，自动变为 PUBLISHED
+     * 规则2：PUBLISHED 活动如果结束时间已过，自动变为 COMPLETED
      */
     @Scheduled(fixedRate = 60000) // 每 60 秒执行一次
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE, CacheNames.ACTIVITY_DETAIL}, allEntries = true)
     public void autoCompleteExpiredActivities() {
         LocalDateTime now = LocalDateTime.now();
 
-        // 获取上次检查时间
-        LocalDateTime checkFrom = lastCheckTime.get();
+        // ====== 1. 自动发布：DRAFT → PUBLISHED ======
+        List<Activity> draftsToPublish = activityMapper.findDraftActivitiesReadyToPublish(now, BATCH_SIZE);
+        if (draftsToPublish != null && !draftsToPublish.isEmpty()) {
+            int published = 0;
+            for (Activity activity : draftsToPublish) {
+                try {
+                    Activity current = activityMapper.selectById(activity.getId());
+                    if (current != null
+                            && current.getStatus() == ActivityStatus.DRAFT
+                            && !current.getStartTime().isAfter(now)) {
+                        current.setStatus(ActivityStatus.PUBLISHED);
+                        activityMapper.updateById(current);
+                        published++;
+                        log.debug("活动 ID={}, 标题='{}' 已自动发布",
+                                current.getId(), current.getTitle());
+                        // 发布后给所有开启邮件通知的用户发送邮件
+                        notifyAllUsersOfNewActivity(current);
+                    }
+                } catch (Exception e) {
+                    log.error("自动发布活动失败: ID={}", activity.getId(), e);
+                }
+            }
+            if (published > 0) {
+                log.info("自动发布 {} 个活动", published);
+            }
+        }
 
-        // 原子更新上次检查时间（防止多线程重复处理）
+        // ====== 2. 自动结束：PUBLISHED → COMPLETED ======
+        LocalDateTime checkFrom = lastCheckTime.get();
         lastCheckTime.set(now);
 
-        // 增量查询：只查询 (checkFrom, now] 时间段内过期的活动
         List<Activity> expiredActivities = activityMapper.findExpiredActivitiesBetween(
                 checkFrom, now, BATCH_SIZE);
 
@@ -82,7 +114,6 @@ public class ActivitySchedulerService {
 
         for (Activity activity : expiredActivities) {
             try {
-                // 再次确认活动状态，防止并发问题
                 Activity current = activityMapper.selectById(activity.getId());
                 if (current != null
                         && current.getStatus() == ActivityStatus.PUBLISHED
@@ -100,5 +131,28 @@ public class ActivitySchedulerService {
         }
 
         log.info("活动自动结束任务完成，成功: {}, 失败: {}", successCount, failCount);
+    }
+
+    /**
+     * 活动自动发布后，给所有开启邮件通知的用户发送新活动通知
+     */
+    private void notifyAllUsersOfNewActivity(Activity activity) {
+        try {
+            QueryWrapper<User> wrapper = new QueryWrapper<>();
+            wrapper.eq("deleted", 0).eq("enabled", 1);
+            List<User> allUsers = userMapper.selectList(wrapper);
+            for (User user : allUsers) {
+                userEmailNotificationService.sendSystemEmail(
+                        user,
+                        "新活动发布：" + activity.getTitle(),
+                        "新活动发布：" + activity.getTitle(),
+                        "管理员发布了一项新活动：" + activity.getTitle() + "，快来报名参加吧！",
+                        "/activities/" + activity.getId()
+                );
+            }
+            log.info("新活动邮件通知已发送: activityId={}, 用户数={}", activity.getId(), allUsers.size());
+        } catch (Exception e) {
+            log.error("发送新活动邮件通知失败: activityId={}, error={}", activity.getId(), e.getMessage());
+        }
     }
 }

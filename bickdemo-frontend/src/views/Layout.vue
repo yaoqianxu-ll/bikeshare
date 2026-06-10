@@ -303,12 +303,6 @@
       </div>
     </main>
 
-    <!-- AI聊天按钮 -->
-    <AiChatButton v-if="!isFullScreen" :is-open="aiChatOpen" @click="aiChatOpen = !aiChatOpen" />
-
-    <!-- AI聊天对话框 -->
-    <AiChatDialog v-if="!isFullScreen" :visible="aiChatOpen" @close="aiChatOpen = false" />
-
     <!-- 底部 -->
     <footer v-if="!isFullScreen" class="app-footer">
       <p>© 2026 BikeShare · 城市骑行计划</p>
@@ -336,8 +330,6 @@ import { getVipStatus } from '@/api/vip'
 // chatSocket 改为动态导入，仅在需要连接时才加载（节省 87KB）
 // import { createChatSocket } from '@/utils/chatSocket'  // 移入 connectSocket 内部
 import ThemeToggle from '@/components/ThemeToggle.vue'
-import AiChatButton from '@/components/AiChatButton.vue'
-import AiChatDialog from '@/components/AiChatDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -350,7 +342,6 @@ const notificationStore = useNotificationStore()
 const message = useMessage()
 const navOpen = ref(false)
 const showBgSelector = ref(false)
-const aiChatOpen = ref(false)
 const selectedBgId = ref(null)
 const backgrounds = ref([])
 const bgLoaded = ref(false)
@@ -378,6 +369,9 @@ const toastRef = ref({
 // WebSocket 连接
 let socketClient = null
 
+// 消息去重：防止双重 WebSocket 连接导致同一事件被处理两次
+const processedMessageIds = new Set()
+
 const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
 const openSourceGiteeUrl = 'https://gitee.com/loopeasen/bikelease'
 const openSourceGithubUrl = 'https://github.com/yaoqianxu-ll/bikeshare'
@@ -402,6 +396,18 @@ const handleSocketEvent = (event) => {
 
   if (event.eventType === 'CHAT_MESSAGE' && event.message) {
     const msg = event.message
+
+    // 去重：同一消息 ID 只处理一次（防止双重 WebSocket 连接导致重复）
+    if (msg.id && processedMessageIds.has(msg.id)) return
+    if (msg.id) {
+      processedMessageIds.add(msg.id)
+      // 只保留最近 200 条记录，避免内存无限增长
+      if (processedMessageIds.size > 200) {
+        const first = processedMessageIds.values().next().value
+        processedMessageIds.delete(first)
+      }
+    }
+
     // 从 event 中获取发送者信息（后端返回的格式）
     const senderName = event.senderUsername || msg.senderUsername || '某人'
     const preview = msg.type === 'IMAGE' ? '[图片]' : (msg.content || '')

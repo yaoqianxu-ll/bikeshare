@@ -16,6 +16,12 @@ import com.example.bickdemo.dto.ActivityMessageResponse;
 // 引入活动请求 DTO，用于封装创建或更新活动的请求数据
 import com.example.bickdemo.dto.ActivityRequest;
 
+// 引入活动报名队列消息 DTO，用于发送到 RabbitMQ 队列
+import com.example.bickdemo.dto.ActivitySignupMessage;
+
+// 引入 RabbitMQ 配置常量
+import com.example.bickdemo.config.RabbitMqConfig;
+
 // 引入活动响应 DTO，用于封装活动信息的响应数据
 import com.example.bickdemo.dto.ActivityResponse;
 
@@ -85,6 +91,9 @@ import org.springframework.stereotype.Service;
 // 引入 Spring 注解，用于声明事务管理
 import org.springframework.transaction.annotation.Transactional;
 
+// 引入 RabbitMQ 发送模板，用于发送报名消息到队列
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+
 // 引入 Java 8 日期时间 API，用于处理日期和时间
 import java.time.LocalDateTime;
 
@@ -122,9 +131,12 @@ public class ActivityService {
     // 用户邮件通知服务
     private final UserEmailNotificationService userEmailNotificationService;
 
+    // RabbitMQ 发送模板，用于将报名消息发送到队列
+    private final RabbitTemplate rabbitTemplate;
+
     /**
      * 获取所有已发布的活动列表
-     * 查询未删除且状态为已发布的未来活动
+     * 查询未删除且状态为已发布或已完成的活动（包含已结束的活动）
      */
     @Cacheable(cacheNames = CacheNames.ACTIVITIES_PUBLISHED, unless = "#result.isEmpty()")
     public List<ActivityResponse> getPublishedActivities() {
@@ -285,13 +297,6 @@ public class ActivityService {
         // 将活动记录插入数据库
         activityMapper.insert(activity);
 
-        // 管理员发布活动后，给开启系统邮件通知的用户发送通知邮件
-        notifyAllSystemEmailUsers(
-                "新活动发布：" + activity.getTitle(),
-                "管理员发布了一项新活动：" + activity.getTitle() + "，快来报名参加吧！",
-                "/activities/" + activity.getId()
-        );
-
         // 返回创建的活动响应对象（包含报名人数统计）
         return convertToResponseWithCount(activity);
     }
@@ -411,11 +416,98 @@ public class ActivityService {
 
     /**
      * 用户报名活动
-     * 当前登录用户报名参加指定活动
+     * 同步预校验 + 异步入队写库，支持高并发秒级响应
+     * 预校验拦截明显不合法的请求（活动状态/时间/重复报名），
+     * 通过校验后将写库操作投递到 RabbitMQ 队列异步处理，接口秒回
+     */
+    public SignupResponse signupActivity(Long activityId, SignupRequest request) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userMapper.findByUsername(username);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        Activity activity = activityMapper.selectById(activityId);
+        if (activity == null) {
+            throw new RuntimeException("活动不存在：" + activityId);
+        }
+
+        // ===== 同步预校验（快速拦截，毫秒级） =====
+
+        if (activity.getStatus() != ActivityStatus.PUBLISHED) {
+            throw new RuntimeException("活动未发布或已结束");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (activity.getSignupDeadline() != null) {
+            if (now.isAfter(activity.getSignupDeadline())) {
+                throw new RuntimeException("报名已截止");
+            }
+        } else {
+            if (activity.getStartTime().isBefore(now)) {
+                throw new RuntimeException("活动已开始或已结束");
+            }
+        }
+        if (activity.getSignupOpenTime() != null && now.isBefore(activity.getSignupOpenTime())) {
+            throw new RuntimeException("报名尚未开始");
+        }
+        if (Boolean.TRUE.equals(activity.getSignupClosed())) {
+            throw new RuntimeException("报名已截止");
+        }
+
+        // 检查名额是否已满（快速拦截，PENDING+APPROVED+SIGNED 都计入，精确判断在消费者锁内）
+        if (activity.getMaxParticipants() != null && activity.getMaxParticipants() > 0) {
+            int pending = signupMapper.countByActivityAndStatus(activityId, SignupStatus.PENDING);
+            int approved = signupMapper.countByActivityAndStatus(activityId, SignupStatus.APPROVED);
+            int signed = signupMapper.countSigned(activityId);
+            if (pending + approved + signed >= activity.getMaxParticipants()) {
+                throw new RuntimeException("活动名额已满");
+            }
+        }
+
+        // 检查已有报名记录（幂等校验）
+        ActivitySignup existingSignup = signupMapper.findByActivityAndUser(activityId, user.getId());
+        if (existingSignup != null) {
+            if (existingSignup.getStatus() == SignupStatus.REJECTED) {
+                throw new RuntimeException("您的报名已被拒绝，请联系管理员");
+            }
+            if (existingSignup.getStatus() != SignupStatus.CANCELLED) {
+                throw new RuntimeException("您已报名该活动");
+            }
+        }
+
+        // ===== 异步入队（不阻塞，秒回） =====
+
+        ActivitySignupMessage message = new ActivitySignupMessage();
+        message.setActivityId(activityId);
+        message.setUserId(user.getId());
+        message.setUsername(username);
+        message.setRemark(request != null ? request.getRemark() : null);
+
+        rabbitTemplate.convertAndSend(
+            RabbitMqConfig.ACTIVITY_SIGNUP_EXCHANGE,
+            RabbitMqConfig.ACTIVITY_SIGNUP_ROUTING_KEY,
+            message
+        );
+
+        log.info("报名请求已入队: activityId={}, userId={}", activityId, user.getId());
+
+        // 立即返回待审核状态
+        SignupResponse response = new SignupResponse();
+        response.setActivityId(activityId);
+        response.setUserId(user.getId());
+        response.setUsername(username);
+        response.setStatus(SignupStatus.PENDING);
+        response.setRemark(request != null ? request.getRemark() : null);
+        return response;
+    }
+
+    /**
+     * 用户签到
+     * 审核通过的用户在活动详情页点击签到
      */
     @Transactional
     @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE, CacheNames.ACTIVITY_DETAIL}, allEntries = true)
-    public SignupResponse signupActivity(Long activityId, SignupRequest request) {
+    public SignupResponse checkinActivity(Long activityId) {
         // 从安全上下文中获取当前登录用户的用户名
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         // 根据用户名查询用户实体
@@ -429,75 +521,35 @@ public class ActivityService {
         Activity activity = activityMapper.selectById(activityId);
         // 如果活动不存在，抛出异常
         if (activity == null) {
-            throw new RuntimeException("活动不存在：" + activityId);
+            throw new RuntimeException("活动不存在");
         }
 
-        // 检查活动状态是否为已发布状态
+        // 查找用户的报名记录
+        ActivitySignup signup = signupMapper.findByActivityAndUser(activityId, user.getId());
+        // 如果报名记录不存在，抛出异常
+        if (signup == null) {
+            throw new RuntimeException("您尚未报名该活动");
+        }
+
+        // 只有审核通过的用户才能签到
+        if (signup.getStatus() != SignupStatus.APPROVED) {
+            throw new RuntimeException("您的报名尚未通过审核");
+        }
+
+        // 活动必须处于可签到状态（已发布）
         if (activity.getStatus() != ActivityStatus.PUBLISHED) {
-            throw new RuntimeException("活动未发布或已结束");
-        }
-        // 检查报名是否已截止
-        if (Boolean.TRUE.equals(activity.getSignupClosed())) {
-            throw new RuntimeException("报名已截止");
-        }
-        // 检查活动是否已开始
-        if (activity.getStartTime().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("活动已开始或已结束");
+            throw new RuntimeException("活动未发布或已结束，无法签到");
         }
 
-        // 查询用户是否已有该活动的报名记录
-        ActivitySignup existingSignup = signupMapper.findByActivityAndUser(activityId, user.getId());
-        // 如果存在报名记录
-        if (existingSignup != null) {
-            // 如果报名状态为已拒绝，提示用户联系管理员
-            if (existingSignup.getStatus() == SignupStatus.REJECTED) {
-                throw new RuntimeException("您的报名已被拒绝，请联系管理员");
-            }
-            // 如果报名状态不是已取消，说明用户已报名
-            if (existingSignup.getStatus() != SignupStatus.CANCELLED) {
-                throw new RuntimeException("您已报名该活动");
-            }
-            // 如果报名状态为已取消，允许用户重新报名
-        }
+        // 更新状态为已签到
+        signup.setStatus(SignupStatus.SIGNED);
+        // 设置签到时间
+        signup.setSignedAt(LocalDateTime.now());
+        // 执行更新操作
+        signupMapper.updateById(signup);
 
-        // 检查活动是否满员（最大参与人数大于 0 时才检查）
-        if (activity.getMaxParticipants() > 0) {
-            // 统计已通过审批的报名人数
-            int currentSignups = signupMapper.countByActivityAndStatus(activityId, SignupStatus.APPROVED);
-            // 统计已签到的人数
-            int signedCount = signupMapper.countSigned(activityId);
-            // 如果已报名人数加上已签到人数大于等于最大参与人数，抛出异常
-            if (currentSignups + signedCount >= activity.getMaxParticipants()) {
-                throw new RuntimeException("活动报名已满");
-            }
-        }
-
-        // 如果存在已取消的报名记录，更新状态为待审核
-        if (existingSignup != null && existingSignup.getStatus() == SignupStatus.CANCELLED) {
-            // 将报名状态设置为待审核
-            existingSignup.setStatus(SignupStatus.PENDING);
-            // 更新报名备注
-            existingSignup.setRemark(request != null ? request.getRemark() : null);
-            // 执行更新操作
-            signupMapper.updateById(existingSignup);
-            // 返回更新后的报名响应对象
-            return convertSignupToResponse(existingSignup);
-        }
-
-        // 创建新的报名记录
-        ActivitySignup signup = new ActivitySignup();
-        // 设置活动 ID
-        signup.setActivityId(activityId);
-        // 设置用户 ID
-        signup.setUserId(user.getId());
-        // 设置报名状态为待审核
-        signup.setStatus(SignupStatus.PENDING);
-        // 设置报名备注
-        signup.setRemark(request != null ? request.getRemark() : null);
-
-        // 将报名记录插入数据库
-        signupMapper.insert(signup);
-        // 返回报名响应对象
+        log.info("用户签到成功: activityId={}, userId={}", activityId, user.getId());
+        // 返回更新后的报名响应对象
         return convertSignupToResponse(signup);
     }
 
@@ -524,9 +576,11 @@ public class ActivityService {
 
         // 审批时再次检查是否满员（最大参与人数大于 0 时才检查）
         if (activity.getMaxParticipants() > 0) {
-            // 统计已通过审批的报名人数
-            int currentSignups = signupMapper.countByActivityAndStatus(activityId, SignupStatus.APPROVED);
-            // 如果已通过人数大于等于最大参与人数，抛出异常
+            // 统计已占用名额的人数（APPROVED + SIGNED）
+            int approved = signupMapper.countByActivityAndStatus(activityId, SignupStatus.APPROVED);
+            int signed = signupMapper.countSigned(activityId);
+            int currentSignups = approved + signed;
+            // 如果已占用人数大于等于最大参与人数，抛出异常
             if (currentSignups >= activity.getMaxParticipants()) {
                 throw new RuntimeException("活动报名已满，无法审批");
             }

@@ -54,6 +54,15 @@ public class ActivityController {
     }
 
     /**
+     * 用户签到
+     */
+    @PostMapping("/{id}/checkin")
+    public ResponseEntity<ApiResponse<SignupResponse>> checkinActivity(@PathVariable Long id) {
+        SignupResponse signup = activityService.checkinActivity(id);
+        return ResponseEntity.ok(ApiResponse.success("签到成功", signup));
+    }
+
+    /**
      * 发送消息给管理员
      */
     @PostMapping("/messages")

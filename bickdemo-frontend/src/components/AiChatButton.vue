@@ -1,11 +1,17 @@
 <template>
-  <div class="ai-chat-button" :class="{ 'ai-chat-button--open': isOpen }">
+  <div
+    class="ai-chat-button"
+    :class="{ 'ai-chat-button--open': isOpen, 'ai-chat-button--dragging': isDragging }"
+    :style="buttonStyle"
+    @mousedown="handleMouseDown"
+    @touchstart="handleTouchStart"
+  >
     <button
       type="button"
       class="ai-chat-button__btn"
       :aria-label="'AI 助手'"
       title="AI 助手"
-      @click="$emit('click')"
+      @click="handleClick"
     >
       <span class="ai-chat-button__icon-wrapper">
         <!-- 机器人图标 -->
@@ -26,7 +32,9 @@
 </template>
 
 <script setup>
-defineProps({
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+
+const props = defineProps({
   isOpen: {
     type: Boolean,
     default: false
@@ -37,15 +45,151 @@ defineProps({
   }
 })
 
-defineEmits(['click'])
+const emit = defineEmits(['click'])
+
+// 拖拽相关状态
+const pos = ref({ x: 0, y: 0 })
+const isDragging = ref(false)
+const dragStart = ref({ x: 0, y: 0, clientX: 0, clientY: 0 })
+let dragOffset = { x: 0, y: 0 }
+
+// 按钮尺寸
+const BUTTON_SIZE = 50
+const EDGE_MARGIN = 20
+
+// 初始化位置：右下角
+onMounted(() => {
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  pos.value = {
+    x: vw - BUTTON_SIZE - EDGE_MARGIN,
+    y: vh - BUTTON_SIZE - EDGE_MARGIN
+  }
+})
+
+// 限制位置不超出视口
+const clampPos = (x, y) => {
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  return {
+    x: Math.max(EDGE_MARGIN, Math.min(x, vw - BUTTON_SIZE - EDGE_MARGIN)),
+    y: Math.max(EDGE_MARGIN, Math.min(y, vh - BUTTON_SIZE - EDGE_MARGIN))
+  }
+}
+
+// 动态样式
+const buttonStyle = computed(() => ({
+  left: `${pos.value.x}px`,
+  top: `${pos.value.y}px`,
+  right: 'auto',
+  bottom: 'auto'
+}))
+
+// 获取事件坐标（兼容 mouse 和 touch）
+const getEventPos = (e) => {
+  if (e.touches && e.touches.length > 0) {
+    return { x: e.touches[0].clientX, y: e.touches[0].clientY }
+  }
+  return { x: e.clientX, y: e.clientY }
+}
+
+// 开始拖拽
+const startDrag = (e) => {
+  const { x, y } = getEventPos(e)
+  dragStart.value = { x: pos.value.x, y: pos.value.y, clientX: x, clientY: y }
+  dragOffset = { x: x - pos.value.x, y: y - pos.value.y }
+  isDragging.value = false // 先标记为未拖拽，移动超过阈值才确认
+}
+
+// 拖拽中
+const onDrag = (e) => {
+  if (dragStart.value.clientX === 0 && dragStart.value.clientY === 0) return
+
+  const { x, y } = getEventPos(e)
+
+  // 判断移动距离是否超过点击阈值（5px）
+  const moveDistance = Math.sqrt(
+    Math.pow(x - dragStart.value.clientX, 2) +
+    Math.pow(y - dragStart.value.clientY, 2)
+  )
+
+  if (moveDistance > 5) {
+    isDragging.value = true
+  }
+
+  const newPos = clampPos(x - dragOffset.x, y - dragOffset.y)
+  pos.value = newPos
+}
+
+// 结束拖拽
+const endDrag = () => {
+  dragStart.value = { x: 0, y: 0, clientX: 0, clientY: 0 }
+  // 延迟清除 dragging 状态，保证 transition 恢复
+  setTimeout(() => {
+    isDragging.value = false
+  }, 50)
+}
+
+// Mouse 事件
+const handleMouseDown = (e) => {
+  if (e.button !== 0) return // 仅左键
+  startDrag(e)
+  document.addEventListener('mousemove', onDrag)
+  document.addEventListener('mouseup', handleMouseUp)
+}
+
+const handleMouseUp = (e) => {
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', handleMouseUp)
+  endDrag()
+}
+
+// Touch 事件
+const handleTouchStart = (e) => {
+  startDrag(e)
+  document.addEventListener('touchmove', onDrag, { passive: false })
+  document.addEventListener('touchend', handleTouchEnd)
+}
+
+const handleTouchEnd = (e) => {
+  document.removeEventListener('touchmove', onDrag)
+  document.removeEventListener('touchend', handleTouchEnd)
+  endDrag()
+}
+
+// 点击处理（区分拖拽和点击）
+const handleClick = (e) => {
+  if (isDragging.value) {
+    e.stopPropagation()
+    return
+  }
+  emit('click')
+}
+
+// 窗口大小变化时重新限制位置
+const handleResize = () => {
+  pos.value = clampPos(pos.value.x, pos.value.y)
+}
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', handleMouseUp)
+  document.removeEventListener('touchmove', onDrag)
+  document.removeEventListener('touchend', handleTouchEnd)
+})
 </script>
 
 <style scoped>
 .ai-chat-button {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
   z-index: 1200;
+  user-select: none;
+  touch-action: none;
 }
 
 .ai-chat-button__btn {
@@ -71,6 +215,16 @@ defineEmits(['click'])
 
 .ai-chat-button__btn:active {
   transform: scale(0.95);
+}
+
+/* 拖拽时禁用过渡，使移动更跟手 */
+.ai-chat-button--dragging .ai-chat-button__btn {
+  transition: none;
+  cursor: grabbing;
+}
+
+.ai-chat-button--dragging {
+  cursor: grabbing;
 }
 
 .ai-chat-button__icon-wrapper {
@@ -130,11 +284,6 @@ defineEmits(['click'])
 }
 
 @media (max-width: 768px) {
-  .ai-chat-button {
-    right: 16px;
-    bottom: 16px;
-  }
-
   .ai-chat-button__btn {
     width: 46px;
     height: 46px;
