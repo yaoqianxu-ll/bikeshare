@@ -831,6 +831,14 @@ onUnmounted(() => {
   opacity: 1 !important;
 }
 
+.status-pending.is-disabled,
+.status-pending.is-disabled:hover,
+.status-pending.is-disabled:focus {
+  background: transparent !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  color: #b45309 !important;
+}
+
 .status-rejected {
   background: transparent !important;
   border: 1px solid rgba(239, 68, 68, 0.35) !important;
@@ -849,11 +857,27 @@ onUnmounted(() => {
   opacity: 1 !important;
 }
 
+.status-signed.is-disabled,
+.status-signed.is-disabled:hover,
+.status-signed.is-disabled:focus {
+  background: transparent !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  color: #059669 !important;
+}
+
 .status-disabled {
   background: transparent !important;
   border: 1px solid rgba(148, 163, 184, 0.30) !important;
   color: #94a3b8 !important;
   opacity: 1 !important;
+}
+
+.status-disabled.is-disabled,
+.status-disabled.is-disabled:hover,
+.status-disabled.is-disabled:focus {
+  background: transparent !important;
+  border: 1px solid rgba(148, 163, 184, 0.30) !important;
+  color: #94a3b8 !important;
 }
 
 /* 报名区域包裹 */
