@@ -140,7 +140,7 @@
             type="warning"
             size="large"
             disabled
-            class="signup-btn"
+            class="signup-btn status-pending"
           >
             报名正在审核中
           </el-button>
@@ -149,6 +149,7 @@
             v-else-if="userStore.isLoggedIn && hasSignedUp && signupInfo?.status === 'REJECTED'"
             type="danger"
             size="large"
+            class="signup-btn status-rejected"
             @click="showContactDialog = true"
           >
             报名被拒绝，请联系管理员
@@ -183,7 +184,7 @@
             type="success"
             size="large"
             disabled
-            class="signup-btn"
+            class="signup-btn status-signed"
           >
             已签到 {{ signupInfo.signedAt ? '(' + formatDateTime(signupInfo.signedAt) + ')' : '' }}
           </el-button>
@@ -202,7 +203,7 @@
             type="info"
             size="large"
             disabled
-            class="signup-btn"
+            class="signup-btn status-disabled"
           >
             {{ signupDisabledReason }}
           </el-button>
@@ -212,7 +213,7 @@
             type="info"
             size="large"
             disabled
-            class="signup-btn"
+            class="signup-btn status-disabled"
           >
             {{ signupDisabledReason || '暂不可操作' }}
           </el-button>
@@ -797,28 +798,66 @@ onUnmounted(() => {
   height: 52px;
   font-size: 16px;
   font-weight: 700;
-  background: var(--brand-primary);
-  border: none;
+  background: rgba(255, 107, 53, 0.15) !important;
+  backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(255, 107, 53, 0.30) !important;
+  color: #e85d26 !important;
   border-radius: 14px;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.10);
 }
 
 .signup-btn:hover {
-  background: #ff7b4a;
-  transform: translateY(-2px);
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22);
+  background: rgba(255, 107, 53, 0.25) !important;
+  border-color: rgba(255, 107, 53, 0.45) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.15);
 }
 
 /* 签到按钮 */
 .checkin-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-  border: none !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+  border: 1px solid rgba(16, 185, 129, 0.30) !important;
+  color: #059669 !important;
 }
 
 .checkin-btn:hover {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
-  transform: translateY(-2px);
-  box-shadow: 0 14px 34px rgba(16, 185, 129, 0.30);
+  background: rgba(16, 185, 129, 0.25) !important;
+  border-color: rgba(16, 185, 129, 0.45) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
+}
+
+/* 各状态按钮玻璃拟态 */
+.status-pending {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border: 1px solid rgba(245, 158, 11, 0.30) !important;
+  color: #b45309 !important;
+  opacity: 1 !important;
+}
+
+.status-rejected {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(239, 68, 68, 0.30) !important;
+  color: #dc2626 !important;
+}
+
+.status-rejected:hover {
+  background: rgba(239, 68, 68, 0.20) !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
+}
+
+.status-signed {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(16, 185, 129, 0.30) !important;
+  color: #059669 !important;
+  opacity: 1 !important;
+}
+
+.status-disabled {
+  background: rgba(148, 163, 184, 0.10) !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  color: #94a3b8 !important;
+  opacity: 1 !important;
 }
 
 /* 报名区域包裹 */
@@ -967,6 +1006,30 @@ html.dark .signup-countdown {
 
 html.dark .signup-approved-text {
   color: #6ee7b7;
+}
+
+html.dark .status-pending {
+  background: rgba(245, 158, 11, 0.10) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+  color: #fbbf24 !important;
+}
+
+html.dark .status-rejected {
+  background: rgba(239, 68, 68, 0.10) !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+  color: #f87171 !important;
+}
+
+html.dark .status-signed {
+  background: rgba(16, 185, 129, 0.10) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+  color: #6ee7b7 !important;
+}
+
+html.dark .status-disabled {
+  background: rgba(148, 163, 184, 0.08) !important;
+  border-color: rgba(148, 163, 184, 0.15) !important;
+  color: rgba(148, 163, 184, 0.60) !important;
 }
 
 /* 留言区域 */
