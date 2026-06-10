@@ -25,7 +25,7 @@ public interface ActivityMapper extends BaseMapper<Activity> {
     /**
      * 获取已发布的活动（包含已结束的）
      */
-    @Select("SELECT * FROM activities WHERE status IN ('PUBLISHED', 'COMPLETED') AND deleted = 0 ORDER BY start_time DESC")
+    @Select("SELECT * FROM activities WHERE status IN ('PUBLISHED', 'COMPLETED') AND deleted = 0 ORDER BY CASE status WHEN 'PUBLISHED' THEN 0 WHEN 'COMPLETED' THEN 1 ELSE 2 END, start_time DESC")
     List<Activity> findPublishedUpcoming();
 
     /**
