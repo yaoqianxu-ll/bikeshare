@@ -303,12 +303,6 @@
       </div>
     </main>
 
-    <!-- AI聊天按钮 -->
-    <AiChatButton v-if="!isFullScreen" :is-open="aiChatOpen" @click="aiChatOpen = !aiChatOpen" />
-
-    <!-- AI聊天对话框 -->
-    <AiChatDialog v-if="!isFullScreen" :visible="aiChatOpen" @close="aiChatOpen = false" />
-
     <!-- 底部 -->
     <footer v-if="!isFullScreen" class="app-footer">
       <p>© 2026 BikeShare · 城市骑行计划</p>
@@ -336,8 +330,6 @@ import { getVipStatus } from '@/api/vip'
 // chatSocket 改为动态导入，仅在需要连接时才加载（节省 87KB）
 // import { createChatSocket } from '@/utils/chatSocket'  // 移入 connectSocket 内部
 import ThemeToggle from '@/components/ThemeToggle.vue'
-import AiChatButton from '@/components/AiChatButton.vue'
-import AiChatDialog from '@/components/AiChatDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -350,7 +342,6 @@ const notificationStore = useNotificationStore()
 const message = useMessage()
 const navOpen = ref(false)
 const showBgSelector = ref(false)
-const aiChatOpen = ref(false)
 const selectedBgId = ref(null)
 const backgrounds = ref([])
 const bgLoaded = ref(false)
