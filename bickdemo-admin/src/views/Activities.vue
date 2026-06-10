@@ -326,9 +326,9 @@
                 <el-tag :type="getSignupStatusType(row.status)" effect="light">{{ getSignupStatusText(row.status) }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="签到" width="80" align="center">
+            <el-table-column label="签到" width="120" align="center">
               <template #default="{ row }">
-                <el-tag v-if="row.signedIn" type="success" effect="light">已签到</el-tag>
+                <el-tag v-if="row.signedAt" type="success" effect="light">已签到 {{ formatTime(row.signedAt) }}</el-tag>
                 <span v-else class="text-muted">-</span>
               </template>
             </el-table-column>
