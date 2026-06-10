@@ -672,16 +672,11 @@ onUnmounted(() => {
   gap: 14px;
   padding: 16px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(12px) saturate(140%);
-  border: 1px solid rgba(15, 23, 42, 0.06);
   transition: all 0.2s ease;
 }
 
 .info-card:hover {
-  background: rgba(255, 255, 255, 0.72);
-  border-color: rgba(15, 23, 42, 0.10);
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+  background: rgba(15, 23, 42, 0.03);
 }
 
 .info-icon {
@@ -943,13 +938,11 @@ html.dark :deep(.el-card__header) {
 }
 
 html.dark .info-card {
-  background: rgba(6, 18, 40, 0.15);
-  border-color: rgba(255, 255, 255, 0.06);
+  background: transparent;
 }
 
 html.dark .info-card:hover {
-  background: rgba(6, 18, 40, 0.22);
-  border-color: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 html.dark .info-label {
