@@ -23,9 +23,9 @@ public interface ActivityMapper extends BaseMapper<Activity> {
     List<Activity> findByStatus(@Param("status") ActivityStatus status);
 
     /**
-     * 获取已发布且未过期的活动
+     * 获取已发布的活动（包含已结束的）
      */
-    @Select("SELECT * FROM activities WHERE status = 'PUBLISHED' AND end_time >= NOW() AND deleted = 0 ORDER BY start_time ASC")
+    @Select("SELECT * FROM activities WHERE status IN ('PUBLISHED', 'COMPLETED') AND deleted = 0 ORDER BY start_time DESC")
     List<Activity> findPublishedUpcoming();
 
     /**
@@ -44,7 +44,7 @@ public interface ActivityMapper extends BaseMapper<Activity> {
             "<if test='status != null'> AND status = #{status} </if>" +
             "<if test='difficulty != null and difficulty != \"\"'> AND difficulty = #{difficulty} </if>" +
             "</where>" +
-            "ORDER BY id DESC" +
+            "ORDER BY deleted ASC, id DESC" +
             "</script>")
     List<Activity> findAllIncludeDeleted(@Param("keyword") String keyword, @Param("status") String status, @Param("difficulty") String difficulty);
 
@@ -58,5 +58,15 @@ public interface ActivityMapper extends BaseMapper<Activity> {
     List<Activity> findExpiredActivitiesBetween(
             @Param("checkFrom") java.time.LocalDateTime checkFrom,
             @Param("checkTo") java.time.LocalDateTime checkTo,
+            @Param("limit") int limit);
+
+    /**
+     * 查找已到开始时间的草稿活动（需要自动发布）
+     */
+    @Select("SELECT id, title, start_time FROM activities " +
+            "WHERE status = 'DRAFT' AND deleted = 0 AND start_time <= #{now} " +
+            "ORDER BY start_time ASC LIMIT #{limit}")
+    List<Activity> findDraftActivitiesReadyToPublish(
+            @Param("now") java.time.LocalDateTime now,
             @Param("limit") int limit);
 }

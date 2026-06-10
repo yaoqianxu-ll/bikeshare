@@ -112,17 +112,31 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="320" align="center">
+        <el-table-column label="报名时间" min-width="180">
+          <template #default="{ row }">
+            <div class="time-cell">
+              <span v-if="row.signupOpenTime">开启: {{ formatTime(row.signupOpenTime) }}</span>
+              <span v-else style="color: #94a3b8;">开启: 未设置</span>
+              <span v-if="row.signupDeadline">截止: {{ formatTime(row.signupDeadline) }}</span>
+              <span v-else style="color: #94a3b8;">截止: 未设置</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="400" align="center">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button size="small" type="primary" plain :disabled="!!row.deleted" @click="openDialog(row)">编辑</el-button>
-              <el-button size="small" :type="row.signupClosed ? 'success' : 'warning'" plain :disabled="!!row.deleted" @click="toggleSignupClosed(row)">
-                {{ row.signupClosed ? '开启报名' : '停止报名' }}
-              </el-button>
-              <el-button size="small" :type="row.status === 'PUBLISHED' ? 'warning' : 'success'" plain :disabled="!!row.deleted || (!row.signupClosed && row.status !== 'PUBLISHED')" @click="toggleActivityStatus(row)">
-                {{ row.status === 'PUBLISHED' ? '结束活动' : '开启活动' }}
-              </el-button>
               <el-button size="small" type="info" plain :disabled="!!row.deleted" @click="openSignupDialog(row)">报名管理</el-button>
+              <el-button
+                size="small"
+                :type="row.status === 'CANCELLED' ? 'info' : 'danger'"
+                plain
+                :disabled="!!row.deleted || row.status === 'CANCELLED'"
+                @click="cancelActivity(row)"
+              >
+                {{ row.status === 'CANCELLED' ? '已取消' : '取消活动' }}
+              </el-button>
+              <el-button size="small" type="danger" plain :disabled="!!row.deleted" @click="remove(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -215,23 +229,6 @@
               <el-input-number v-model="form.maxParticipants" :min="1" :max="9999" class="full-width" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="活动状态" prop="status">
-              <el-dropdown trigger="click" @command="(val) => form.status = val">
-                <el-button>
-                  {{ statusOptions.find(o => o.value === form.status)?.label || '请选择状态' }}
-                  <el-icon class="el-icon--right"><arrow-down /></el-icon>
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item v-for="item in statusOptions" :key="item.value" :command="item.value">
-                      {{ item.label }}
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </el-form-item>
-          </el-col>
         </el-row>
         <el-row :gutter="14">
           <el-col :span="12">
@@ -260,14 +257,16 @@
           </el-col>
         </el-row>
         <el-form-item label="封面图片">
-          <div class="upload-line">
-            <el-upload :show-file-list="false" :http-request="handleImageUpload" accept="image/*">
-              <el-button plain>上传图片</el-button>
-            </el-upload>
-            <el-input v-model="form.coverImage" placeholder="也可以直接粘贴图片地址" />
-          </div>
-          <div v-if="form.coverImage" class="cover-preview">
-            <el-image :src="form.coverImage" fit="cover" />
+          <div class="cover-field">
+            <div class="upload-line">
+              <el-upload :show-file-list="false" :http-request="handleImageUpload" accept="image/*">
+                <el-button plain>上传图片</el-button>
+              </el-upload>
+              <el-input v-model="form.coverImage" placeholder="也可以直接粘贴图片地址" />
+            </div>
+            <div v-if="form.coverImage" class="cover-preview">
+              <el-image :src="form.coverImage" fit="cover" />
+            </div>
           </div>
         </el-form-item>
       </el-form>
@@ -528,6 +527,7 @@ const form = reactive({
   locationCode: '',
   difficulty: 'MEDIUM',
   status: 'DRAFT',
+  signupClosed: false,
   signupOpenTime: '',
   signupDeadline: ''
 })
@@ -653,6 +653,7 @@ const resetForm = () => {
   form.locationCode = ''
   form.difficulty = 'MEDIUM'
   form.status = 'DRAFT'
+  form.signupClosed = false
   form.signupOpenTime = ''
   form.signupDeadline = ''
 }
@@ -717,6 +718,7 @@ const openDialog = (row) => {
       locationCode: row.locationCode || '',
       difficulty: row.difficulty || 'MEDIUM',
       status: row.status || 'DRAFT',
+      signupClosed: row.signupClosed || false,
       signupOpenTime: row.signupOpenTime || '',
       signupDeadline: row.signupDeadline || ''
     })
@@ -808,12 +810,15 @@ const submit = async () => {
       location: locationText,
       locationCode: locationCode,
       difficulty: form.difficulty,
-      status: form.status
+      signupOpenTime: formatDateTime(form.signupOpenTime),
+      signupDeadline: formatDateTime(form.signupDeadline),
+      signupClosed: form.signupClosed || false
     }
     if (form.id) {
       await updateActivity(form.id, payload)
       ElMessage.success('活动已更新')
     } else {
+      payload.status = 'DRAFT'
       await createActivity(payload)
       ElMessage.success('活动已创建')
     }
@@ -835,6 +840,17 @@ const remove = async (row) => {
   }
 }
 
+const cancelActivity = async (row) => {
+  try {
+    await ElMessageBox.confirm(`确认取消活动"${row.title}"吗？取消后报名将被关闭。`, '取消活动确认', { type: 'warning' })
+    await updateActivityStatus(row.id, { status: 'CANCELLED' })
+    ElMessage.success('活动已取消')
+    await load()
+  } catch (error) {
+    if (error !== 'cancel') throw error
+  }
+}
+
 const removeFromDialog = async () => {
   try {
     await ElMessageBox.confirm(`确认删除活动"${form.title}"吗？`, '删除确认', { type: 'warning' })
@@ -844,43 +860,6 @@ const removeFromDialog = async () => {
     await load()
   } catch (error) {
     if (error !== 'cancel') throw error
-  }
-}
-
-const toggleSignupClosed = async (row) => {
-  try {
-    if (row.signupClosed) {
-      await reopenSignup(row.id)
-      ElMessage.success('已开启报名')
-    } else {
-      await closeSignup(row.id)
-      ElMessage.success('已停止报名')
-    }
-    await load()
-  } catch (error) {
-    // Error handled by interceptor
-  }
-}
-
-const toggleActivityStatus = async (row) => {
-  try {
-    const now = new Date()
-    const pad2 = (n) => String(n).padStart(2, '0')
-    const formatNow = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())} ${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`
-    if (row.status === 'PUBLISHED') {
-      await updateActivityStatus(row.id, { status: 'COMPLETED', endTime: formatNow })
-      ElMessage.success('活动已结束')
-    } else {
-      if (!row.signupClosed) {
-        ElMessage.warning('请先停止报名后再开启活动')
-        return
-      }
-      await updateActivityStatus(row.id, { status: 'PUBLISHED', startTime: formatNow })
-      ElMessage.success('活动已开启')
-    }
-    await load()
-  } catch (error) {
-    // Error handled by interceptor
   }
 }
 
@@ -1015,10 +994,18 @@ onMounted(load)
   color: #909399;
 }
 
+.cover-field {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
 .upload-line {
   display: flex;
   gap: 12px;
   align-items: center;
+  width: 100%;
 }
 
 .upload-line .el-input {
@@ -1026,11 +1013,11 @@ onMounted(load)
 }
 
 .cover-preview {
-  margin-top: 12px;
   width: 200px;
   height: 120px;
   border-radius: 8px;
   overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .cover-preview .el-image {
