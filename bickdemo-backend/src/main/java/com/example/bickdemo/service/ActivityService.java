@@ -131,6 +131,9 @@ public class ActivityService {
     // 用户邮件通知服务
     private final UserEmailNotificationService userEmailNotificationService;
 
+    // 用户端通知服务（消息中心）
+    private final UserNotificationService userNotificationService;
+
     // RabbitMQ 发送模板，用于将报名消息发送到队列
     private final RabbitTemplate rabbitTemplate;
 
@@ -597,6 +600,13 @@ public class ActivityService {
             userEmailNotificationService.sendReviewResultEmail(
                     signupUser, "活动报名", activity.getTitle(), true, activityId
             );
+            // 消息中心系统通知
+            userNotificationService.createNotification(
+                    signupUser.getId(), "SYSTEM",
+                    "报名审核通过",
+                    "你对活动《" + activity.getTitle() + "》的报名已通过审核，请及时签到",
+                    activityId, "ACTIVITY", null, "系统"
+            );
         }
 
         // 返回更新后的报名响应对象
@@ -629,6 +639,13 @@ public class ActivityService {
             if (activity != null) {
                 userEmailNotificationService.sendReviewResultEmail(
                         signupUser, "活动报名", activity.getTitle(), false, activityId
+                );
+                // 消息中心系统通知
+                userNotificationService.createNotification(
+                        signupUser.getId(), "SYSTEM",
+                        "报名审核未通过",
+                        "你对活动《" + activity.getTitle() + "》的报名未通过审核，请联系管理员了解原因",
+                        activityId, "ACTIVITY", null, "系统"
                 );
             }
         }
