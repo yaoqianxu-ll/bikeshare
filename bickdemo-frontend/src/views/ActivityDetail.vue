@@ -798,35 +798,35 @@ onUnmounted(() => {
   height: 52px;
   font-size: 16px;
   font-weight: 700;
-  background: transparent !important;
-  border: 1px solid rgba(255, 107, 53, 0.35) !important;
+  background: rgba(255, 107, 53, 0.08);
+  border: 1px solid rgba(255, 107, 53, 0.20);
   color: #e85d26 !important;
   border-radius: 14px;
 }
 
 .signup-btn:hover {
-  background: rgba(255, 107, 53, 0.10) !important;
-  border-color: rgba(255, 107, 53, 0.50) !important;
+  background: rgba(255, 107, 53, 0.12);
+  border-color: rgba(255, 107, 53, 0.30);
   transform: translateY(-1px);
 }
 
 /* 签到按钮 */
 .checkin-btn {
-  background: transparent !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  background: rgba(16, 185, 129, 0.08) !important;
+  border: 1px solid rgba(16, 185, 129, 0.20) !important;
   color: #059669 !important;
 }
 
 .checkin-btn:hover {
-  background: rgba(16, 185, 129, 0.10) !important;
-  border-color: rgba(16, 185, 129, 0.50) !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.30) !important;
   transform: translateY(-1px);
 }
 
 /* 各状态按钮透明边框风格 */
 .status-pending {
-  background: transparent !important;
-  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  background: rgba(245, 158, 11, 0.08) !important;
+  border: 1px solid rgba(245, 158, 11, 0.20) !important;
   color: #b45309 !important;
   opacity: 1 !important;
 }
@@ -834,25 +834,25 @@ onUnmounted(() => {
 .status-pending.is-disabled,
 .status-pending.is-disabled:hover,
 .status-pending.is-disabled:focus {
-  background: transparent !important;
-  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  background: rgba(245, 158, 11, 0.08) !important;
+  border: 1px solid rgba(245, 158, 11, 0.20) !important;
   color: #b45309 !important;
 }
 
 .status-rejected {
-  background: transparent !important;
-  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  border: 1px solid rgba(239, 68, 68, 0.20) !important;
   color: #dc2626 !important;
 }
 
 .status-rejected:hover {
-  background: rgba(239, 68, 68, 0.10) !important;
-  border-color: rgba(239, 68, 68, 0.50) !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.30) !important;
 }
 
 .status-signed {
-  background: transparent !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  background: rgba(16, 185, 129, 0.08) !important;
+  border: 1px solid rgba(16, 185, 129, 0.20) !important;
   color: #059669 !important;
   opacity: 1 !important;
 }
@@ -860,14 +860,14 @@ onUnmounted(() => {
 .status-signed.is-disabled,
 .status-signed.is-disabled:hover,
 .status-signed.is-disabled:focus {
-  background: transparent !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  background: rgba(16, 185, 129, 0.08) !important;
+  border: 1px solid rgba(16, 185, 129, 0.20) !important;
   color: #059669 !important;
 }
 
 .status-disabled {
-  background: transparent !important;
-  border: 1px solid rgba(148, 163, 184, 0.30) !important;
+  background: rgba(148, 163, 184, 0.08) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
   color: #94a3b8 !important;
   opacity: 1 !important;
 }
@@ -875,8 +875,8 @@ onUnmounted(() => {
 .status-disabled.is-disabled,
 .status-disabled.is-disabled:hover,
 .status-disabled.is-disabled:focus {
-  background: transparent !important;
-  border: 1px solid rgba(148, 163, 184, 0.30) !important;
+  background: rgba(148, 163, 184, 0.08) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
   color: #94a3b8 !important;
 }
 
@@ -1029,26 +1029,26 @@ html.dark .signup-approved-text {
 }
 
 html.dark .status-pending {
-  background: transparent !important;
-  border-color: rgba(245, 158, 11, 0.35) !important;
+  background: rgba(245, 158, 11, 0.10) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
   color: #fbbf24 !important;
 }
 
 html.dark .status-rejected {
-  background: transparent !important;
-  border-color: rgba(239, 68, 68, 0.35) !important;
+  background: rgba(239, 68, 68, 0.10) !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
   color: #f87171 !important;
 }
 
 html.dark .status-signed {
-  background: transparent !important;
-  border-color: rgba(16, 185, 129, 0.35) !important;
+  background: rgba(16, 185, 129, 0.10) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
   color: #6ee7b7 !important;
 }
 
 html.dark .status-disabled {
-  background: transparent !important;
-  border-color: rgba(148, 163, 184, 0.20) !important;
+  background: rgba(148, 163, 184, 0.08) !important;
+  border-color: rgba(148, 163, 184, 0.15) !important;
   color: rgba(148, 163, 184, 0.60) !important;
 }
 
