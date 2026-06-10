@@ -38,8 +38,9 @@
                 <el-icon><Calendar /></el-icon>
               </div>
               <div class="info-body">
-                <span class="info-label">活动开始</span>
+                <span class="info-label">活动时间</span>
                 <span class="info-value">{{ formatDateTime(activity.startTime) }}</span>
+                <span class="info-sub">至 {{ formatDateTime(activity.endTime) }}</span>
                 <span v-if="countdownToStart" class="info-countdown">
                   {{ formatCountdown(countdownToStart) }}
                 </span>
@@ -737,6 +738,12 @@ onUnmounted(() => {
   color: #ff6b35;
 }
 
+.info-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
 /* 倒计时样式 */
 .info-countdown {
   font-size: 12px;
@@ -955,6 +962,10 @@ html.dark .info-value {
 
 html.dark .info-value-price {
   color: #fb923c;
+}
+
+html.dark .info-sub {
+  color: rgba(225, 235, 248, 0.52);
 }
 
 html.dark .signup-countdown {
