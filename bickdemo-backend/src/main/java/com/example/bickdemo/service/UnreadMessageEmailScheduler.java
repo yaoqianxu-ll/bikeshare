@@ -69,10 +69,30 @@ public class UnreadMessageEmailScheduler {
                         continue;
                     }
 
-                    // 截取消息预览内容
-                    String preview = msg.getContent();
-                    if (preview != null && preview.length() > 50) {
-                        preview = preview.substring(0, 50) + "...";
+                    // 根据消息类型生成预览内容
+                    String preview;
+                    if (msg.getType() != null) {
+                        switch (msg.getType()) {
+                            case IMAGE -> preview = "发送了一张图片";
+                            case EMOJI -> preview = "发送了一个表情";
+                            case STICKER -> preview = "发送了一个贴纸";
+                            default -> {
+                                preview = msg.getContent();
+                                if (preview != null && preview.length() > 50) {
+                                    preview = preview.substring(0, 50) + "...";
+                                }
+                            }
+                        }
+                    } else {
+                        preview = msg.getContent();
+                        if (preview != null && preview.length() > 50) {
+                            preview = preview.substring(0, 50) + "...";
+                        }
+                    }
+
+                    // 兜底：如果预览内容仍为空，给一个默认提示
+                    if (preview == null || preview.isBlank()) {
+                        preview = "收到了一条消息";
                     }
 
                     emailNotificationService.sendPrivateMessageEmail(
