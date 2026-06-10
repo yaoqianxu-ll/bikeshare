@@ -798,63 +798,59 @@ onUnmounted(() => {
   height: 52px;
   font-size: 16px;
   font-weight: 700;
-  background: rgba(255, 107, 53, 0.25) !important;
-  backdrop-filter: blur(12px) saturate(140%);
+  background: transparent !important;
   border: 1px solid rgba(255, 107, 53, 0.35) !important;
   color: #e85d26 !important;
   border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.10);
 }
 
 .signup-btn:hover {
-  background: rgba(255, 107, 53, 0.35) !important;
+  background: rgba(255, 107, 53, 0.10) !important;
   border-color: rgba(255, 107, 53, 0.50) !important;
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.15);
 }
 
 /* 签到按钮 */
 .checkin-btn {
-  background: rgba(16, 185, 129, 0.25) !important;
+  background: transparent !important;
   border: 1px solid rgba(16, 185, 129, 0.35) !important;
   color: #059669 !important;
 }
 
 .checkin-btn:hover {
-  background: rgba(16, 185, 129, 0.35) !important;
+  background: rgba(16, 185, 129, 0.10) !important;
   border-color: rgba(16, 185, 129, 0.50) !important;
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
 }
 
-/* 各状态按钮玻璃拟态 */
+/* 各状态按钮透明边框风格 */
 .status-pending {
-  background: rgba(245, 158, 11, 0.25) !important;
+  background: transparent !important;
   border: 1px solid rgba(245, 158, 11, 0.35) !important;
   color: #b45309 !important;
   opacity: 1 !important;
 }
 
 .status-rejected {
-  background: rgba(239, 68, 68, 0.25) !important;
+  background: transparent !important;
   border: 1px solid rgba(239, 68, 68, 0.35) !important;
   color: #dc2626 !important;
 }
 
 .status-rejected:hover {
-  background: rgba(239, 68, 68, 0.35) !important;
+  background: rgba(239, 68, 68, 0.10) !important;
   border-color: rgba(239, 68, 68, 0.50) !important;
 }
 
 .status-signed {
-  background: rgba(16, 185, 129, 0.25) !important;
+  background: transparent !important;
   border: 1px solid rgba(16, 185, 129, 0.35) !important;
   color: #059669 !important;
   opacity: 1 !important;
 }
 
 .status-disabled {
-  background: rgba(148, 163, 184, 0.25) !important;
+  background: transparent !important;
   border: 1px solid rgba(148, 163, 184, 0.30) !important;
   color: #94a3b8 !important;
   opacity: 1 !important;
@@ -1009,25 +1005,25 @@ html.dark .signup-approved-text {
 }
 
 html.dark .status-pending {
-  background: rgba(245, 158, 11, 0.25) !important;
+  background: transparent !important;
   border-color: rgba(245, 158, 11, 0.35) !important;
   color: #fbbf24 !important;
 }
 
 html.dark .status-rejected {
-  background: rgba(239, 68, 68, 0.25) !important;
+  background: transparent !important;
   border-color: rgba(239, 68, 68, 0.35) !important;
   color: #f87171 !important;
 }
 
 html.dark .status-signed {
-  background: rgba(16, 185, 129, 0.25) !important;
+  background: transparent !important;
   border-color: rgba(16, 185, 129, 0.35) !important;
   color: #6ee7b7 !important;
 }
 
 html.dark .status-disabled {
-  background: rgba(148, 163, 184, 0.25) !important;
+  background: transparent !important;
   border-color: rgba(148, 163, 184, 0.20) !important;
   color: rgba(148, 163, 184, 0.60) !important;
 }
