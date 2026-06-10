@@ -23,6 +23,13 @@ export function signupForActivity(id, data) {
   })
 }
 
+export function checkinForActivity(id) {
+  return request({
+    url: `/activities/${id}/checkin`,
+    method: 'post'
+  })
+}
+
 export function sendActivityMessage(data) {
   return request({
     url: '/activities/messages',
