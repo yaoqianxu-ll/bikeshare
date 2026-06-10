@@ -369,6 +369,9 @@ const toastRef = ref({
 // WebSocket 连接
 let socketClient = null
 
+// 消息去重：防止双重 WebSocket 连接导致同一事件被处理两次
+const processedMessageIds = new Set()
+
 const LOCAL_BG_KEY = 'bickdemo:selectedBgId'
 const openSourceGiteeUrl = 'https://gitee.com/loopeasen/bikelease'
 const openSourceGithubUrl = 'https://github.com/yaoqianxu-ll/bikeshare'
@@ -393,6 +396,18 @@ const handleSocketEvent = (event) => {
 
   if (event.eventType === 'CHAT_MESSAGE' && event.message) {
     const msg = event.message
+
+    // 去重：同一消息 ID 只处理一次（防止双重 WebSocket 连接导致重复）
+    if (msg.id && processedMessageIds.has(msg.id)) return
+    if (msg.id) {
+      processedMessageIds.add(msg.id)
+      // 只保留最近 200 条记录，避免内存无限增长
+      if (processedMessageIds.size > 200) {
+        const first = processedMessageIds.values().next().value
+        processedMessageIds.delete(first)
+      }
+    }
+
     // 从 event 中获取发送者信息（后端返回的格式）
     const senderName = event.senderUsername || msg.senderUsername || '某人'
     const preview = msg.type === 'IMAGE' ? '[图片]' : (msg.content || '')

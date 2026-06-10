@@ -1225,7 +1225,9 @@ const sendPayload = async (payload) => {
   })
 
   const sentMessage = normalizeMessage(res.data)
-  messages.value = [...messages.value, sentMessage]
+  if (!messages.value.some(m => m.id === sentMessage.id)) {
+    messages.value = [...messages.value, sentMessage]
+  }
   draft.value = ''
 
   // 更新或添加联系人
@@ -1510,10 +1512,12 @@ const handleSocketEvent = async (event) => {
     const now = new Date().toISOString()
 
     if (activeContact.value?.userId === conversationUserId) {
-      // 消息来自当前会话，直接显示
-      messages.value = [...messages.value, incomingMessage]
-      await nextTick()
-      scrollToBottom()
+      // 消息来自当前会话，去重后追加（防止 Layout.vue 和 FriendsChat.vue 双重 WebSocket 连接导致重复）
+      if (!messages.value.some(m => m.id === incomingMessage.id)) {
+        messages.value = [...messages.value, incomingMessage]
+        await nextTick()
+        scrollToBottom()
+      }
       if (!incomingMessage.mine) {
         markConversationRead(conversationUserId)
       }
