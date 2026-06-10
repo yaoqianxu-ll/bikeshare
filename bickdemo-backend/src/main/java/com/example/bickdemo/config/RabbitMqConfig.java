@@ -22,6 +22,7 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.boot.autoconfigure.amqp.SimpleRabbitListenerContainerFactoryConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 import jakarta.annotation.PostConstruct;
 import org.aopalliance.intercept.MethodInterceptor;
@@ -35,6 +36,7 @@ import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 @Configuration
 @RequiredArgsConstructor
 @EnableRabbit
+@Lazy(false)
 public class RabbitMqConfig {
 
     private final ConnectionFactory connectionFactory;
@@ -311,5 +313,104 @@ public class RabbitMqConfig {
     @Bean
     public Queue vipOrderDeadLetterQueue() {
         return QueueBuilder.durable(VIP_ORDER_EXPIRE_QUEUE + ".dlq").build();
+    }
+
+    // ========== 活动报名队列 ==========
+    public static final String ACTIVITY_SIGNUP_EXCHANGE = "activity.signup.exchange";
+    public static final String ACTIVITY_SIGNUP_QUEUE = "activity.signup.queue";
+    public static final String ACTIVITY_SIGNUP_ROUTING_KEY = "activity.signup";
+    public static final String ACTIVITY_SIGNUP_DLQ = "activity.signup.queue.dlq";
+    public static final String ACTIVITY_SIGNUP_DLQ_EXCHANGE = "activity.signup.error.exchange";
+
+    /**
+     * 初始化活动报名交换机、队列和死信队列
+     */
+    @PostConstruct
+    public void initActivitySignupExchangeAndQueue() {
+        try {
+            RabbitAdmin admin = new RabbitAdmin(connectionFactory);
+
+            // 声明活动报名交换机
+            admin.declareExchange(new DirectExchange(ACTIVITY_SIGNUP_EXCHANGE, true, false));
+
+            // 声明活动报名队列
+            admin.declareQueue(new Queue(ACTIVITY_SIGNUP_QUEUE, true));
+
+            // 绑定交换机和队列
+            admin.declareBinding(BindingBuilder
+                    .bind(new Queue(ACTIVITY_SIGNUP_QUEUE, true))
+                    .to(new DirectExchange(ACTIVITY_SIGNUP_EXCHANGE, true, false))
+                    .with(ACTIVITY_SIGNUP_ROUTING_KEY));
+
+            // 死信队列：重试耗尽后消息落到这里，便于排查和手动重发
+            admin.declareExchange(new DirectExchange(ACTIVITY_SIGNUP_DLQ_EXCHANGE, true, false));
+            admin.declareQueue(new Queue(ACTIVITY_SIGNUP_DLQ, true));
+            admin.declareBinding(BindingBuilder
+                    .bind(new Queue(ACTIVITY_SIGNUP_DLQ, true))
+                    .to(new DirectExchange(ACTIVITY_SIGNUP_DLQ_EXCHANGE, true, false))
+                    .with(ACTIVITY_SIGNUP_DLQ));
+        } catch (Exception e) {
+            log.error("[RabbitMQ] Failed to declare activity signup exchange/queue: {} - {}", e.getClass().getName(), e.getMessage(), e);
+        }
+    }
+
+    @Bean
+    public DirectExchange activitySignupExchange() {
+        return new DirectExchange(ACTIVITY_SIGNUP_EXCHANGE, true, false);
+    }
+
+    @Bean
+    public Queue activitySignupQueue() {
+        return new Queue(ACTIVITY_SIGNUP_QUEUE, true);
+    }
+
+    @Bean
+    public Binding activitySignupBinding(Queue activitySignupQueue, DirectExchange activitySignupExchange) {
+        return BindingBuilder.bind(activitySignupQueue)
+                .to(activitySignupExchange)
+                .with(ACTIVITY_SIGNUP_ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue activitySignupDeadLetterQueue() {
+        return new Queue(ACTIVITY_SIGNUP_DLQ, true);
+    }
+
+    // ========== 活动报名队列专用监听器工厂（多消费者，带重试） ==========
+
+    /**
+     * 活动报名重试拦截器。
+     * 最多重试 3 次，退避策略：1s → 2s → 4s。
+     * 锁竞争失败属于瞬时故障，短间隔重试即可恢复。
+     * 重试耗尽后转发到死信队列。
+     */
+    @Bean
+    public MethodInterceptor activitySignupRetryInterceptor(
+            RabbitTemplate rabbitTemplate
+    ) {
+        return RetryInterceptorBuilder.stateless()
+                .maxAttempts(3)
+                .backOffOptions(1000, 2.0, 5000)
+                .recoverer(new RepublishMessageRecoverer(rabbitTemplate, ACTIVITY_SIGNUP_DLQ_EXCHANGE, ACTIVITY_SIGNUP_DLQ))
+                .build();
+    }
+
+    @Lazy(false)
+    @Bean("activitySignupListenerContainerFactory")
+    public SimpleRabbitListenerContainerFactory activitySignupListenerContainerFactory(
+            ConnectionFactory connectionFactory,
+            MessageConverter rabbitMessageConverter,
+            MethodInterceptor activitySignupRetryInterceptor
+    ) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setMessageConverter(rabbitMessageConverter);
+        factory.setConcurrentConsumers(3);
+        factory.setMaxConcurrentConsumers(10);
+        factory.setPrefetchCount(5);
+        factory.setDefaultRequeueRejected(false);
+        factory.setAdviceChain(activitySignupRetryInterceptor);
+        factory.setAutoStartup(true);
+        return factory;
     }
 }
