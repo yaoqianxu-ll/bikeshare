@@ -49,10 +49,10 @@
 
 - 🚴 **租车服务**: 车辆浏览、实时库存、在线租赁、计费扣费、订单管理
 - 🔐 **安全可靠**: Spring Security + JWT 认证、BCrypt 密码加密、IP 限流黑名单
-- ⚡ **高性能**: Redis 多级缓存、HikariCP 连接池、异步消息队列
+- ⚡ **高性能**: Redis 多级缓存、HikariCP 连接池、RabbitMQ 异步队列、分布式锁防超卖
 - 💬 **实时通信**: WebSocket 实时聊天、RabbitMQ 异步消息处理
 - 📝 **社区论坛**: 图文发帖、评论点赞、标签分类、管理员审核
-- 🎪 **活动管理**: 骑行活动发布，省市区三级联动、在线报名签到
+- 🎪 **活动管理**: 骑行活动发布，省市区三级联动、RabbitMQ 报名队列、Redis 分布式锁防超卖、在线报名签到
 - 🛒 **二手市场**: 物品发布、审核机制、多种交易方式
 - 📊 **数据看板**: ECharts 可视化统计、实时数据监控
 - 🎁 **积分VIP体系**: 积分获取/消耗/签到、VIP会员购买与兑换
@@ -130,29 +130,34 @@ bikelease/
 │       │   ├── ReadOnlyAdminFilter               #     只读管理员过滤
 │       │   ├── WebSocketConfig                   #     WebSocket 配置
 │       │   ├── MailSenderConfig                  #     双邮箱 MailSender 配置
-│       │   ├── RabbitMqConfig                    #     RabbitMQ 队列配置
+│       │   ├── RabbitMqConfig                    #     RabbitMQ 队列配置 (报名队列 + 重试拦截器 + DLQ)
 │       │   └── AsyncConfig                       #     异步线程池配置
 │       ├── controller/                            #   REST API 控制器
 │       │   ├── AuthController                    #     认证模块 (登录/注册)
 │       │   ├── BicycleController                 #     车辆模块
 │       │   ├── RentalController                  #     租赁模块
 │       │   ├── ForumController                   #     论坛模块
-│       │   ├── ActivityController                #     活动模块
+│       │   ├── ActivityController                #     活动模块 (报名入队/签到/审核)
 │       │   ├── SocialController                  #     社交模块
 │       │   ├── TicketController                  #     工单模块
 │       │   ├── MarketplaceController             #     二手市场模块
 │       │   └── Admin*Controller                 #     管理端 API
 │       ├── dto/                                   #   数据传输对象
+│       │   └── ActivitySignupMessage.java       #    活动报名队列消息体
 │       ├── entity/                                #   实体类
 │       ├── exception/                            #   全局异常处理
 │       ├── listener/                            #   事件监听器
 │       │   ├── AdminNotificationListener.java  #     管理端通知监听器 (RabbitMQ → WebSocket)
+│       │   ├── ActivitySignupConsumer.java     #     活动报名消费者 (分布式锁 + 防超卖 + 重试)
 │       │   ├── EmailQueueListener.java         #     邮件队列消费者 (重试 + DLQ)
 │       │   └── PointsListener.java             #     积分变动监听器
 │       ├── mapper/                                #   MyBatis-Plus Mapper
 │       ├── service/                               #   业务逻辑服务
+│       │   ├── ActivityService.java            #     活动管理 + 报名/审核/签到（防超卖校验）
+│       │   ├── ActivitySchedulerService.java   #     活动定时任务（自动发布/自动完成）
 │       │   ├── AdminNotificationPublisher.java #     管理端通知发布服务
 │       │   ├── UserEmailNotificationService.java #  用户邮件通知服务 (轮换 + 频控)
+│       │   ├── UserNotificationService.java    #     用户消息中心通知服务
 │       │   └── UnreadMessageEmailScheduler.java #   未读私信邮件提醒定时任务
 │       └── util/                                  #   工具类
 │
@@ -260,12 +265,15 @@ bikelease/
 
 ### 🎪 活动管理
 
-- **活动发布**: 创建骑行活动、管理活动信息
+- **活动发布**: 创建骑行活动、管理活动信息、自动定时发布
 - **省市区选择**: 中国省市区三级联动选择器
-- **报名管理**: 在线报名、截止报名设置
-- **签到管理**: 活动签到、签到统计
+- **报名队列**: RabbitMQ 异步报名入队，高并发场景下削峰填谷
+- **防超卖机制**: Redis 分布式锁 + 三层防线（同步预检→消费者锁内校验→审核校验），精确计数 PENDING/APPROVED/SIGNED 状态
+- **报名重试**: 消费失败自动重试 3 次（指数退避 1s→2s→4s），最终转入死信队列
+- **签到管理**: 活动签到、签到统计、实时倒计时
+- **审核通知**: 报名审核通过/拒绝自动推送消息中心系统通知
 - **难度等级**: 简单/中等/困难三级难度
-- **状态管理**: 草稿/已发布/已完成/已取消
+- **状态管理**: 草稿/已发布/进行中/已完成/已取消，进行中活动优先展示
 
 ### 🛒 二手市场
 
@@ -289,7 +297,7 @@ bikelease/
 - **用户管理**: 用户列表、状态启用/禁用
 - **车辆管理**: 车辆 CRUD、批量导入
 - **订单管理**: 租赁订单查询、退款处理
-- **活动管理**: 活动审核、签到管理
+- **活动管理**: 活动审核、报名审批（通过/拒绝）、签到管理、活动列表排序优化
 - **论坛管理**: 帖子审核、评论管理
 - **公告管理**: 系统公告发布与管理
 - **黑名单管理**: IP 黑名单封禁
@@ -588,6 +596,22 @@ html.dark {
 ```
 
 ## 📜 更新日志
+
+### [v1.5.0] - 2026-06-10
+
+- ✅ **RabbitMQ 报名队列**: 高并发场景下异步报名入队，削峰填谷，避免数据库瞬时压力
+- ✅ **Redis 分布式锁防超卖**: 三层防线体系——同步预检（PENDING+APPROVED+SIGNED ≥ 上限快速拦截）、消费者锁内精确校验、审核通过前二次校验
+- ✅ **报名消费重试**: 消费失败自动重试 3 次（指数退避 1s→2s→4s），最终转入死信队列兜底
+- ✅ **锁释放安全校验**: Redis 锁释放前校验所有权，防止误删其他线程持有的锁
+- ✅ **报名审核消息通知**: 审核通过/拒绝自动推送消息中心系统板块通知
+- ✅ **活动详情页优化**: 实时倒计时、签到按钮、活动时间展示起止时间
+- ✅ **活动状态按钮机**: 报名/审核中/已签到/名额已满等状态按钮样式联动
+- ✅ **WebSocket 消息去重**: Layout 层全局消息去重，避免重复渲染
+- ✅ **论坛 UI 重构**: 帖子列表与详情页交互优化
+- ✅ **活动列表排序优化**: 进行中的活动优先展示，已完成活动降序排列
+- ✅ **活动自动发布**: 定时任务自动将草稿状态活动发布，并发送通知邮件
+- ✅ **管理端活动表格优化**: 签到时间纯文本展示、报名审核列对齐优化
+- ✅ **按钮透明边框风格**: 操作区按钮改为淡色调透明边框样式，视觉更统一
 
 ### [v1.4.0] - 2026-06
 
