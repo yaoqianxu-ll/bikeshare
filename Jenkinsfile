@@ -297,12 +297,20 @@ pipeline {
                 sh """
                     cd ${WORKSPACE}
 
-                    # 强制从 .env 文件加载所有变量并 export，确保覆盖 pipeline 中的旧值
-                    if [ -f .env ]; then
+                    # 优先从稳定路径加载 .env，防止 checkout scm 覆盖 workspace 的 .env
+                    ENV_SOURCE=""
+                    if [ -f /opt/bickdemo/.env ]; then
+                        cp /opt/bickdemo/.env .env
+                        ENV_SOURCE="/opt/bickdemo/.env"
+                    elif [ -f .env ]; then
+                        ENV_SOURCE=".env (workspace)"
+                    fi
+
+                    if [ -n "\${ENV_SOURCE}" ]; then
                         set -a
                         . ./.env
                         set +a
-                        echo "已从 .env 文件强制加载环境变量 (MAIL_SECONDARY_HOST=\${MAIL_SECONDARY_HOST:-空})"
+                        echo "已从 \${ENV_SOURCE} 强制加载环境变量 (MAIL_SECONDARY_HOST=\${MAIL_SECONDARY_HOST:-空}, MAIL_PASSWORD长度=\${#MAIL_PASSWORD})"
                     fi
 
                     echo "SILICONFLOW_API_KEY 已由 Checkout 阶段加载 (pipeline env 长度: \${#SILICONFLOW_API_KEY})"
