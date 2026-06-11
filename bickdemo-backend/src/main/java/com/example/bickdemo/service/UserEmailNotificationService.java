@@ -375,7 +375,21 @@ public class UserEmailNotificationService {
         String statusColor = approved ? "#16a34a" : "#dc2626";
         String statusBg = approved ? "#f0fdf4" : "#fef2f2";
         String statusBorder = approved ? "#bbf7d0" : "#fecaca";
-        String actionUrl = "forum".equals(targetType) ? frontendUrl + "/forum?postId=" + targetId : frontendUrl + "/forum";
+        String actionUrl;
+        switch (targetType) {
+            case "活动报名":
+                actionUrl = frontendUrl + "/activities/" + targetId;
+                break;
+            case "帖子":
+                actionUrl = frontendUrl + "/forum?postId=" + targetId;
+                break;
+            case "评论":
+                actionUrl = frontendUrl + "/forum";
+                break;
+            default:
+                actionUrl = frontendUrl + "/forum";
+                break;
+        }
 
         return """
                 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; background: #f8fafc; border-radius: 16px;">
