@@ -137,6 +137,9 @@ public class ActivityService {
     // RabbitMQ 发送模板，用于将报名消息发送到队列
     private final RabbitTemplate rabbitTemplate;
 
+    // 活动详情缓存服务（只缓存公共数据，不含用户私有报名信息）
+    private final ActivityDetailCacheService activityDetailCacheService;
+
     /**
      * 获取所有已发布的活动列表
      * 查询未删除且状态为已发布或已完成的活动（包含已结束的活动）
@@ -215,45 +218,34 @@ public class ActivityService {
 
     /**
      * 根据 ID 获取活动详情
-     * 查询单个活动的详细信息，并附带报名统计和当前用户报名状态
+     * 活动公共数据（含报名人数）通过 ActivityDetailCacheService 缓存，所有用户共享；
+     * 当前用户的报名/签到状态实时查询，不走缓存，避免跨用户状态污染。
      */
-    @Cacheable(cacheNames = CacheNames.ACTIVITY_DETAIL, key = "#id", unless = "#result == null")
     public ActivityResponse getActivityById(Long id) {
-        // 记录调试日志
         log.debug("根据 ID 查询活动：{}", id);
-        // 根据 ID 查询活动实体
-        Activity activity = activityMapper.selectById(id);
-        // 如果活动不存在，抛出异常
-        if (activity == null) {
+
+        // 从缓存获取活动公共数据（不含用户私有信息）
+        ActivityResponse response = activityDetailCacheService.getActivityDetail(id);
+        if (response == null) {
             throw new RuntimeException("活动不存在：" + id);
         }
-        // 将活动实体转换为响应 DTO，并统计报名人数
-        ActivityResponse response = convertToResponseWithCount(activity);
 
-        // 尝试获取当前登录用户的报名状态
+        // 实时获取当前登录用户的报名状态（不缓存，确保每个用户看到自己的状态）
         try {
-            // 从安全上下文中获取当前登录用户的用户名
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
-            // 如果用户已登录（不是匿名用户）
             if (username != null && !"anonymousUser".equals(username)) {
-                // 根据用户名查询用户实体
                 User user = userMapper.findByUsername(username);
-                // 如果用户存在
                 if (user != null) {
-                    // 查询该用户对本活动的报名记录
                     ActivitySignup signup = signupMapper.findByActivityAndUser(id, user.getId());
-                    // 如果报名记录存在，设置到响应对象中
                     if (signup != null) {
                         response.setUserSignup(convertSignupToResponse(signup));
                     }
                 }
             }
         } catch (Exception e) {
-            // 如果用户未登录或其他异常，记录调试日志并忽略
             log.debug("获取用户报名状态失败：{}", e.getMessage());
         }
 
-        // 返回活动响应对象
         return response;
     }
 

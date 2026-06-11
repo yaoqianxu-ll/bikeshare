@@ -58,7 +58,7 @@ public class ActivitySchedulerService {
      * 规则1：DRAFT 活动如果开始时间已到，自动变为 PUBLISHED
      * 规则2：PUBLISHED 活动如果结束时间已过，自动变为 COMPLETED
      */
-    @Scheduled(fixedRate = 60000) // 每 60 秒执行一次
+    @Scheduled(fixedDelay = 5000) // 每次执行结束后 5 秒再执行下一次，秒杀场景需要快速响应状态变更
     @Transactional
     @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE, CacheNames.ACTIVITY_DETAIL}, allEntries = true)
     public void autoCompleteExpiredActivities() {
