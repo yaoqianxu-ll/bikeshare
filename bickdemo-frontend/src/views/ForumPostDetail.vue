@@ -3,7 +3,7 @@
     <!-- 返回按钮 -->
     <div class="back-bar">
       <el-button text @click="goBack">
-        <el-icon><ArrowLeft /></el-icon> 返回论坛
+        <el-icon><ArrowLeft /></el-icon> {{ fromNotifications ? '返回消息中心' : '返回论坛' }}
       </el-button>
     </div>
 
@@ -617,8 +617,14 @@ const goToFriends = () => {
 
 // ===== 辅助函数 =====
 
+const fromNotifications = computed(() => route.query.from === 'notifications')
+
 const goBack = () => {
-  router.push('/forum')
+  if (fromNotifications.value) {
+    router.push('/notifications')
+  } else {
+    router.push('/forum')
+  }
 }
 
 const getInitial = (name) => {
@@ -831,13 +837,13 @@ onMounted(() => {
   backdrop-filter: blur(8px);
   color: #64748b;
   font-size: 13px;
-  line-height: 1;
+  line-height: 0;
 }
 
 .stat-pill svg {
   width: 16px;
   height: 16px;
-  flex: none;
+  flex: 0 0 16px;
   stroke: currentColor;
   stroke-width: 1.8;
   fill: none;
@@ -849,6 +855,7 @@ onMounted(() => {
   font-size: 13px;
   font-weight: 600;
   color: inherit;
+  line-height: 1;
 }
 
 .stat-action {

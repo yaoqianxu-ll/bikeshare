@@ -87,7 +87,7 @@
           v-for="item in notificationStore.notifications"
           :key="item.id"
           class="notification-item"
-          :class="{ unread: !item.isRead }"
+          :class="{ unread: !item.isRead, clickable: isNavigable(item) }"
           @click="handleNotificationClick(item)"
         >
           <div class="notification-icon" :class="getTypeIconClass(item.type)">
@@ -108,6 +108,9 @@
               <span class="notification-actor" v-if="item.actorUsername">{{ item.actorUsername }}</span>
               <span class="notification-time">{{ formatDateTime(item.createdAt) }}</span>
             </div>
+          </div>
+          <div v-if="isNavigable(item)" class="notification-link-hint">
+            <el-icon :size="14"><Link /></el-icon>
           </div>
         </div>
 
@@ -155,7 +158,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Bell, ArrowRight, Refresh, Check,
-  Setting, ChatDotRound, StarFilled
+  Setting, ChatDotRound, StarFilled, Link
 } from '@element-plus/icons-vue'
 import { useNotificationStore } from '@/stores/notification'
 import { useNoticeStore } from '@/stores/notice'
@@ -268,12 +271,21 @@ const handleNotificationClick = (item) => {
   if (!item.isRead) {
     notificationStore.markRead(item.id)
   }
-  // 根据类型跳转到对应页面
+  // 根据 refType 跳转到对应页面，携带来源参数以便返回
   if (item.refType === 'POST' && item.refId) {
-    router.push(`/forum/${item.refId}`)
+    router.push({ path: `/forum/${item.refId}`, query: { from: 'notifications' } })
   } else if (item.refType === 'COMMENT' && item.refId) {
-    router.push(`/forum`)
+    router.push({ path: `/forum/${item.refId}`, query: { from: 'notifications' } })
+  } else if (item.refType === 'ACTIVITY' && item.refId) {
+    router.push({ path: `/activities/${item.refId}`, query: { from: 'notifications' } })
   }
+}
+
+/**
+ * 判断通知是否可点击跳转
+ */
+const isNavigable = (item) => {
+  return item.refId && ['POST', 'COMMENT', 'ACTIVITY'].includes(item.refType)
 }
 
 /**
@@ -515,6 +527,23 @@ onMounted(() => {
 
 .notification-item.unread:hover {
   background: rgba(64, 158, 255, 0.08);
+}
+
+.notification-item.clickable {
+  cursor: pointer;
+}
+
+.notification-link-hint {
+  display: flex;
+  align-items: center;
+  color: #c0c4cc;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.notification-item.clickable:hover .notification-link-hint {
+  color: var(--el-color-primary, #409eff);
+  transform: translateX(2px);
 }
 
 .notification-item:last-child {
@@ -865,6 +894,14 @@ html.dark .notification-item:hover {
 
 html.dark .notification-item.unread {
   background: rgba(64, 158, 255, 0.08);
+}
+
+html.dark .notification-link-hint {
+  color: #475569;
+}
+
+html.dark .notification-item.clickable:hover .notification-link-hint {
+  color: #60a5fa;
 }
 
 html.dark .notification-title {

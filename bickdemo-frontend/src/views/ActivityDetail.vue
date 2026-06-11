@@ -3,7 +3,10 @@
     <el-card shadow="never" class="detail-card" v-loading="loading">
       <template #header>
         <div class="card-header">
-          <el-button @click="goBack" :icon="ArrowLeft" circle />
+          <el-button v-if="fromNotifications" text @click="goBack">
+            <el-icon><ArrowLeft /></el-icon> 返回消息中心
+          </el-button>
+          <el-button v-else @click="goBack" :icon="ArrowLeft" circle />
           <h2>{{ activity?.title || '活动详情' }}</h2>
         </div>
       </template>
@@ -298,6 +301,11 @@ const now = ref(new Date())
 let timerInterval = null
 // 倒计时归零时的自动刷新定时器
 let reloadTimers = []
+// 防止过度刷新：冷却时间 + 最大次数
+let lastReloadTime = 0
+let reloadCount = 0
+const RELOAD_COOLDOWN = 10000 // 两次刷新之间至少间隔 10 秒
+const MAX_RELOADS = 5 // 单次页面生命周期内最多自动刷新 5 次
 
 const activityId = computed(() => route.params.id)
 
@@ -447,6 +455,7 @@ const getDifficultyText = (difficulty) => {
 }
 
 const loadActivity = async () => {
+  if (loading.value) return
   loading.value = true
   try {
     const res = await getActivityById(activityId.value)
@@ -471,6 +480,8 @@ const loadActivity = async () => {
  * 在每个倒计时精确到达零的时刻自动刷新活动数据
  * 这样倒计时一结束，UI 就会立即反映最新状态
  */
+const MIN_RELOAD_DELAY = 3000 // 最小延迟 3 秒，防止过快刷新
+
 const scheduleReloads = () => {
   // 清除之前的定时器
   reloadTimers.forEach(t => clearTimeout(t))
@@ -483,43 +494,43 @@ const scheduleReloads = () => {
   // 报名开启倒计时归零 → 刷新以显示报名按钮
   if (a.signupOpenTime) {
     const ms = new Date(a.signupOpenTime).getTime() - currentMs
-    if (ms > 0) {
+    if (ms > MIN_RELOAD_DELAY) {
       reloadTimers.push(setTimeout(() => {
         loadActivity()
         message.info('报名已开启')
-      }, ms + 500)) // +500ms 缓冲，确保后端状态已更新
+      }, ms + 1000))
     }
   }
 
   // 报名截止倒计时归零 → 刷新以禁用报名按钮
   if (a.signupDeadline) {
     const ms = new Date(a.signupDeadline).getTime() - currentMs
-    if (ms > 0) {
+    if (ms > MIN_RELOAD_DELAY) {
       reloadTimers.push(setTimeout(() => {
         loadActivity()
         message.info('报名已截止')
-      }, ms + 500))
+      }, ms + 1000))
     }
   }
 
   // 活动开始倒计时归零 → 刷新以更新活动状态
   if (a.startTime) {
     const ms = new Date(a.startTime).getTime() - currentMs
-    if (ms > 0) {
+    if (ms > MIN_RELOAD_DELAY) {
       reloadTimers.push(setTimeout(() => {
         loadActivity()
         message.info('活动已开始')
-      }, ms + 500))
+      }, ms + 1000))
     }
   }
 
   // 活动结束倒计时归零 → 刷新以显示已结束状态
   if (a.endTime) {
     const ms = new Date(a.endTime).getTime() - currentMs
-    if (ms > 0) {
+    if (ms > MIN_RELOAD_DELAY) {
       reloadTimers.push(setTimeout(() => {
         loadActivity()
-      }, ms + 500))
+      }, ms + 1000))
     }
   }
 }
@@ -564,8 +575,12 @@ const handleCheckin = async () => {
   }
 }
 
+const fromNotifications = computed(() => route.query.from === 'notifications')
+
 const goBack = () => {
-  if (window.history.length > 1) {
+  if (fromNotifications.value) {
+    router.push('/notifications')
+  } else if (window.history.length > 1) {
     router.back()
   } else {
     router.push('/')
@@ -862,16 +877,21 @@ onUnmounted(() => {
   height: 52px;
   font-size: 16px;
   font-weight: 700;
-  background: rgba(255, 107, 53, 0.08);
-  border: 1px solid rgba(255, 107, 53, 0.20);
-  color: #e85d26 !important;
+  background: rgba(255, 107, 53, 0.18) !important;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 107, 53, 0.30) !important;
+  color: #c74a1a !important;
   border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.40);
+  transition: all 0.25s ease;
 }
 
 .signup-btn:hover {
-  background: rgba(255, 107, 53, 0.12);
-  border-color: rgba(255, 107, 53, 0.30);
-  transform: translateY(-1px);
+  background: rgba(255, 107, 53, 0.28) !important;
+  border-color: rgba(255, 107, 53, 0.45) !important;
+  box-shadow: 0 6px 28px rgba(255, 107, 53, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.50);
+  transform: translateY(-2px);
 }
 
 /* 签到按钮 */
