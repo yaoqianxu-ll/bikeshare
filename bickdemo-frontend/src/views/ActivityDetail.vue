@@ -296,6 +296,8 @@ const myMessages = ref([])
 // 实时倒计时
 const now = ref(new Date())
 let timerInterval = null
+// 倒计时归零时的自动刷新定时器
+let reloadTimers = []
 
 const activityId = computed(() => route.params.id)
 
@@ -454,11 +456,71 @@ const loadActivity = async () => {
     if (userStore.isLoggedIn && res.data.userSignup) {
       signupInfo.value = res.data.userSignup
     }
+
+    // 调度倒计时归零时的自动刷新
+    scheduleReloads()
   } catch (error) {
     console.error(error)
     message.error('加载活动失败')
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 在每个倒计时精确到达零的时刻自动刷新活动数据
+ * 这样倒计时一结束，UI 就会立即反映最新状态
+ */
+const scheduleReloads = () => {
+  // 清除之前的定时器
+  reloadTimers.forEach(t => clearTimeout(t))
+  reloadTimers = []
+
+  const a = activity.value
+  if (!a) return
+  const currentMs = Date.now()
+
+  // 报名开启倒计时归零 → 刷新以显示报名按钮
+  if (a.signupOpenTime) {
+    const ms = new Date(a.signupOpenTime).getTime() - currentMs
+    if (ms > 0) {
+      reloadTimers.push(setTimeout(() => {
+        loadActivity()
+        message.info('报名已开启')
+      }, ms + 500)) // +500ms 缓冲，确保后端状态已更新
+    }
+  }
+
+  // 报名截止倒计时归零 → 刷新以禁用报名按钮
+  if (a.signupDeadline) {
+    const ms = new Date(a.signupDeadline).getTime() - currentMs
+    if (ms > 0) {
+      reloadTimers.push(setTimeout(() => {
+        loadActivity()
+        message.info('报名已截止')
+      }, ms + 500))
+    }
+  }
+
+  // 活动开始倒计时归零 → 刷新以更新活动状态
+  if (a.startTime) {
+    const ms = new Date(a.startTime).getTime() - currentMs
+    if (ms > 0) {
+      reloadTimers.push(setTimeout(() => {
+        loadActivity()
+        message.info('活动已开始')
+      }, ms + 500))
+    }
+  }
+
+  // 活动结束倒计时归零 → 刷新以显示已结束状态
+  if (a.endTime) {
+    const ms = new Date(a.endTime).getTime() - currentMs
+    if (ms > 0) {
+      reloadTimers.push(setTimeout(() => {
+        loadActivity()
+      }, ms + 500))
+    }
   }
 }
 
@@ -562,6 +624,8 @@ onUnmounted(() => {
     clearInterval(timerInterval)
     timerInterval = null
   }
+  reloadTimers.forEach(t => clearTimeout(t))
+  reloadTimers = []
 })
 </script>
 

@@ -10,6 +10,7 @@ import com.example.bickdemo.mapper.UserMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.TaskScheduler;
@@ -38,7 +39,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Administrator
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class ActivitySchedulerService {
 
@@ -46,6 +46,16 @@ public class ActivitySchedulerService {
     private final UserMapper userMapper;
     private final UserEmailNotificationService userEmailNotificationService;
     private final TaskScheduler taskScheduler;
+
+    public ActivitySchedulerService(ActivityMapper activityMapper,
+                                     UserMapper userMapper,
+                                     UserEmailNotificationService userEmailNotificationService,
+                                     @Qualifier("activityTaskScheduler") TaskScheduler taskScheduler) {
+        this.activityMapper = activityMapper;
+        this.userMapper = userMapper;
+        this.userEmailNotificationService = userEmailNotificationService;
+        this.taskScheduler = taskScheduler;
+    }
 
     /** 延迟注入自身代理，避免循环依赖，用于调用 @CacheEvict 方法使缓存失效 */
     @Lazy
