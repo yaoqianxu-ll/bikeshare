@@ -7,22 +7,34 @@ import com.example.bickdemo.entity.ActivityStatus;
 import com.example.bickdemo.entity.User;
 import com.example.bickdemo.mapper.ActivityMapper;
 import com.example.bickdemo.mapper.UserMapper;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 活动定时任务服务
  * 自动处理活动状态的变更
- * 采用增量处理模式，只查询上次检查后新过期的活动，避免全表扫描
+ *
+ * 采用双重策略：
+ * 1. 精确调度：活动创建/更新时，通过 TaskScheduler 在精确时间点触发状态变更
+ * 2. 兜底轮询：定期扫描数据库，处理服务重启等场景下丢失的调度任务
+ *
  * @author Administrator
  */
 @Service
@@ -33,6 +45,15 @@ public class ActivitySchedulerService {
     private final ActivityMapper activityMapper;
     private final UserMapper userMapper;
     private final UserEmailNotificationService userEmailNotificationService;
+    private final TaskScheduler taskScheduler;
+
+    /** 延迟注入自身代理，避免循环依赖，用于调用 @CacheEvict 方法使缓存失效 */
+    @Lazy
+    @org.springframework.beans.factory.annotation.Autowired
+    private ActivitySchedulerService self;
+
+    /** 已调度的未来任务，用于在活动更新时取消旧任务 */
+    private final Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
 
     /**
      * 时间格式化器，用于日志输出
@@ -53,85 +74,250 @@ public class ActivitySchedulerService {
      */
     private static final int BATCH_SIZE = 50;
 
+    // ==================== 精确调度 ====================
+
     /**
-     * 每分钟检查一次活动，自动处理状态变更
-     * 规则1：DRAFT 活动如果开始时间已到，自动变为 PUBLISHED
-     * 规则2：PUBLISHED 活动如果结束时间已过，自动变为 COMPLETED
+     * 应用启动时，扫描所有需要调度的活动，恢复调度任务
+     * 防止服务重启期间丢失的定时任务
      */
-    @Scheduled(fixedDelay = 5000) // 每次执行结束后 5 秒再执行下一次，秒杀场景需要快速响应状态变更
-    @Transactional
-    @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE, CacheNames.ACTIVITY_DETAIL}, allEntries = true)
-    public void autoCompleteExpiredActivities() {
+    @PostConstruct
+    public void init() {
+        log.info("[ActivityScheduler] 启动初始化，扫描需要调度的活动...");
         LocalDateTime now = LocalDateTime.now();
 
-        // ====== 1. 自动发布：DRAFT → PUBLISHED ======
-        List<Activity> draftsToPublish = activityMapper.findDraftActivitiesReadyToPublish(now, BATCH_SIZE);
-        if (draftsToPublish != null && !draftsToPublish.isEmpty()) {
-            int published = 0;
-            for (Activity activity : draftsToPublish) {
-                try {
-                    Activity current = activityMapper.selectById(activity.getId());
-                    if (current != null
-                            && current.getStatus() == ActivityStatus.DRAFT
-                            && !current.getStartTime().isAfter(now)) {
-                        current.setStatus(ActivityStatus.PUBLISHED);
-                        activityMapper.updateById(current);
-                        published++;
-                        log.debug("活动 ID={}, 标题='{}' 已自动发布",
-                                current.getId(), current.getTitle());
-                        // 发布后给所有开启邮件通知的用户发送邮件
-                        notifyAllUsersOfNewActivity(current);
-                    }
-                } catch (Exception e) {
-                    log.error("自动发布活动失败: ID={}", activity.getId(), e);
-                }
-            }
-            if (published > 0) {
-                log.info("自动发布 {} 个活动", published);
+        // 查找所有 DRAFT 状态且开始时间在未来的活动
+        List<Activity> drafts = activityMapper.selectList(
+                new QueryWrapper<Activity>()
+                        .eq("status", ActivityStatus.DRAFT)
+                        .eq("deleted", 0)
+                        .gt("start_time", now)
+        );
+        for (Activity activity : drafts) {
+            schedulePublish(activity.getId(), activity.getStartTime());
+        }
+
+        // 查找所有 PUBLISHED 状态且结束时间在未来的活动
+        List<Activity> published = activityMapper.selectList(
+                new QueryWrapper<Activity>()
+                        .eq("status", ActivityStatus.PUBLISHED)
+                        .eq("deleted", 0)
+                        .gt("end_time", now)
+        );
+        for (Activity activity : published) {
+            scheduleComplete(activity.getId(), activity.getEndTime());
+        }
+
+        log.info("[ActivityScheduler] 初始化完成，已调度 {} 个发布任务 + {} 个结束任务",
+                drafts.size(), published.size());
+    }
+
+    /**
+     * 调度活动的状态变更任务
+     * 根据活动当前状态，在精确时间点调度发布或结束任务
+     * 如果活动已更新，会先取消旧的调度任务
+     *
+     * @param activityId 活动 ID
+     */
+    public void scheduleActivity(Long activityId) {
+        Activity activity = activityMapper.selectById(activityId);
+        if (activity == null || activity.getDeleted() != null && activity.getDeleted() == 1) {
+            cancelScheduledTasks(activityId);
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if (activity.getStatus() == ActivityStatus.DRAFT && activity.getStartTime() != null) {
+            if (activity.getStartTime().isAfter(now)) {
+                // DRAFT 且开始时间在未来 → 调度自动发布
+                schedulePublish(activityId, activity.getStartTime());
+            } else {
+                // DRAFT 且开始时间已过 → 立即发布
+                doPublish(activityId);
+                return;
             }
         }
 
-        // ====== 2. 自动结束：PUBLISHED → COMPLETED ======
+        if (activity.getStatus() == ActivityStatus.PUBLISHED && activity.getEndTime() != null) {
+            if (activity.getEndTime().isAfter(now)) {
+                // PUBLISHED 且结束时间在未来 → 调度自动结束
+                scheduleComplete(activityId, activity.getEndTime());
+            } else {
+                // PUBLISHED 且结束时间已过 → 立即结束
+                doComplete(activityId);
+            }
+        }
+    }
+
+    /**
+     * 在指定时间调度活动自动发布（DRAFT → PUBLISHED）
+     */
+    private void schedulePublish(Long activityId, LocalDateTime publishTime) {
+        String key = "publish:" + activityId;
+        cancelTask(key);
+
+        Date triggerTime = Date.from(publishTime.atZone(ZoneId.systemDefault()).toInstant());
+        ScheduledFuture<?> future = taskScheduler.schedule(
+                () -> doPublish(activityId),
+                triggerTime
+        );
+        scheduledTasks.put(key, future);
+        log.info("[ActivityScheduler] 已调度活动自动发布: activityId={}, 发布时间={}",
+                activityId, publishTime.format(DATETIME_FORMATTER));
+    }
+
+    /**
+     * 在指定时间调度活动自动结束（PUBLISHED → COMPLETED）
+     */
+    private void scheduleComplete(Long activityId, LocalDateTime completeTime) {
+        String key = "complete:" + activityId;
+        cancelTask(key);
+
+        Date triggerTime = Date.from(completeTime.atZone(ZoneId.systemDefault()).toInstant());
+        ScheduledFuture<?> future = taskScheduler.schedule(
+                () -> doComplete(activityId),
+                triggerTime
+        );
+        scheduledTasks.put(key, future);
+        log.info("[ActivityScheduler] 已调度活动自动结束: activityId={}, 结束时间={}",
+                activityId, completeTime.format(DATETIME_FORMATTER));
+    }
+
+    /**
+     * 执行活动发布：DRAFT → PUBLISHED
+     * 通过 self 代理调用以触发 @CacheEvict
+     */
+    private void doPublish(Long activityId) {
+        try {
+            self.publishActivity(activityId);
+            // 发布成功后，调度自动结束任务
+            Activity activity = activityMapper.selectById(activityId);
+            if (activity != null && activity.getEndTime() != null
+                    && activity.getEndTime().isAfter(LocalDateTime.now())) {
+                scheduleComplete(activityId, activity.getEndTime());
+            }
+        } catch (Exception e) {
+            log.error("[ActivityScheduler] 自动发布活动失败: activityId={}", activityId, e);
+        }
+        scheduledTasks.remove("publish:" + activityId);
+    }
+
+    /**
+     * 执行活动结束：PUBLISHED → COMPLETED
+     * 通过 self 代理调用以触发 @CacheEvict
+     */
+    private void doComplete(Long activityId) {
+        try {
+            self.completeActivity(activityId);
+        } catch (Exception e) {
+            log.error("[ActivityScheduler] 自动结束活动失败: activityId={}", activityId, e);
+        }
+        scheduledTasks.remove("complete:" + activityId);
+    }
+
+    /**
+     * 取消指定活动的所有调度任务
+     */
+    public void cancelScheduledTasks(Long activityId) {
+        cancelTask("publish:" + activityId);
+        cancelTask("complete:" + activityId);
+    }
+
+    private void cancelTask(String key) {
+        ScheduledFuture<?> future = scheduledTasks.remove(key);
+        if (future != null && !future.isDone()) {
+            future.cancel(false);
+            log.debug("[ActivityScheduler] 已取消调度任务: {}", key);
+        }
+    }
+
+    // ==================== 状态变更操作（通过代理调用以触发缓存失效） ====================
+
+    /**
+     * 将活动状态从 DRAFT 改为 PUBLISHED，并发送通知邮件
+     * 由 self 代理调用以确保 @CacheEvict 生效
+     */
+    @Transactional
+    @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE, CacheNames.ACTIVITY_DETAIL}, allEntries = true)
+    public void publishActivity(Long activityId) {
+        Activity activity = activityMapper.selectById(activityId);
+        if (activity == null || activity.getStatus() != ActivityStatus.DRAFT) {
+            log.debug("[ActivityScheduler] 跳过发布: activityId={}, status={}",
+                    activityId, activity != null ? activity.getStatus() : "NOT_FOUND");
+            return;
+        }
+        activity.setStatus(ActivityStatus.PUBLISHED);
+        activityMapper.updateById(activity);
+        log.info("[ActivityScheduler] 活动已自动发布: activityId={}, title='{}'",
+                activityId, activity.getTitle());
+        notifyAllUsersOfNewActivity(activity);
+    }
+
+    /**
+     * 将活动状态从 PUBLISHED 改为 COMPLETED
+     * 由 self 代理调用以确保 @CacheEvict 生效
+     */
+    @Transactional
+    @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE, CacheNames.ACTIVITY_DETAIL}, allEntries = true)
+    public void completeActivity(Long activityId) {
+        Activity activity = activityMapper.selectById(activityId);
+        if (activity == null || activity.getStatus() != ActivityStatus.PUBLISHED) {
+            log.debug("[ActivityScheduler] 跳过结束: activityId={}, status={}",
+                    activityId, activity != null ? activity.getStatus() : "NOT_FOUND");
+            return;
+        }
+        activity.setStatus(ActivityStatus.COMPLETED);
+        activityMapper.updateById(activity);
+        log.info("[ActivityScheduler] 活动已自动结束: activityId={}, title='{}'",
+                activityId, activity.getTitle());
+    }
+
+    // ==================== 兜底轮询 ====================
+
+    /**
+     * 兜底轮询：每 30 秒扫描一次，处理因服务重启等原因丢失的调度任务
+     * 正常情况下，精确调度已覆盖所有状态变更，此轮询仅作为安全网
+     */
+    @Scheduled(fixedDelay = 30000)
+    public void fallbackPoll() {
+        LocalDateTime now = LocalDateTime.now();
+
+        // 兜底：自动发布到期的 DRAFT 活动
+        List<Activity> draftsToPublish = activityMapper.findDraftActivitiesReadyToPublish(now, BATCH_SIZE);
+        if (draftsToPublish != null) {
+            for (Activity activity : draftsToPublish) {
+                try {
+                    self.publishActivity(activity.getId());
+                    // 发布后调度结束任务
+                    Activity updated = activityMapper.selectById(activity.getId());
+                    if (updated != null && updated.getEndTime() != null
+                            && updated.getEndTime().isAfter(now)) {
+                        scheduleComplete(updated.getId(), updated.getEndTime());
+                    }
+                } catch (Exception e) {
+                    log.error("[ActivityScheduler] 兜底发布失败: activityId={}", activity.getId(), e);
+                }
+            }
+        }
+
+        // 兜底：自动结束到期的 PUBLISHED 活动
         LocalDateTime checkFrom = lastCheckTime.get();
         lastCheckTime.set(now);
 
         List<Activity> expiredActivities = activityMapper.findExpiredActivitiesBetween(
                 checkFrom, now, BATCH_SIZE);
-
-        if (expiredActivities == null || expiredActivities.isEmpty()) {
-            log.debug("本次检查无新过期活动，上次检查时间: {}",
-                    checkFrom.format(DATETIME_FORMATTER));
-            return;
-        }
-
-        log.info("发现 {} 个新过期活动待处理（时间段: {} 至 {}）",
-                expiredActivities.size(),
-                checkFrom.format(DATETIME_FORMATTER),
-                now.format(DATETIME_FORMATTER));
-
-        int successCount = 0;
-        int failCount = 0;
-
-        for (Activity activity : expiredActivities) {
-            try {
-                Activity current = activityMapper.selectById(activity.getId());
-                if (current != null
-                        && current.getStatus() == ActivityStatus.PUBLISHED
-                        && current.getEndTime().isBefore(now)) {
-                    current.setStatus(ActivityStatus.COMPLETED);
-                    activityMapper.updateById(current);
-                    successCount++;
-                    log.debug("活动 ID={}, 标题='{}' 已自动结束",
-                            current.getId(), current.getTitle());
+        if (expiredActivities != null) {
+            for (Activity activity : expiredActivities) {
+                try {
+                    self.completeActivity(activity.getId());
+                } catch (Exception e) {
+                    log.error("[ActivityScheduler] 兜底结束失败: activityId={}", activity.getId(), e);
                 }
-            } catch (Exception e) {
-                failCount++;
-                log.error("自动结束活动失败: ID={}", activity.getId(), e);
             }
         }
-
-        log.info("活动自动结束任务完成，成功: {}, 失败: {}", successCount, failCount);
     }
+
+    // ==================== 辅助方法 ====================
 
     /**
      * 活动自动发布后，给所有开启邮件通知的用户发送新活动通知

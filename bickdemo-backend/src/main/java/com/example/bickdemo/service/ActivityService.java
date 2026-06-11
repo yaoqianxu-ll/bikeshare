@@ -140,6 +140,9 @@ public class ActivityService {
     // 活动详情缓存服务（只缓存公共数据，不含用户私有报名信息）
     private final ActivityDetailCacheService activityDetailCacheService;
 
+    // 活动调度服务，用于精确调度活动状态变更
+    private final ActivitySchedulerService activitySchedulerService;
+
     /**
      * 获取所有已发布的活动列表
      * 查询未删除且状态为已发布或已完成的活动（包含已结束的活动）
@@ -292,6 +295,9 @@ public class ActivityService {
         // 将活动记录插入数据库
         activityMapper.insert(activity);
 
+        // 调度活动的精确状态变更任务
+        activitySchedulerService.scheduleActivity(activity.getId());
+
         // 返回创建的活动响应对象（包含报名人数统计）
         return convertToResponseWithCount(activity);
     }
@@ -372,6 +378,10 @@ public class ActivityService {
 
         // 执行活动记录的更新操作
         activityMapper.updateById(activity);
+
+        // 重新调度活动的状态变更任务（时间可能已变更）
+        activitySchedulerService.scheduleActivity(id);
+
         // 返回更新后的活动响应对象
         return convertToResponseWithCount(activity);
     }
@@ -392,6 +402,8 @@ public class ActivityService {
         if (activity == null) {
             throw new RuntimeException("活动不存在：" + id);
         }
+        // 取消活动的调度任务
+        activitySchedulerService.cancelScheduledTasks(id);
         // 执行活动记录的删除操作
         activityMapper.deleteById(id);
     }
@@ -808,6 +820,8 @@ public class ActivityService {
         }
         // 执行更新操作
         activityMapper.updateById(activity);
+        // 重新调度活动的状态变更任务（时间可能已变更）
+        activitySchedulerService.scheduleActivity(id);
         // 返回更新后的活动响应对象
         return convertToResponseWithCount(activity);
     }
