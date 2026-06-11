@@ -227,14 +227,25 @@
                 <!-- 已撤回消息（发送者）：居中显示一行提示，含时间 -->
                 <div v-if="message.recalled && message.mine" class="recall-notice">
                   <span class="recall-time">{{ formatTime(message.createdAt) }}</span>
-                  <span class="recall-text">你撤回了一条消息</span>
-                  <el-button v-if="canResendRecall(message)" link size="small" @click.stop="handleEditToInput(message)">重新编辑</el-button>
+                  <span v-if="message.type === 'IMAGE'" class="recall-text">你撤回了一张图片</span>
+                  <span v-else class="recall-text">你撤回了一条消息</span>
+                  <el-button v-if="canResendRecall(message) && message.type !== 'IMAGE'" link size="small" @click.stop="handleEditToInput(message)">重新编辑</el-button>
+                  <el-button v-if="canResendRecall(message) && message.type === 'IMAGE'" link size="small" @click.stop="handleEditToInput(message)">重新发送</el-button>
+                  <!-- 图片重新发送预览 -->
+                  <div v-if="message.type === 'IMAGE' && resendingImageMessageId === message.id" class="resend-image-preview">
+                    <img :src="message.originalMediaUrl || message.mediaUrl" class="resend-thumb" />
+                    <div class="resend-actions">
+                      <el-button type="primary" size="small" @click.stop="handleResendImage(message)">重新发送</el-button>
+                      <el-button size="small" @click.stop="cancelResendImage">取消</el-button>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- 已撤回消息（接收方）：居中显示一行提示，含时间 -->
                 <div v-else-if="message.recalled && !message.mine" class="recall-notice">
                   <span class="recall-time">{{ formatTime(message.createdAt) }}</span>
-                  <span class="recall-text">对方撤回了一条消息</span>
+                  <span v-if="message.type === 'IMAGE'" class="recall-text">对方撤回了一张图片</span>
+                  <span v-else class="recall-text">对方撤回了一条消息</span>
                 </div>
 
                 <template v-else>
@@ -322,14 +333,14 @@
               </div>
             </div>
 
-            <div class="input-box">
+            <div class="input-box" @paste="handlePaste">
               <el-input
                 v-model="draft"
                 type="textarea"
                 :rows="2"
                 resize="none"
                 maxlength="500"
-                placeholder="输入消息，按 Enter 发送，Shift+Enter 换行"
+                placeholder="输入消息，按 Enter 发送；支持粘贴图片 (Ctrl+V)"
                 @keydown.enter.exact.prevent="handleSendText"
               />
               <el-button type="primary" :disabled="!draft.trim()" @click="handleSendText">
@@ -647,6 +658,7 @@ const contextMenuVisible = ref(false)    // 右键菜单是否显示
 const contextMenuMessage = ref(null)     // 右键菜单对应的消息
 const contextMenuPosition = ref({ x: 0, y: 0 }) // 右键菜单位置
 const editingMessageId = ref(null)       // 正在重新编辑的撤回消息ID
+const resendingImageMessageId = ref(null) // 正在重新发送的已撤回图片消息ID
 
 // 输入
 const draft = ref('')
@@ -1081,6 +1093,8 @@ const selectContact = async (contact, skipProfileFetch = false) => {
   activeContact.value = fullContact
   sidebarTab.value = 'contacts'
   emojiPickerVisible.value = false
+  editingMessageId.value = null
+  resendingImageMessageId.value = null
   messages.value = []
   messagePage.value = 1
   messageHasMore.value = false
@@ -1188,6 +1202,7 @@ const handleSendText = async () => {
     const msg = messages.value.find(m => m.id === messageId)
     try {
       const res = await resendChatMessage(messageId, {
+        receiverId: activeContact.value.userId,
         content,
         type: msg?.type || 'TEXT'
       })
@@ -1303,22 +1318,23 @@ const handleCopyMessage = async (message) => {
 /**
  * 撤回消息
  */
-const handleRecall = async (message) => {
+const handleRecall = async (msg) => {
   contextMenuVisible.value = false
   try {
-    await recallChatMessage(message.id)
+    await recallChatMessage(msg.id)
     // 如果撤回的正是正在编辑的消息，清除编辑状态
-    if (editingMessageId.value === message.id) {
+    if (editingMessageId.value === msg.id) {
       editingMessageId.value = null
       draft.value = ''
     }
     // 更新本地消息状态：标记为已撤回，同时保存原始内容用于重新编辑
-    const idx = messages.value.findIndex(m => m.id === message.id)
+    const idx = messages.value.findIndex(m => m.id === msg.id)
     if (idx >= 0) {
       messages.value[idx] = {
         ...messages.value[idx],
         recalled: true,
-        originalContent: message.content, // 保存原始内容用于重新编辑
+        originalContent: msg.content, // 保存原始内容用于重新编辑（文本消息）
+        originalMediaUrl: msg.mediaUrl, // 保存原始图片URL用于重新编辑（图片消息）
         recalledAt: new Date() // 记录撤回时间，用于判断重新编辑有效期
       }
     }
@@ -1333,14 +1349,22 @@ const handleRecall = async (message) => {
  * 处理"重新编辑"按钮点击
  * 将已撤回消息的原始内容放回输入框，并记录正在编辑的消息ID
  *
- * @param {object} message - 已撤回的消息对象
+ * @param {object} msg - 已撤回的消息对象
  */
-const handleEditToInput = (message) => {
-  // 优先使用 originalContent（从数据库保存的原始内容），否则使用已显示的 content
-  const contentToRestore = message.originalContent || message.content || ''
+const handleEditToInput = (msg) => {
+  // 图片消息：显示预览 + "重新发送"按钮，而不是放入输入框
+  // originalMediaUrl 仅在本会话撤回后存在；从后端加载的历史撤回消息用 mediaUrl 兜底
+  const imageUrl = msg.originalMediaUrl || msg.mediaUrl
+  if (msg.type === 'IMAGE' && imageUrl) {
+    resendingImageMessageId.value = msg.id
+    nextTick(() => scrollToBottom())
+    return
+  }
+
+  // 文本/表情消息：放回输入框重新编辑
+  const contentToRestore = msg.originalContent || msg.content || ''
   draft.value = contentToRestore
-  editingMessageId.value = message.id // 标记正在编辑的撤回消息
-  activeMessageMenu.value = null
+  editingMessageId.value = msg.id // 标记正在编辑的撤回消息
   // 滚动到底部并聚焦输入框
   nextTick(() => {
     const textarea = document.querySelector('.input-box .el-textarea__inner')
@@ -1349,6 +1373,41 @@ const handleEditToInput = (message) => {
     }
     scrollToBottom()
   })
+}
+
+/**
+ * 重新发送已撤回的图片消息（原图原样发送）
+ */
+const handleResendImage = async (msg) => {
+  const mediaUrl = msg.originalMediaUrl || msg.mediaUrl
+  if (!mediaUrl) {
+    message.error('图片地址不存在，无法重新发送')
+    return
+  }
+  try {
+    const res = await resendChatMessage(msg.id, {
+      receiverId: activeContact.value.userId,
+      type: 'IMAGE',
+      mediaUrl
+    })
+    const updated = normalizeMessage(res.data)
+    const idx = messages.value.findIndex(m => m.id === msg.id)
+    if (idx >= 0) {
+      messages.value[idx] = updated
+    }
+    resendingImageMessageId.value = null
+    message.success('图片已重新发送')
+  } catch (error) {
+    console.error('重新发送失败:', error)
+    message.error(error?.message || '重新发送失败')
+  }
+}
+
+/**
+ * 取消重新发送图片
+ */
+const cancelResendImage = () => {
+  resendingImageMessageId.value = null
 }
 
 const toggleEmojiPicker = () => {
@@ -1363,10 +1422,12 @@ const triggerImagePicker = () => {
   imageInputRef.value?.click()
 }
 
-const handleImageSelected = async (event) => {
-  const file = event?.target?.files?.[0]
-  if (!file) return
-
+/**
+ * 公共函数：上传图片文件并发送消息
+ * 供文件选择器和剪贴板粘贴两种方式复用
+ */
+const uploadAndSendImage = async (file) => {
+  if (!file || !activeContact.value) return
   imageUploading.value = true
   try {
     const uploadRes = await uploadImage(file)
@@ -1378,8 +1439,34 @@ const handleImageSelected = async (event) => {
     message.error('图片发送失败')
   } finally {
     imageUploading.value = false
-    if (event?.target) event.target.value = ''
   }
+}
+
+const handleImageSelected = async (event) => {
+  const file = event?.target?.files?.[0]
+  if (!file) return
+  await uploadAndSendImage(file)
+  if (event?.target) event.target.value = ''
+}
+
+/**
+ * 处理粘贴事件：如果剪贴板中包含图片，则自动上传并发送
+ */
+const handlePaste = async (event) => {
+  const items = event?.clipboardData?.items
+  if (!items || !activeContact.value) return
+
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      event.preventDefault()
+      const file = item.getAsFile()
+      if (file) {
+        await uploadAndSendImage(file)
+      }
+      return
+    }
+  }
+  // 如果剪贴板没有图片，不做任何处理，正常粘贴文本
 }
 
 // 添加好友
@@ -2974,6 +3061,7 @@ html.dark .context-menu-item:hover {
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   width: 100%;
   padding: 6px 12px;
@@ -3012,6 +3100,29 @@ html.dark .context-menu-item:hover {
   color: #ccc;
 }
 
+/* 图片重新发送预览区 */
+.resend-image-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.resend-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.resend-actions {
+  display: flex;
+  gap: 6px;
+}
+
 /* ========== 深色模式 - 撤回提示 ========== */
 html.dark .recall-text {
   color: #808080;
@@ -3023,6 +3134,10 @@ html.dark .recall-time {
 
 html.dark .recall-notice :deep(.el-button) {
   color: #6aa8ff !important;
+}
+
+html.dark .resend-thumb {
+  border-color: #3a3a3a;
 }
 </style>
 
