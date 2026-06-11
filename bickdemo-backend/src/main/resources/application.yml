@@ -118,6 +118,10 @@ logging:
     com.zaxxer.hikari: INFO
     # RabbitMQ 连接工厂被 AOP 代理时会输出无业务影响的告警，这里仅保留 ERROR。
     org.springframework.aop.framework.CglibAopProxy: ERROR
+    # 以下组件的 INFO 日志为框架内部状态输出，无业务价值，提升级别以减少噪音。
+    org.springframework.security.web.DefaultSecurityFilterChain: WARN
+    org.springframework.web.servlet.handler.HandlerMappingIntrospector: ERROR
+    org.springframework.web.socket.config.WebSocketMessageBrokerStats: WARN
 
 app:
   frontend-url: ${APP_FRONTEND_URL:https://bikeshare.online}

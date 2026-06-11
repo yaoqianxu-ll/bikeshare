@@ -47,7 +47,6 @@ public class MailSenderConfig {
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
 
-        log.info("主邮箱 MailSender 已创建: {}@{}:{}", username, host, port);
         return sender;
     }
 
@@ -88,7 +87,6 @@ public class MailSenderConfig {
             props.put("mail.smtp.starttls.enable", "true");
         }
 
-        log.info("副邮箱 MailSender 已创建: {}@{}:{}", username, host, port);
         return sender;
     }
 }
