@@ -32,12 +32,12 @@ public class AsyncConfig {
 
     /**
      * 定时任务调度器，用于活动状态的精确定时变更。
-     * 线程池大小 2 足够应对一般场景（发布 + 结束两个任务不会同时大量执行）。
+     * 线程池大小 4，留出余量以应对多个活动同时到达发布/结束时间的场景。
      */
     @Bean
     public TaskScheduler activityTaskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(2);
+        scheduler.setPoolSize(4);
         scheduler.setThreadNamePrefix("activity-scheduler-");
         scheduler.setWaitForTasksToCompleteOnShutdown(true);
         scheduler.setAwaitTerminationSeconds(10);

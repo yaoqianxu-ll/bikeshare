@@ -24,7 +24,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -46,15 +48,18 @@ public class ActivitySchedulerService {
     private final UserMapper userMapper;
     private final UserEmailNotificationService userEmailNotificationService;
     private final TaskScheduler taskScheduler;
+    private final Executor taskExecutor;
 
     public ActivitySchedulerService(ActivityMapper activityMapper,
                                      UserMapper userMapper,
                                      UserEmailNotificationService userEmailNotificationService,
-                                     @Qualifier("activityTaskScheduler") TaskScheduler taskScheduler) {
+                                     @Qualifier("activityTaskScheduler") TaskScheduler taskScheduler,
+                                     @Qualifier("taskExecutor") Executor taskExecutor) {
         this.activityMapper = activityMapper;
         this.userMapper = userMapper;
         this.userEmailNotificationService = userEmailNotificationService;
         this.taskScheduler = taskScheduler;
+        this.taskExecutor = taskExecutor;
     }
 
     /** 延迟注入自身代理，避免循环依赖，用于调用 @CacheEvict 方法使缓存失效 */
@@ -196,10 +201,25 @@ public class ActivitySchedulerService {
     /**
      * 执行活动发布：DRAFT → PUBLISHED
      * 通过 self 代理调用以触发 @CacheEvict
+     * 邮件通知在事务提交后异步发送，不阻塞状态变更
      */
     private void doPublish(Long activityId) {
         try {
+            // 事务内只做状态变更 + 缓存失效，self 代理调用确保 @Transactional 生效
             self.publishActivity(activityId);
+
+            // 事务已提交，状态变更已落库，现在异步发送通知邮件
+            CompletableFuture.runAsync(() -> {
+                try {
+                    Activity act = activityMapper.selectById(activityId);
+                    if (act != null) {
+                        notifyAllUsersOfNewActivity(act);
+                    }
+                } catch (Exception e) {
+                    log.error("[ActivityScheduler] 异步发送新活动邮件通知失败: activityId={}", activityId, e);
+                }
+            }, taskExecutor);
+
             // 发布成功后，调度自动结束任务
             Activity activity = activityMapper.selectById(activityId);
             if (activity != null && activity.getEndTime() != null
@@ -244,8 +264,9 @@ public class ActivitySchedulerService {
     // ==================== 状态变更操作（通过代理调用以触发缓存失效） ====================
 
     /**
-     * 将活动状态从 DRAFT 改为 PUBLISHED，并发送通知邮件
+     * 将活动状态从 DRAFT 改为 PUBLISHED
      * 由 self 代理调用以确保 @CacheEvict 生效
+     * 注意：邮件通知已移至 doPublish 中异步执行，不再阻塞事务
      */
     @Transactional
     @CacheEvict(cacheNames = {CacheNames.ACTIVITIES_PUBLISHED, CacheNames.ACTIVITIES_PAGE, CacheNames.ACTIVITY_DETAIL}, allEntries = true)
@@ -260,7 +281,6 @@ public class ActivitySchedulerService {
         activityMapper.updateById(activity);
         log.info("[ActivityScheduler] 活动已自动发布: activityId={}, title='{}'",
                 activityId, activity.getTitle());
-        notifyAllUsersOfNewActivity(activity);
     }
 
     /**
@@ -298,6 +318,20 @@ public class ActivitySchedulerService {
             for (Activity activity : draftsToPublish) {
                 try {
                     self.publishActivity(activity.getId());
+
+                    // 事务已提交，异步发送通知邮件
+                    final Long publishedId = activity.getId();
+                    CompletableFuture.runAsync(() -> {
+                        try {
+                            Activity act = activityMapper.selectById(publishedId);
+                            if (act != null) {
+                                notifyAllUsersOfNewActivity(act);
+                            }
+                        } catch (Exception e) {
+                            log.error("[ActivityScheduler] 兜底异步发送邮件通知失败: activityId={}", publishedId, e);
+                        }
+                    }, taskExecutor);
+
                     // 发布后调度结束任务
                     Activity updated = activityMapper.selectById(activity.getId());
                     if (updated != null && updated.getEndTime() != null
@@ -331,6 +365,7 @@ public class ActivitySchedulerService {
 
     /**
      * 活动自动发布后，给所有开启邮件通知的用户发送新活动通知
+     * 注意：此方法通过 CompletableFuture.runAsync 异步调用，不阻塞状态变更事务
      */
     private void notifyAllUsersOfNewActivity(Activity activity) {
         try {
