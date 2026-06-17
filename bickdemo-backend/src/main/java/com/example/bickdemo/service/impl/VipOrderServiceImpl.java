@@ -265,7 +265,9 @@ public class VipOrderServiceImpl implements VipOrderService {
                 VipOrder current = vipOrderMapper.selectOne(
                         new LambdaQueryWrapper<VipOrder>().eq(VipOrder::getOrderNo, order.getOrderNo())
                 );
-                if (current != null && !"PAID".equals(current.getStatus())) {
+                if (current != null && "PAID".equals(current.getStatus())) {
+                    log.info("支付宝查询到已支付，订单已处理过，跳过: orderNo={}", order.getOrderNo());
+                } else if (current != null) {
                     markOrderPaid(order.getOrderNo(), queryResp.tradeNo);
                     log.info("支付宝查询到已支付，自动更新订单: orderNo={}, tradeNo={}", order.getOrderNo(), queryResp.tradeNo);
                 }
@@ -289,8 +291,10 @@ public class VipOrderServiceImpl implements VipOrderService {
     @Override
     @Transactional
     public void markOrderPaid(String orderNo, String tradeNo) {
-        // 查询订单
-        VipOrder order = getOrderByNo(orderNo);
+        // 直接查询数据库（不使用getOrderByNo，避免触发支付宝查询导致递归调用）
+        VipOrder order = vipOrderMapper.selectOne(
+                new LambdaQueryWrapper<VipOrder>().eq(VipOrder::getOrderNo, orderNo)
+        );
         if (order == null) {
             log.error("订单不存在: {}", orderNo);
             return;

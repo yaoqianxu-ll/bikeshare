@@ -63,3 +63,4 @@ src/test/
 **/__tests__/
 **/*.test.*
 **/*.spec.*
+/deploy
