@@ -53,6 +53,7 @@ pipeline {
                     ]
                     List<String> externalEnvCandidates = [
                         env.BICKDEMO_ENV_FILE,
+                        '/workspace/bickdemo/.env',
                         '/opt/bickdemo/.env',
                         "${env.JENKINS_HOME ?: ''}/.bickdemo.env",
                         '/var/jenkins_home/.bickdemo.env',
@@ -132,7 +133,7 @@ pipeline {
 
                     // 如果 .env 加载未成功，尝试从备用路径直接读取 AI 密钥
                     if (!env.SILICONFLOW_API_KEY?.trim()) {
-                        for (String fallback : ['/opt/bickdemo/.env', "${env.JENKINS_HOME ?: ''}/workspace/bike-deploy/.env", '/var/jenkins_home/workspace/bike-deploy/.env']) {
+                        for (String fallback : ['/workspace/bickdemo/.env', '/opt/bickdemo/.env', "${env.JENKINS_HOME ?: ''}/workspace/bike-deploy/.env", '/var/jenkins_home/workspace/bike-deploy/.env']) {
                             if (fallback?.trim()) {
                                 int rc = sh(script: "[ -r '${fallback}' ]", returnStatus: true)
                                 if (rc == 0) {
@@ -298,8 +299,12 @@ pipeline {
                     cd ${WORKSPACE}
 
                     # 优先从稳定路径加载 .env，防止 checkout scm 覆盖 workspace 的 .env
+                    # 注意：Jenkins 容器内 /opt/bickdemo 挂载在 /workspace/bickdemo
                     ENV_SOURCE=""
-                    if [ -f /opt/bickdemo/.env ]; then
+                    if [ -f /workspace/bickdemo/.env ]; then
+                        cp /workspace/bickdemo/.env .env
+                        ENV_SOURCE="/workspace/bickdemo/.env (容器内挂载路径)"
+                    elif [ -f /opt/bickdemo/.env ]; then
                         cp /opt/bickdemo/.env .env
                         ENV_SOURCE="/opt/bickdemo/.env"
                     elif [ -f .env ]; then
